@@ -55,7 +55,7 @@ function Login({ setIsAuthenticated }) {
           <p className="text-gray-600">Financial Habits That Grow With You</p>
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex justify-between items-start">
               <span>{error}</span>
@@ -96,8 +96,7 @@ function Login({ setIsAuthenticated }) {
           </div>
 
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             disabled={loading}
             className="w-full bg-bloom-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50"
           >
