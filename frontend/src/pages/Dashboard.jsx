@@ -9,11 +9,12 @@ import { useState, useEffect } from 'react'
 import { expenseAPI, incomeAPI } from '../api'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
-import ExpenseList from '../components/ExpenseList'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
   const [income, setIncome] = useState([])
+  const [transactions, setTransactions] = useState([])
+  const [filter, setFilter] = useState('all') // 'all', 'income', 'expense', 'debit', 'credit'
   const [showAddModal, setShowAddModal] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [modalType, setModalType] = useState(null) // 'expense' or 'income'
@@ -26,6 +27,17 @@ function Dashboard({ setIsAuthenticated }) {
     loadExpenses()
     loadIncome()
   }, [])
+
+  useEffect(() => {
+    // Combine and sort transactions whenever expenses or income change
+    const combined = [
+      ...expenses.map(e => ({ ...e, transactionType: 'expense' })),
+      ...income.map(i => ({ ...i, transactionType: 'income' }))
+    ]
+    // Sort by date (most recent first)
+    combined.sort((a, b) => new Date(b.date) - new Date(a.date))
+    setTransactions(combined)
+  }, [expenses, income])
 
   const loadExpenses = async () => {
     try {
@@ -53,7 +65,12 @@ function Dashboard({ setIsAuthenticated }) {
 
     expenseList.forEach(expense => {
       const amount = expense.amount / 100 // Convert cents to euros
-      if (expense.payment_method === 'Debit card') {
+
+      // Check if this is a credit card payment (reduces credit balance)
+      if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
+        credit -= amount // Payment reduces credit card debt
+        debit += amount  // Payment comes from debit card
+      } else if (expense.payment_method === 'Debit card') {
         debit += amount
       } else if (expense.payment_method === 'Credit card') {
         credit += amount
@@ -67,6 +84,10 @@ function Dashboard({ setIsAuthenticated }) {
   const calculateTotalIncome = (incomeList) => {
     const total = incomeList.reduce((sum, inc) => sum + (inc.amount / 100), 0)
     setTotalIncome(total)
+  }
+
+  const getDebitAvailable = () => {
+    return totalIncome - debitBalance
   }
 
   const handleLogout = () => {
@@ -142,17 +163,32 @@ function Dashboard({ setIsAuthenticated }) {
           {/* Debit Card */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-mint">
             <div className="flex justify-between items-start mb-4">
-              <div>
+              <div className="flex-1">
                 <p className="text-gray-600 font-semibold mb-1">Debit Card</p>
                 <p className="text-sm text-gray-500 mb-3">Spent this period</p>
-                <h2 className="text-4xl font-bold text-gray-800">
+                <h2 className="text-4xl font-bold text-gray-800 mb-1">
                   €{debitBalance.toFixed(2)}
                 </h2>
+                <p className="text-2xl font-semibold text-bloom-mint mt-2">
+                  €{getDebitAvailable().toFixed(2)} <span className="text-sm text-gray-500 font-normal">available</span>
+                </p>
               </div>
               <div className="bg-bloom-mint rounded-full p-3">
                 <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Income: €{totalIncome.toFixed(2)}</span>
+                <span>{totalIncome > 0 ? ((debitBalance / totalIncome) * 100).toFixed(0) : 0}% used</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-bloom-mint rounded-full h-2 transition-all"
+                  style={{ width: `${totalIncome > 0 ? (debitBalance / totalIncome) * 100 : 0}%` }}
+                ></div>
               </div>
             </div>
           </div>
@@ -191,40 +227,139 @@ function Dashboard({ setIsAuthenticated }) {
           </div>
         </div>
 
-        {/* Income Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Income</h2>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Total this period</p>
-              <p className="text-3xl font-bold text-bloom-mint">€{totalIncome.toFixed(2)}</p>
+        {/* Transactions Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Transactions</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg transition ${
+                  filter === 'all'
+                    ? 'bg-bloom-pink text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilter('income')}
+                className={`px-4 py-2 rounded-lg transition ${
+                  filter === 'income'
+                    ? 'bg-bloom-mint text-green-800'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Income
+              </button>
+              <button
+                onClick={() => setFilter('expense')}
+                className={`px-4 py-2 rounded-lg transition ${
+                  filter === 'expense'
+                    ? 'bg-bloom-pink text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Expenses
+              </button>
+              <button
+                onClick={() => setFilter('debit')}
+                className={`px-4 py-2 rounded-lg transition ${
+                  filter === 'debit'
+                    ? 'bg-bloom-mint text-green-800'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Debit
+              </button>
+              <button
+                onClick={() => setFilter('credit')}
+                className={`px-4 py-2 rounded-lg transition ${
+                  filter === 'credit'
+                    ? 'bg-bloom-pink text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Credit
+              </button>
             </div>
           </div>
 
-          {income.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No income entries yet. Add your salary or other income!</p>
+          {transactions.filter(t => {
+            if (filter === 'all') return true
+            if (filter === 'income') return t.transactionType === 'income'
+            if (filter === 'expense') return t.transactionType === 'expense'
+            if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
+            if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
+            return true
+          }).length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p>No transactions yet. Start tracking your finances!</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {income.map(inc => (
+              {transactions.filter(t => {
+                if (filter === 'all') return true
+                if (filter === 'income') return t.transactionType === 'income'
+                if (filter === 'expense') return t.transactionType === 'expense'
+                if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
+                if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
+                return true
+              }).map(transaction => {
+                const isFuture = new Date(transaction.date) > new Date()
+                return (
                 <div
-                  key={inc.id}
-                  className="flex items-center justify-between p-4 bg-bloom-mint/20 rounded-lg hover:bg-bloom-mint/30 transition"
+                  key={`${transaction.transactionType}-${transaction.id}`}
+                  className={`flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition ${
+                    transaction.transactionType === 'income' ? 'bg-bloom-mint/20' : 'bg-gray-50'
+                  } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300' : ''}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-bloom-mint"></div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{inc.type}</h3>
-                      <p className="text-sm text-gray-500">{inc.date}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        transaction.transactionType === 'income'
+                          ? 'bg-bloom-mint'
+                          : transaction.payment_method === 'Credit card'
+                            ? 'bg-bloom-pink'
+                            : 'bg-bloom-mint'
+                      }`}></div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-800">
+                            {transaction.transactionType === 'income' ? transaction.type : transaction.name}
+                          </h3>
+                          {isFuture && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              Scheduled
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {transaction.transactionType === 'expense'
+                            ? `${transaction.category} • ${transaction.subcategory}`
+                            : 'Income'}
+                        </p>
+                      </div>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-4">
-                    <p className="font-bold text-green-700 text-lg">
-                      +€{(inc.amount / 100).toFixed(2)}
-                    </p>
+                    <div className="text-right">
+                      <p className={`font-bold ${
+                        transaction.transactionType === 'income' ? 'text-green-700' : 'text-gray-800'
+                      }`}>
+                        {transaction.transactionType === 'income' ? '+' : ''}€{(transaction.amount / 100).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-500">{transaction.date}</p>
+                    </div>
                     <button
-                      onClick={() => handleDeleteIncome(inc.id)}
+                      onClick={() => transaction.transactionType === 'income'
+                        ? handleDeleteIncome(transaction.id)
+                        : handleDeleteExpense(transaction.id)
+                      }
                       className="text-red-500 hover:text-red-700 transition"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,13 +368,10 @@ function Dashboard({ setIsAuthenticated }) {
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
-
-        {/* Expense List */}
-        <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
       </main>
 
       {/* Floating Add Button with Menu */}

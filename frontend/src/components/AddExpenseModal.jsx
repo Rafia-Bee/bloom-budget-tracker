@@ -10,6 +10,7 @@ import { useState } from 'react'
 function AddExpenseModal({ onClose, onAdd }) {
   const [name, setName] = useState('Wolt')
   const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [category, setCategory] = useState('Flexible Expenses')
   const [subcategory, setSubcategory] = useState('Food')
   const [paymentMethod, setPaymentMethod] = useState('Credit card')
@@ -40,6 +41,7 @@ function AddExpenseModal({ onClose, onAdd }) {
       await onAdd({
         name,
         amount: amountInCents,
+        date,
         category,
         subcategory,
         payment_method: paymentMethod
@@ -88,8 +90,20 @@ function AddExpenseModal({ onClose, onAdd }) {
             <input
               type="number"
               step="0.01"
+              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
               required
             />

@@ -74,6 +74,7 @@ function AddIncomeModal({ onClose, onAdd }) {
             <input
               type="number"
               step="0.01"
+              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-mint"

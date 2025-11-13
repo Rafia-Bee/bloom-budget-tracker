@@ -10,8 +10,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../api'
 
 function Login({ setIsAuthenticated }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('test@bloom.com')
+  const [password, setPassword] = useState('password123')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
