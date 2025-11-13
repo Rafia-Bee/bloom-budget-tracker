@@ -58,4 +58,13 @@ export const incomeAPI = {
     delete: (id) => api.delete(`/income/${id}`),
 };
 
+export const budgetPeriodAPI = {
+    getAll: () => api.get("/budget-periods"),
+    getActive: () => api.get("/budget-periods/active"),
+    getById: (id) => api.get(`/budget-periods/${id}`),
+    create: (data) => api.post("/budget-periods", data),
+    update: (id, data) => api.put(`/budget-periods/${id}`, data),
+    delete: (id) => api.delete(`/budget-periods/${id}`),
+};
+
 export default api;

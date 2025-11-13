@@ -159,7 +159,15 @@ def update_expense(expense_id):
     if 'subcategory' in data:
         expense.subcategory = data['subcategory']
     if 'date' in data:
-        expense.date = datetime.strptime(data['date'], '%d %b, %Y').date()
+        try:
+            # Try ISO format first (YYYY-MM-DD from date picker)
+            expense.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                # Fallback to display format (dd MMM, YYYY)
+                expense.date = datetime.strptime(data['date'], '%d %b, %Y').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
     if 'due_date' in data:
         expense.due_date = data['due_date']
     if 'payment_method' in data:

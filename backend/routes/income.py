@@ -16,16 +16,26 @@ income_bp = Blueprint('income', __name__)
 @income_bp.route('', methods=['GET'])
 @jwt_required()
 def get_income():
-    """Get all income entries for the current user."""
+    """Get all income entries for the current user, optionally filtered by budget period."""
     user_id = int(get_jwt_identity())
-    income_entries = Income.query.filter_by(user_id=user_id).order_by(Income.actual_date.desc()).all()
+
+    # Get optional budget_period_id filter from query params
+    budget_period_id = request.args.get('budget_period_id', type=int)
+
+    query = Income.query.filter_by(user_id=user_id)
+
+    if budget_period_id:
+        query = query.filter_by(budget_period_id=budget_period_id)
+
+    income_entries = query.order_by(Income.actual_date.desc()).all()
 
     return jsonify([{
         'id': entry.id,
         'type': entry.type,
         'amount': entry.amount,
         'date': entry.actual_date.strftime('%d %b, %Y') if entry.actual_date else None,
-        'scheduled_date': entry.scheduled_date.strftime('%d %b, %Y') if entry.scheduled_date else None
+        'scheduled_date': entry.scheduled_date.strftime('%d %b, %Y') if entry.scheduled_date else None,
+        'budget_period_id': entry.budget_period_id
     } for entry in income_entries]), 200
 @income_bp.route('', methods=['POST'])
 @jwt_required()
@@ -37,6 +47,9 @@ def create_income():
     # Validate required fields
     if not data.get('type') or not data.get('amount'):
         return jsonify({'error': 'Type and amount are required'}), 400
+
+    if not data.get('budget_period_id'):
+        return jsonify({'error': 'Budget period is required'}), 400
 
     try:
         amount = int(data['amount'])
@@ -58,9 +71,11 @@ def create_income():
     # Create income entry
     income = Income(
         user_id=user_id,
+        budget_period_id=data['budget_period_id'],
         type=data['type'],
         amount=amount,
-        actual_date=date
+        actual_date=date,
+        scheduled_date=date
     )
 
     db.session.add(income)
@@ -72,7 +87,8 @@ def create_income():
             'id': income.id,
             'type': income.type,
             'amount': income.amount,
-            'date': income.actual_date.strftime('%d %b, %Y')
+            'date': income.actual_date.strftime('%d %b, %Y'),
+            'budget_period_id': income.budget_period_id
         }
     }), 201
 @income_bp.route('/<int:income_id>', methods=['PUT'])

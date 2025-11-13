@@ -10,7 +10,7 @@ Usage:
 
 from datetime import datetime, timedelta
 from backend.app import create_app
-from backend.models.database import db, User, Expense, Income
+from backend.models.database import db, User, Expense, Income, BudgetPeriod
 
 def seed_data():
     app = create_app()
@@ -31,20 +31,36 @@ def seed_data():
         # Clear existing test data for this user
         Expense.query.filter_by(user_id=user.id).delete()
         Income.query.filter_by(user_id=user.id).delete()
+        BudgetPeriod.query.filter_by(user_id=user.id).delete()
         db.session.commit()
 
         today = datetime.now().date()
 
+        # Create a budget period for the test data (monthly period covering today)
+        budget_period = BudgetPeriod(
+            user_id=user.id,
+            period_type='monthly',
+            start_date=today - timedelta(days=10),
+            end_date=today + timedelta(days=19)  # 30-day period
+        )
+        db.session.add(budget_period)
+        db.session.commit()
+
+        print(f"✓ Created budget period: {budget_period.start_date} to {budget_period.end_date}")
+
         # Sample Income
         incomes = [
-            {'type': 'Salary', 'amount': 250000, 'date': today - timedelta(days=15)},  # €2500
-            {'type': 'Freelance', 'amount': 50000, 'date': today - timedelta(days=10)},  # €500
-            {'type': 'Bonus', 'amount': 100000, 'date': today + timedelta(days=5)},  # €1000 (future)
+            {'type': 'Salary', 'amount': 250000, 'date': today - timedelta(days=5)},  # €2500
+            {'type': 'Freelance', 'amount': 50000, 'date': today - timedelta(days=2)},  # €500
+            {'type': 'Side Gig', 'amount': 30000, 'date': today},  # €300 (today)
+            {'type': 'Bonus', 'amount': 100000, 'date': today + timedelta(days=3)},  # €1000
+            {'type': 'Refund', 'amount': 7500, 'date': today + timedelta(days=1)},  # €75 (tomorrow)
         ]
 
         for inc in incomes:
             income = Income(
                 user_id=user.id,
+                budget_period_id=budget_period.id,
                 type=inc['type'],
                 amount=inc['amount'],
                 scheduled_date=inc['date'],
@@ -56,42 +72,61 @@ def seed_data():
         expenses = [
             # Credit Card Expenses
             {'name': 'Wolt', 'amount': 2850, 'category': 'Flexible Expenses', 'subcategory': 'Food',
-             'payment_method': 'Credit card', 'date': today - timedelta(days=1)},
+             'payment_method': 'Credit card', 'date': today - timedelta(days=7)},
             {'name': 'Netflix', 'amount': 1599, 'category': 'Fixed Expenses', 'subcategory': 'Subscriptions',
-             'payment_method': 'Credit card', 'date': today - timedelta(days=3)},
+             'payment_method': 'Credit card', 'date': today - timedelta(days=6)},
             {'name': 'H&M', 'amount': 4500, 'category': 'Flexible Expenses', 'subcategory': 'Shopping',
              'payment_method': 'Credit card', 'date': today - timedelta(days=5)},
             {'name': 'Uber', 'amount': 1250, 'category': 'Flexible Expenses', 'subcategory': 'Transportation',
-             'payment_method': 'Credit card', 'date': today - timedelta(days=7)},
+             'payment_method': 'Credit card', 'date': today - timedelta(days=4)},
             {'name': 'Cinema', 'amount': 1500, 'category': 'Flexible Expenses', 'subcategory': 'Entertainment',
-             'payment_method': 'Credit card', 'date': today - timedelta(days=8)},
+             'payment_method': 'Credit card', 'date': today - timedelta(days=3)},
             {'name': 'Spotify', 'amount': 999, 'category': 'Fixed Expenses', 'subcategory': 'Subscriptions',
-             'payment_method': 'Credit card', 'date': today - timedelta(days=12)},
+             'payment_method': 'Credit card', 'date': today - timedelta(days=2)},
+            {'name': 'Starbucks', 'amount': 650, 'category': 'Flexible Expenses', 'subcategory': 'Food',
+             'payment_method': 'Credit card', 'date': today - timedelta(days=1)},
+            {'name': 'Amazon', 'amount': 3500, 'category': 'Flexible Expenses', 'subcategory': 'Shopping',
+             'payment_method': 'Credit card', 'date': today},  # Today
+            {'name': 'Gas Station', 'amount': 5000, 'category': 'Flexible Expenses', 'subcategory': 'Transportation',
+             'payment_method': 'Credit card', 'date': today + timedelta(days=1)},  # Tomorrow
+            {'name': 'Restaurant', 'amount': 4200, 'category': 'Flexible Expenses', 'subcategory': 'Food',
+             'payment_method': 'Credit card', 'date': today + timedelta(days=2)},  # Day after
 
             # Debit Card Expenses
             {'name': 'Lidl Groceries', 'amount': 6500, 'category': 'Flexible Expenses', 'subcategory': 'Food',
-             'payment_method': 'Debit card', 'date': today - timedelta(days=2)},
-            {'name': 'Bus Pass', 'amount': 4000, 'category': 'Flexible Expenses', 'subcategory': 'Transportation',
-             'payment_method': 'Debit card', 'date': today - timedelta(days=4)},
-            {'name': 'Pharmacy', 'amount': 2500, 'category': 'Flexible Expenses', 'subcategory': 'Health',
              'payment_method': 'Debit card', 'date': today - timedelta(days=6)},
+            {'name': 'Bus Pass', 'amount': 4000, 'category': 'Flexible Expenses', 'subcategory': 'Transportation',
+             'payment_method': 'Debit card', 'date': today - timedelta(days=5)},
+            {'name': 'Pharmacy', 'amount': 2500, 'category': 'Flexible Expenses', 'subcategory': 'Health',
+             'payment_method': 'Debit card', 'date': today - timedelta(days=4)},
             {'name': 'Electricity Bill', 'amount': 8500, 'category': 'Fixed Expenses', 'subcategory': 'Utilities',
-             'payment_method': 'Debit card', 'date': today - timedelta(days=9)},
+             'payment_method': 'Debit card', 'date': today - timedelta(days=3)},
+            {'name': 'Coffee Shop', 'amount': 850, 'category': 'Flexible Expenses', 'subcategory': 'Food',
+             'payment_method': 'Debit card', 'date': today - timedelta(days=1)},
+            {'name': 'Bakery', 'amount': 1200, 'category': 'Flexible Expenses', 'subcategory': 'Food',
+             'payment_method': 'Debit card', 'date': today},  # Today
+            {'name': 'Internet Bill', 'amount': 5500, 'category': 'Fixed Expenses', 'subcategory': 'Utilities',
+             'payment_method': 'Debit card', 'date': today + timedelta(days=1)},  # Tomorrow
+            {'name': 'Gym Membership', 'amount': 3500, 'category': 'Flexible Expenses', 'subcategory': 'Health',
+             'payment_method': 'Debit card', 'date': today + timedelta(days=2)},  # Day after
 
             # Credit Card Payment (reduces credit balance)
             {'name': 'Credit Card Payment', 'amount': 50000, 'category': 'Debt Payments',
-             'subcategory': 'Credit Card', 'payment_method': 'Debit card', 'date': today - timedelta(days=11)},
+             'subcategory': 'Credit Card', 'payment_method': 'Debit card', 'date': today - timedelta(days=7)},
 
             # Future Expenses
             {'name': 'Rent', 'amount': 95000, 'category': 'Fixed Expenses', 'subcategory': 'Rent',
-             'payment_method': 'Debit card', 'date': today + timedelta(days=17)},  # Future
+             'payment_method': 'Debit card', 'date': today + timedelta(days=5)},
             {'name': 'Insurance', 'amount': 15000, 'category': 'Fixed Expenses', 'subcategory': 'Insurance',
-             'payment_method': 'Debit card', 'date': today + timedelta(days=20)},  # Future
+             'payment_method': 'Debit card', 'date': today + timedelta(days=8)},
+            {'name': 'Phone Bill', 'amount': 2500, 'category': 'Fixed Expenses', 'subcategory': 'Utilities',
+             'payment_method': 'Debit card', 'date': today + timedelta(days=7)},
         ]
 
         for exp in expenses:
             expense = Expense(
                 user_id=user.id,
+                budget_period_id=budget_period.id,
                 name=exp['name'],
                 amount=exp['amount'],
                 category=exp['category'],
