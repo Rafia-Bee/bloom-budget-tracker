@@ -24,13 +24,17 @@ A flexible web-based budget tracking application accessible from any device (And
 - ✅ Future/scheduled transaction indicators
 - ✅ Sticky navigation with user email display
 - ✅ Streamlined debt payment workflow
+- ✅ Recurring expenses automation with smart scheduling
+- ✅ Auto-generation of recurring expenses (60-day lookahead)
+- ✅ Recurring expense templates management
+- ✅ Purple "Recurring" badge on Dashboard transactions
 - ✅ Comprehensive seed data for testing
 
 ### In Development
 
-- 🚧 Period calendar UI (improved navigation)
-- 📋 Recurring expenses automation
-- 📋 End-of-period suggestions
+- 🚧 End-of-period suggestions
+- 📋 Budget categories & spending limits
+- 📋 Reports & analytics
 
 ## Core Features
 
@@ -212,9 +216,10 @@ Access the app at `http://localhost:3000`
 3. ~~Build backend API with Flask~~ ✅
 4. ~~Build frontend with React~~ ✅
 5. ~~Implement core features (expense tracking, budget monitoring)~~ ✅
-6. Implement recurring expenses automation
+6. ~~Implement recurring expenses automation~~ ✅
 7. Add end-of-period suggestions
-8. Improve period selector UI (calendar view)
-9. Test across devices (Android, iPad, PC)
-10. Deploy to production
-11. Add budget visualizations and spending trends
+8. Add budget categories with spending limits
+9. Improve period selector UI (calendar view)
+10. Test across devices (Android, iPad, PC)
+11. Deploy to production
+12. Add budget visualizations and spending trends

@@ -75,4 +75,21 @@ export const debtAPI = {
     delete: (id) => api.delete(`/debts/${id}`),
 };
 
+export const recurringExpenseAPI = {
+    getAll: (params = {}) => api.get("/recurring-expenses", { params }),
+    getById: (id) => api.get(`/recurring-expenses/${id}`),
+    create: (data) => api.post("/recurring-expenses", data),
+    update: (id, data) => api.put(`/recurring-expenses/${id}`, data),
+    delete: (id) => api.delete(`/recurring-expenses/${id}`),
+    toggleActive: (id) => api.put(`/recurring-expenses/${id}/toggle`),
+    generateNow: (dryRun = false, daysAhead = 60) =>
+        api.post(
+            `/recurring-generation/generate`,
+            {},
+            { params: { dry_run: dryRun, days_ahead: daysAhead } }
+        ),
+    previewUpcoming: (days = 30) =>
+        api.get(`/recurring-generation/preview`, { params: { days } }),
+};
+
 export default api;

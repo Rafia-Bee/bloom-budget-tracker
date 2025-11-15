@@ -50,6 +50,7 @@ def get_expenses():
         'payment_method': e.payment_method,
         'notes': e.notes,
         'receipt_url': e.receipt_url,
+        'recurring_template_id': e.recurring_template_id,
         'created_at': e.created_at.isoformat()
     } for e in expenses]), 200
 

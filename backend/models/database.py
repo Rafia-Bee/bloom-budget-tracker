@@ -62,6 +62,7 @@ class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     budget_period_id = db.Column(db.Integer, db.ForeignKey('budget_periods.id'), nullable=True)
+    recurring_template_id = db.Column(db.Integer, db.ForeignKey('recurring_expenses.id'), nullable=True)
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), nullable=False)
@@ -99,6 +100,32 @@ class Debt(db.Model):
     archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RecurringExpense(db.Model):
+    __tablename__ = 'recurring_expenses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    subcategory = db.Column(db.String(100), nullable=True)
+    payment_method = db.Column(db.String(20), nullable=False, default='credit')
+    frequency = db.Column(db.String(20), nullable=False)  # 'weekly', 'biweekly', 'monthly', 'custom'
+    frequency_value = db.Column(db.Integer, nullable=True)  # For custom frequency (days)
+    day_of_month = db.Column(db.Integer, nullable=True)  # For monthly (1-31)
+    day_of_week = db.Column(db.Integer, nullable=True)  # For weekly (0=Monday, 6=Sunday)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)  # Optional end date
+    next_due_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship to generated expenses
+    generated_expenses = db.relationship('Expense', backref='recurring_template', lazy=True, foreign_keys='Expense.recurring_template_id')
 
 
 class ExpenseNameMapping(db.Model):

@@ -406,6 +406,12 @@ function Dashboard({ setIsAuthenticated }) {
             >
               Debts
             </a>
+            <a
+              href="/recurring-expenses"
+              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+            >
+              Recurring
+            </a>
             <div className="relative user-menu">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -619,6 +625,14 @@ function Dashboard({ setIsAuthenticated }) {
                             {isFuture && (
                               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                                 Scheduled
+                              </span>
+                            )}
+                            {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Recurring
                               </span>
                             )}
                           </div>

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI } from '../api'
+import { debtAPI, recurringExpenseAPI } from '../api'
 
 function AddExpenseModal({ onClose, onAdd }) {
   const [name, setName] = useState('Wolt')
@@ -15,6 +15,11 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [category, setCategory] = useState('Flexible Expenses')
   const [subcategory, setSubcategory] = useState('Food')
   const [paymentMethod, setPaymentMethod] = useState('Credit card')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState('monthly')
+  const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [dayOfWeek, setDayOfWeek] = useState(0)
+  const [frequencyValue, setFrequencyValue] = useState(30)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
@@ -51,6 +56,8 @@ function AddExpenseModal({ onClose, onAdd }) {
 
   const subcategories = getSubcategories()
 
+  const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
   const handleSubcategoryChange = (value) => {
     setSubcategory(value)
 
@@ -71,14 +78,39 @@ function AddExpenseModal({ onClose, onAdd }) {
 
     try {
       const amountInCents = Math.round(parseFloat(amount) * 100)
-      await onAdd({
-        name,
-        amount: amountInCents,
-        date,
-        category,
-        subcategory,
-        payment_method: paymentMethod
-      })
+
+      if (isRecurring) {
+        // Create recurring expense template
+        const recurringData = {
+          name,
+          amount: amountInCents,
+          category,
+          subcategory,
+          payment_method: paymentMethod,
+          frequency,
+          frequency_value: frequency === 'custom' ? frequencyValue : null,
+          day_of_month: frequency === 'monthly' ? dayOfMonth : null,
+          day_of_week: frequency === 'weekly' || frequency === 'biweekly' ? dayOfWeek : null,
+          start_date: date,
+          is_active: true
+        }
+
+        await recurringExpenseAPI.create(recurringData)
+        onClose()
+
+        // Optionally show success message
+        alert('Recurring expense template created! Use "Generate Now" to create the first instance.')
+      } else {
+        // Create one-time expense
+        await onAdd({
+          name,
+          amount: amountInCents,
+          date,
+          category,
+          subcategory,
+          payment_method: paymentMethod
+        })
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add expense')
       setLoading(false)
@@ -86,9 +118,9 @@ function AddExpenseModal({ onClose, onAdd }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center p-6 pb-4 border-b">
           <h2 className="text-2xl font-bold text-bloom-pink">Add Expense</h2>
           <button
             onClick={onClose}
@@ -100,7 +132,7 @@ function AddExpenseModal({ onClose, onAdd }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
               {error}
@@ -183,7 +215,89 @@ function AddExpenseModal({ onClose, onAdd }) {
             </select>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Recurring Expense Toggle */}
+          <div className="border-t pt-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="w-5 h-5 text-bloom-pink focus:ring-bloom-pink rounded"
+              />
+              <span className="text-gray-700 font-semibold">Make this a recurring expense</span>
+            </label>
+          </div>
+
+          {/* Recurring Expense Options */}
+          {isRecurring && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+              <h3 className="font-semibold text-purple-900 mb-2">Recurrence Schedule</h3>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Biweekly (Every 2 weeks)</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="custom">Custom (Every X days)</option>
+                </select>
+              </div>
+
+              {(frequency === 'weekly' || frequency === 'biweekly') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Day of Week</label>
+                  <select
+                    value={dayOfWeek}
+                    onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                  >
+                    {weekDays.map((day, index) => (
+                      <option key={index} value={index}>{day}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {frequency === 'monthly' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Day of Month</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={dayOfMonth}
+                    onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                  />
+                </div>
+              )}
+
+              {frequency === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Repeat every X days</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={frequencyValue}
+                    onChange={(e) => setFrequencyValue(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                  />
+                </div>
+              )}
+
+              <p className="text-xs text-purple-700 mt-2">
+                Start date will be: {new Date(date).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+        </form>
+
+        <div className="border-t p-6 pt-4">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -193,13 +307,14 @@ function AddExpenseModal({ onClose, onAdd }) {
             </button>
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="flex-1 bg-bloom-pink text-white px-4 py-2 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50"
             >
-              {loading ? 'Adding...' : 'Add'}
+              {loading ? 'Adding...' : isRecurring ? 'Create Template' : 'Add'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

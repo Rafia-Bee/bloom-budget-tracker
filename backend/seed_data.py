@@ -10,7 +10,7 @@ Usage:
 
 from datetime import datetime, timedelta
 from backend.app import create_app
-from backend.models.database import db, User, Expense, Income, BudgetPeriod, Debt
+from backend.models.database import db, User, Expense, Income, BudgetPeriod, Debt, RecurringExpense
 
 def seed_data():
     app = create_app()
@@ -330,6 +330,148 @@ def seed_data():
 
         print(f"✓ Added {len(debts)} active debt entries")
         print(f"✓ Added {len(archived_debts_data)} archived debts with payment history")
+
+        # Sample Recurring Expenses
+        recurring_expenses_data = [
+            {
+                'name': 'Netflix Subscription',
+                'amount': 1599,  # €15.99
+                'category': 'Fixed Expenses',
+                'subcategory': 'Subscriptions',
+                'payment_method': 'Credit card',
+                'frequency': 'monthly',
+                'day_of_month': 1,
+                'start_date': datetime(2025, 11, 1).date(),
+                'notes': 'Premium plan'
+            },
+            {
+                'name': 'Spotify Premium',
+                'amount': 999,  # €9.99
+                'category': 'Fixed Expenses',
+                'subcategory': 'Subscriptions',
+                'payment_method': 'Credit card',
+                'frequency': 'monthly',
+                'day_of_month': 4,
+                'start_date': datetime(2025, 11, 4).date(),
+                'notes': 'Individual plan'
+            },
+            {
+                'name': 'Gym Membership',
+                'amount': 3500,  # €35.00
+                'category': 'Flexible Expenses',
+                'subcategory': 'Health',
+                'payment_method': 'Debit card',
+                'frequency': 'monthly',
+                'day_of_month': 8,
+                'start_date': datetime(2025, 11, 8).date(),
+                'notes': 'Annual contract'
+            },
+            {
+                'name': 'Weekly Groceries Budget',
+                'amount': 7000,  # €70.00
+                'category': 'Flexible Expenses',
+                'subcategory': 'Food',
+                'payment_method': 'Debit card',
+                'frequency': 'weekly',
+                'day_of_week': 0,  # Monday
+                'start_date': datetime(2025, 11, 3).date(),
+                'notes': 'Planned grocery shopping'
+            },
+            {
+                'name': 'Phone Bill',
+                'amount': 2500,  # €25.00
+                'category': 'Fixed Expenses',
+                'subcategory': 'Utilities',
+                'payment_method': 'Debit card',
+                'frequency': 'monthly',
+                'day_of_month': 12,
+                'start_date': datetime(2025, 11, 12).date(),
+                'notes': 'Mobile contract'
+            },
+            {
+                'name': 'Coffee Subscription',
+                'amount': 1200,  # €12.00
+                'category': 'Flexible Expenses',
+                'subcategory': 'Food',
+                'payment_method': 'Credit card',
+                'frequency': 'biweekly',
+                'day_of_week': 5,  # Saturday
+                'start_date': datetime(2025, 11, 2).date(),
+                'notes': 'Local coffee roaster delivery'
+            },
+            {
+                'name': 'Cloud Storage',
+                'amount': 299,  # €2.99
+                'category': 'Fixed Expenses',
+                'subcategory': 'Subscriptions',
+                'payment_method': 'Credit card',
+                'frequency': 'monthly',
+                'day_of_month': 15,
+                'start_date': datetime(2025, 11, 15).date(),
+                'notes': '100GB plan'
+            },
+            {
+                'name': 'Student Loan Payment',
+                'amount': 25000,  # €250.00
+                'category': 'Debt Payments',
+                'subcategory': 'Student Loan',
+                'payment_method': 'Debit card',
+                'frequency': 'monthly',
+                'day_of_month': 5,
+                'start_date': datetime(2025, 11, 5).date(),
+                'end_date': datetime(2027, 11, 5).date(),
+                'notes': 'Auto-payment enabled'
+            },
+            {
+                'name': 'Car Insurance',
+                'amount': 15000,  # €150.00
+                'category': 'Fixed Expenses',
+                'subcategory': 'Insurance',
+                'payment_method': 'Debit card',
+                'frequency': 'monthly',
+                'day_of_month': 22,
+                'start_date': datetime(2025, 11, 22).date(),
+                'notes': 'Comprehensive coverage'
+            },
+            {
+                'name': 'Vitamin Supplements',
+                'amount': 2500,  # €25.00
+                'category': 'Flexible Expenses',
+                'subcategory': 'Health',
+                'payment_method': 'Debit card',
+                'frequency': 'custom',
+                'frequency_value': 30,
+                'start_date': datetime(2025, 11, 10).date(),
+                'notes': 'Monthly supply'
+            }
+        ]
+
+        for rec_exp in recurring_expenses_data:
+            # Calculate next_due_date
+            next_due = rec_exp['start_date']
+
+            recurring_expense = RecurringExpense(
+                user_id=user.id,
+                name=rec_exp['name'],
+                amount=rec_exp['amount'],
+                category=rec_exp['category'],
+                subcategory=rec_exp['subcategory'],
+                payment_method=rec_exp['payment_method'],
+                frequency=rec_exp['frequency'],
+                frequency_value=rec_exp.get('frequency_value'),
+                day_of_month=rec_exp.get('day_of_month'),
+                day_of_week=rec_exp.get('day_of_week'),
+                start_date=rec_exp['start_date'],
+                end_date=rec_exp.get('end_date'),
+                next_due_date=next_due,
+                is_active=True,
+                notes=rec_exp.get('notes')
+            )
+            db.session.add(recurring_expense)
+
+        db.session.commit()
+
+        print(f"✓ Added {len(recurring_expenses_data)} recurring expense templates")
         print("\nSample data seeded successfully!")
         print("\nLogin credentials:")
         print("  Email: test@bloom.com")

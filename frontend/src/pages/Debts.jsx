@@ -241,6 +241,12 @@ function Debts({ setIsAuthenticated }) {
             <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
               ← Back to Dashboard
             </a>
+            <a
+              href="/recurring-expenses"
+              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+            >
+              Recurring
+            </a>
             <div className="relative user-menu">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
