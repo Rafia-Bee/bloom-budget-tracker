@@ -17,6 +17,7 @@ from backend.routes.auth import auth_bp
 from backend.routes.expenses import expenses_bp
 from backend.routes.income import income_bp
 from backend.routes.budget_periods import budget_periods_bp
+from backend.routes.debts import debts_bp
 
 
 def create_app(config_name='development'):
@@ -33,6 +34,7 @@ def create_app(config_name='development'):
     app.register_blueprint(expenses_bp)
     app.register_blueprint(income_bp, url_prefix='/income')
     app.register_blueprint(budget_periods_bp)
+    app.register_blueprint(debts_bp)
 
     with app.app_context():
         db.create_all()

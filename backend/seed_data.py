@@ -10,7 +10,7 @@ Usage:
 
 from datetime import datetime, timedelta
 from backend.app import create_app
-from backend.models.database import db, User, Expense, Income, BudgetPeriod
+from backend.models.database import db, User, Expense, Income, BudgetPeriod, Debt
 
 def seed_data():
     app = create_app()
@@ -32,6 +32,7 @@ def seed_data():
         Expense.query.filter_by(user_id=user.id).delete()
         Income.query.filter_by(user_id=user.id).delete()
         BudgetPeriod.query.filter_by(user_id=user.id).delete()
+        Debt.query.filter_by(user_id=user.id).delete()
         db.session.commit()
 
         today = datetime.now().date()
@@ -140,6 +141,42 @@ def seed_data():
 
         print(f"\n✓ Added {len(incomes)} income entries")
         print(f"✓ Added {len(expenses)} expense entries")
+
+        # Sample Debts
+        debts = [
+            {
+                'name': 'Student Loan',
+                'original_amount': 1500000,  # €15,000
+                'current_balance': 875000,   # €8,750
+                'monthly_payment': 25000     # €250
+            },
+            {
+                'name': 'Car Loan',
+                'original_amount': 1200000,  # €12,000
+                'current_balance': 650000,   # €6,500
+                'monthly_payment': 35000     # €350
+            },
+            {
+                'name': 'Credit Card Debt',
+                'original_amount': 300000,   # €3,000
+                'current_balance': 175000,   # €1,750
+                'monthly_payment': 15000     # €150
+            }
+        ]
+
+        for debt_data in debts:
+            debt = Debt(
+                user_id=user.id,
+                name=debt_data['name'],
+                original_amount=debt_data['original_amount'],
+                current_balance=debt_data['current_balance'],
+                monthly_payment=debt_data['monthly_payment']
+            )
+            db.session.add(debt)
+
+        db.session.commit()
+
+        print(f"✓ Added {len(debts)} debt entries")
         print("\nSample data seeded successfully!")
         print("\nLogin credentials:")
         print("  Email: test@bloom.com")
@@ -152,6 +189,8 @@ def seed_data():
                            if e['payment_method'] == 'Debit card'
                            and not (e['category'] == 'Debt Payments' and e['subcategory'] == 'Credit Card')) / 100
         credit_payment = 500.00  # The credit card payment
+        total_debt = sum(d['current_balance'] for d in debts) / 100
+        total_monthly_debt_payment = sum(d['monthly_payment'] for d in debts) / 100
 
         print(f"\nTest Data Summary:")
         print(f"  Total Income: €{total_income:.2f}")
@@ -160,6 +199,9 @@ def seed_data():
         print(f"  Net Credit Balance: €{credit_expenses - credit_payment:.2f}")
         print(f"  Debit Card Spent: €{debit_expenses + credit_payment:.2f}")
         print(f"  Debit Available: €{total_income - (debit_expenses + credit_payment):.2f}")
+        print(f"\nDebt Summary:")
+        print(f"  Total Debt: €{total_debt:.2f}")
+        print(f"  Monthly Debt Payments: €{total_monthly_debt_payment:.2f}")
 
 if __name__ == '__main__':
     seed_data()

@@ -67,4 +67,12 @@ export const budgetPeriodAPI = {
     delete: (id) => api.delete(`/budget-periods/${id}`),
 };
 
+export const debtAPI = {
+    getAll: () => api.get("/debts"),
+    getById: (id) => api.get(`/debts/${id}`),
+    create: (data) => api.post("/debts", data),
+    update: (id, data) => api.put(`/debts/${id}`, data),
+    delete: (id) => api.delete(`/debts/${id}`),
+};
+
 export default api;

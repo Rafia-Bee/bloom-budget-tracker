@@ -52,15 +52,11 @@ function Dashboard({ setIsAuthenticated }) {
   const loadTransactionsAndBalances = async () => {
     if (!currentPeriod) return
     try {
-      console.log('Loading transactions for period:', currentPeriod.id, currentPeriod.start_date, '-', currentPeriod.end_date)
-
       // Load current period transactions
       const [expensesRes, incomeRes] = await Promise.all([
         expenseAPI.getAll({ budget_period_id: currentPeriod.id }),
         incomeAPI.getAll({ budget_period_id: currentPeriod.id })
       ])
-
-      console.log('Loaded expenses:', expensesRes.data.length, 'Loaded income:', incomeRes.data.length)
 
       setExpenses(expensesRes.data)
       setIncome(incomeRes.data)
@@ -121,7 +117,10 @@ function Dashboard({ setIsAuthenticated }) {
         setCurrentPeriod(allPeriodsRes.data[0])
       }
     } catch (error) {
-      console.error('Failed to load periods:', error)
+      // Suppress 401 errors - the API interceptor handles auth redirects
+      if (error.response?.status !== 401) {
+        console.error('Failed to load periods:', error)
+      }
     }
   }
 
@@ -261,8 +260,44 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   const handleAddExpense = async (expenseData) => {
+    const expenseAmount = expenseData.amount / 100 // Convert cents to euros
+    const paymentMethod = expenseData.payment_method
+
+    // Check if this would exceed available balance
+    if (paymentMethod === 'Debit card') {
+      const available = getDebitAvailable()
+      if (expenseAmount > available) {
+        const proceed = window.confirm(
+          `⚠️ WARNING: Insufficient Funds\n\n` +
+          `You're trying to spend €${expenseAmount.toFixed(2)} but only have €${available.toFixed(2)} available in your debit account.\n\n` +
+          `This will result in a negative balance of €${(available - expenseAmount).toFixed(2)}.\n\n` +
+          `Do you want to proceed anyway?`
+        )
+        if (!proceed) {
+          throw new Error('Transaction cancelled by user')
+        }
+      }
+    } else if (paymentMethod === 'Credit card') {
+      const available = getCreditAvailable()
+      if (expenseAmount > available) {
+        const proceed = window.confirm(
+          `⚠️ WARNING: Credit Limit Exceeded\n\n` +
+          `You're trying to spend €${expenseAmount.toFixed(2)} but only have €${available.toFixed(2)} available credit.\n\n` +
+          `Your credit limit is €${creditLimit.toFixed(2)} and current balance is €${creditBalance.toFixed(2)}.\n\n` +
+          `This will exceed your limit by €${(expenseAmount - available).toFixed(2)}.\n\n` +
+          `Do you want to proceed anyway?`
+        )
+        if (!proceed) {
+          throw new Error('Transaction cancelled by user')
+        }
+      }
+    }
+
     try {
-      await expenseAPI.create(expenseData)
+      await expenseAPI.create({
+        ...expenseData,
+        budget_period_id: currentPeriod.id
+      })
       loadExpenses()
       setShowAddModal(false)
       setModalType(null)
@@ -274,7 +309,10 @@ function Dashboard({ setIsAuthenticated }) {
 
   const handleAddIncome = async (incomeData) => {
     try {
-      await incomeAPI.create(incomeData)
+      await incomeAPI.create({
+        ...incomeData,
+        budget_period_id: currentPeriod.id
+      })
       setShowAddModal(false)
       setModalType(null)
       loadIncome() // Reload income list
@@ -349,6 +387,12 @@ function Dashboard({ setIsAuthenticated }) {
               }}
               onDelete={handleDeletePeriod}
             />
+            <a
+              href="/debts"
+              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+            >
+              Debts
+            </a>
             <button
               onClick={handleLogout}
               className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition"

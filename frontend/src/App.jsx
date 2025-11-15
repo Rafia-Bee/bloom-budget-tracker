@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Debts from './pages/Debts'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -43,6 +44,10 @@ function App() {
         <Route
           path="/dashboard"
           element={isAuthenticated ? <Dashboard setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/debts"
+          element={isAuthenticated ? <Debts setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
         />
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>

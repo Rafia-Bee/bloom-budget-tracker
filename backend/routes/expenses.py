@@ -14,7 +14,7 @@ Endpoints:
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from backend.models.database import db, Expense, ExpenseNameMapping
+from backend.models.database import db, Expense, ExpenseNameMapping, Debt
 
 expenses_bp = Blueprint('expenses', __name__, url_prefix='/expenses')
 
@@ -98,6 +98,14 @@ def create_expense():
     )
 
     db.session.add(expense)
+
+    # If this is a debt payment, update the debt balance
+    if data['category'] == 'Debt Payments' and subcategory and subcategory != 'Credit Card':
+        debt = Debt.query.filter_by(user_id=current_user_id, name=subcategory).first()
+        if debt:
+            # Reduce the debt balance by the payment amount
+            debt.current_balance = max(0, debt.current_balance - data['amount'])
+
     db.session.commit()
 
     return jsonify({
@@ -150,6 +158,11 @@ def update_expense(expense_id):
 
     data = request.get_json()
 
+    # Track if this was a debt payment and if amount changed
+    old_was_debt_payment = expense.category == 'Debt Payments' and expense.subcategory and expense.subcategory != 'Credit Card'
+    old_amount = expense.amount
+    old_subcategory = expense.subcategory
+
     if 'name' in data:
         expense.name = data['name']
     if 'amount' in data:
@@ -177,6 +190,21 @@ def update_expense(expense_id):
     if 'receipt_url' in data:
         expense.receipt_url = data['receipt_url']
 
+    # Handle debt balance updates
+    new_is_debt_payment = expense.category == 'Debt Payments' and expense.subcategory and expense.subcategory != 'Credit Card'
+
+    # If this was a debt payment before, reverse the old payment
+    if old_was_debt_payment:
+        old_debt = Debt.query.filter_by(user_id=current_user_id, name=old_subcategory).first()
+        if old_debt:
+            old_debt.current_balance += old_amount
+
+    # If this is now a debt payment, apply the new payment
+    if new_is_debt_payment:
+        new_debt = Debt.query.filter_by(user_id=current_user_id, name=expense.subcategory).first()
+        if new_debt:
+            new_debt.current_balance = max(0, new_debt.current_balance - expense.amount)
+
     db.session.commit()
 
     return jsonify({'message': 'Expense updated successfully'}), 200
@@ -190,6 +218,13 @@ def delete_expense(expense_id):
 
     if not expense:
         return jsonify({'error': 'Expense not found'}), 404
+
+    # If this was a debt payment, reverse it from the debt balance
+    if expense.category == 'Debt Payments' and expense.subcategory and expense.subcategory != 'Credit Card':
+        debt = Debt.query.filter_by(user_id=current_user_id, name=expense.subcategory).first()
+        if debt:
+            # Add the payment back to the debt balance
+            debt.current_balance += expense.amount
 
     db.session.delete(expense)
     db.session.commit()

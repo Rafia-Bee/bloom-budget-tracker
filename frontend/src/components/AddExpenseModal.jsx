@@ -5,7 +5,8 @@
  * subcategory, payment method, and amount input.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { debtAPI } from '../api'
 
 function AddExpenseModal({ onClose, onAdd }) {
   const [name, setName] = useState('Wolt')
@@ -16,6 +17,20 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [paymentMethod, setPaymentMethod] = useState('Credit card')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [debts, setDebts] = useState([])
+
+  useEffect(() => {
+    loadDebts()
+  }, [])
+
+  const loadDebts = async () => {
+    try {
+      const response = await debtAPI.getAll()
+      setDebts(response.data)
+    } catch (error) {
+      console.error('Failed to load debts:', error)
+    }
+  }
 
   const categories = [
     'Fixed Expenses',
@@ -24,11 +39,29 @@ function AddExpenseModal({ onClose, onAdd }) {
     'Debt Payments'
   ]
 
-  const subcategories = {
-    'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
-    'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
-    'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
-    'Debt Payments': ['Credit Card', 'Loan', 'Other']
+  const getSubcategories = () => {
+    const baseSubcategories = {
+      'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
+      'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
+      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
+      'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
+    }
+    return baseSubcategories
+  }
+
+  const subcategories = getSubcategories()
+
+  const handleSubcategoryChange = (value) => {
+    setSubcategory(value)
+
+    // If Debt Payments category and a debt is selected, autofill the amount and name
+    if (category === 'Debt Payments' && value !== 'Credit Card') {
+      const selectedDebt = debts.find(d => d.name === value)
+      if (selectedDebt && selectedDebt.monthly_payment) {
+        setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
+        setName(`${value} Payment`)
+      }
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -129,7 +162,7 @@ function AddExpenseModal({ onClose, onAdd }) {
             <label className="block text-gray-700 font-semibold mb-2">Subcategory</label>
             <select
               value={subcategory}
-              onChange={(e) => setSubcategory(e.target.value)}
+              onChange={(e) => handleSubcategoryChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
             >
               {subcategories[category].map(sub => (
