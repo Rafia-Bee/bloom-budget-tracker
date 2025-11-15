@@ -31,14 +31,9 @@ function Debts({ setIsAuthenticated }) {
     if (currentPeriod) {
       loadDebts()
       loadCreditCardDebt()
-    }
-  }, [currentPeriod])
-
-  useEffect(() => {
-    if (showArchived) {
       loadArchivedDebts()
     }
-  }, [showArchived])
+  }, [currentPeriod])
 
   const loadCurrentPeriod = async () => {
     try {
@@ -503,6 +498,9 @@ function Debts({ setIsAuthenticated }) {
               <div className="space-y-3">
                 {archivedDebts.map(debt => {
                   const original = debt.original_amount / 100
+                  const isExpanded = expandedDebtId === debt.id
+                  const transactions = debtTransactions[debt.id] || []
+
                   return (
                     <div key={debt.id} className="border border-green-300 bg-green-50 rounded-lg p-4">
                       <div className="flex justify-between items-center">
@@ -522,12 +520,49 @@ function Debts({ setIsAuthenticated }) {
                             </div>
                           </div>
                         </div>
-                        <div className="text-green-600">
-                          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleDebtExpansion(debt.id, debt.name)}
+                            className="text-green-600 hover:text-green-700 transition"
+                            title="View payment history"
+                          >
+                            <svg
+                              className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          <div className="text-green-600">
+                            <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
+
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-green-300">
+                          <h4 className="font-semibold text-gray-700 mb-2">Payment History</h4>
+                          {transactions.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No payment history available</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {transactions.map(transaction => (
+                                <div key={transaction.id} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-green-200">
+                                  <div>
+                                    <p className="font-medium text-gray-800">{transaction.name}</p>
+                                    <p className="text-gray-500 text-xs">{new Date(transaction.date).toLocaleDateString()}</p>
+                                  </div>
+                                  <p className="font-semibold text-green-700">€{(transaction.amount / 100).toFixed(2)}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

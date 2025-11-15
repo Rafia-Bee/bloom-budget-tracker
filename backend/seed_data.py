@@ -277,7 +277,59 @@ def seed_data():
 
         db.session.commit()
 
-        print(f"✓ Added {len(debts)} debt entries")
+        # Archived Debts (fully paid off)
+        archived_debts_data = [
+            {
+                'name': 'Old Credit Card Debt',
+                'original_amount': 300000,   # €3,000
+                'payments': [
+                    {'amount': 100000, 'date': datetime(2025, 10, 5), 'period_idx': 0},   # €1,000 - Week 1
+                    {'amount': 100000, 'date': datetime(2025, 10, 12), 'period_idx': 1},  # €1,000 - Week 2
+                    {'amount': 100000, 'date': datetime(2025, 10, 19), 'period_idx': 2}   # €1,000 - Week 3 (final payment)
+                ]
+            },
+            {
+                'name': 'Phone Financing',
+                'original_amount': 80000,    # €800
+                'payments': [
+                    {'amount': 40000, 'date': datetime(2025, 10, 8), 'period_idx': 1},    # €400 - Week 2
+                    {'amount': 40000, 'date': datetime(2025, 10, 15), 'period_idx': 2}    # €400 - Week 3 (final payment)
+                ]
+            }
+        ]
+
+        for archived_data in archived_debts_data:
+            # Create archived debt
+            archived_debt = Debt(
+                user_id=user.id,
+                name=archived_data['name'],
+                original_amount=archived_data['original_amount'],
+                current_balance=0,  # Fully paid
+                monthly_payment=0,
+                archived=True
+            )
+            db.session.add(archived_debt)
+            db.session.flush()  # Get the debt ID
+
+            # Add payment history
+            for payment in archived_data['payments']:
+                period = periods[payment['period_idx']]
+                expense = Expense(
+                    user_id=user.id,
+                    budget_period_id=period.id,
+                    name=f"Payment: {archived_data['name']}",
+                    amount=payment['amount'],
+                    category='Debt Payments',
+                    subcategory=archived_data['name'],
+                    date=payment['date'],
+                    payment_method='Debit card'
+                )
+                db.session.add(expense)
+
+        db.session.commit()
+
+        print(f"✓ Added {len(debts)} active debt entries")
+        print(f"✓ Added {len(archived_debts_data)} archived debts with payment history")
         print("\nSample data seeded successfully!")
         print("\nLogin credentials:")
         print("  Email: test@bloom.com")
