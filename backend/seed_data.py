@@ -28,12 +28,14 @@ def seed_data():
         else:
             print(f"Using existing user: {user.email}")
 
-        # Clear existing test data for this user
+        # Clear existing test data for this user only
+        print(f"⚠️  Wiping data for user: {user.email}")
         Expense.query.filter_by(user_id=user.id).delete()
         Income.query.filter_by(user_id=user.id).delete()
         BudgetPeriod.query.filter_by(user_id=user.id).delete()
         Debt.query.filter_by(user_id=user.id).delete()
         db.session.commit()
+        print("✓ Test user data wiped clean")
 
         today = datetime.now().date()
 
@@ -157,10 +159,10 @@ def seed_data():
                 'monthly_payment': 35000     # €350
             },
             {
-                'name': 'Credit Card Debt',
-                'original_amount': 300000,   # €3,000
-                'current_balance': 175000,   # €1,750
-                'monthly_payment': 15000     # €150
+                'name': 'Personal Loan',
+                'original_amount': 500000,   # €5,000
+                'current_balance': 275000,   # €2,750
+                'monthly_payment': 20000     # €200
             }
         ]
 

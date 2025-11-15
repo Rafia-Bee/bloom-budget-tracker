@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI } from '../api'
+import { debtAPI, expenseAPI, incomeAPI, budgetPeriodAPI } from '../api'
 import AddDebtModal from '../components/AddDebtModal'
 import EditDebtModal from '../components/EditDebtModal'
 
@@ -15,10 +15,33 @@ function Debts({ setIsAuthenticated }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedDebt, setSelectedDebt] = useState(null)
+  const [creditCardDebt, setCreditCardDebt] = useState(null)
+  const [currentPeriod, setCurrentPeriod] = useState(null)
+  const [expandedDebtId, setExpandedDebtId] = useState(null)
+  const [debtTransactions, setDebtTransactions] = useState({})
+  const creditLimit = 1500
 
   useEffect(() => {
-    loadDebts()
+    loadCurrentPeriod()
   }, [])
+
+  useEffect(() => {
+    if (currentPeriod) {
+      loadDebts()
+      loadCreditCardDebt()
+    }
+  }, [currentPeriod])
+
+  const loadCurrentPeriod = async () => {
+    try {
+      const periodsRes = await budgetPeriodAPI.getAll()
+      if (periodsRes.data.length > 0) {
+        setCurrentPeriod(periodsRes.data[0])
+      }
+    } catch (error) {
+      console.error('Failed to load periods:', error)
+    }
+  }
 
   const loadDebts = async () => {
     try {
@@ -26,6 +49,57 @@ function Debts({ setIsAuthenticated }) {
       setDebts(response.data)
     } catch (error) {
       console.error('Failed to load debts:', error)
+    }
+  }
+
+  const loadCreditCardDebt = async () => {
+    try {
+      if (!currentPeriod) return
+
+      // Get all periods up to and including current period (same as Dashboard)
+      const allPeriodsRes = await budgetPeriodAPI.getAll()
+      const periodsToInclude = allPeriodsRes.data.filter(period => {
+        const periodStart = new Date(period.start_date)
+        const currentStart = new Date(currentPeriod.start_date)
+        return periodStart <= currentStart
+      })
+
+      let cumulativeCredit = 0
+
+      // Calculate credit balance from all periods chronologically (matches Dashboard logic)
+      for (const period of periodsToInclude) {
+        const expensesRes = await expenseAPI.getAll({ budget_period_id: period.id })
+        const periodExpenses = expensesRes.data
+
+        periodExpenses.forEach(expense => {
+          const amount = expense.amount / 100
+
+          if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
+            cumulativeCredit -= amount // Payment reduces credit card debt
+          } else if (expense.payment_method === 'Credit card') {
+            cumulativeCredit += amount // Credit card purchase increases debt
+          }
+        })
+      }
+
+      const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
+      const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
+
+      // Only show credit card debt if there's an actual balance
+      if (currentBalance > 0) {
+        setCreditCardDebt({
+          id: 'credit-card',
+          name: 'Credit Card',
+          original_amount: creditLimit * 100, // Convert to cents
+          current_balance: currentBalance,
+          monthly_payment: monthlyPayment,
+          isVirtual: true // Flag to prevent editing/deleting
+        })
+      } else {
+        setCreditCardDebt(null) // No debt to show if balance is zero or negative
+      }
+    } catch (error) {
+      console.error('Failed to load credit card debt:', error)
     }
   }
 
@@ -63,17 +137,65 @@ function Debts({ setIsAuthenticated }) {
     }
   }
 
+  const toggleDebtExpansion = async (debtId, debtName) => {
+    if (expandedDebtId === debtId) {
+      setExpandedDebtId(null)
+    } else {
+      setExpandedDebtId(debtId)
+      // Load transactions for this debt if not already loaded
+      if (!debtTransactions[debtId]) {
+        await loadDebtTransactions(debtId, debtName)
+      }
+    }
+  }
+
+  const loadDebtTransactions = async (debtId, debtName) => {
+    try {
+      // Get all expenses that are payments for this debt
+      const allPeriodsRes = await budgetPeriodAPI.getAll()
+      let allPayments = []
+
+      for (const period of allPeriodsRes.data) {
+        const expensesRes = await expenseAPI.getAll({ budget_period_id: period.id })
+        const payments = expensesRes.data.filter(e =>
+          e.category === 'Debt Payments' && e.subcategory === debtName
+        )
+        allPayments = [...allPayments, ...payments]
+      }
+
+      // Sort by date (newest first)
+      allPayments.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+      setDebtTransactions(prev => ({
+        ...prev,
+        [debtId]: allPayments
+      }))
+    } catch (error) {
+      console.error('Failed to load debt transactions:', error)
+    }
+  }
+
   const calculatePayoffMonths = (balance, monthlyPayment) => {
     if (monthlyPayment <= 0) return null
     return Math.ceil(balance / monthlyPayment)
   }
 
+  const getAllDebts = () => {
+    const allDebts = [...debts]
+    if (creditCardDebt && creditCardDebt.current_balance > 0) {
+      allDebts.unshift(creditCardDebt) // Add credit card at the beginning
+    }
+    return allDebts
+  }
+
   const getTotalDebt = () => {
-    return debts.reduce((sum, debt) => sum + (debt.current_balance / 100), 0)
+    const allDebts = getAllDebts()
+    return allDebts.reduce((sum, debt) => sum + (debt.current_balance / 100), 0)
   }
 
   const getTotalMonthlyPayment = () => {
-    return debts.reduce((sum, debt) => sum + (debt.monthly_payment / 100), 0)
+    const allDebts = getAllDebts()
+    return allDebts.reduce((sum, debt) => sum + (debt.monthly_payment / 100), 0)
   }
 
   const handleLogout = () => {
@@ -124,7 +246,7 @@ function Debts({ setIsAuthenticated }) {
               </div>
             </div>
             <div className="mt-4 text-sm text-gray-500">
-              Across {debts.length} {debts.length === 1 ? 'debt' : 'debts'}
+              Across {getAllDebts().length} {getAllDebts().length === 1 ? 'debt' : 'debts'}
             </div>
           </div>
 
@@ -160,7 +282,7 @@ function Debts({ setIsAuthenticated }) {
             </button>
           </div>
 
-          {debts.length === 0 ? (
+          {getAllDebts().length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -176,7 +298,7 @@ function Debts({ setIsAuthenticated }) {
             </div>
           ) : (
             <div className="space-y-4">
-              {debts.map(debt => {
+              {getAllDebts().map(debt => {
                 const balance = debt.current_balance / 100
                 const original = debt.original_amount / 100
                 const monthly = debt.monthly_payment / 100
@@ -184,22 +306,28 @@ function Debts({ setIsAuthenticated }) {
                 const monthsLeft = calculatePayoffMonths(balance, monthly)
 
                 return (
-                  <div key={debt.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                  <div key={debt.id} className={`border rounded-lg p-6 hover:shadow-md transition ${debt.isVirtual ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">{debt.name}</h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-xl font-bold text-gray-800">{debt.name}</h3>
+                          {debt.isVirtual && (
+                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Auto-calculated</span>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
                             <p className="text-gray-500">Current Balance</p>
                             <p className="font-semibold text-gray-800">€{balance.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Original Amount</p>
+                            <p className="text-gray-500">{debt.isVirtual ? 'Credit Limit' : 'Original Amount'}</p>
                             <p className="font-semibold text-gray-800">€{original.toFixed(2)}</p>
                           </div>
                           <div>
                             <p className="text-gray-500">Monthly Payment</p>
                             <p className="font-semibold text-gray-800">€{monthly.toFixed(2)}</p>
+                            {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">50% of balance</p>}
                           </div>
                           <div>
                             <p className="text-gray-500">Payoff Time</p>
@@ -209,29 +337,31 @@ function Debts({ setIsAuthenticated }) {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          onClick={() => {
-                            setSelectedDebt(debt)
-                            setShowEditModal(true)
-                          }}
-                          className="text-blue-500 hover:text-blue-700 transition"
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDebt(debt.id)}
-                          className="text-red-500 hover:text-red-700 transition"
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+                      {!debt.isVirtual && (
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() => {
+                              setSelectedDebt(debt)
+                              setShowEditModal(true)
+                            }}
+                            className="text-blue-500 hover:text-blue-700 transition"
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDebt(debt.id)}
+                            className="text-red-500 hover:text-red-700 transition"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Progress Bar */}
@@ -247,6 +377,57 @@ function Debts({ setIsAuthenticated }) {
                         ></div>
                       </div>
                     </div>
+
+                    {/* Expand/Collapse Button */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => toggleDebtExpansion(debt.id, debt.name)}
+                        className="flex items-center gap-2 text-bloom-pink hover:text-bloom-pink/80 transition font-semibold"
+                      >
+                        <svg
+                          className={`w-5 h-5 transition-transform ${expandedDebtId === debt.id ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        {expandedDebtId === debt.id ? 'Hide' : 'View'} Payment History
+                      </button>
+                    </div>
+
+                    {/* Transactions List (Expanded) */}
+                    {expandedDebtId === debt.id && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="font-semibold text-gray-800 mb-3">Payment History</h4>
+                        {debtTransactions[debt.id] && debtTransactions[debt.id].length > 0 ? (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {debtTransactions[debt.id].map(transaction => (
+                              <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-800">{transaction.name}</p>
+                                  <p className="text-sm text-gray-500">{transaction.date}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-green-600">-€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="text-xs text-gray-500">{transaction.payment_method}</p>
+                                </div>
+                              </div>
+                            ))}
+                            <div className="mt-3 pt-3 border-t border-gray-300">
+                              <div className="flex justify-between items-center font-bold text-gray-800">
+                                <span>Total Paid:</span>
+                                <span className="text-green-600">
+                                  -€{debtTransactions[debt.id].reduce((sum, t) => sum + (t.amount / 100), 0).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">No payments recorded yet</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
