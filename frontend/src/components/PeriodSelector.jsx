@@ -1,33 +1,69 @@
 /**
  * Bloom - Period Selector
  *
- * Component for selecting and switching between budget periods.
- * Shows current period dates and allows creation of new periods.
+ * Calendar-like component for selecting and switching between budget periods.
+ * Shows periods in a visual grid layout with navigation controls.
  */
 
 import { useState, useEffect } from 'react'
 
 function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, onEdit, onDelete }) {
-  const [showDropdown, setShowDropdown] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [viewMode, setViewMode] = useState('grid') // 'list' or 'grid'
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00')
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
+  const formatShortDate = (dateStr) => {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  }
+
   const getPeriodLabel = (period) => {
     return `${formatDate(period.start_date)} - ${formatDate(period.end_date)}`
+  }
+
+  const getPeriodShortLabel = (period) => {
+    return `${formatShortDate(period.start_date)} - ${formatShortDate(period.end_date)}`
   }
 
   const getPeriodTypeLabel = (type) => {
     return type.charAt(0).toUpperCase() + type.slice(1)
   }
 
-  // Close dropdown when clicking outside
+  const isPeriodCurrent = (period) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const start = new Date(period.start_date + 'T00:00:00')
+    const end = new Date(period.end_date + 'T00:00:00')
+    return today >= start && today <= end
+  }
+
+  const isPeriodPast = (period) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const end = new Date(period.end_date + 'T00:00:00')
+    return end < today
+  }
+
+  const isPeriodFuture = (period) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const start = new Date(period.start_date + 'T00:00:00')
+    return start > today
+  }
+
+  const getCurrentPeriodFromList = () => {
+    return periods.find(p => isPeriodCurrent(p))
+  }
+
+  // Close calendar when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest('.period-selector')) {
-        setShowDropdown(false)
+        setShowCalendar(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -50,15 +86,26 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
   return (
     <div className="period-selector relative">
       <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="bg-white rounded-lg shadow px-4 py-2 hover:bg-gray-50 transition flex items-center gap-3"
+        onClick={() => setShowCalendar(!showCalendar)}
+        className="bg-white border-2 border-gray-300 rounded-lg shadow px-4 py-2 hover:border-bloom-pink hover:shadow-md transition flex items-center gap-3"
       >
         <div className="text-left">
-          <p className="text-xs text-gray-500 uppercase">{getPeriodTypeLabel(currentPeriod.period_type)} Period</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-bloom-pink font-semibold uppercase">{getPeriodTypeLabel(currentPeriod.period_type)} Period</p>
+            {isPeriodCurrent(currentPeriod) && (
+              <span className="bg-bloom-mint text-green-800 text-xs px-2 py-0.5 rounded-full">Current</span>
+            )}
+            {isPeriodPast(currentPeriod) && (
+              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">Past</span>
+            )}
+            {isPeriodFuture(currentPeriod) && (
+              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Future</span>
+            )}
+          </div>
           <p className="font-semibold text-gray-800">{getPeriodLabel(currentPeriod)}</p>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-gray-500 transition-transform ${showCalendar ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -67,79 +114,198 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
         </svg>
       </button>
 
-      {showDropdown && (
-        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[300px] z-50">
-          <div className="p-2 max-h-[300px] overflow-y-auto">
-            {periods.map((period) => (
-              <div
-                key={period.id}
-                className={`group rounded-lg hover:bg-gray-50 transition ${
-                  currentPeriod.id === period.id ? 'bg-bloom-light' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between px-4 py-3">
+      {showCalendar && (
+        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[500px] z-50">
+          {/* Header with view toggle and quick actions */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-gray-800">Budget Periods</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                  className="text-xs text-gray-600 hover:text-bloom-pink transition px-2 py-1 rounded border border-gray-300 hover:border-bloom-pink"
+                >
+                  {viewMode === 'list' ? '⊞ Grid' : '☰ List'}
+                </button>
+                {getCurrentPeriodFromList() && currentPeriod.id !== getCurrentPeriodFromList().id && (
                   <button
                     onClick={() => {
-                      onPeriodChange(period)
-                      setShowDropdown(false)
+                      onPeriodChange(getCurrentPeriodFromList())
+                      setShowCalendar(false)
                     }}
-                    className="flex-1 text-left"
+                    className="text-xs text-white bg-green-600 hover:bg-green-700 transition px-3 py-1 rounded"
                   >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase">{getPeriodTypeLabel(period.period_type)}</p>
-                        <p className="font-semibold text-gray-800">{getPeriodLabel(period)}</p>
-                      </div>
-                      {currentPeriod.id === period.id && (
-                        <svg className="w-5 h-5 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
+                    ← Current Period
                   </button>
-                  <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEdit(period)
-                        setShowDropdown(false)
-                      }}
-                      className="p-1 text-blue-500 hover:text-blue-700 transition"
-                      title="Edit period"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (window.confirm(`Delete period ${getPeriodLabel(period)}?`)) {
-                          onDelete(period.id)
-                          setShowDropdown(false)
-                        }
-                      }}
-                      className="p-1 text-red-500 hover:text-red-700 transition"
-                      title="Delete period"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
-            ))}
+            </div>
           </div>
+
+          {/* Period grid/list */}
+          <div className="p-2 max-h-[400px] overflow-y-auto">
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 gap-2">
+                {periods.map((period) => {
+                  const isCurrent = isPeriodCurrent(period)
+                  const isPast = isPeriodPast(period)
+                  const isFuture = isPeriodFuture(period)
+                  const isSelected = currentPeriod.id === period.id
+
+                  return (
+                    <div
+                      key={period.id}
+                      className={`group rounded-lg border-2 transition ${
+                        isSelected
+                          ? 'border-bloom-pink bg-pink-50'
+                          : isCurrent
+                          ? 'border-green-300 bg-green-50 hover:border-green-400'
+                          : isPast
+                          ? 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                          : 'border-blue-200 bg-blue-50 hover:border-blue-300'
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          onPeriodChange(period)
+                          setShowCalendar(false)
+                        }}
+                        className="w-full text-left p-3"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`text-xs font-semibold uppercase ${
+                            isSelected ? 'text-bloom-pink' : isCurrent ? 'text-green-700' : isPast ? 'text-gray-600' : 'text-blue-700'
+                          }`}>
+                            {getPeriodTypeLabel(period.period_type)}
+                          </span>
+                          {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Now</span>}
+                          {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
+                          {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Future</span>}
+                        </div>
+                        <p className="text-sm font-medium text-gray-800">{getPeriodShortLabel(period)}</p>
+                      </button>
+                      <div className="flex gap-1 px-2 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEdit(period)
+                            setShowCalendar(false)
+                          }}
+                          className="flex-1 text-xs py-1 text-blue-600 hover:bg-blue-100 rounded transition"
+                          title="Edit"
+                        >
+                          ✎ Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (window.confirm(`Delete period ${getPeriodShortLabel(period)}?`)) {
+                              onDelete(period.id)
+                              setShowCalendar(false)
+                            }
+                          }}
+                          className="flex-1 text-xs py-1 text-red-600 hover:bg-red-100 rounded transition"
+                          title="Delete"
+                        >
+                          ✕ Delete
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {periods.map((period) => {
+                  const isCurrent = isPeriodCurrent(period)
+                  const isPast = isPeriodPast(period)
+                  const isFuture = isPeriodFuture(period)
+                  const isSelected = currentPeriod.id === period.id
+
+                  return (
+                    <div
+                      key={period.id}
+                      className={`group rounded-lg transition ${
+                        isSelected
+                          ? 'bg-pink-50'
+                          : isCurrent
+                          ? 'bg-green-50 hover:bg-green-100'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <button
+                          onClick={() => {
+                            onPeriodChange(period)
+                            setShowCalendar(false)
+                          }}
+                          className="flex-1 text-left"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-gray-500 uppercase">{getPeriodTypeLabel(period.period_type)}</p>
+                                {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Current</span>}
+                                {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
+                                {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Future</span>}
+                              </div>
+                              <p className="font-semibold text-gray-800">{getPeriodLabel(period)}</p>
+                            </div>
+                            {isSelected && (
+                              <svg className="w-5 h-5 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                        <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEdit(period)
+                              setShowCalendar(false)
+                            }}
+                            className="p-1 text-blue-500 hover:text-blue-700 transition"
+                            title="Edit period"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (window.confirm(`Delete period ${getPeriodLabel(period)}?`)) {
+                                onDelete(period.id)
+                                setShowCalendar(false)
+                              }
+                            }}
+                            className="p-1 text-red-500 hover:text-red-700 transition"
+                            title="Delete period"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Footer with create button */}
           <div className="border-t border-gray-200 p-2">
             <button
               onClick={() => {
                 onCreateNew()
-                setShowDropdown(false)
+                setShowCalendar(false)
               }}
               className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition text-bloom-pink font-semibold"
             >
