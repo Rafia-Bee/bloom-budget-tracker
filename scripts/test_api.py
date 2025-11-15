@@ -1,10 +1,17 @@
 """
 Simple script to test Bloom API endpoints.
 Tests authentication and expense CRUD operations.
+
+Run from project root: python scripts/test_api.py
 """
 
 import requests
 import json
+import sys
+import os
+
+# Add parent directory to path to import backend modules if needed
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 BASE_URL = "http://127.0.0.1:5000"
 

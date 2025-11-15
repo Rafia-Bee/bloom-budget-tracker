@@ -114,19 +114,30 @@ Bloom/
 ├── backend/              # Flask API
 │   ├── models/          # Database models (User, BudgetPeriod, Expense, Income, Debt)
 │   ├── routes/          # API endpoints (auth, budget_periods, expenses, income, debts)
-│   ├── utils/           # Helper functions
+│   ├── utils/           # Helper functions (recurring expense generation)
 │   ├── app.py           # Flask application setup
-│   └── config.py        # Configuration
+│   ├── config.py        # Configuration
+│   ├── seed_data.py     # Test data generation
+│   └── run_recurring_generation.py  # Scheduled task for recurring expenses
 ├── frontend/            # React web app
 │   └── src/
 │       ├── components/  # Reusable UI components
-│       ├── pages/       # Main pages (Dashboard, Debts, Login, Register)
+│       ├── pages/       # Main pages (Dashboard, Debts, Login, Register, RecurringExpenses)
 │       ├── api.js       # API client
 │       └── main.jsx     # App entry point
-├── instance/            # SQLite database
+├── scripts/             # Utility scripts
+│   ├── maintenance.py   # Database maintenance & migrations
+│   ├── test_api.py      # API testing script
+│   └── README.md        # Scripts documentation
+├── docs/                # Documentation
+│   ├── FEATURES.md      # Feature specifications
+│   ├── FRONTEND_REQUIREMENTS.md  # UI/UX requirements
+│   ├── RECURRING_EXPENSES.md     # Recurring expenses documentation
+│   └── README.md        # Documentation index
+├── instance/            # SQLite database (gitignored)
 ├── run.py              # Application entry point
 ├── start.ps1           # Development startup script
-└── seed_data.py        # Test data generation
+└── requirements.txt    # Python dependencies
 ```
 
 ## Getting Started
@@ -159,6 +170,12 @@ Bloom/
    ```
 
    Creates test user (email: `test@test.com`, password: `test`) with 4 weekly November periods and 62 sample transactions.
+
+4. **Run database migrations (if upgrading from older version):**
+
+   ```powershell
+   python scripts/maintenance.py migrate
+   ```
 
 ### Running the Application
 
@@ -206,8 +223,46 @@ Access the app at `http://localhost:3000`
 1. Navigate to "Debts" page
 2. Click "Add Debt" to create a new debt
 3. Record payments via "Debt Payment" button (pre-fills category)
-4. View payment history by expanding debt cards
-5. Archived debts (fully paid) appear in collapsible "Archived Debts" section
+5. View payment history by expanding debt cards
+6. Archived debts (fully paid) appear in collapsible "Archived Debts" section
+
+### Managing Recurring Expenses
+
+1. Navigate to "Recurring" page from Dashboard or Debts page
+2. Click "Add Recurring Expense" to create templates
+3. Choose frequency (weekly, biweekly, monthly, or custom intervals)
+4. Set scheduling options (day of week/month, start/end dates)
+5. Click "⚡ Generate Now" to manually create expenses from templates
+6. View active and paused templates with edit/delete options
+
+**Quick Create:** Use "Make this recurring" checkbox in Add Expense modal for faster template creation.
+
+## Documentation
+
+- **[Feature Specifications](docs/FEATURES.md)** - Detailed feature documentation
+- **[Frontend Requirements](docs/FRONTEND_REQUIREMENTS.md)** - UI/UX design system
+- **[Recurring Expenses](docs/RECURRING_EXPENSES.md)** - Automation setup and usage
+- **[Scripts](scripts/README.md)** - Maintenance and utility scripts
+
+## Utility Scripts
+
+### Database Maintenance
+
+```powershell
+# Run all migrations
+python scripts/maintenance.py migrate
+
+# Remove orphaned recurring expenses
+python scripts/maintenance.py cleanup-recurring
+
+# Remove duplicate recurring templates
+python scripts/maintenance.py remove-duplicates
+
+# Verify database integrity
+python scripts/maintenance.py verify-db
+```
+
+See [scripts/README.md](scripts/README.md) for full documentation.
 
 ## Next Steps
 
