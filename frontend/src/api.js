@@ -68,7 +68,7 @@ export const budgetPeriodAPI = {
 };
 
 export const debtAPI = {
-    getAll: () => api.get("/debts"),
+    getAll: (params = {}) => api.get("/debts", { params }),
     getById: (id) => api.get(`/debts/${id}`),
     create: (data) => api.post("/debts", data),
     update: (id, data) => api.put(`/debts/${id}`, data),

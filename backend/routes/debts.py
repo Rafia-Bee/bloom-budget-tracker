@@ -24,8 +24,17 @@ def get_debts():
     """Get all debts for the current user."""
     current_user_id = int(get_jwt_identity())
 
-    debts = Debt.query.filter_by(user_id=current_user_id)\
-        .order_by(Debt.created_at.desc()).all()
+    # Check if requesting archived debts
+    show_archived = request.args.get('archived', 'false').lower() == 'true'
+
+    query = Debt.query.filter_by(user_id=current_user_id)
+
+    if show_archived:
+        query = query.filter_by(archived=True)
+    else:
+        query = query.filter_by(archived=False)
+
+    debts = query.order_by(Debt.created_at.desc()).all()
 
     return jsonify([{
         'id': d.id,
@@ -33,6 +42,7 @@ def get_debts():
         'original_amount': d.original_amount,
         'current_balance': d.current_balance,
         'monthly_payment': d.monthly_payment,
+        'archived': d.archived,
         'created_at': d.created_at.isoformat(),
         'updated_at': d.updated_at.isoformat()
     } for d in debts]), 200
@@ -111,6 +121,7 @@ def get_debt(debt_id):
         'original_amount': debt.original_amount,
         'current_balance': debt.current_balance,
         'monthly_payment': debt.monthly_payment,
+        'archived': debt.archived,
         'created_at': debt.created_at.isoformat(),
         'updated_at': debt.updated_at.isoformat()
     }), 200
@@ -143,6 +154,9 @@ def update_debt(debt_id):
             if balance < 0:
                 return jsonify({'error': 'Balance cannot be negative'}), 400
             debt.current_balance = balance
+            # Auto-archive if balance reaches 0
+            if balance == 0:
+                debt.archived = True
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid balance amount'}), 400
 
@@ -154,6 +168,9 @@ def update_debt(debt_id):
             debt.monthly_payment = payment
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid monthly payment'}), 400
+
+    if 'archived' in data:
+        debt.archived = bool(data['archived'])
 
     db.session.commit()
 

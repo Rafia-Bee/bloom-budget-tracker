@@ -12,6 +12,8 @@ import EditDebtModal from '../components/EditDebtModal'
 
 function Debts({ setIsAuthenticated }) {
   const [debts, setDebts] = useState([])
+  const [archivedDebts, setArchivedDebts] = useState([])
+  const [showArchived, setShowArchived] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedDebt, setSelectedDebt] = useState(null)
@@ -32,6 +34,12 @@ function Debts({ setIsAuthenticated }) {
     }
   }, [currentPeriod])
 
+  useEffect(() => {
+    if (showArchived) {
+      loadArchivedDebts()
+    }
+  }, [showArchived])
+
   const loadCurrentPeriod = async () => {
     try {
       const periodsRes = await budgetPeriodAPI.getAll()
@@ -49,6 +57,15 @@ function Debts({ setIsAuthenticated }) {
       setDebts(response.data)
     } catch (error) {
       console.error('Failed to load debts:', error)
+    }
+  }
+
+  const loadArchivedDebts = async () => {
+    try {
+      const response = await debtAPI.getAll({ archived: true })
+      setArchivedDebts(response.data)
+    } catch (error) {
+      console.error('Failed to load archived debts:', error)
     }
   }
 
@@ -85,7 +102,7 @@ function Debts({ setIsAuthenticated }) {
       const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
       const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
 
-      // Only show credit card debt if there's an actual balance
+      // Show credit card debt if there's any balance remaining (even if monthly payment is 0)
       if (currentBalance > 0) {
         setCreditCardDebt({
           id: 'credit-card',
@@ -96,7 +113,7 @@ function Debts({ setIsAuthenticated }) {
           isVirtual: true // Flag to prevent editing/deleting
         })
       } else {
-        setCreditCardDebt(null) // No debt to show if balance is zero or negative
+        setCreditCardDebt(null) // No debt to show if balance is zero or negative (fully paid off)
       }
     } catch (error) {
       console.error('Failed to load credit card debt:', error)
@@ -201,13 +218,14 @@ function Debts({ setIsAuthenticated }) {
   const handleLogout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_email')
     setIsAuthenticated(false)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-bloom-pink">Bloom - Debt Tracker</h1>
@@ -217,12 +235,20 @@ function Debts({ setIsAuthenticated }) {
             <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
               ← Back to Dashboard
             </a>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition"
-            >
-              Logout
-            </button>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1.5 mb-1">
+                <svg className="w-3.5 h-3.5 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs text-gray-500">{localStorage.getItem('user_email')}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -326,8 +352,17 @@ function Debts({ setIsAuthenticated }) {
                           </div>
                           <div>
                             <p className="text-gray-500">Monthly Payment</p>
-                            <p className="font-semibold text-gray-800">€{monthly.toFixed(2)}</p>
-                            {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">50% of balance</p>}
+                            {monthly > 0 ? (
+                              <>
+                                <p className="font-semibold text-gray-800">€{monthly.toFixed(2)}</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">50% of balance</p>}
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-semibold text-green-600">€0 this period</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">Already paid 50%</p>}
+                              </>
+                            )}
                           </div>
                           <div>
                             <p className="text-gray-500">Payoff Time</p>
@@ -432,6 +467,72 @@ function Debts({ setIsAuthenticated }) {
                 )
               })}
             </div>
+          )}
+        </div>
+
+        {/* Archived Debts Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Archived Debts</h2>
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="text-bloom-pink hover:text-bloom-pink/80 transition flex items-center gap-2"
+            >
+              <svg
+                className={`w-5 h-5 transition-transform ${showArchived ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {showArchived ? 'Hide' : 'Show'} Archived ({archivedDebts.length})
+            </button>
+          </div>
+
+          {showArchived && (
+            archivedDebts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p>No archived debts yet</p>
+                <p className="text-sm mt-1">Debts are automatically archived when fully paid</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {archivedDebts.map(debt => {
+                  const original = debt.original_amount / 100
+                  return (
+                    <div key={debt.id} className="border border-green-300 bg-green-50 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-bold text-gray-800">{debt.name}</h3>
+                            <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">Paid Off</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-500">Original Amount</p>
+                              <p className="font-semibold text-gray-800">€{original.toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Paid On</p>
+                              <p className="font-semibold text-gray-800">{new Date(debt.updated_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-green-600">
+                          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
           )}
         </div>
       </main>

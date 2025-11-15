@@ -96,6 +96,7 @@ class Debt(db.Model):
     original_amount = db.Column(db.Integer, nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
     monthly_payment = db.Column(db.Integer, nullable=False)
+    archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

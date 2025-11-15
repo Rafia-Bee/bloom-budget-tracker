@@ -105,6 +105,9 @@ def create_expense():
         if debt:
             # Reduce the debt balance by the payment amount
             debt.current_balance = max(0, debt.current_balance - data['amount'])
+            # Auto-archive if fully paid
+            if debt.current_balance == 0:
+                debt.archived = True
 
     db.session.commit()
 
@@ -198,12 +201,18 @@ def update_expense(expense_id):
         old_debt = Debt.query.filter_by(user_id=current_user_id, name=old_subcategory).first()
         if old_debt:
             old_debt.current_balance += old_amount
+            # Unarchive if balance increases from 0
+            if old_debt.current_balance > 0 and old_debt.archived:
+                old_debt.archived = False
 
     # If this is now a debt payment, apply the new payment
     if new_is_debt_payment:
         new_debt = Debt.query.filter_by(user_id=current_user_id, name=expense.subcategory).first()
         if new_debt:
             new_debt.current_balance = max(0, new_debt.current_balance - expense.amount)
+            # Auto-archive if fully paid
+            if new_debt.current_balance == 0:
+                new_debt.archived = True
 
     db.session.commit()
 
@@ -225,6 +234,9 @@ def delete_expense(expense_id):
         if debt:
             # Add the payment back to the debt balance
             debt.current_balance += expense.amount
+            # Unarchive if balance increases from 0
+            if debt.current_balance > 0 and debt.archived:
+                debt.archived = False
 
     db.session.delete(expense)
     db.session.commit()

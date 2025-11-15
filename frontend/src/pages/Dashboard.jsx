@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { expenseAPI, incomeAPI, budgetPeriodAPI } from '../api'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
+import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditExpenseModal from '../components/EditExpenseModal'
 import EditIncomeModal from '../components/EditIncomeModal'
 import PeriodSelector from '../components/PeriodSelector'
@@ -256,6 +257,7 @@ function Dashboard({ setIsAuthenticated }) {
   const handleLogout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_email')
     setIsAuthenticated(false)
   }
 
@@ -369,7 +371,7 @@ function Dashboard({ setIsAuthenticated }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-bloom-pink">Bloom</h1>
@@ -393,12 +395,20 @@ function Dashboard({ setIsAuthenticated }) {
             >
               Debts
             </a>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition"
-            >
-              Logout
-            </button>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1.5 mb-1">
+                <svg className="w-3.5 h-3.5 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs text-gray-500">{localStorage.getItem('user_email')}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -650,6 +660,17 @@ function Dashboard({ setIsAuthenticated }) {
             <div className="absolute bottom-20 right-0 bg-white rounded-lg shadow-xl p-2 mb-2 min-w-[150px]">
               <button
                 onClick={() => {
+                  setModalType('income')
+                  setShowAddModal(true)
+                  setShowAddMenu(false)
+                }}
+                className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+              >
+                <span className="text-2xl">💰</span>
+                <span className="font-semibold text-gray-700">Add Income</span>
+              </button>
+              <button
+                onClick={() => {
                   setModalType('expense')
                   setShowAddModal(true)
                   setShowAddMenu(false)
@@ -661,14 +682,14 @@ function Dashboard({ setIsAuthenticated }) {
               </button>
               <button
                 onClick={() => {
-                  setModalType('income')
+                  setModalType('debt')
                   setShowAddModal(true)
                   setShowAddMenu(false)
                 }}
                 className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
               >
-                <span className="text-2xl">💰</span>
-                <span className="font-semibold text-gray-700">Add Income</span>
+                <span className="text-2xl">💳</span>
+                <span className="font-semibold text-gray-700">Debt Payment</span>
               </button>
             </div>
           )}
@@ -700,6 +721,15 @@ function Dashboard({ setIsAuthenticated }) {
             setModalType(null)
           }}
           onAdd={handleAddIncome}
+        />
+      )}
+      {showAddModal && modalType === 'debt' && (
+        <AddDebtPaymentModal
+          onClose={() => {
+            setShowAddModal(false)
+            setModalType(null)
+          }}
+          onAdd={handleAddExpense}
         />
       )}
 

@@ -7,7 +7,7 @@
 import { useState } from 'react'
 
 function CreatePeriodModal({ onClose, onCreate }) {
-  const [periodType, setPeriodType] = useState('monthly')
+  const [periodType, setPeriodType] = useState('weekly')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
@@ -71,8 +71,8 @@ function CreatePeriodModal({ onClose, onCreate }) {
               onChange={(e) => setPeriodType(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
             >
-              <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
               <option value="custom">Custom Date Range</option>
             </select>
           </div>
