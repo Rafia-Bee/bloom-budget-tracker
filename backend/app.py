@@ -21,6 +21,7 @@ from backend.routes.budget_periods import budget_periods_bp
 from backend.routes.debts import debts_bp
 from backend.routes.recurring_expenses import recurring_expenses_bp
 from backend.routes.recurring_generation import recurring_generation_bp
+from backend.routes.salary_periods import salary_periods_bp
 
 
 def create_app(config_name='development'):
@@ -51,6 +52,7 @@ def create_app(config_name='development'):
     app.register_blueprint(debts_bp)
     app.register_blueprint(recurring_expenses_bp, url_prefix='/recurring-expenses')
     app.register_blueprint(recurring_generation_bp, url_prefix='/recurring-generation')
+    app.register_blueprint(salary_periods_bp, url_prefix='/salary-periods')
 
     with app.app_context():
         db.create_all()

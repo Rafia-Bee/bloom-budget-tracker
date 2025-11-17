@@ -44,6 +44,7 @@ def get_recurring_expenses():
             'end_date': re.end_date.isoformat() if re.end_date else None,
             'next_due_date': re.next_due_date.isoformat(),
             'is_active': re.is_active,
+            'is_fixed_bill': re.is_fixed_bill,
             'notes': re.notes,
             'created_at': re.created_at.isoformat(),
             'updated_at': re.updated_at.isoformat()
@@ -78,6 +79,7 @@ def get_recurring_expense(id):
             'end_date': re.end_date.isoformat() if re.end_date else None,
             'next_due_date': re.next_due_date.isoformat(),
             'is_active': re.is_active,
+            'is_fixed_bill': re.is_fixed_bill,
             'notes': re.notes,
             'created_at': re.created_at.isoformat(),
             'updated_at': re.updated_at.isoformat()
@@ -113,6 +115,7 @@ def create_recurring_expense():
             end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None,
             next_due_date=next_due_date,
             is_active=data.get('is_active', True),
+            is_fixed_bill=data.get('is_fixed_bill', False),
             notes=data.get('notes')
         )
 
@@ -157,6 +160,8 @@ def update_recurring_expense(id):
             re.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data['end_date'] else None
         if 'is_active' in data:
             re.is_active = data['is_active']
+        if 'is_fixed_bill' in data:
+            re.is_fixed_bill = data['is_fixed_bill']
         if 'notes' in data:
             re.notes = data['notes']
 
@@ -205,6 +210,30 @@ def toggle_recurring_expense(id):
         return jsonify({
             'message': 'Recurring expense toggled successfully',
             'is_active': re.is_active
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@recurring_expenses_bp.route('/<int:id>/fixed-bill', methods=['PATCH'])
+@jwt_required()
+def toggle_fixed_bill(id):
+    """Toggle whether a recurring expense is a fixed bill"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+
+        if not re:
+            return jsonify({'error': 'Recurring expense not found'}), 404
+
+        data = request.get_json()
+        re.is_fixed_bill = data.get('is_fixed_bill', not re.is_fixed_bill)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Fixed bill status updated successfully',
+            'is_fixed_bill': re.is_fixed_bill
         }), 200
     except Exception as e:
         db.session.rollback()

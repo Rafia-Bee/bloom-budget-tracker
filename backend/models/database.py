@@ -5,10 +5,12 @@ This module defines the SQLAlchemy models for the Bloom budget tracking applicat
 
 Models:
 - User: User authentication and profile
+- SalaryPeriod: Monthly salary periods with weekly budget calculations
 - BudgetPeriod: Budget periods (weekly, monthly, custom)
 - Expense: Individual expense transactions
 - Income: Income records (salary, etc.)
 - Debt: Debt tracking with balances
+- RecurringExpense: Recurring expense templates
 - ExpenseNameMapping: AI subcategorization mappings
 - UserDefaults: User's default expense values
 - CreditCardSettings: Credit card configuration
@@ -31,6 +33,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     budget_periods = db.relationship('BudgetPeriod', backref='user', lazy=True, cascade='all, delete-orphan')
+    salary_periods = db.relationship('SalaryPeriod', backref='user', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
     income = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
     debts = db.relationship('Debt', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -42,11 +45,32 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
 
+class SalaryPeriod(db.Model):
+    __tablename__ = 'salary_periods'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    salary_amount = db.Column(db.Integer, nullable=False)  # Total salary in cents
+    fixed_bills_total = db.Column(db.Integer, nullable=False, default=0)  # Total fixed bills in cents
+    remaining_amount = db.Column(db.Integer, nullable=False)  # salary - fixed_bills
+    weekly_budget = db.Column(db.Integer, nullable=False)  # remaining / 4
+    start_date = db.Column(db.Date, nullable=False)  # Salary payment date
+    end_date = db.Column(db.Date, nullable=False)  # Day before next salary
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    budget_periods = db.relationship('BudgetPeriod', backref='salary_period', lazy=True, cascade='all, delete-orphan')
+
+
 class BudgetPeriod(db.Model):
     __tablename__ = 'budget_periods'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    salary_period_id = db.Column(db.Integer, db.ForeignKey('salary_periods.id'), nullable=True)
+    week_number = db.Column(db.Integer, nullable=True)  # 1-4 for weekly budgets
+    budget_amount = db.Column(db.Integer, nullable=True)  # Weekly budget allocation
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     period_type = db.Column(db.String(50), nullable=False)
@@ -72,6 +96,7 @@ class Expense(db.Model):
     payment_method = db.Column(db.String(20), nullable=False, default='credit')
     notes = db.Column(db.Text, nullable=True)
     receipt_url = db.Column(db.String(500), nullable=True)
+    is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)  # True for fixed bills that don't count against weekly budget
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -120,6 +145,7 @@ class RecurringExpense(db.Model):
     end_date = db.Column(db.Date, nullable=True)  # Optional end date
     next_due_date = db.Column(db.Date, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)  # True if this counts as a fixed bill for weekly budgeting
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
