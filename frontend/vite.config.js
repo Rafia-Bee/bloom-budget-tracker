@@ -7,6 +7,9 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: "autoUpdate",
+            devOptions: {
+                enabled: false, // Disable PWA in development to prevent caching issues
+            },
             includeAssets: ["icon-192.png", "icon-512.png"],
             manifest: {
                 name: "Bloom - Budget Tracker",
@@ -52,6 +55,9 @@ export default defineConfig({
     ],
     server: {
         port: 3000,
+        headers: {
+            "Cache-Control": "no-store", // Prevent browser caching in development
+        },
         proxy: {
             "/api": {
                 target: "http://localhost:5000",

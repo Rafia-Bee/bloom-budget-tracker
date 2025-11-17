@@ -2,7 +2,36 @@
 # Bloom - Development Server Startup Script
 # Runs both Flask backend and React frontend concurrently
 
-Write-Host " Starting Bloom Development Servers..." -ForegroundColor Magenta
+param(
+    [switch]$Stop
+)
+
+if ($Stop) {
+    Write-Host "🛑 Stopping Bloom Development Servers..." -ForegroundColor Red
+
+    # Kill all Python and Node processes
+    Stop-Process -Name "python" -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
+
+    # Kill PowerShell windows with Bloom in their path
+    Get-Process powershell -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
+            if ($cmdLine -like "*Bloom*" -and $cmdLine -like "*run.py*") {
+                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+            }
+            elseif ($cmdLine -like "*Bloom*frontend*" -and $cmdLine -like "*npm*") {
+                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+            }
+        } catch {}
+    }
+
+    Write-Host "✓ All servers stopped and windows closed." -ForegroundColor Green
+    Start-Sleep -Seconds 1
+    exit
+}
+
+Write-Host "🌸 Starting Bloom Development Servers..." -ForegroundColor Magenta
 
 # Kill any existing Python and npm processes to avoid port conflicts
 Write-Host "`nCleaning up existing processes..." -ForegroundColor Yellow
@@ -25,7 +54,7 @@ $backendJob = Start-Process powershell -ArgumentList @(
 Start-Sleep -Seconds 2
 
 # Start React Frontend
-Write-Host "⚛️  Starting React Frontend (Port 5173)..." -ForegroundColor Green
+Write-Host "⚛️  Starting React Frontend (Port 3000)..." -ForegroundColor Green
 $frontendJob = Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",

@@ -9,11 +9,15 @@ Endpoints:
 - GET /debts/<id>: Get specific debt
 - PUT /debts/<id>: Update debt
 - DELETE /debts/<id>: Delete debt
+- GET /debts/export: Export all debts as JSON
+- POST /debts/import: Import debts from JSON
 """
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, Debt
+from backend.models.database import db, Debt, SalaryPeriod, BudgetPeriod, Expense
+from datetime import datetime
+import json
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
@@ -191,3 +195,135 @@ def delete_debt(debt_id):
     db.session.commit()
 
     return jsonify({'message': 'Debt deleted successfully'}), 200
+
+
+@debts_bp.route('/pay', methods=['POST'])
+@jwt_required()
+def pay_debt():
+    """Make a payment towards a debt by creating a debt payment expense."""
+    try:
+        current_user_id = int(get_jwt_identity())
+        data = request.get_json()
+
+        # Validate required fields
+        if 'debt_id' not in data or 'amount' not in data:
+            return jsonify({'error': 'Missing required fields: debt_id, amount'}), 400
+
+        debt_id = data['debt_id']
+        amount = float(data['amount'])
+        payment_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+
+        # Validate debt exists and belongs to user
+        debt = Debt.query.filter_by(id=debt_id, user_id=current_user_id).first()
+        if not debt:
+            return jsonify({'error': 'Debt not found'}), 404
+
+        # Validate amount
+        if amount <= 0:
+            return jsonify({'error': 'Payment amount must be positive'}), 400
+        if amount > debt.current_balance:
+            return jsonify({'error': 'Payment amount exceeds current balance'}), 400
+
+        # Find the active salary period
+        salary_period = SalaryPeriod.query.filter_by(user_id=current_user_id, is_active=True).first()
+        budget_period_id = None
+
+        # Convert payment_date string to date object
+        payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d').date()
+
+        if salary_period:
+            # Find the budget period (week) that contains this payment date
+            budget_period = BudgetPeriod.query.filter(
+                BudgetPeriod.salary_period_id == salary_period.id,
+                BudgetPeriod.start_date <= payment_date_obj,
+                BudgetPeriod.end_date >= payment_date_obj
+            ).first()
+
+            if budget_period:
+                budget_period_id = budget_period.id
+
+        # Create expense for debt payment
+        expense = Expense(
+            user_id=current_user_id,
+            name=f'Payment to {debt.name}',
+            amount=amount,
+            category='Debt Payments',
+            subcategory=debt.name,
+            payment_method='Debit card',
+            date=payment_date_obj,
+            budget_period_id=budget_period_id
+        )
+
+        # Update debt balance
+        debt.current_balance -= amount
+
+        db.session.add(expense)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Debt payment recorded successfully',
+            'expense_id': expense.id,
+            'new_balance': debt.current_balance
+        }), 200
+
+    except ValueError as e:
+        return jsonify({'error': f'Invalid data format: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@debts_bp.route('/export', methods=['GET'])
+@jwt_required()
+def export_debts():
+    """Export all debts as JSON for backup/testing"""
+    current_user_id = int(get_jwt_identity())
+    debts = Debt.query.filter_by(user_id=current_user_id).all()
+
+    export_data = [{
+        'name': d.name,
+        'original_amount': d.original_amount,
+        'current_balance': d.current_balance,
+        'monthly_payment': d.monthly_payment,
+        'archived': d.archived
+    } for d in debts]
+
+    return jsonify({
+        'debts': export_data,
+        'count': len(export_data)
+    }), 200
+
+
+@debts_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_debts():
+    """Import debts from JSON (for testing/setup)"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        data = request.get_json()
+
+        if 'debts' not in data:
+            return jsonify({'error': 'Missing debts array'}), 400
+
+        imported_count = 0
+        for debt_data in data['debts']:
+            debt = Debt(
+                user_id=current_user_id,
+                name=debt_data['name'],
+                original_amount=debt_data['original_amount'],
+                current_balance=debt_data['current_balance'],
+                monthly_payment=debt_data['monthly_payment'],
+                archived=debt_data.get('archived', False)
+            )
+            db.session.add(debt)
+            imported_count += 1
+
+        db.session.commit()
+        return jsonify({
+            'message': f'Successfully imported {imported_count} debts'
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+

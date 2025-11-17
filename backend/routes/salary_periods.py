@@ -7,10 +7,10 @@ Handles salary period creation, weekly budget tracking, and leftover allocation.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, SalaryPeriod, BudgetPeriod, RecurringExpense, Expense
+from backend.models.database import db, SalaryPeriod, BudgetPeriod, RecurringExpense, Expense, Income
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import and_, func
+from sqlalchemy import and_, or_, func
 
 salary_periods_bp = Blueprint('salary_periods', __name__)
 
@@ -86,6 +86,44 @@ def get_current_salary_period():
                 )
             ).scalar() or 0
 
+        # Get all weeks with their spending and carryover
+        all_weeks = BudgetPeriod.query.filter_by(
+            salary_period_id=salary_period.id
+        ).order_by(BudgetPeriod.week_number).all()
+
+        weeks_data = []
+        cumulative_carryover = 0  # Track carryover from previous weeks
+
+        for week in all_weeks:
+            week_expenses = db.session.query(func.sum(Expense.amount)).filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.budget_period_id == week.id,
+                    Expense.is_fixed_bill == False
+                )
+            ).scalar() or 0
+
+            # Add carryover from previous weeks to this week's budget
+            adjusted_budget = week.budget_amount + cumulative_carryover
+            remaining = adjusted_budget - week_expenses
+
+            weeks_data.append({
+                'id': week.id,
+                'week_number': week.week_number,
+                'budget_amount': week.budget_amount,  # Original budget
+                'adjusted_budget': adjusted_budget,    # Budget + carryover
+                'carryover': cumulative_carryover,     # Carryover from previous weeks
+                'spent': week_expenses,
+                'remaining': remaining,
+                'start_date': week.start_date.isoformat(),
+                'end_date': week.end_date.isoformat()
+            })
+
+            # Update cumulative carryover for next week (if week is in the past)
+            week_end = week.end_date
+            if week_end < today:
+                cumulative_carryover = remaining
+
         return jsonify({
             'salary_period': {
                 'id': salary_period.id,
@@ -93,10 +131,13 @@ def get_current_salary_period():
                 'fixed_bills_total': salary_period.fixed_bills_total,
                 'remaining_amount': salary_period.remaining_amount,
                 'weekly_budget': salary_period.weekly_budget,
+                'credit_limit': salary_period.credit_limit,
                 'start_date': salary_period.start_date.isoformat(),
-                'end_date': salary_period.end_date.isoformat()
+                'end_date': salary_period.end_date.isoformat(),
+                'weeks': weeks_data
             },
             'current_week': {
+                'id': current_week.id if current_week else None,
                 'week_number': current_week.week_number if current_week else None,
                 'budget_amount': current_week.budget_amount if current_week else None,
                 'spent': week_spent,
@@ -117,8 +158,15 @@ def preview_salary_period():
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
 
-        salary_amount = data.get('salary_amount')
+        # Get balance-based inputs
+        debit_balance = data.get('debit_balance')
+        credit_balance = data.get('credit_balance', 0)
+        credit_allowance = data.get('credit_allowance', 0)
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+
+        # Validate credit allowance doesn't exceed available credit
+        if credit_allowance > credit_balance:
+            return jsonify({'error': 'Credit allowance cannot exceed available credit'}), 400
 
         # Auto-detect fixed bills from recurring expenses
         fixed_bills = RecurringExpense.query.filter_by(
@@ -143,8 +191,21 @@ def preview_salary_period():
                 'category': bill.category
             } for bill in fixed_bills]
 
-        remaining_amount = salary_amount - fixed_bills_total
+        # Calculate budget: debit + credit allowance - fixed bills
+        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        remaining_amount = total_budget
         weekly_budget = remaining_amount // 4
+
+        # Calculate debit vs credit portions of weekly budget
+        debit_after_bills = debit_balance - fixed_bills_total
+        if debit_after_bills >= weekly_budget * 4:
+            # All budget comes from debit
+            weekly_debit_budget = weekly_budget
+            weekly_credit_budget = 0
+        else:
+            # Split between debit and credit
+            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_credit_budget = weekly_budget - weekly_debit_budget
 
         # Calculate end date (day before next salary, assuming monthly)
         end_date = start_date + relativedelta(months=1) - timedelta(days=1)
@@ -169,11 +230,16 @@ def preview_salary_period():
             current_start = week_end + timedelta(days=1)
 
         return jsonify({
-            'salary_amount': salary_amount,
+            'debit_balance': debit_balance,
+            'credit_balance': credit_balance,
+            'credit_allowance': credit_allowance,
+            'total_budget': total_budget,
             'fixed_bills_total': fixed_bills_total,
             'fixed_bills': bills_list,
             'remaining_amount': remaining_amount,
             'weekly_budget': weekly_budget,
+            'weekly_debit_budget': weekly_debit_budget,
+            'weekly_credit_budget': weekly_credit_budget,
             'start_date': start_date.isoformat(),
             'end_date': end_date.isoformat(),
             'weeks': weeks
@@ -190,8 +256,16 @@ def create_salary_period():
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
 
-        salary_amount = data['salary_amount']
+        # Get balance-based inputs
+        debit_balance = data['debit_balance']
+        credit_balance = data.get('credit_balance', 0)
+        credit_limit = data.get('credit_limit', credit_balance)  # Default to available if not provided
+        credit_allowance = data.get('credit_allowance', 0)
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+
+        # Validate credit allowance
+        if credit_allowance > credit_balance:
+            return jsonify({'error': 'Credit allowance cannot exceed available credit'}), 400
 
         # Get fixed bills (either auto-detected or manually adjusted)
         fixed_bill_adjustments = data.get('fixed_bills', [])
@@ -207,9 +281,45 @@ def create_salary_period():
             ).all()
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
-        remaining_amount = salary_amount - fixed_bills_total
+        # Calculate budget: debit + credit allowance - fixed bills
+        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        remaining_amount = total_budget
         weekly_budget = remaining_amount // 4
+
+        # Calculate debit vs credit portions of weekly budget
+        debit_after_bills = debit_balance - fixed_bills_total
+        if debit_after_bills >= weekly_budget * 4:
+            weekly_debit_budget = weekly_budget
+            weekly_credit_budget = 0
+        else:
+            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_credit_budget = weekly_budget - weekly_debit_budget
+
         end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+
+        # Check for overlapping salary periods
+        overlapping = SalaryPeriod.query.filter(
+            SalaryPeriod.user_id == current_user_id,
+            or_(
+                and_(
+                    SalaryPeriod.start_date <= start_date,
+                    SalaryPeriod.end_date >= start_date
+                ),
+                and_(
+                    SalaryPeriod.start_date <= end_date,
+                    SalaryPeriod.end_date >= end_date
+                ),
+                and_(
+                    SalaryPeriod.start_date >= start_date,
+                    SalaryPeriod.end_date <= end_date
+                )
+            )
+        ).first()
+
+        if overlapping:
+            return jsonify({
+                'error': f'This period overlaps with an existing period ({overlapping.start_date} to {overlapping.end_date}). Please choose different dates.'
+            }), 400
 
         # Deactivate any existing active salary periods
         SalaryPeriod.query.filter_by(
@@ -220,10 +330,16 @@ def create_salary_period():
         # Create salary period
         salary_period = SalaryPeriod(
             user_id=current_user_id,
-            salary_amount=salary_amount,
+            initial_debit_balance=debit_balance,
+            initial_credit_balance=credit_balance,
+            credit_limit=credit_limit,
+            credit_budget_allowance=credit_allowance,
+            total_budget_amount=total_budget,
             fixed_bills_total=fixed_bills_total,
             remaining_amount=remaining_amount,
             weekly_budget=weekly_budget,
+            weekly_debit_budget=weekly_debit_budget,
+            weekly_credit_budget=weekly_credit_budget,
             start_date=start_date,
             end_date=end_date,
             is_active=True
@@ -253,6 +369,36 @@ def create_salary_period():
             db.session.add(budget_period)
             current_start = week_end + timedelta(days=1)
 
+        # Create initial income entry for the debit balance
+        # This makes the dashboard debit/credit cards show correct available amounts
+        if debit_balance > 0:
+            initial_income = Income(
+                user_id=current_user_id,
+                budget_period_id=None,  # Not tied to a specific week
+                type='Initial Balance',
+                amount=debit_balance,
+                scheduled_date=start_date,
+                actual_date=start_date
+            )
+            db.session.add(initial_income)
+
+        # Create pre-existing credit debt expense (if any)
+        pre_existing_debt = credit_limit - credit_balance
+        if pre_existing_debt > 0:
+            debt_expense = Expense(
+                user_id=current_user_id,
+                budget_period_id=None,  # Not tied to a specific week
+                name='Pre-existing Credit Card Debt',
+                amount=pre_existing_debt,
+                category='Debt',
+                subcategory='Credit Card',
+                payment_method='Credit card',
+                date=start_date - timedelta(days=1),  # Date it before the period starts
+                is_fixed_bill=False,
+                notes='Existing credit card balance at budget period start'
+            )
+            db.session.add(debt_expense)
+
         db.session.commit()
 
         return jsonify({
@@ -270,6 +416,7 @@ def get_week_leftover(id, week_number):
     """Calculate leftover budget for a specific week"""
     try:
         current_user_id = int(get_jwt_identity())
+        today = datetime.now().date()
 
         # Get salary period
         salary_period = SalaryPeriod.query.filter_by(
@@ -289,6 +436,32 @@ def get_week_leftover(id, week_number):
         if not budget_period:
             return jsonify({'error': 'Week not found'}), 404
 
+        # Calculate carryover from previous weeks
+        cumulative_carryover = 0
+        previous_weeks = BudgetPeriod.query.filter(
+            and_(
+                BudgetPeriod.salary_period_id == salary_period.id,
+                BudgetPeriod.week_number < week_number
+            )
+        ).order_by(BudgetPeriod.week_number).all()
+
+        for prev_week in previous_weeks:
+            prev_spent = db.session.query(func.sum(Expense.amount)).filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.budget_period_id == prev_week.id,
+                    Expense.is_fixed_bill == False
+                )
+            ).scalar() or 0
+
+            # Add carryover from previous weeks
+            prev_adjusted_budget = prev_week.budget_amount + cumulative_carryover
+            prev_remaining = prev_adjusted_budget - prev_spent
+
+            # Only carry over if week is in the past
+            if prev_week.end_date < today:
+                cumulative_carryover = prev_remaining
+
         # Calculate spending for this week (excluding fixed bills)
         week_spent = db.session.query(func.sum(Expense.amount)).filter(
             and_(
@@ -298,7 +471,9 @@ def get_week_leftover(id, week_number):
             )
         ).scalar() or 0
 
-        leftover = budget_period.budget_amount - week_spent
+        # Calculate adjusted budget and leftover
+        adjusted_budget = budget_period.budget_amount + cumulative_carryover
+        leftover = adjusted_budget - week_spent
 
         # Get user's active debts for allocation suggestions
         from backend.models.database import Debt
@@ -309,7 +484,11 @@ def get_week_leftover(id, week_number):
 
         return jsonify({
             'week_number': week_number,
+            'start_date': budget_period.start_date.isoformat(),
+            'end_date': budget_period.end_date.isoformat(),
             'budget_amount': budget_period.budget_amount,
+            'adjusted_budget': adjusted_budget,
+            'carryover': cumulative_carryover,
             'spent': week_spent,
             'leftover': leftover,
             'allocation_options': {
@@ -348,6 +527,49 @@ def update_salary_period(id):
         db.session.commit()
 
         return jsonify({'message': 'Salary period updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@salary_periods_bp.route('/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_salary_period(id):
+    """Delete a salary period and all its weekly budget periods"""
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id,
+            user_id=current_user_id
+        ).first()
+
+        if not salary_period:
+            return jsonify({'error': 'Salary period not found'}), 404
+
+        # Check if any of the weekly budget periods have transactions
+        has_transactions = False
+        for budget_period in salary_period.budget_periods:
+            expense_count = Expense.query.filter_by(budget_period_id=budget_period.id).count()
+            income_count = Income.query.filter_by(budget_period_id=budget_period.id).count()
+            if expense_count > 0 or income_count > 0:
+                has_transactions = True
+                break
+
+        if has_transactions:
+            return jsonify({
+                'error': 'Cannot delete salary period that contains transactions. Please delete all expenses and income first.'
+            }), 400
+
+        # Delete all weekly budget periods (cascade should handle this, but being explicit)
+        for budget_period in salary_period.budget_periods:
+            db.session.delete(budget_period)
+
+        # Delete the salary period
+        db.session.delete(salary_period)
+        db.session.commit()
+
+        return jsonify({'message': 'Salary period deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

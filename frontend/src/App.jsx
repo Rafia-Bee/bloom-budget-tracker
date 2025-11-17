@@ -12,6 +12,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Debts from './pages/Debts'
 import RecurringExpenses from './pages/RecurringExpenses'
+import TestingTools from './pages/TestingTools'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -53,6 +54,10 @@ function App() {
         <Route
           path="/recurring-expenses"
           element={isAuthenticated ? <RecurringExpenses setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/testing-tools"
+          element={isAuthenticated ? <TestingTools /> : <Navigate to="/login" />}
         />
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>

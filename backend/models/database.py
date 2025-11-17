@@ -50,12 +50,26 @@ class SalaryPeriod(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    salary_amount = db.Column(db.Integer, nullable=False)  # Total salary in cents
+
+    # Balance-based budgeting fields
+    initial_debit_balance = db.Column(db.Integer, nullable=False)  # Starting debit balance in cents
+    initial_credit_balance = db.Column(db.Integer, nullable=False)  # Available credit remaining (limit - debt)
+    credit_limit = db.Column(db.Integer, nullable=False, default=150000)  # Total credit card limit in cents
+    credit_budget_allowance = db.Column(db.Integer, nullable=False, default=0)  # Credit limit to use this period
+
+    # Legacy salary field (kept for backwards compatibility)
+    salary_amount = db.Column(db.Integer, nullable=True)  # Total salary in cents (deprecated)
+
+    # Budget calculation fields
+    total_budget_amount = db.Column(db.Integer, nullable=False)  # debit + credit_allowance - fixed_bills
     fixed_bills_total = db.Column(db.Integer, nullable=False, default=0)  # Total fixed bills in cents
-    remaining_amount = db.Column(db.Integer, nullable=False)  # salary - fixed_bills
+    remaining_amount = db.Column(db.Integer, nullable=False)  # total_budget - fixed_bills
     weekly_budget = db.Column(db.Integer, nullable=False)  # remaining / 4
-    start_date = db.Column(db.Date, nullable=False)  # Salary payment date
-    end_date = db.Column(db.Date, nullable=False)  # Day before next salary
+    weekly_debit_budget = db.Column(db.Integer, nullable=False)  # Debit portion of weekly budget
+    weekly_credit_budget = db.Column(db.Integer, nullable=False, default=0)  # Credit portion of weekly budget
+
+    start_date = db.Column(db.Date, nullable=False)  # Period start date
+    end_date = db.Column(db.Date, nullable=False)  # Period end date
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

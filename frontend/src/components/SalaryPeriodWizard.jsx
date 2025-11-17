@@ -1,12 +1,12 @@
 /**
- * Bloom - Salary Period Setup Wizard
+ * Bloom - Budget Period Setup Wizard
  *
- * Multi-step modal for setting up monthly salary periods with weekly budgets.
+ * Multi-step modal for setting up monthly budget periods with weekly budgets.
  * Steps:
- * 1. Enter monthly salary and start date
+ * 1. Enter current debit/credit balances and optional credit allowance
  * 2. Review/adjust auto-detected fixed bills from recurring expenses
  * 3. Confirm weekly budget calculation
- * 4. Create salary period and 4 weekly budgets
+ * 4. Create budget period and 4 weekly budgets
  */
 
 import { useState, useEffect } from 'react'
@@ -17,13 +17,16 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const [salaryAmount, setSalaryAmount] = useState('')
+  const [debitBalance, setDebitBalance] = useState('')
+  const [creditBalance, setCreditBalance] = useState('')
+  const [creditLimit, setCreditLimit] = useState('1500')
+  const [creditAllowance, setCreditAllowance] = useState(0)
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [preview, setPreview] = useState(null)
   const [fixedBills, setFixedBills] = useState([])
 
   const formatCurrency = (cents) => {
-    return `$${(cents / 100).toFixed(2)}`
+    return `€${(cents / 100).toFixed(2)}`
   }
 
   const parseCurrency = (value) => {
@@ -33,17 +36,25 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
   }
 
   const handleStep1Next = async () => {
-    if (!salaryAmount || parseCurrency(salaryAmount) <= 0) {
-      setError('Please enter your monthly salary')
+    const debitCents = parseCurrency(debitBalance)
+    const creditCents = parseCurrency(creditBalance)
+
+    if (debitCents <= 0) {
+      setError('Please enter your current debit balance')
       return
     }
+
+    // No validation needed - credit allowance slider only shows when credit available
 
     setError('')
     setLoading(true)
 
     try {
       const response = await api.post('/salary-periods/preview', {
-        salary_amount: parseCurrency(salaryAmount),
+        debit_balance: debitCents,
+        credit_balance: creditCents,
+        credit_limit: parseCurrency(creditLimit),
+        credit_allowance: creditAllowance,
         start_date: startDate
       })
 
@@ -51,7 +62,7 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
       setFixedBills(response.data.fixed_bills)
       setStep(2)
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to preview salary period')
+      setError(err.response?.data?.error || 'Failed to preview budget period')
     } finally {
       setLoading(false)
     }
@@ -63,7 +74,10 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
 
     try {
       const response = await api.post('/salary-periods/preview', {
-        salary_amount: parseCurrency(salaryAmount),
+        debit_balance: parseCurrency(debitBalance),
+        credit_balance: parseCurrency(creditBalance),
+        credit_limit: parseCurrency(creditLimit),
+        credit_allowance: creditAllowance,
         start_date: startDate,
         fixed_bills: fixedBills
       })
@@ -83,14 +97,17 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
 
     try {
       await api.post('/salary-periods', {
-        salary_amount: parseCurrency(salaryAmount),
+        debit_balance: parseCurrency(debitBalance),
+        credit_balance: parseCurrency(creditBalance),
+        credit_limit: parseCurrency(creditLimit),
+        credit_allowance: creditAllowance,
         start_date: startDate,
         fixed_bills: fixedBills
       })
 
       onComplete()
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create salary period')
+      setError(err.response?.data?.error || 'Failed to create budget period')
       setLoading(false)
     }
   }
@@ -139,24 +156,24 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Enter Your Monthly Salary</h3>
+                <h3 className="text-lg font-semibold mb-2">Enter Your Current Balances</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  We'll help you divide this into 4 weekly budgets after subtracting fixed bills.
+                  We'll help you create a 4-week budget based on your available funds.
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monthly Salary
+                  Debit Balance (Current Bank Account)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
                   <input
                     type="text"
-                    value={salaryAmount}
-                    onChange={(e) => setSalaryAmount(e.target.value)}
+                    value={debitBalance}
+                    onChange={(e) => setDebitBalance(e.target.value)}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
-                    placeholder="4000.00"
+                    placeholder="1500.00"
                     autoFocus
                   />
                 </div>
@@ -164,7 +181,78 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Salary Payment Date
+                  Credit Card Available (Remaining Limit)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                  <input
+                    type="text"
+                    value={creditBalance}
+                    onChange={(e) => setCreditBalance(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                    placeholder="1000.00"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">How much credit you have left to spend</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Credit Card Limit (Total)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                  <input
+                    type="text"
+                    value={creditLimit}
+                    onChange={(e) => setCreditLimit(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                    placeholder="1500.00"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {parseCurrency(creditLimit) > parseCurrency(creditBalance)
+                    ? `You currently owe €${((parseCurrency(creditLimit) - parseCurrency(creditBalance)) / 100).toFixed(2)}`
+                    : 'No pre-existing debt'}
+                </p>
+              </div>
+
+              {parseCurrency(creditBalance) > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Credit Allowance (Optional)
+                  </label>
+                  <p className="text-xs text-gray-600 mb-3">
+                    How much of your available credit do you want to include in this budget?
+                  </p>
+                  <input
+                    type="range"
+                    min="0"
+                    max={parseCurrency(creditBalance)}
+                    step="1000"
+                    value={creditAllowance}
+                    onChange={(e) => setCreditAllowance(parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-gray-600 mt-1">
+                    <span>€0</span>
+                    <span className="font-semibold text-bloom-pink">{formatCurrency(creditAllowance)}</span>
+                    <span>{formatCurrency(parseCurrency(creditBalance))}</span>
+                  </div>
+                </div>
+              )}
+
+              {parseCurrency(creditBalance) === 0 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ No credit available (card is maxed out). Only your debit balance will be used for budgeting.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Budget Period Start Date
                 </label>
                 <input
                   type="date"
@@ -266,21 +354,39 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
 
               <div className="bg-gradient-to-br from-bloom-pink to-pink-600 text-white rounded-xl p-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="opacity-90">Monthly Salary</span>
-                  <span className="text-2xl font-bold">{formatCurrency(preview.salary_amount)}</span>
+                  <span className="opacity-90">Debit Balance</span>
+                  <span className="text-2xl font-bold">{formatCurrency(preview.debit_balance)}</span>
                 </div>
+                {preview.credit_allowance > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="opacity-90">+ Credit Allowance</span>
+                    <span className="text-xl">+{formatCurrency(preview.credit_allowance)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="opacity-90">− Fixed Bills</span>
                   <span className="text-xl">−{formatCurrency(preview.fixed_bills_total)}</span>
                 </div>
                 <div className="border-t border-white/30 pt-3 flex justify-between items-center">
-                  <span className="opacity-90">= Remaining</span>
-                  <span className="text-2xl font-bold">{formatCurrency(preview.remaining_amount)}</span>
+                  <span className="opacity-90">= Total Budget</span>
+                  <span className="text-2xl font-bold">{formatCurrency(preview.total_budget)}</span>
                 </div>
                 <div className="border-t border-white/30 pt-3 flex justify-between items-center">
                   <span className="opacity-90">÷ 4 weeks</span>
                   <span className="text-3xl font-bold">{formatCurrency(preview.weekly_budget)}</span>
                 </div>
+                {preview.weekly_credit_budget > 0 && (
+                  <div className="text-sm opacity-90 mt-2">
+                    <div className="flex justify-between">
+                      <span>Debit per week:</span>
+                      <span>{formatCurrency(preview.weekly_debit_budget)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Credit per week:</span>
+                      <span>{formatCurrency(preview.weekly_credit_budget)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

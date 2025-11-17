@@ -22,9 +22,19 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - DISABLED IN DEVELOPMENT -->
     <script>
-      if ('serviceWorker' in navigator) {
+      // Unregister any existing service workers in development
+      if ('serviceWorker' in navigator && window.location.hostname === 'localhost') {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (let registration of registrations) {
+            registration.unregister();
+            console.log('SW unregistered for development');
+          }
+        });
+      }
+      // Only register service worker in production
+      else if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then(registration => {

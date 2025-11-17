@@ -41,6 +41,7 @@ def get_expenses():
 
     return jsonify([{
         'id': e.id,
+        'budget_period_id': e.budget_period_id,
         'name': e.name,
         'amount': e.amount,
         'category': e.category,

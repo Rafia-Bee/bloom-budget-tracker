@@ -3,6 +3,7 @@ Bloom - Recurring Expenses Routes
 
 CRUD endpoints for managing recurring expense templates.
 Handles creation, retrieval, updates, and deletion of recurring expenses.
+Also includes export/import for testing purposes.
 """
 
 from flask import Blueprint, request, jsonify
@@ -10,6 +11,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, RecurringExpense
 from datetime import datetime, timedelta
 from sqlalchemy import and_
+import json
 
 recurring_expenses_bp = Blueprint('recurring_expenses', __name__)
 
@@ -238,3 +240,79 @@ def toggle_fixed_bill(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@recurring_expenses_bp.route('/export', methods=['GET'])
+@jwt_required()
+def export_recurring_expenses():
+    """Export all recurring expenses as JSON for backup/testing"""
+    current_user_id = int(get_jwt_identity())
+    recurring_expenses = RecurringExpense.query.filter_by(user_id=current_user_id).all()
+
+    export_data = [{
+        'name': re.name,
+        'amount': re.amount,
+        'category': re.category,
+        'subcategory': re.subcategory,
+        'payment_method': re.payment_method,
+        'frequency': re.frequency,
+        'frequency_value': re.frequency_value,
+        'day_of_month': re.day_of_month,
+        'day_of_week': re.day_of_week,
+        'start_date': re.start_date.isoformat(),
+        'end_date': re.end_date.isoformat() if re.end_date else None,
+        'next_due_date': re.next_due_date.isoformat(),
+        'is_active': re.is_active,
+        'is_fixed_bill': re.is_fixed_bill,
+        'notes': re.notes
+    } for re in recurring_expenses]
+
+    return jsonify({
+        'recurring_expenses': export_data,
+        'count': len(export_data)
+    }), 200
+
+
+@recurring_expenses_bp.route('/import', methods=['POST'])
+@jwt_required()
+def import_recurring_expenses():
+    """Import recurring expenses from JSON (for testing/setup)"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        data = request.get_json()
+
+        if 'recurring_expenses' not in data:
+            return jsonify({'error': 'Missing recurring_expenses array'}), 400
+
+        imported_count = 0
+        for re_data in data['recurring_expenses']:
+            recurring_expense = RecurringExpense(
+                user_id=current_user_id,
+                name=re_data['name'],
+                amount=re_data['amount'],
+                category=re_data['category'],
+                subcategory=re_data.get('subcategory'),
+                payment_method=re_data['payment_method'],
+                frequency=re_data['frequency'],
+                frequency_value=re_data.get('frequency_value', 1),
+                day_of_month=re_data.get('day_of_month'),
+                day_of_week=re_data.get('day_of_week'),
+                start_date=datetime.fromisoformat(re_data['start_date']).date(),
+                end_date=datetime.fromisoformat(re_data['end_date']).date() if re_data.get('end_date') else None,
+                next_due_date=datetime.fromisoformat(re_data['next_due_date']).date(),
+                is_active=re_data.get('is_active', True),
+                is_fixed_bill=re_data.get('is_fixed_bill', False),
+                notes=re_data.get('notes')
+            )
+            db.session.add(recurring_expense)
+            imported_count += 1
+
+        db.session.commit()
+        return jsonify({
+            'message': f'Successfully imported {imported_count} recurring expenses'
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+

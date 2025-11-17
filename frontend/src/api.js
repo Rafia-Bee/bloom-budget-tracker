@@ -99,4 +99,10 @@ export const recurringExpenseAPI = {
         api.get(`/recurring-generation/preview`, { params: { days } }),
 };
 
+export const salaryPeriodAPI = {
+    getCurrent: () => api.get("/salary-periods/current"),
+    getAll: () => api.get("/salary-periods"),
+    delete: (id) => api.delete(`/salary-periods/${id}`),
+};
+
 export default api;

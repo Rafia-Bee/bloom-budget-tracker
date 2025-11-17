@@ -30,8 +30,14 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
     return `${formatShortDate(period.start_date)} - ${formatShortDate(period.end_date)}`
   }
 
-  const getPeriodTypeLabel = (type) => {
-    return type.charAt(0).toUpperCase() + type.slice(1)
+  const getPeriodTypeLabel = (period) => {
+    // Salary periods don't have period_type field - they're always 4-week periods
+    if (period.weekly_budget !== undefined) {
+      return 'Salary Period'
+    }
+    // Budget periods (old system)
+    if (!period.period_type) return 'Weekly'
+    return period.period_type.charAt(0).toUpperCase() + period.period_type.slice(1)
   }
 
   const isPeriodCurrent = (period) => {
@@ -78,7 +84,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
           onClick={onCreateNew}
           className="text-bloom-pink font-semibold hover:underline"
         >
-          + Create First Budget Period
+          + Create Salary Period
         </button>
       </div>
     )
@@ -92,7 +98,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
       >
         <div className="text-left">
           <div className="flex items-center gap-2">
-            <p className="text-xs text-bloom-pink font-semibold uppercase">{getPeriodTypeLabel(currentPeriod.period_type)} Period</p>
+            <p className="text-xs text-bloom-pink font-semibold uppercase">{getPeriodTypeLabel(currentPeriod)}</p>
             {isPeriodCurrent(currentPeriod) && (
               <span className="bg-bloom-mint text-green-800 text-xs px-2 py-0.5 rounded-full">Current</span>
             )}
@@ -120,7 +126,10 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
           {/* Header with view toggle and quick actions */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold text-gray-800">Budget Periods</h3>
+              <div>
+                <h3 className="font-semibold text-gray-800">Salary Periods</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Each period has 4 weekly budgets</p>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
@@ -177,7 +186,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                           <span className={`text-xs font-semibold uppercase ${
                             isSelected ? 'text-bloom-pink' : isCurrent ? 'text-green-700' : isPast ? 'text-gray-600' : 'text-blue-700'
                           }`}>
-                            {getPeriodTypeLabel(period.period_type)}
+                            {getPeriodTypeLabel(period)}
                           </span>
                           {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Now</span>}
                           {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
@@ -242,7 +251,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                           <div className="flex justify-between items-center">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="text-xs text-gray-500 uppercase">{getPeriodTypeLabel(period.period_type)}</p>
+                                <p className="text-xs text-gray-500 uppercase">{getPeriodTypeLabel(period)}</p>
                                 {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Current</span>}
                                 {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
                                 {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Future</span>}
@@ -304,7 +313,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
               }}
               className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition text-bloom-pink font-semibold"
             >
-              + Create New Period
+              + Create New Salary Period
             </button>
           </div>
         </div>

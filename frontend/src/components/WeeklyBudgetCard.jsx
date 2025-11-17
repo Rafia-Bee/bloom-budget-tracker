@@ -5,11 +5,12 @@
  * Shows progress bar and prompts user to create salary period if none exists.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import api from '../api'
 
-function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
+const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChange }, ref) => {
   const [weeklyData, setWeeklyData] = useState(null)
+  const [selectedWeek, setSelectedWeek] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -17,11 +18,20 @@ function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
     loadWeeklyData()
   }, [])
 
+  // Expose refresh method to parent via ref
+  useImperativeHandle(ref, () => ({
+    refresh: loadWeeklyData
+  }))
+
   const loadWeeklyData = async () => {
     try {
       setLoading(true)
       const response = await api.get('/salary-periods/current')
       setWeeklyData(response.data)
+      // Default to current week if no week selected
+      if (!selectedWeek && response.data?.current_week) {
+        setSelectedWeek(response.data.current_week.week_number)
+      }
       setError(null)
     } catch (err) {
       if (err.response?.status === 404) {
@@ -34,14 +44,32 @@ function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
     }
   }
 
+  const handleWeekChange = (weekNumber) => {
+    setSelectedWeek(weekNumber)
+    if (onWeekChange) {
+      // Find the budget period for this week
+      const weekPeriod = weeklyData.salary_period.weeks?.find(w => w.week_number === weekNumber)
+      if (weekPeriod) {
+        onWeekChange(weekPeriod)
+      }
+    }
+  }
+
+  const getDisplayWeek = () => {
+    if (!weeklyData?.salary_period?.weeks) return weeklyData?.current_week
+    return weeklyData.salary_period.weeks.find(w => w.week_number === selectedWeek) || weeklyData.current_week
+  }
+
   const formatCurrency = (cents) => {
     return `$${(cents / 100).toFixed(2)}`
   }
 
   const getProgress = () => {
-    if (!weeklyData?.current_week) return 0
-    const { spent, budget_amount } = weeklyData.current_week
-    return Math.min((spent / budget_amount) * 100, 100)
+    const displayWeek = getDisplayWeek()
+    if (!displayWeek) return 0
+    const { spent, adjusted_budget, budget_amount } = displayWeek
+    const budget = adjusted_budget || budget_amount
+    return Math.min((spent / budget) * 100, 100)
   }
 
   const getProgressColor = () => {
@@ -92,45 +120,83 @@ function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
   }
 
   const { salary_period, current_week } = weeklyData
+  const displayWeek = getDisplayWeek()
   const progress = getProgress()
+  const isCurrentWeek = displayWeek?.week_number === current_week?.week_number
 
   return (
     <div className="bg-gradient-to-br from-bloom-pink to-pink-600 rounded-2xl shadow-lg p-6 text-white">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
-              {current_week?.week_number || '?'}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center font-bold text-xl">
+            {displayWeek?.week_number || '?'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold">Week {displayWeek?.week_number || '?'} of 4</h2>
+              {isCurrentWeek && <span className="text-xs bg-white/20 px-2 py-0.5 rounded">Current</span>}
             </div>
-            <div>
-              <p className="text-sm opacity-90">Week {current_week?.week_number || '?'} of 4</p>
-              <p className="text-xs opacity-75">
-                {current_week?.start_date && new Date(current_week.start_date).toLocaleDateString()} - {current_week?.end_date && new Date(current_week.end_date).toLocaleDateString()}
-              </p>
-            </div>
+            <p className="text-xs opacity-75 mt-0.5">
+              {displayWeek?.start_date && new Date(displayWeek.start_date).toLocaleDateString()} - {displayWeek?.end_date && new Date(displayWeek.end_date).toLocaleDateString()}
+            </p>
           </div>
         </div>
-        <button
-          onClick={onSetupClick}
-          className="text-white/80 hover:text-white transition"
-          title="Manage salary period"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* Week Navigation Dropdown */}
+          {salary_period?.weeks && salary_period.weeks.length > 1 && (
+            <select
+              value={selectedWeek || ''}
+              onChange={(e) => handleWeekChange(parseInt(e.target.value))}
+              className="bg-white/20 text-white text-sm px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/30 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              {salary_period.weeks.map((week) => (
+                <option key={week.week_number} value={week.week_number} className="text-gray-800">
+                  Week {week.week_number}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={onSetupClick}
+            className="text-white/80 hover:text-white transition"
+            title="Manage salary period"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
+        {/* Show carryover if exists */}
+        {displayWeek?.carryover !== undefined && displayWeek.carryover !== 0 && (
+          <div className={`flex justify-between items-baseline text-sm ${displayWeek.carryover < 0 ? 'text-red-200' : 'text-green-200'}`}>
+            <span className="opacity-90">
+              {displayWeek.carryover < 0 ? '⚠️ Overspent from previous weeks' : '✨ Leftover from previous weeks'}
+            </span>
+            <span className="font-semibold">{formatCurrency(Math.abs(displayWeek.carryover))}</span>
+          </div>
+        )}
+
         <div className="flex justify-between items-baseline">
-          <span className="text-sm opacity-90">Weekly Budget</span>
-          <span className="text-2xl font-bold">{formatCurrency(current_week?.budget_amount || 0)}</span>
+          <span className="text-sm opacity-90">Base Budget</span>
+          <span className="text-xl font-semibold">{formatCurrency(displayWeek?.budget_amount || 0)}</span>
         </div>
+
+        {displayWeek?.adjusted_budget !== displayWeek?.budget_amount && (
+          <div className="flex justify-between items-baseline border-t border-white/20 pt-2">
+            <span className="text-sm opacity-90 font-semibold">Adjusted Budget</span>
+            <span className="text-2xl font-bold">{formatCurrency(displayWeek?.adjusted_budget || 0)}</span>
+          </div>
+        )}
 
         <div className="flex justify-between items-baseline">
           <span className="text-sm opacity-90">Spent</span>
-          <span className="text-xl font-semibold">{formatCurrency(current_week?.spent || 0)}</span>
+          <span className="text-xl font-semibold">{formatCurrency(displayWeek?.spent || 0)}</span>
         </div>
 
         <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
@@ -142,8 +208,8 @@ function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
 
         <div className="flex justify-between items-baseline pt-2">
           <span className="text-sm opacity-90">Remaining</span>
-          <span className={`text-2xl font-bold ${current_week?.remaining < 0 ? 'text-red-200' : ''}`}>
-            {formatCurrency(current_week?.remaining || 0)}
+          <span className={`text-2xl font-bold ${displayWeek?.remaining < 0 ? 'text-red-200' : ''}`}>
+            {formatCurrency(displayWeek?.remaining || 0)}
           </span>
         </div>
       </div>
@@ -156,16 +222,18 @@ function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
         </div>
       )}
 
-      {current_week?.remaining > 0 && (
+      {displayWeek?.remaining > 0 && (
         <button
-          onClick={() => onAllocateClick(weeklyData.salary_period.id, current_week.week_number)}
+          onClick={() => onAllocateClick(weeklyData.salary_period.id, displayWeek.week_number)}
           className="mt-4 w-full bg-white text-bloom-pink py-2 rounded-lg font-semibold hover:bg-opacity-90 transition text-sm"
         >
-          💰 Allocate Leftover ({formatCurrency(current_week.remaining)})
+          💰 Allocate Leftover ({formatCurrency(displayWeek.remaining)})
         </button>
       )}
     </div>
   )
-}
+})
+
+WeeklyBudgetCard.displayName = 'WeeklyBudgetCard'
 
 export default WeeklyBudgetCard

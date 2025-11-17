@@ -3,7 +3,7 @@
  * Enables offline functionality and app caching
  */
 
-const CACHE_NAME = "bloom-v1";
+const CACHE_NAME = "bloom-v3"; // Increment to force refresh
 const urlsToCache = ["/", "/index.html", "/src/main.jsx", "/src/index.css"];
 
 // Install event - cache assets
@@ -19,6 +19,16 @@ self.addEventListener("install", (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener("fetch", (event) => {
+    // Don't cache API requests
+    if (event.request.url.includes("/api/")) {
+        return;
+    }
+
+    // Only cache GET requests
+    if (event.request.method !== "GET") {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((response) => {
             // Cache hit - return response

@@ -5,8 +5,8 @@
  * Shows balance cards, expense list with filters, and floating action button for adding expenses.
  */
 
-import { useState, useEffect } from 'react'
-import { expenseAPI, incomeAPI, budgetPeriodAPI } from '../api'
+import { useState, useEffect, useRef } from 'react'
+import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
@@ -32,6 +32,7 @@ function Dashboard({ setIsAuthenticated }) {
   const [selectedTransaction, setSelectedTransaction] = useState(null)
   const [currentPeriod, setCurrentPeriod] = useState(null)
   const [allPeriods, setAllPeriods] = useState([])
+  const [salaryPeriods, setSalaryPeriods] = useState([]) // Salary periods for selector
   const [showCreatePeriod, setShowCreatePeriod] = useState(false)
   const [showEditPeriod, setShowEditPeriod] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState(null)
@@ -47,10 +48,12 @@ function Dashboard({ setIsAuthenticated }) {
   const [showSalaryWizard, setShowSalaryWizard] = useState(false)
   const [showLeftoverModal, setShowLeftoverModal] = useState(false)
   const [leftoverModalData, setLeftoverModalData] = useState(null)
-  const creditLimit = 1500
+  const [currentWeekPeriod, setCurrentWeekPeriod] = useState(null) // Current week from salary period
+  const [creditLimit, setCreditLimit] = useState(null) // Load from salary period
+  const weeklyBudgetCardRef = useRef(null)
 
   useEffect(() => {
-    loadPeriods()
+    loadPeriodsAndCurrentWeek()
   }, [])
 
   useEffect(() => {
@@ -94,6 +97,8 @@ function Dashboard({ setIsAuthenticated }) {
       const currentResponse = await expenseAPI.getAll({ budget_period_id: currentPeriod.id })
       setExpenses(currentResponse.data)
       await calculateCumulativeBalances()
+      // Refresh weekly budget card to update spent amount
+      weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
       console.error('Failed to load expenses:', error)
     }
@@ -105,6 +110,8 @@ function Dashboard({ setIsAuthenticated }) {
       const response = await incomeAPI.getAll({ budget_period_id: currentPeriod.id })
       setIncome(response.data)
       await calculateCumulativeBalances()
+      // Refresh weekly budget card to update balances
+      weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
       console.error('Failed to load income:', error)
     }
@@ -121,21 +128,52 @@ function Dashboard({ setIsAuthenticated }) {
     setTransactions(combined)
   }, [expenses, income])
 
-  const loadPeriods = async () => {
+  const loadPeriodsAndCurrentWeek = async () => {
     try {
-      const [allPeriodsRes, activeRes] = await Promise.all([
+      const [allPeriodsRes, activeRes, salaryPeriodRes, salaryPeriodsListRes] = await Promise.all([
         budgetPeriodAPI.getAll(),
-        budgetPeriodAPI.getActive().catch(() => null)
+        budgetPeriodAPI.getActive().catch(() => null),
+        salaryPeriodAPI.getCurrent().catch(() => null),
+        salaryPeriodAPI.getAll().catch(() => ({ data: [] }))
       ])
 
       setAllPeriods(allPeriodsRes.data)
+      setSalaryPeriods(salaryPeriodsListRes.data || [])
 
-      if (activeRes?.data) {
-        setCurrentPeriod(activeRes.data)
-      } else if (allPeriodsRes.data.length > 0) {
-        // If no active period, use the most recent one
-        setCurrentPeriod(allPeriodsRes.data[0])
+      // Prefer salary period's current week if available
+      if (salaryPeriodRes?.data?.current_week?.id) {
+        const currentWeek = salaryPeriodRes.data.current_week
+        const salaryPeriod = salaryPeriodRes.data.salary_period
+
+        // Load credit limit from salary period
+        if (salaryPeriod.credit_limit) {
+          setCreditLimit(salaryPeriod.credit_limit / 100) // Convert cents to euros
+        }
+
+        // Create a budget period object from current week data
+        const weekPeriod = {
+          id: currentWeek.id, // Use actual budget_period ID from database
+          start_date: currentWeek.start_date,
+          end_date: currentWeek.end_date,
+          period_type: 'weekly',
+          week_number: currentWeek.week_number,
+          budget_amount: currentWeek.budget_amount
+        }
+        setCurrentWeekPeriod(weekPeriod)
+        // Use current week for both display AND expense tracking
+        setCurrentPeriod(weekPeriod)
+      } else {
+        // Fall back to old system if no salary period
+        setCurrentWeekPeriod(null)
+        if (activeRes?.data) {
+          setCurrentPeriod(activeRes.data)
+        } else if (allPeriodsRes.data.length > 0) {
+          setCurrentPeriod(allPeriodsRes.data[0])
+        }
       }
+
+      // Refresh weekly budget card when periods change
+      weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
       // Suppress 401 errors - the API interceptor handles auth redirects
       if (error.response?.status !== 401) {
@@ -143,6 +181,9 @@ function Dashboard({ setIsAuthenticated }) {
       }
     }
   }
+
+  // Keep old loadPeriods method for other callers
+  const loadPeriods = loadPeriodsAndCurrentWeek
 
   const calculateCumulativeBalances = async () => {
     if (!currentPeriod) return
@@ -162,40 +203,68 @@ function Dashboard({ setIsAuthenticated }) {
       let currentCredit = 0
       let currentIncome = 0
 
-      // Calculate balances from all periods chronologically
-      for (const period of periodsToInclude) {
-        const isCurrentPeriod = period.id === currentPeriod.id
+      // First, get ALL income (including Initial Balance which has no budget_period_id)
+      const allIncomeRes = await incomeAPI.getAll({})
+      const allIncome = allIncomeRes.data
 
-        // Get expenses for this period
-        const expensesRes = await expenseAPI.getAll({ budget_period_id: period.id })
-        const periodExpenses = expensesRes.data
+      // Add all income to totals (Initial Balance income has no budget_period_id)
+      allIncome.forEach(income => {
+        const amount = income.amount / 100
+        cumulativeIncome += amount
 
-        periodExpenses.forEach(expense => {
-          const amount = expense.amount / 100
-
-          if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
-            cumulativeCredit -= amount // Payment reduces credit card debt
-            cumulativeDebit += amount  // Payment comes from debit card
-            if (isCurrentPeriod) {
-              currentCredit -= amount
-              currentDebit += amount
-            }
-          } else if (expense.payment_method === 'Debit card') {
-            cumulativeDebit += amount
-            if (isCurrentPeriod) currentDebit += amount
-          } else if (expense.payment_method === 'Credit card') {
-            cumulativeCredit += amount
-            if (isCurrentPeriod) currentCredit += amount
+        // If this income belongs to current period, add to current period income
+        if (income.budget_period_id === currentPeriod.id) {
+          currentIncome += amount
+        }
+        // If it's Initial Balance (no budget_period_id), add to current if it's within period dates
+        else if (!income.budget_period_id && income.actual_date) {
+          const incomeDate = new Date(income.actual_date)
+          const periodStart = new Date(currentPeriod.start_date)
+          if (incomeDate >= periodStart) {
+            currentIncome += amount
           }
-        })
+        }
+      })
 
-        // Get income for this period
-        const incomeRes = await incomeAPI.getAll({ budget_period_id: period.id })
-        const periodIncome = incomeRes.data
-        const periodIncomeTotal = periodIncome.reduce((sum, inc) => sum + (inc.amount / 100), 0)
-        cumulativeIncome += periodIncomeTotal
-        if (isCurrentPeriod) currentIncome = periodIncomeTotal
-      }
+      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
+      const allExpensesRes = await expenseAPI.getAll({})
+      const allExpenses = allExpensesRes.data
+
+      // Process all expenses
+      allExpenses.forEach(expense => {
+        const amount = expense.amount / 100
+        const expenseDate = new Date(expense.date)
+        const currentPeriodStart = new Date(currentPeriod.start_date)
+        const currentPeriodEnd = new Date(currentPeriod.end_date)
+
+        // Determine if expense belongs to current period:
+        // - Has matching budget_period_id, OR
+        // - Has no budget_period_id but date is within current period
+        const belongsToCurrentPeriod =
+          expense.budget_period_id === currentPeriod.id ||
+          (!expense.budget_period_id && expenseDate >= currentPeriodStart && expenseDate <= currentPeriodEnd)
+
+        // Check if expense is from a period we're including in cumulative totals
+        const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
+        const isInIncludedPeriod = periodToCheck || !expense.budget_period_id
+
+        if (!isInIncludedPeriod) return // Skip expenses from future periods
+
+        if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
+          cumulativeCredit -= amount // Payment reduces credit card debt
+          cumulativeDebit += amount  // Payment comes from debit card
+          if (belongsToCurrentPeriod) {
+            currentCredit -= amount
+            currentDebit += amount
+          }
+        } else if (expense.payment_method === 'Debit card') {
+          cumulativeDebit += amount
+          if (belongsToCurrentPeriod) currentDebit += amount
+        } else if (expense.payment_method === 'Credit card') {
+          cumulativeCredit += amount
+          if (belongsToCurrentPeriod) currentCredit += amount
+        }
+      })
 
       setDebitBalance(cumulativeDebit)
       setCreditBalance(cumulativeCredit)
@@ -237,7 +306,25 @@ function Dashboard({ setIsAuthenticated }) {
 
   const handleDeletePeriod = async (id) => {
     try {
-      await budgetPeriodAPI.delete(id)
+      // Find the period to determine its type
+      const periodToDelete = salaryPeriods.find(p => p.id === id) || allPeriods.find(p => p.id === id)
+
+      if (!periodToDelete) {
+        throw new Error('Period not found')
+      }
+
+      // Use the appropriate API based on whether it's a salary period (has weekly_budget field)
+      if (periodToDelete.weekly_budget !== undefined) {
+        // It's a salary period
+        await salaryPeriodAPI.delete(id)
+
+        // Reload salary periods
+        const salaryPeriodsRes = await salaryPeriodAPI.getAll()
+        setSalaryPeriods(salaryPeriodsRes.data)
+      } else {
+        // It's a budget period
+        await budgetPeriodAPI.delete(id)
+      }
 
       // Check remaining periods
       const periodsRes = await budgetPeriodAPI.getAll()
@@ -259,7 +346,8 @@ function Dashboard({ setIsAuthenticated }) {
       }
     } catch (error) {
       console.error('Failed to delete period:', error)
-      alert('Failed to delete period. It may contain transactions.')
+      const errorMessage = error.response?.data?.error || 'Failed to delete period. It may contain transactions.'
+      alert(errorMessage)
     }
   }
 
@@ -283,6 +371,21 @@ function Dashboard({ setIsAuthenticated }) {
   const handleAddExpense = async (expenseData) => {
     const expenseAmount = expenseData.amount / 100 // Convert cents to euros
     const paymentMethod = expenseData.payment_method
+
+    // Determine which budget period this expense belongs to based on date
+    let targetPeriodId = currentPeriod.id // Default to current week
+
+    if (expenseData.date && allPeriods.length > 0) {
+      const expenseDate = new Date(expenseData.date)
+      const matchingPeriod = allPeriods.find(period => {
+        const start = new Date(period.start_date)
+        const end = new Date(period.end_date)
+        return expenseDate >= start && expenseDate <= end
+      })
+      if (matchingPeriod) {
+        targetPeriodId = matchingPeriod.id
+      }
+    }
 
     // Check if this would exceed available balance
     if (paymentMethod === 'Debit card') {
@@ -318,7 +421,7 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await expenseAPI.create({
         ...expenseData,
-        budget_period_id: currentPeriod.id
+        budget_period_id: targetPeriodId
       })
       loadExpenses()
       setShowAddModal(false)
@@ -330,10 +433,27 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   const handleAddIncome = async (incomeData) => {
+    // Determine which budget period this income belongs to based on date
+    let targetPeriodId = currentPeriod.id // Default to current week
+
+    const incomeDate = incomeData.actual_date ? new Date(incomeData.actual_date) :
+                       incomeData.scheduled_date ? new Date(incomeData.scheduled_date) : null
+
+    if (incomeDate && allPeriods.length > 0) {
+      const matchingPeriod = allPeriods.find(period => {
+        const start = new Date(period.start_date)
+        const end = new Date(period.end_date)
+        return incomeDate >= start && incomeDate <= end
+      })
+      if (matchingPeriod) {
+        targetPeriodId = matchingPeriod.id
+      }
+    }
+
     try {
       await incomeAPI.create({
         ...incomeData,
-        budget_period_id: currentPeriod.id
+        budget_period_id: targetPeriodId
       })
       setShowAddModal(false)
       setModalType(null)
@@ -425,12 +545,15 @@ function Dashboard({ setIsAuthenticated }) {
             <div className="flex items-center gap-4">
               <PeriodSelector
                 currentPeriod={currentPeriod}
-                periods={allPeriods}
+                periods={salaryPeriods}
                 onPeriodChange={handlePeriodChange}
-                onCreateNew={() => setShowCreatePeriod(true)}
+                onCreateNew={() => setShowSalaryWizard(true)}
                 onEdit={(period) => {
-                  setSelectedPeriod(period)
-                  setShowEditPeriod(true)
+                  // Only allow editing salary periods, not individual weeks
+                  if (!period.salary_period_id) {
+                    setSelectedPeriod(period)
+                    setShowEditPeriod(true)
+                  }
                 }}
                 onDelete={handleDeletePeriod}
               />
@@ -542,29 +665,44 @@ function Dashboard({ setIsAuthenticated }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">{!currentPeriod ? (
-          <div className="text-center py-20">
-            <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Budget Period</h2>
-            <p className="text-gray-600 mb-6">Create your first budget period to start tracking expenses</p>
-            <button
-              onClick={() => setShowCreatePeriod(true)}
-              className="bg-bloom-pink text-white px-6 py-3 rounded-lg hover:bg-bloom-pink/90 transition font-semibold"
-            >
-              Create Budget Period
-            </button>
-          </div>
+          <>
+            {/* Weekly Budget Card - shown even without period to trigger setup */}
+            <div className="max-w-md mx-auto mb-8">
+              <WeeklyBudgetCard
+                ref={weeklyBudgetCardRef}
+                onSetupClick={() => setShowSalaryWizard(true)}
+                onAllocateClick={(salaryPeriodId, weekNumber) => {
+                  setLeftoverModalData({ salaryPeriodId, weekNumber })
+                  setShowLeftoverModal(true)
+                }}
+                onWeekChange={(weekPeriod) => {
+                  setCurrentPeriod(weekPeriod)
+                }}
+              />
+            </div>
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">No Budget Period</h2>
+              <p className="text-gray-600 mb-4">Click "Set Up Weekly Budget" above to get started</p>
+            </div>
+          </>
         ) : (
           <>
         {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Weekly Budget Card */}
           <WeeklyBudgetCard
+            ref={weeklyBudgetCardRef}
             onSetupClick={() => setShowSalaryWizard(true)}
             onAllocateClick={(salaryPeriodId, weekNumber) => {
               setLeftoverModalData({ salaryPeriodId, weekNumber })
               setShowLeftoverModal(true)
+            }}
+            onWeekChange={(weekPeriod) => {
+              setCurrentPeriod(weekPeriod)
+              loadTransactionsAndBalances()
             }}
           />
 
@@ -600,35 +738,37 @@ function Dashboard({ setIsAuthenticated }) {
           </div>
 
           {/* Credit Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-pink">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <p className="text-gray-600 font-semibold mb-1">Credit Card</p>
-                <p className="text-sm text-gray-500 mb-3">Spent this period</p>
-                <h2 className="text-4xl font-bold text-gray-800 mb-1">
-                  €{currentPeriodCreditSpent.toFixed(2)}
-                </h2>
-                <p className="text-2xl font-semibold text-bloom-mint mt-2">
-                  €{getCreditAvailable().toFixed(2)} <span className="text-sm text-gray-500 font-normal">available</span>
-                </p>
+          {creditLimit !== null && (
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-pink">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <p className="text-gray-600 font-semibold mb-1">Credit Card</p>
+                  <p className="text-sm text-gray-500 mb-3">Spent this period</p>
+                  <h2 className="text-4xl font-bold text-gray-800 mb-1">
+                    €{currentPeriodCreditSpent.toFixed(2)}
+                  </h2>
+                  <p className="text-2xl font-semibold text-bloom-mint mt-2">
+                    €{getCreditAvailable().toFixed(2)} <span className="text-sm text-gray-500 font-normal">available</span>
+                  </p>
+                </div>
+                <div className="bg-bloom-pink rounded-full p-3">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
               </div>
-              <div className="bg-bloom-pink rounded-full p-3">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+              <div className="mt-4">
+                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                  <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
+                  <span>Total balance: €{creditBalance.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Credit limit: €{creditLimit}</span>
+                  <span>{((creditBalance / creditLimit) * 100).toFixed(0)}% used</span>
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
-                <span>Total balance: €{creditBalance.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Credit limit: €{creditLimit}</span>
-                <span>{((creditBalance / creditLimit) * 100).toFixed(0)}% used</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Transactions Section */}
@@ -992,6 +1132,7 @@ function Dashboard({ setIsAuthenticated }) {
       )}
 
       {/* Salary Period Wizard */}
+      {/* Creates 4-week salary periods with automatic weekly budgets */}
       {showSalaryWizard && (
         <SalaryPeriodWizard
           onClose={() => setShowSalaryWizard(false)}
@@ -1014,6 +1155,7 @@ function Dashboard({ setIsAuthenticated }) {
           onAllocate={() => {
             setShowLeftoverModal(false)
             setLeftoverModalData(null)
+            weeklyBudgetCardRef.current?.refresh()
             loadTransactionsAndBalances()
           }}
         />
