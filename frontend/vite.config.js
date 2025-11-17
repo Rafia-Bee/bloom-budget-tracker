@@ -32,7 +32,8 @@ export default defineConfig({
                 globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
                 runtimeCaching: [
                     {
-                        urlPattern: /^http:\/\/localhost:5000\/.*$/,
+                        urlPattern:
+                            /^https:\/\/bloom-backend-b44r\.onrender\.com\/.*$/,
                         handler: "NetworkFirst",
                         options: {
                             cacheName: "api-cache",
