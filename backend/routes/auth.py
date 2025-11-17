@@ -13,22 +13,34 @@ Endpoints:
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from backend.models.database import db, User, UserDefaults, CreditCardSettings
+from backend.utils.rate_limiter import rate_limit
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @auth_bp.route('/register', methods=['POST'])
+@rate_limit('auth.register')
 def register():
     data = request.get_json()
 
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Email and password required'}), 400
 
-    if User.query.filter_by(email=data['email']).first():
+    # Validate email format
+    email = data['email'].strip().lower()
+    if len(email) > 120 or '@' not in email:
+        return jsonify({'error': 'Invalid email format'}), 400
+
+    # Validate password strength
+    password = data['password']
+    if len(password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+    if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
 
-    user = User(email=data['email'])
-    user.set_password(data['password'])
+    user = User(email=email)
+    user.set_password(password)
 
     db.session.add(user)
     db.session.commit()
@@ -55,13 +67,15 @@ def register():
 
 
 @auth_bp.route('/login', methods=['POST'])
+@rate_limit('auth.login')
 def login():
     data = request.get_json()
 
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Email and password required'}), 400
 
-    user = User.query.filter_by(email=data['email']).first()
+    email = data['email'].strip().lower()
+    user = User.query.filter_by(email=email).first()
 
     if not user or not user.check_password(data['password']):
         return jsonify({'error': 'Invalid email or password'}), 401

@@ -23,7 +23,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Extended for offline PWA usage
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     CREDIT_CARD_LIMIT = int(os.getenv('CREDIT_CARD_LIMIT', 1500))
