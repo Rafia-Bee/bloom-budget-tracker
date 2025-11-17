@@ -4,6 +4,10 @@
 
 A flexible web-based budget tracking application accessible from any device (Android, iPad, PC).
 
+**🌐 Live Demo:** [https://the-bloom-tracker.netlify.app](https://the-bloom-tracker.netlify.app)
+
+**📱 Progressive Web App:** Install on your device for offline access!
+
 ## Current Status
 
 ✅ **Fully Functional Budget Tracker** - All core features implemented and working
@@ -29,6 +33,9 @@ A flexible web-based budget tracking application accessible from any device (And
 - ✅ Recurring expense templates management
 - ✅ Purple "Recurring" badge on Dashboard transactions
 - ✅ Comprehensive seed data for testing
+- ✅ **PWA Support** - Installable as offline-capable app
+- ✅ **Production Deployment** - Live on Netlify with password protection
+- ✅ **Mobile Optimized** - Responsive hamburger navigation and touch-friendly UI
 
 ### In Development
 
@@ -106,6 +113,8 @@ A flexible web-based budget tracking application accessible from any device (And
 - **Database**: SQLite
 - **Styling**: Tailwind CSS
 - **Authentication**: JWT tokens
+- **PWA**: Service Worker for offline support
+- **Hosting**: Netlify (Frontend) with password protection
 
 ## Project Structure
 
@@ -200,6 +209,24 @@ npm run dev
 
 Access the app at `http://localhost:3000`
 
+### Production Deployment
+
+The app is deployed to Netlify and accessible at:
+**https://the-bloom-tracker.netlify.app**
+
+**Features:**
+- ✅ Progressive Web App (PWA) - Install on any device
+- ✅ Offline support - Works without internet after first visit
+- ✅ Password protected - Private access only
+- ✅ Auto-updates - Always get the latest version
+
+**Install on iPad/Mobile:**
+1. Open Safari (iOS) or Chrome (Android)
+2. Visit the live URL
+3. Tap Share → "Add to Home Screen"
+4. Access the app icon like a native app
+5. Works offline during flights! ✈️
+
 ## Usage
 
 ### First Time Setup
@@ -272,9 +299,12 @@ See [scripts/README.md](scripts/README.md) for full documentation.
 4. ~~Build frontend with React~~ ✅
 5. ~~Implement core features (expense tracking, budget monitoring)~~ ✅
 6. ~~Implement recurring expenses automation~~ ✅
-7. Add end-of-period suggestions
-8. Add budget categories with spending limits
-9. Improve period selector UI (calendar view)
-10. Test across devices (Android, iPad, PC)
-11. Deploy to production
-12. Add budget visualizations and spending trends
+7. ~~Add PWA support for offline access~~ ✅
+8. ~~Deploy to production (Netlify)~~ ✅
+9. ~~Mobile UI optimization~~ ✅
+10. Add end-of-period suggestions
+11. Add budget categories with spending limits
+12. Deploy backend to cloud (Render/Railway)
+13. Add budget visualizations and spending trends
+14. Cross-browser testing
+15. Performance optimization for large datasets
