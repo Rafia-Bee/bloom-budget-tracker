@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api'
 
-function WeeklyBudgetCard({ onSetupClick }) {
+function WeeklyBudgetCard({ onSetupClick, onAllocateClick }) {
   const [weeklyData, setWeeklyData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -154,6 +154,15 @@ function WeeklyBudgetCard({ onSetupClick }) {
             ⚠️ You've spent {progress.toFixed(0)}% of your weekly budget
           </p>
         </div>
+      )}
+
+      {current_week?.remaining > 0 && (
+        <button
+          onClick={() => onAllocateClick(weeklyData.salary_period.id, current_week.week_number)}
+          className="mt-4 w-full bg-white text-bloom-pink py-2 rounded-lg font-semibold hover:bg-opacity-90 transition text-sm"
+        >
+          💰 Allocate Leftover ({formatCurrency(current_week.remaining)})
+        </button>
       )}
     </div>
   )

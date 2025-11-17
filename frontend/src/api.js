@@ -85,6 +85,10 @@ export const recurringExpenseAPI = {
     update: (id, data) => api.put(`/recurring-expenses/${id}`, data),
     delete: (id) => api.delete(`/recurring-expenses/${id}`),
     toggleActive: (id) => api.put(`/recurring-expenses/${id}/toggle`),
+    toggleFixedBill: (id, isFixedBill) =>
+        api.patch(`/recurring-expenses/${id}/fixed-bill`, {
+            is_fixed_bill: isFixedBill,
+        }),
     generateNow: (dryRun = false, daysAhead = 60) =>
         api.post(
             `/recurring-generation/generate`,

@@ -17,6 +17,7 @@ import CreatePeriodModal from '../components/CreatePeriodModal'
 import EditPeriodModal from '../components/EditPeriodModal'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
+import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -44,6 +45,8 @@ function Dashboard({ setIsAuthenticated }) {
   const [currentPeriodIncome, setCurrentPeriodIncome] = useState(0)
   const [warningModal, setWarningModal] = useState(null)
   const [showSalaryWizard, setShowSalaryWizard] = useState(false)
+  const [showLeftoverModal, setShowLeftoverModal] = useState(false)
+  const [leftoverModalData, setLeftoverModalData] = useState(null)
   const creditLimit = 1500
 
   useEffect(() => {
@@ -557,7 +560,13 @@ function Dashboard({ setIsAuthenticated }) {
         {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Weekly Budget Card */}
-          <WeeklyBudgetCard onSetupClick={() => setShowSalaryWizard(true)} />
+          <WeeklyBudgetCard
+            onSetupClick={() => setShowSalaryWizard(true)}
+            onAllocateClick={(salaryPeriodId, weekNumber) => {
+              setLeftoverModalData({ salaryPeriodId, weekNumber })
+              setShowLeftoverModal(true)
+            }}
+          />
 
           {/* Debit Card */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-mint">
@@ -989,6 +998,23 @@ function Dashboard({ setIsAuthenticated }) {
           onComplete={() => {
             setShowSalaryWizard(false)
             loadPeriods()
+          }}
+        />
+      )}
+
+      {/* Leftover Budget Allocation Modal */}
+      {showLeftoverModal && leftoverModalData && (
+        <LeftoverBudgetModal
+          salaryPeriodId={leftoverModalData.salaryPeriodId}
+          weekNumber={leftoverModalData.weekNumber}
+          onClose={() => {
+            setShowLeftoverModal(false)
+            setLeftoverModalData(null)
+          }}
+          onAllocate={() => {
+            setShowLeftoverModal(false)
+            setLeftoverModalData(null)
+            loadTransactionsAndBalances()
           }}
         />
       )}

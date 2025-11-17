@@ -77,6 +77,15 @@ function RecurringExpenses() {
     }
   }
 
+  const handleToggleFixedBill = async (id, currentStatus) => {
+    try {
+      await recurringExpenseAPI.toggleFixedBill(id, !currentStatus)
+      await loadRecurringExpenses()
+    } catch (error) {
+      console.error('Failed to toggle fixed bill status:', error)
+    }
+  }
+
   const handleDelete = async (id) => {
     setDeleteConfirm(id)
   }
@@ -360,6 +369,11 @@ function RecurringExpenses() {
                             <span className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded">
                               {getFrequencyText(expense)}
                             </span>
+                            {expense.is_fixed_bill && (
+                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                                📌 Fixed Bill
+                              </span>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -387,6 +401,19 @@ function RecurringExpenses() {
                         </div>
 
                         <div className="flex gap-2 sm:ml-4 self-end sm:self-start flex-shrink-0">
+                          <button
+                            onClick={() => handleToggleFixedBill(expense.id, expense.is_fixed_bill)}
+                            className={`p-2 rounded transition-colors ${
+                              expense.is_fixed_bill
+                                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                            }`}
+                            title={expense.is_fixed_bill ? 'Remove from fixed bills' : 'Mark as fixed bill'}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
                           <button
                             onClick={() => setEditingExpense(expense)}
                             className="p-2 text-gray-600 hover:text-bloom-pink hover:bg-pink-50 rounded transition-colors"
