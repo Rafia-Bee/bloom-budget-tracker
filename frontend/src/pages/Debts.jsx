@@ -22,6 +22,8 @@ function Debts({ setIsAuthenticated }) {
   const [expandedDebtId, setExpandedDebtId] = useState(null)
   const [debtTransactions, setDebtTransactions] = useState({})
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const creditLimit = 1500
 
   useEffect(() => {
@@ -150,13 +152,18 @@ function Debts({ setIsAuthenticated }) {
   }
 
   const handleDeleteDebt = async (id) => {
-    if (window.confirm('Are you sure you want to delete this debt?')) {
-      try {
-        await debtAPI.delete(id)
-        loadDebts()
-      } catch (error) {
-        console.error('Failed to delete debt:', error)
-      }
+    setDeleteConfirm(id)
+  }
+
+  const confirmDeleteDebt = async () => {
+    const id = deleteConfirm
+    setDeleteConfirm(null)
+
+    try {
+      await debtAPI.delete(id)
+      loadDebts()
+    } catch (error) {
+      console.error('Failed to delete debt:', error)
     }
   }
 
@@ -232,49 +239,117 @@ function Debts({ setIsAuthenticated }) {
     <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-bloom-pink">Bloom - Debt Tracker</h1>
-            <p className="text-sm text-gray-600">Manage your debts and track payoff progress</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
-              ← Back to Dashboard
-            </a>
-            <a
-              href="/recurring-expenses"
-              className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Mobile Header */}
+          <div className="flex justify-between items-center md:hidden">
+            <div>
+              <h1 className="text-2xl font-bold text-bloom-pink">Debts</h1>
+              <p className="text-xs text-gray-600">Track payoff progress</p>
+            </div>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
+              aria-label="Menu"
             >
-              Recurring
-            </a>
-            <div className="relative user-menu">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 rounded-full bg-bloom-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
-                title="User menu"
-              >
-                {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
-              </button>
+              {showMobileMenu ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
 
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-gray-200">
+          {/* Desktop Header */}
+          <div className="hidden md:flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-bloom-pink">Bloom - Debt Tracker</h1>
+              <p className="text-sm text-gray-600">Manage your debts and track payoff progress</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
+                ← Back to Dashboard
+              </a>
+              <a
+                href="/recurring-expenses"
+                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+              >
+                Recurring
+              </a>
+              <div className="relative user-menu">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="w-10 h-10 rounded-full bg-bloom-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
+                  title="User menu"
+                >
+                  {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <p className="text-xs text-gray-500">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+              <div className="space-y-3">
+                <a
+                  href="/dashboard"
+                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  🏠 Dashboard
+                </a>
+                <a
+                  href="/recurring-expenses"
+                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  🔄 Recurring Expenses
+                </a>
+
+                {/* User Info & Logout */}
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <div className="px-4 py-2 mb-2">
                     <p className="text-xs text-gray-500">Signed in as</p>
                     <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
                   </div>
                   <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    onClick={() => {
+                      handleLogout()
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     Logout
                   </button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -620,6 +695,32 @@ function Debts({ setIsAuthenticated }) {
           onEdit={handleEditDebt}
           debt={selectedDebt}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Debt?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this debt? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteDebt}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, onEdit, onDelete }) {
   const [showCalendar, setShowCalendar] = useState(false)
   const [viewMode, setViewMode] = useState('grid') // 'list' or 'grid'
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00')
@@ -115,7 +116,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
       </button>
 
       {showCalendar && (
-        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[500px] z-50">
+        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-white rounded-lg shadow-xl border border-gray-200 w-[95vw] sm:w-auto sm:min-w-[500px] max-w-[500px] z-50">
           {/* Header with view toggle and quick actions */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex justify-between items-center mb-3">
@@ -199,10 +200,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if (window.confirm(`Delete period ${getPeriodShortLabel(period)}?`)) {
-                              onDelete(period.id)
-                              setShowCalendar(false)
-                            }
+                            setDeleteConfirm({ period, closeCalendar: true })
                           }}
                           className="flex-1 text-xs py-1 text-red-600 hover:bg-red-100 rounded transition"
                           title="Delete"
@@ -279,10 +277,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (window.confirm(`Delete period ${getPeriodLabel(period)}?`)) {
-                                onDelete(period.id)
-                                setShowCalendar(false)
-                              }
+                              setDeleteConfirm({ period, closeCalendar: true })
                             }}
                             className="p-1 text-red-500 hover:text-red-700 transition"
                             title="Delete period"
@@ -311,6 +306,44 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
             >
               + Create New Period
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Budget Period?</h3>
+            <p className="text-gray-600 mb-2">
+              Are you sure you want to delete the period:
+            </p>
+            <p className="text-gray-800 font-semibold mb-4">
+              {getPeriodLabel(deleteConfirm.period)}
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action cannot be undone. All transactions in this period will be deleted.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(deleteConfirm.period.id)
+                  if (deleteConfirm.closeCalendar) {
+                    setShowCalendar(false)
+                  }
+                  setDeleteConfirm(null)
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

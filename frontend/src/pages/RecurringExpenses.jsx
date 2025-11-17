@@ -17,8 +17,11 @@ function RecurringExpenses() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generationResult, setGenerationResult] = useState(null)
+  const [showConfirmGenerate, setShowConfirmGenerate] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useEffect(() => {
     loadRecurringExpenses()
@@ -75,9 +78,12 @@ function RecurringExpenses() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this recurring expense?')) {
-      return
-    }
+    setDeleteConfirm(id)
+  }
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm
+    setDeleteConfirm(null)
 
     try {
       await recurringExpenseAPI.delete(id)
@@ -88,10 +94,7 @@ function RecurringExpenses() {
   }
 
   const handleGenerateNow = async () => {
-    if (!confirm('Generate due recurring expenses now?')) {
-      return
-    }
-
+    setShowConfirmGenerate(false)
     setGenerating(true)
     setGenerationResult(null)
 
@@ -104,7 +107,8 @@ function RecurringExpenses() {
       setTimeout(() => setGenerationResult(null), 5000)
     } catch (error) {
       console.error('Failed to generate expenses:', error)
-      alert('Failed to generate expenses. Check console for details.')
+      setGenerationResult({ message: 'Failed to generate expenses', generated_count: 0 })
+      setTimeout(() => setGenerationResult(null), 5000)
     } finally {
       setGenerating(false)
     }
@@ -150,84 +154,147 @@ function RecurringExpenses() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-8">
+          {/* Mobile Header */}
+          <div className="flex justify-between items-center md:hidden">
+            <div>
+              <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
+              <p className="text-xs text-gray-600">Recurring Expense Management</p>
+            </div>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
+              aria-label="Menu"
+            >
+              {showMobileMenu ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden md:flex justify-between items-center">
+            <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-bloom-pink to-pink-400 bg-clip-text text-transparent">
                 Bloom
               </h1>
-              <nav className="flex gap-6">
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="text-gray-600 hover:text-bloom-pink transition-colors"
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => navigate('/debts')}
-                  className="text-gray-600 hover:text-bloom-pink transition-colors"
-                >
-                  Debts
-                </button>
-                <button
-                  onClick={() => navigate('/recurring-expenses')}
-                  className="text-bloom-pink font-semibold"
-                >
-                  Recurring
-                </button>
-              </nav>
+              <p className="text-sm text-gray-600">Recurring Expense Management</p>
             </div>
 
-            {/* User Menu */}
-            <div className="relative user-menu">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowUserMenu(!showUserMenu)
-                }}
-                className="w-10 h-10 rounded-full bg-bloom-pink text-white font-semibold hover:bg-pink-600 transition-colors flex items-center justify-center"
+            <div className="flex items-center gap-4">
+              <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
+                ← Back to Dashboard
+              </a>
+              <a
+                href="/debts"
+                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
               >
-                {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
-              </button>
+                Debts
+              </a>
 
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm text-gray-600 truncate">
-                      {localStorage.getItem('user_email')}
-                    </p>
+              {/* User Menu */}
+              <div className="relative user-menu">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu(!showUserMenu)
+                  }}
+                  className="w-10 h-10 rounded-full bg-bloom-pink text-white font-semibold hover:bg-pink-600 transition-colors flex items-center justify-center"
+                >
+                  {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm text-gray-600 truncate">
+                        {localStorage.getItem('user_email')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    navigate('/dashboard')
+                    setShowMobileMenu(false)
+                  }}
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                >
+                  🏠 Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('/debts')
+                    setShowMobileMenu(false)
+                  }}
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                >
+                  💳 Debts
+                </button>
+
+                {/* User Info & Logout */}
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <div className="px-4 py-2 mb-2">
+                    <p className="text-xs text-gray-500">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
                   </div>
                   <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      handleLogout()
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold"
                   >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Logout
                   </button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Recurring Expenses</h2>
             <p className="text-gray-600 mt-1">Manage your automatic expense templates</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={handleGenerateNow}
+              onClick={() => setShowConfirmGenerate(true)}
               disabled={generating}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               title="Generate due recurring expenses now"
             >
               {generating ? 'Generating...' : '⚡ Generate Now'}
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold shadow-sm"
+              className="px-6 py-3 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold shadow-sm whitespace-nowrap"
             >
               + Add Recurring Expense
             </button>
@@ -286,9 +353,9 @@ function RecurringExpenses() {
                       key={expense.id}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h4 className="font-semibold text-gray-800">{expense.name}</h4>
                             <span className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded">
                               {getFrequencyText(expense)}
@@ -319,7 +386,7 @@ function RecurringExpenses() {
                           )}
                         </div>
 
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex gap-2 sm:ml-4 self-end sm:self-start flex-shrink-0">
                           <button
                             onClick={() => setEditingExpense(expense)}
                             className="p-2 text-gray-600 hover:text-bloom-pink hover:bg-pink-50 rounded transition-colors"
@@ -368,9 +435,9 @@ function RecurringExpenses() {
                       key={expense.id}
                       className="border border-gray-200 rounded-lg p-4 bg-gray-50 opacity-75"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h4 className="font-semibold text-gray-600">{expense.name}</h4>
                             <span className="text-sm px-2 py-1 bg-gray-200 text-gray-600 rounded">
                               Paused
@@ -382,7 +449,7 @@ function RecurringExpenses() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex gap-2 sm:ml-4 self-end sm:self-start flex-shrink-0">
                           <button
                             onClick={() => handleToggle(expense.id)}
                             className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
@@ -427,6 +494,58 @@ function RecurringExpenses() {
           onAdd={handleEdit}
           existingExpense={editingExpense}
         />
+      )}
+
+      {/* Confirm Generate Modal */}
+      {showConfirmGenerate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Generate Recurring Expenses?</h3>
+            <p className="text-gray-600 mb-6">
+              This will create expense entries for all recurring expenses that are due. Do you want to continue?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmGenerate(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGenerateNow}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+              >
+                ⚡ Generate Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Recurring Expense?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this recurring expense? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
