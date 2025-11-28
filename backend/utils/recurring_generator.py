@@ -55,7 +55,8 @@ def calculate_next_due_date(recurring_expense):
             next_year += 1
 
         # Handle day overflow (e.g., Jan 31 -> Feb 28)
-        day = min(recurring_expense.day_of_month, 28)  # Safe day for all months
+        # Safe day for all months
+        day = min(recurring_expense.day_of_month, 28)
 
         try:
             return datetime(next_year, next_month, day).date()
@@ -63,7 +64,8 @@ def calculate_next_due_date(recurring_expense):
             # If day is still invalid, use last day of month
             if next_month == 2:
                 # February
-                is_leap = (next_year % 4 == 0 and next_year % 100 != 0) or (next_year % 400 == 0)
+                is_leap = (next_year % 4 == 0 and next_year %
+                           100 != 0) or (next_year % 400 == 0)
                 day = 29 if is_leap else 28
             elif next_month in [4, 6, 9, 11]:
                 day = 30
@@ -127,7 +129,8 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
             if existing:
                 # Already generated, just update next_due_date
                 if not dry_run:
-                    recurring_expense.next_due_date = calculate_next_due_date(recurring_expense)
+                    recurring_expense.next_due_date = calculate_next_due_date(
+                        recurring_expense)
                     recurring_expense.updated_at = datetime.utcnow()
                 updated_templates.append({
                     'id': recurring_expense.id,
@@ -145,10 +148,13 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                 )
 
                 if not budget_period:
-                    errors.append({
+                    # Skip this one - budget period doesn't exist yet
+                    # Don't update next_due_date, will retry next time
+                    updated_templates.append({
                         'id': recurring_expense.id,
                         'name': recurring_expense.name,
-                        'error': f'No budget period found for date {recurring_expense.next_due_date}'
+                        'action': 'skipped (no budget period yet)',
+                        'date': recurring_expense.next_due_date.isoformat()
                     })
                     continue
 
@@ -161,12 +167,14 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                     category=recurring_expense.category,
                     subcategory=recurring_expense.subcategory,
                     payment_method=recurring_expense.payment_method,
-                    recurring_template_id=recurring_expense.id
+                    recurring_template_id=recurring_expense.id,
+                    is_fixed_bill=recurring_expense.is_fixed_bill
                 )
                 db.session.add(expense)
 
                 # Update next_due_date
-                recurring_expense.next_due_date = calculate_next_due_date(recurring_expense)
+                recurring_expense.next_due_date = calculate_next_due_date(
+                    recurring_expense)
                 recurring_expense.updated_at = datetime.utcnow()
 
                 # Check if we should deactivate (past end_date)
@@ -252,12 +260,14 @@ def get_upcoming_recurring_expenses(user_id, days=30):
                     next_month = 1
                     next_year += 1
                 try:
-                    next_due = datetime(next_year, next_month, recurring_expense.day_of_month).date()
+                    next_due = datetime(
+                        next_year, next_month, recurring_expense.day_of_month).date()
                 except ValueError:
                     # Handle invalid day (e.g., Feb 30)
                     next_due = datetime(next_year, next_month, 28).date()
             elif recurring_expense.frequency == 'custom':
-                next_due = next_due + timedelta(days=recurring_expense.frequency_value)
+                next_due = next_due + \
+                    timedelta(days=recurring_expense.frequency_value)
 
     # Sort by date
     upcoming.sort(key=lambda x: x['date'])

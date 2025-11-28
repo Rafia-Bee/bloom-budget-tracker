@@ -19,6 +19,7 @@ import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
 import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
 import ExportImportModal from '../components/ExportImportModal'
+import BankImportModal from '../components/BankImportModal'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -41,6 +42,7 @@ function Dashboard({ setIsAuthenticated }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
+  const [showBankImportModal, setShowBankImportModal] = useState(false)
   const [debitBalance, setDebitBalance] = useState(0)
   const [creditBalance, setCreditBalance] = useState(0)
   const [totalIncome, setTotalIncome] = useState(0)
@@ -49,12 +51,16 @@ function Dashboard({ setIsAuthenticated }) {
   const [currentPeriodIncome, setCurrentPeriodIncome] = useState(0)
   const [warningModal, setWarningModal] = useState(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState(null) // {type: 'expense'|'income', id, transaction}
+  const [selectedTransactions, setSelectedTransactions] = useState([]) // Array of {type, id}
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
   const [showSalaryWizard, setShowSalaryWizard] = useState(false)
   const [editSalaryPeriod, setEditSalaryPeriod] = useState(null) // Period to edit in wizard
   const [showLeftoverModal, setShowLeftoverModal] = useState(false)
   const [leftoverModalData, setLeftoverModalData] = useState(null)
   const [currentWeekPeriod, setCurrentWeekPeriod] = useState(null) // Current week from salary period
   const [creditLimit, setCreditLimit] = useState(null) // Load from salary period
+  const [isInitialLoading, setIsInitialLoading] = useState(true) // Prevent flickering on initial load
   const weeklyBudgetCardRef = useRef(null)
 
   useEffect(() => {
@@ -136,6 +142,12 @@ function Dashboard({ setIsAuthenticated }) {
     setTransactions(combined)
   }, [expenses, income])
 
+  useEffect(() => {
+    // Clear selections and exit selection mode when filter changes
+    setSelectedTransactions([])
+    setSelectionMode(false)
+  }, [filter])
+
   const loadPeriodsAndCurrentWeek = async () => {
     try {
       const [allPeriodsRes, activeRes, salaryPeriodRes, salaryPeriodsListRes] = await Promise.all([
@@ -194,6 +206,8 @@ function Dashboard({ setIsAuthenticated }) {
       if (error.response?.status !== 401) {
         console.error('Failed to load periods:', error)
       }
+    } finally {
+      setIsInitialLoading(false)
     }
   }
 
@@ -528,6 +542,78 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }
 
+  const toggleTransactionSelection = (type, id) => {
+    const key = `${type}-${id}`
+    setSelectedTransactions(prev => {
+      const exists = prev.find(t => t.key === key)
+      if (exists) {
+        return prev.filter(t => t.key !== key)
+      } else {
+        return [...prev, { type, id, key }]
+      }
+    })
+  }
+
+  const toggleSelectAll = () => {
+    const filteredTxns = transactions.filter(t => {
+      if (filter === 'all') return true
+      if (filter === 'income') return t.transactionType === 'income'
+      if (filter === 'expense') return t.transactionType === 'expense'
+      if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
+      if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
+      return true
+    })
+
+    if (selectedTransactions.length === filteredTxns.length) {
+      // Deselect all
+      setSelectedTransactions([])
+    } else {
+      // Select all filtered
+      setSelectedTransactions(filteredTxns.map(t => ({
+        type: t.transactionType,
+        id: t.id,
+        key: `${t.transactionType}-${t.id}`
+      })))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    try {
+      // Delete all selected transactions
+      await Promise.all(
+        selectedTransactions.map(txn => {
+          if (txn.type === 'expense') {
+            return expenseAPI.delete(txn.id)
+          } else {
+            return incomeAPI.delete(txn.id)
+          }
+        })
+      )
+
+      // Reload data
+      loadExpenses()
+      loadIncome()
+
+      // Clear selections and exit selection mode
+      setSelectedTransactions([])
+      setShowBulkDeleteConfirm(false)
+      setSelectionMode(false)
+    } catch (error) {
+      console.error('Failed to delete transactions:', error)
+    }
+  };
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-bloom-pink"></div>
+          <p className="mt-4 text-gray-600">Loading your budget...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
       {/* Header */}
@@ -633,6 +719,18 @@ function Dashboard({ setIsAuthenticated }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
                       Import Data
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowBankImportModal(true)
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      Import Bank Transactions
                     </button>
                     <button
                       onClick={handleLogout}
@@ -855,7 +953,51 @@ function Dashboard({ setIsAuthenticated }) {
         {/* Transactions Section */}
         <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Transactions</h2>
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">Transactions</h2>
+
+              {/* Selection Mode Controls */}
+              <div className="flex items-center gap-2">
+                {!selectionMode ? (
+                  <button
+                    onClick={() => setSelectionMode(true)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-semibold flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Select
+                  </button>
+                ) : (
+                  <>
+                    {selectedTransactions.length > 0 && (
+                      <>
+                        <span className="text-sm text-gray-600">{selectedTransactions.length} selected</span>
+                        <button
+                          onClick={() => setShowBulkDeleteConfirm(true)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectionMode(false)
+                        setSelectedTransactions([])
+                      }}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
             <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
               <button
@@ -904,6 +1046,36 @@ function Dashboard({ setIsAuthenticated }) {
                 Credit
               </button>
             </div>
+
+            {/* Select All Checkbox */}
+            {selectionMode && transactions.filter(t => {
+              if (filter === 'all') return true
+              if (filter === 'income') return t.transactionType === 'income'
+              if (filter === 'expense') return t.transactionType === 'expense'
+              if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
+              if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
+              return true
+            }).length > 0 && (
+              <div className="mt-4 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="select-all"
+                  checked={selectedTransactions.length === transactions.filter(t => {
+                    if (filter === 'all') return true
+                    if (filter === 'income') return t.transactionType === 'income'
+                    if (filter === 'expense') return t.transactionType === 'expense'
+                    if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
+                    if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
+                    return true
+                  }).length && selectedTransactions.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
+                />
+                <label htmlFor="select-all" className="text-gray-700 cursor-pointer select-none">
+                  Select All
+                </label>
+              </div>
+            )}
           </div>
 
           {transactions.filter(t => {
@@ -931,46 +1103,57 @@ function Dashboard({ setIsAuthenticated }) {
                 return true
               }).map(transaction => {
                 const isFuture = new Date(transaction.date) > new Date()
+                const isSelected = selectedTransactions.some(t => t.key === `${transaction.transactionType}-${transaction.id}`)
                 return (
                   <div
                     key={`${transaction.transactionType}-${transaction.id}`}
                     className={`flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition ${transaction.transactionType === 'income' ? 'bg-bloom-mint/20' : 'bg-gray-50'
-                      } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300' : ''}`}
+                      } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300' : ''} ${isSelected ? 'ring-2 ring-bloom-pink' : ''}`}
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${transaction.transactionType === 'income'
+                    <div className="flex items-center gap-3">
+                      {/* Checkbox */}
+                      {selectionMode && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleTransactionSelection(transaction.transactionType, transaction.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
+                        />
+                      )}
+
+                      <div className={`w-2 h-2 rounded-full ${transaction.transactionType === 'income'
                             ? 'bg-bloom-mint'
                             : transaction.payment_method === 'Credit card'
                               ? 'bg-bloom-pink'
                               : 'bg-bloom-mint'
                           }`}></div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-800">
-                              {transaction.transactionType === 'income' ? transaction.type : transaction.name}
-                            </h3>
-                            {isFuture && (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                Scheduled
-                              </span>
-                            )}
-                            {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
-                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Recurring
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            {transaction.transactionType === 'expense'
-                              ? `${transaction.category} • ${transaction.subcategory}`
-                              : 'Income'}
-                          </p>
-                        </div>
+                    </div>
+
+                    <div className="flex-1 ml-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-800">
+                          {transaction.transactionType === 'income' ? transaction.type : transaction.name}
+                        </h3>
+                        {isFuture && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            Scheduled
+                          </span>
+                        )}
+                        {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Recurring
+                          </span>
+                        )}
                       </div>
+                      <p className="text-sm text-gray-500">
+                        {transaction.transactionType === 'expense'
+                          ? `${transaction.category} • ${transaction.subcategory}`
+                          : 'Income'}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -1302,11 +1485,70 @@ function Dashboard({ setIsAuthenticated }) {
         </div>
       )}
 
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Multiple Transactions?</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete <strong>{selectedTransactions.length}</strong> transaction(s)?
+            </p>
+            <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-48 overflow-y-auto">
+              <p className="text-sm text-gray-500 mb-2">Selected transactions:</p>
+              {selectedTransactions.map(txn => {
+                const transaction = transactions.find(t =>
+                  t.transactionType === txn.type && t.id === txn.id
+                )
+                if (!transaction) return null
+                return (
+                  <div key={txn.key} className="flex justify-between items-center py-1 text-sm">
+                    <span className="text-gray-700">
+                      {txn.type === 'income' ? transaction.type : transaction.name}
+                    </span>
+                    <span className="font-semibold text-gray-800">
+                      €{(transaction.amount / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-sm text-red-600 mb-6">
+              ⚠️ This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Delete {selectedTransactions.length} Transaction(s)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Export/Import Modal */}
       {showExportModal && (
         <ExportImportModal
           mode={exportMode}
           onClose={() => setShowExportModal(false)}
+        />
+      )}
+
+      {/* Bank Import Modal */}
+      {showBankImportModal && (
+        <BankImportModal
+          onClose={() => setShowBankImportModal(false)}
+          onImportComplete={() => {
+            loadTransactions()
+            setShowBankImportModal(false)
+          }}
         />
       )}
     </div>

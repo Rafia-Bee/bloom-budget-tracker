@@ -60,7 +60,6 @@ function Login({ setIsAuthenticated }) {
       setResetMessage('✅ Password reset email sent!\n\nCheck your email inbox for a link to reset your password. The link will expire in 1 hour.')
     }
     setShowForgotPassword(false)
-    setTimeout(() => setResetMessage(''), 15000) // Clear message after 15 seconds
   }
 
   return (
@@ -78,7 +77,7 @@ function Login({ setIsAuthenticated }) {
               <button
                 type="button"
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 ml-4"
+                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -88,8 +87,17 @@ function Login({ setIsAuthenticated }) {
           )}
 
           {resetMessage && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex justify-between items-start">
               <pre className="text-sm whitespace-pre-wrap">{resetMessage}</pre>
+              <button
+                type="button"
+                onClick={() => setResetMessage('')}
+                className="text-green-700 hover:text-green-900 ml-4 flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 

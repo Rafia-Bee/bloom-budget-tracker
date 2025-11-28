@@ -134,8 +134,16 @@ function AddExpenseModal({ onClose, onAdd }) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
-              {error}
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded flex justify-between items-start">
+              <span>{error}</span>
+              <button
+                onClick={() => setError('')}
+                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 

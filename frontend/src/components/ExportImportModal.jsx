@@ -11,7 +11,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
   const [exportTypes, setExportTypes] = useState({
     debts: true,
     recurring_expenses: true,
-    salary_periods: true
+    salary_periods: true,
+    expenses: true,
+    income: true
   })
   const [exportFormat, setExportFormat] = useState('json') // 'json' or 'csv'
   const [loading, setLoading] = useState(false)
@@ -60,12 +62,22 @@ function ExportImportModal({ onClose, mode = 'export' }) {
       )
 
       if (exportFormat === 'json') {
-        // Download as JSON file
+        // Download as JSON file with descriptive name
+        const dateStr = new Date().toISOString().split('T')[0]
+        const typeAbbreviations = {
+          debts: 'debts',
+          recurring_expenses: 'recurring',
+          salary_periods: 'periods',
+          expenses: 'expenses',
+          income: 'income'
+        }
+        const typesStr = selectedTypes.map(t => typeAbbreviations[t] || t).join('-')
+
         const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `bloom-export-${new Date().toISOString().split('T')[0]}.json`
+        link.download = `bloom-${typesStr}-${dateStr}.json`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -92,7 +104,6 @@ function ExportImportModal({ onClose, mode = 'export' }) {
       }
 
       setMessage('Data exported successfully!')
-      setTimeout(() => onClose(), 2000)
     } catch (err) {
       setError(err.response?.data?.error || 'Export failed')
     } finally {
@@ -124,6 +135,8 @@ function ExportImportModal({ onClose, mode = 'export' }) {
       if (counts.debts > 0) summary.push(`${counts.debts} debt(s)`)
       if (counts.recurring_expenses > 0) summary.push(`${counts.recurring_expenses} recurring expense(s)`)
       if (counts.salary_periods > 0) summary.push(`${counts.salary_periods} salary period(s)`)
+      if (counts.expenses > 0) summary.push(`${counts.expenses} expense(s)`)
+      if (counts.income > 0) summary.push(`${counts.income} income(s)`)
 
       let message = summary.length > 0 ? `Successfully imported: ${summary.join(', ')}` : 'No new data imported'
 
@@ -132,15 +145,14 @@ function ExportImportModal({ onClose, mode = 'export' }) {
       if (skipped?.debts > 0) skippedSummary.push(`${skipped.debts} debt(s)`)
       if (skipped?.recurring_expenses > 0) skippedSummary.push(`${skipped.recurring_expenses} recurring expense(s)`)
       if (skipped?.salary_periods > 0) skippedSummary.push(`${skipped.salary_periods} salary period(s)`)
+      if (skipped?.expenses > 0) skippedSummary.push(`${skipped.expenses} expense(s)`)
+      if (skipped?.income > 0) skippedSummary.push(`${skipped.income} income(s)`)
 
       if (skippedSummary.length > 0) {
         message += `\n\nSkipped ${skippedSummary.join(', ')} (already exists)`
       }
 
-      setMessage(message)
-      setTimeout(() => {
-        window.location.reload()
-      }, 3000)
+      setMessage(message + '\n\nPlease close this dialog and refresh the page to see imported data.')
     } catch (err) {
       setError(err.response?.data?.error || 'Import failed. Please check file format.')
     } finally {
@@ -166,14 +178,30 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         </div>
 
         {message && (
-          <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            {message}
+          <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex justify-between items-start">
+            <span>{message}</span>
+            <button
+              onClick={() => setMessage('')}
+              className="text-green-700 hover:text-green-900 ml-4 flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 
         {error && (
-          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
+          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex justify-between items-start">
+            <span>{error}</span>
+            <button
+              onClick={() => setError('')}
+              className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -212,6 +240,26 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
                 />
                 <span className="text-gray-700">Salary Periods</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={exportTypes.expenses}
+                  onChange={(e) => setExportTypes({ ...exportTypes, expenses: e.target.checked })}
+                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                />
+                <span className="text-gray-700">Expenses</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={exportTypes.income}
+                  onChange={(e) => setExportTypes({ ...exportTypes, income: e.target.checked })}
+                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                />
+                <span className="text-gray-700">Income</span>
               </label>
             </div>
 
@@ -259,7 +307,7 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         ) : (
           <div>
             <p className="text-gray-600 mb-4">
-              Select a Bloom export file to import. The system will automatically detect and import debts, recurring expenses, and salary periods.
+              Select a Bloom export file to import. The system will automatically detect and import debts, recurring expenses, salary periods, expenses, and income.
             </p>
 
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

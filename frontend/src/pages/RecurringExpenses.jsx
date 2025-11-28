@@ -114,13 +114,9 @@ function RecurringExpenses() {
       const response = await recurringExpenseAPI.generateNow(false)
       setGenerationResult(response.data)
       await loadRecurringExpenses()
-
-      // Auto-hide after 5 seconds
-      setTimeout(() => setGenerationResult(null), 5000)
     } catch (error) {
       console.error('Failed to generate expenses:', error)
       setGenerationResult({ message: 'Failed to generate expenses', generated_count: 0 })
-      setTimeout(() => setGenerationResult(null), 5000)
     } finally {
       setGenerating(false)
     }
