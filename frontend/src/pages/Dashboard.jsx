@@ -18,6 +18,7 @@ import EditPeriodModal from '../components/EditPeriodModal'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
 import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
+import ExportImportModal from '../components/ExportImportModal'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -38,6 +39,8 @@ function Dashboard({ setIsAuthenticated }) {
   const [selectedPeriod, setSelectedPeriod] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportMode, setExportMode] = useState('export')
   const [debitBalance, setDebitBalance] = useState(0)
   const [creditBalance, setCreditBalance] = useState(0)
   const [totalIncome, setTotalIncome] = useState(0)
@@ -590,8 +593,34 @@ function Dashboard({ setIsAuthenticated }) {
                       <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
                     </div>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('export')
+                        setShowUserMenu(false)
+                      }}
                       className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Data
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('import')
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Import Data
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200 mt-2 pt-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1163,6 +1192,14 @@ function Dashboard({ setIsAuthenticated }) {
             weeklyBudgetCardRef.current?.refresh()
             loadTransactionsAndBalances()
           }}
+        />
+      )}
+
+      {/* Export/Import Modal */}
+      {showExportModal && (
+        <ExportImportModal
+          mode={exportMode}
+          onClose={() => setShowExportModal(false)}
         />
       )}
     </div>
