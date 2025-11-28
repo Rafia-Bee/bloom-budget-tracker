@@ -141,7 +141,14 @@ function Dashboard({ setIsAuthenticated }) {
       ])
 
       setAllPeriods(allPeriodsRes.data)
-      setSalaryPeriods(salaryPeriodsListRes.data || [])
+      
+      // Combine salary periods with standalone budget periods (for historical data access)
+      // Filter out budget periods that belong to salary periods (they have salary_period_id)
+      const standalonePeriods = allPeriodsRes.data.filter(p => !p.salary_period_id)
+      const combinedPeriods = [...(salaryPeriodsListRes.data || []), ...standalonePeriods]
+      // Sort by start date descending (most recent first)
+      combinedPeriods.sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+      setSalaryPeriods(combinedPeriods)
 
       // Prefer salary period's current week if available
       if (salaryPeriodRes?.data?.current_week?.id) {
