@@ -28,6 +28,8 @@ function Debts({ setIsAuthenticated }) {
 
   useEffect(() => {
     loadCurrentPeriod()
+    loadDebts()
+    loadArchivedDebts()
   }, [])
 
   useEffect(() => {
@@ -42,9 +44,7 @@ function Debts({ setIsAuthenticated }) {
 
   useEffect(() => {
     if (currentPeriod) {
-      loadDebts()
       loadCreditCardDebt()
-      loadArchivedDebts()
     }
   }, [currentPeriod])
 
