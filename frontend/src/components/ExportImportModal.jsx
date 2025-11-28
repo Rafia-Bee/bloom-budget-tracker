@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react'
-import axios from 'axios'
+import api from '../api'
 
 function ExportImportModal({ onClose, mode = 'export' }) {
   const [exportTypes, setExportTypes] = useState({
@@ -54,16 +54,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         return
       }
 
-      const token = localStorage.getItem('access_token')
-      const response = await axios.post(
-        'http://localhost:5000/data/export',
-        { types: selectedTypes },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await api.post(
+        '/data/export',
+        { types: selectedTypes }
       )
 
       if (exportFormat === 'json') {
@@ -119,28 +112,35 @@ function ExportImportModal({ onClose, mode = 'export' }) {
       const fileContent = await file.text()
       const importData = JSON.parse(fileContent)
 
-      const token = localStorage.getItem('access_token')
-      const response = await axios.post(
-        'http://localhost:5000/data/import',
-        importData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await api.post(
+        '/data/import',
+        importData
       )
 
       const counts = response.data.imported
+      const skipped = response.data.skipped
       const summary = []
+
       if (counts.debts > 0) summary.push(`${counts.debts} debt(s)`)
       if (counts.recurring_expenses > 0) summary.push(`${counts.recurring_expenses} recurring expense(s)`)
       if (counts.salary_periods > 0) summary.push(`${counts.salary_periods} salary period(s)`)
 
-      setMessage(`Successfully imported: ${summary.join(', ')}`)
+      let message = summary.length > 0 ? `Successfully imported: ${summary.join(', ')}` : 'No new data imported'
+
+      // Add skipped items info
+      const skippedSummary = []
+      if (skipped?.debts > 0) skippedSummary.push(`${skipped.debts} debt(s)`)
+      if (skipped?.recurring_expenses > 0) skippedSummary.push(`${skipped.recurring_expenses} recurring expense(s)`)
+      if (skipped?.salary_periods > 0) skippedSummary.push(`${skipped.salary_periods} salary period(s)`)
+
+      if (skippedSummary.length > 0) {
+        message += `\n\nSkipped ${skippedSummary.join(', ')} (already exists)`
+      }
+
+      setMessage(message)
       setTimeout(() => {
         window.location.reload()
-      }, 2000)
+      }, 3000)
     } catch (err) {
       setError(err.response?.data?.error || 'Import failed. Please check file format.')
     } finally {

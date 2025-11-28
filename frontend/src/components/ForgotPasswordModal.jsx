@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import api from '../api'
 
 function ForgotPasswordModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState('')
@@ -18,25 +19,15 @@ function ForgotPasswordModal({ onClose, onSuccess }) {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:5000/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email.trim() })
+      const response = await api.post('/auth/forgot-password', {
+        email: email.trim()
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Pass message and optional development token
-        onSuccess(data.message, data.reset_token)
-        onClose()
-      } else {
-        setError(data.error || 'An error occurred')
-      }
+      // Pass message and optional development token
+      onSuccess(response.data.message, response.data.reset_token)
+      onClose()
     } catch (error) {
-      setError('Unable to connect to server')
+      setError(error.response?.data?.error || 'Unable to connect to server')
     } finally {
       setLoading(false)
     }

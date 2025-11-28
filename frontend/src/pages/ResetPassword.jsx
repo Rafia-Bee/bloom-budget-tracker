@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import api from '../api'
 
 function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -26,24 +27,16 @@ function ResetPassword() {
 
   const validateToken = async () => {
     try {
-      const response = await fetch('http://localhost:5000/auth/validate-reset-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token })
-      })
+      const response = await api.post('/auth/validate-reset-token', { token })
 
-      const data = await response.json()
-
-      if (response.ok && data.valid) {
+      if (response.data.valid) {
         setTokenValid(true)
       } else {
-        setError(data.error || 'Invalid or expired reset token')
+        setError(response.data.error || 'Invalid or expired reset token')
         setTokenValid(false)
       }
     } catch (error) {
-      setError('Unable to validate reset token')
+      setError(error.response?.data?.error || 'Unable to validate reset token')
       setTokenValid(false)
     } finally {
       setValidating(false)
@@ -67,29 +60,19 @@ function ResetPassword() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:5000/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          password
-        })
+      const response = await api.post('/auth/reset-password', {
+        token,
+        password
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
+      if (response.data) {
         setSuccess(true)
         setTimeout(() => {
           navigate('/login')
         }, 3000)
-      } else {
-        setError(data.error || 'An error occurred while resetting your password')
       }
     } catch (error) {
-      setError('Unable to connect to server')
+      setError(error.response?.data?.error || 'An error occurred while resetting your password')
     } finally {
       setLoading(false)
     }

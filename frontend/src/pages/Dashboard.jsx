@@ -239,14 +239,13 @@ function Dashboard({ setIsAuthenticated }) {
           // If it's Initial Balance (no budget_period_id), add to current if it's within period dates
           else if (!income.budget_period_id) {
             const periodStart = new Date(currentPeriod.start_date)
-            if (incomeDate >= periodStart) {
+            const periodEnd = new Date(currentPeriod.end_date)
+            if (incomeDate >= periodStart && incomeDate <= periodEnd) {
               currentIncome += amount
             }
           }
         }
-      })
-
-      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
+      })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
       const allExpensesRes = await expenseAPI.getAll({})
       const allExpenses = allExpensesRes.data
 
@@ -456,7 +455,8 @@ function Dashboard({ setIsAuthenticated }) {
     // Determine which budget period this income belongs to based on date
     let targetPeriodId = currentPeriod.id // Default to current week
 
-    const incomeDate = incomeData.actual_date ? new Date(incomeData.actual_date) :
+    const incomeDate = incomeData.date ? new Date(incomeData.date) :
+                       incomeData.actual_date ? new Date(incomeData.actual_date) :
                        incomeData.scheduled_date ? new Date(incomeData.scheduled_date) : null
 
     if (incomeDate && allPeriods.length > 0) {

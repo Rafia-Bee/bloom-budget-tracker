@@ -104,10 +104,27 @@ def import_data():
             'recurring_expenses': 0,
             'salary_periods': 0
         }
+        skipped_counts = {
+            'debts': 0,
+            'recurring_expenses': 0,
+            'salary_periods': 0
+        }
 
         # Import Debts
         if 'debts' in data['data']:
             for debt_data in data['data']['debts']:
+                # Check for duplicate: same name and original_amount
+                existing_debt = Debt.query.filter_by(
+                    user_id=current_user_id,
+                    name=debt_data['name'],
+                    original_amount=debt_data['original_amount'],
+                    archived=False
+                ).first()
+
+                if existing_debt:
+                    skipped_counts['debts'] += 1
+                    continue
+
                 debt = Debt(
                     user_id=current_user_id,
                     name=debt_data['name'],
@@ -126,6 +143,19 @@ def import_data():
                     recurring_data['start_date'].replace('Z', '+00:00'))
                 end_date = datetime.fromisoformat(recurring_data['end_date'].replace(
                     'Z', '+00:00')) if recurring_data.get('end_date') else None
+
+                # Check for duplicate: same name, amount, and category
+                existing_recurring = RecurringExpense.query.filter_by(
+                    user_id=current_user_id,
+                    name=recurring_data['name'],
+                    amount=recurring_data['amount'],
+                    category=recurring_data['category'],
+                    is_active=True
+                ).first()
+
+                if existing_recurring:
+                    skipped_counts['recurring_expenses'] += 1
+                    continue
 
                 # Calculate next_due_date
                 next_due = start_date
@@ -160,6 +190,18 @@ def import_data():
                     sp_data['start_date'].replace('Z', '+00:00')).date()
                 end_date = datetime.fromisoformat(
                     sp_data['end_date'].replace('Z', '+00:00')).date()
+
+                # Check for duplicate: same start_date and end_date
+                existing_salary_period = SalaryPeriod.query.filter_by(
+                    user_id=current_user_id,
+                    start_date=start_date,
+                    end_date=end_date,
+                    is_active=True
+                ).first()
+
+                if existing_salary_period:
+                    skipped_counts['salary_periods'] += 1
+                    continue
 
                 salary_period = SalaryPeriod(
                     user_id=current_user_id,
@@ -215,7 +257,8 @@ def import_data():
                     db.session.add(initial_income)
 
                 # Create pre-existing credit debt expense (if any)
-                pre_existing_debt = sp_data['credit_limit'] - sp_data['initial_credit_balance']
+                pre_existing_debt = sp_data['credit_limit'] - \
+                    sp_data['initial_credit_balance']
                 if pre_existing_debt > 0:
                     debt_expense = Expense(
                         user_id=current_user_id,
@@ -225,7 +268,8 @@ def import_data():
                         category='Debt',
                         subcategory='Credit Card',
                         payment_method='Credit card',
-                        date=start_date - timedelta(days=1),  # Date it before the period starts
+                        # Date it before the period starts
+                        date=start_date - timedelta(days=1),
                         is_fixed_bill=False,
                         notes='Existing credit card balance at budget period start'
                     )
@@ -235,9 +279,29 @@ def import_data():
 
         db.session.commit()
 
+        # Build response message
+        message_parts = []
+        if imported_counts['debts'] > 0 or imported_counts['recurring_expenses'] > 0 or imported_counts['salary_periods'] > 0:
+            message_parts.append('Data imported successfully')
+
+        skipped_total = sum(skipped_counts.values())
+        if skipped_total > 0:
+            skipped_details = []
+            if skipped_counts['debts'] > 0:
+                skipped_details.append(f"{skipped_counts['debts']} debt(s)")
+            if skipped_counts['recurring_expenses'] > 0:
+                skipped_details.append(
+                    f"{skipped_counts['recurring_expenses']} recurring expense(s)")
+            if skipped_counts['salary_periods'] > 0:
+                skipped_details.append(
+                    f"{skipped_counts['salary_periods']} salary period(s)")
+            message_parts.append(
+                f"Skipped {', '.join(skipped_details)} (already exists)")
+
         return jsonify({
-            'message': 'Data imported successfully',
-            'imported': imported_counts
+            'message': '. '.join(message_parts) if message_parts else 'No new data to import',
+            'imported': imported_counts,
+            'skipped': skipped_counts
         }), 200
 
     except Exception as e:
