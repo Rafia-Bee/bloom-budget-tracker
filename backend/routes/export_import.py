@@ -6,7 +6,7 @@ Handles exporting and importing user data (debts, recurring expenses).
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, Debt, RecurringExpense, SalaryPeriod, BudgetPeriod
+from backend.models.database import db, Debt, RecurringExpense, SalaryPeriod, BudgetPeriod, Income, Expense
 from datetime import datetime, timedelta
 import json
 
@@ -200,6 +200,36 @@ def import_data():
                     )
                     db.session.add(budget_period)
                     current_start = week_end + timedelta(days=1)
+
+                # Create initial income entry for the debit balance
+                # This makes the dashboard debit/credit cards show correct available amounts
+                if sp_data['initial_debit_balance'] > 0:
+                    initial_income = Income(
+                        user_id=current_user_id,
+                        budget_period_id=None,  # Not tied to a specific week
+                        type='Initial Balance',
+                        amount=sp_data['initial_debit_balance'],
+                        scheduled_date=start_date,
+                        actual_date=start_date
+                    )
+                    db.session.add(initial_income)
+
+                # Create pre-existing credit debt expense (if any)
+                pre_existing_debt = sp_data['credit_limit'] - sp_data['initial_credit_balance']
+                if pre_existing_debt > 0:
+                    debt_expense = Expense(
+                        user_id=current_user_id,
+                        budget_period_id=None,  # Not tied to a specific week
+                        name='Pre-existing Credit Card Debt',
+                        amount=pre_existing_debt,
+                        category='Debt',
+                        subcategory='Credit Card',
+                        payment_method='Credit card',
+                        date=start_date - timedelta(days=1),  # Date it before the period starts
+                        is_fixed_bill=False,
+                        notes='Existing credit card balance at budget period start'
+                    )
+                    db.session.add(debt_expense)
 
                 imported_counts['salary_periods'] += 1
 
