@@ -61,7 +61,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
   }
 
   const formatCurrency = (cents) => {
-    return `$${(cents / 100).toFixed(2)}`
+    return `€${(cents / 100).toFixed(2)}`
   }
 
   const getProgress = () => {
