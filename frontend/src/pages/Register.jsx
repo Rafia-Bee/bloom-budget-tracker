@@ -94,10 +94,10 @@ function Register({ setIsAuthenticated }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
-              minLength={6}
+              minLength={8}
               required
             />
-            <p className="text-sm text-gray-500 mt-1">Minimum 6 characters</p>
+            <p className="text-sm text-gray-500 mt-1">Minimum 8 characters</p>
           </div>
 
           <div>
@@ -107,7 +107,7 @@ function Register({ setIsAuthenticated }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
-              minLength={6}
+              minLength={8}
               required
             />
           </div>
