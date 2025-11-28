@@ -65,6 +65,9 @@ function Dashboard({ setIsAuthenticated }) {
       if (!e.target.closest('.user-menu')) {
         setShowUserMenu(false)
       }
+      if (!e.target.closest('.add-menu')) {
+        setShowAddMenu(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -1017,7 +1020,7 @@ function Dashboard({ setIsAuthenticated }) {
 
       {/* Floating Add Button with Menu - Only show if period exists */}
       {currentPeriod && (
-        <div className="fixed bottom-8 right-8">
+        <div className="fixed bottom-8 right-8 add-menu">
           {showAddMenu && (
             <div className="absolute bottom-20 right-0 bg-white rounded-lg shadow-xl p-2 mb-2 min-w-[150px]">
               <button
