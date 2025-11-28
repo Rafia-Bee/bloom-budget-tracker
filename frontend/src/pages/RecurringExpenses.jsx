@@ -457,10 +457,10 @@ function RecurringExpenses() {
                           )}
                         </div>
 
-                        <div className="flex gap-2 sm:ml-4 self-end sm:self-start flex-shrink-0">
+                        <div className="flex gap-3 sm:ml-4 pr-2 sm:pr-0 self-end sm:self-start flex-shrink-0">
                           <button
                             onClick={() => handleToggleFixedBill(expense.id, expense.is_fixed_bill)}
-                            className={`p-2 rounded transition-colors ${
+                            className={`p-2.5 sm:p-2 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${
                               expense.is_fixed_bill
                                 ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
                                 : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
@@ -473,7 +473,7 @@ function RecurringExpenses() {
                           </button>
                           <button
                             onClick={() => setEditingExpense(expense)}
-                            className="p-2 text-gray-600 hover:text-bloom-pink hover:bg-pink-50 rounded transition-colors"
+                            className="p-2.5 sm:p-2 text-gray-600 hover:text-bloom-pink hover:bg-pink-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                             title="Edit"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -482,7 +482,7 @@ function RecurringExpenses() {
                           </button>
                           <button
                             onClick={() => handleToggle(expense.id)}
-                            className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded transition-colors"
+                            className="p-2.5 sm:p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                             title="Pause"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -491,7 +491,7 @@ function RecurringExpenses() {
                           </button>
                           <button
                             onClick={() => handleDelete(expense.id)}
-                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-2.5 sm:p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                             title="Delete"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,10 +533,10 @@ function RecurringExpenses() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 sm:ml-4 self-end sm:self-start flex-shrink-0">
+                        <div className="flex gap-3 sm:ml-4 pr-2 sm:pr-0 self-end sm:self-start flex-shrink-0">
                           <button
                             onClick={() => handleToggle(expense.id)}
-                            className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                            className="p-2.5 sm:p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                             title="Resume"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,7 +546,7 @@ function RecurringExpenses() {
                           </button>
                           <button
                             onClick={() => handleDelete(expense.id)}
-                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-2.5 sm:p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                             title="Delete"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
