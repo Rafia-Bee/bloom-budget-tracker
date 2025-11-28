@@ -6,8 +6,8 @@ Handles exporting and importing user data (debts, recurring expenses).
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, Debt, RecurringExpense, SalaryPeriod
-from datetime import datetime
+from backend.models.database import db, Debt, RecurringExpense, SalaryPeriod, BudgetPeriod
+from datetime import datetime, timedelta
 import json
 
 export_import_bp = Blueprint('export_import', __name__, url_prefix='/data')
@@ -179,6 +179,28 @@ def import_data():
                     is_active=True
                 )
                 db.session.add(salary_period)
+                db.session.flush()  # Get salary_period.id for creating weekly periods
+
+                # Create 4 weekly budget periods for this salary period
+                current_start = start_date
+                for week_num in range(1, 5):
+                    if week_num < 4:
+                        week_end = current_start + timedelta(days=6)
+                    else:
+                        week_end = end_date
+
+                    budget_period = BudgetPeriod(
+                        user_id=current_user_id,
+                        salary_period_id=salary_period.id,
+                        week_number=week_num,
+                        budget_amount=sp_data['weekly_budget'],
+                        start_date=current_start,
+                        end_date=week_end,
+                        period_type='weekly'
+                    )
+                    db.session.add(budget_period)
+                    current_start = week_end + timedelta(days=1)
+
                 imported_counts['salary_periods'] += 1
 
         db.session.commit()

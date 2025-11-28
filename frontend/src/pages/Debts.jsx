@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { debtAPI, expenseAPI, incomeAPI, budgetPeriodAPI } from '../api'
 import AddDebtModal from '../components/AddDebtModal'
 import EditDebtModal from '../components/EditDebtModal'
+import ExportImportModal from '../components/ExportImportModal'
 
 function Debts({ setIsAuthenticated }) {
   const [debts, setDebts] = useState([])
@@ -24,6 +25,8 @@ function Debts({ setIsAuthenticated }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportMode, setExportMode] = useState('export')
   const creditLimit = 1500
 
   useEffect(() => {
@@ -295,8 +298,34 @@ function Debts({ setIsAuthenticated }) {
                       <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
                     </div>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('export')
+                        setShowUserMenu(false)
+                      }}
                       className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Data
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('import')
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Import Data
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200 mt-2 pt-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -336,10 +365,36 @@ function Debts({ setIsAuthenticated }) {
                   </div>
                   <button
                     onClick={() => {
+                      setShowExportModal(true)
+                      setExportMode('export')
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Data
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportModal(true)
+                      setExportMode('import')
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import Data
+                  </button>
+                  <button
+                    onClick={() => {
                       handleLogout()
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 mt-2 pt-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -721,6 +776,14 @@ function Debts({ setIsAuthenticated }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Export/Import Modal */}
+      {showExportModal && (
+        <ExportImportModal
+          mode={exportMode}
+          onClose={() => setShowExportModal(false)}
+        />
       )}
     </div>
   )

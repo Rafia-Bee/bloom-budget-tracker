@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { recurringExpenseAPI } from '../api'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
+import ExportImportModal from '../components/ExportImportModal'
 import { useNavigate } from 'react-router-dom'
 
 function RecurringExpenses() {
@@ -22,6 +23,8 @@ function RecurringExpenses() {
   const [generationResult, setGenerationResult] = useState(null)
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportMode, setExportMode] = useState('export')
 
   useEffect(() => {
     loadRecurringExpenses()
@@ -226,8 +229,34 @@ function RecurringExpenses() {
                       </p>
                     </div>
                     <button
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('export')
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Data
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowExportModal(true)
+                        setExportMode('import')
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Import Data
+                    </button>
+                    <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200 mt-2 pt-2"
                     >
                       Logout
                     </button>
@@ -268,10 +297,36 @@ function RecurringExpenses() {
                   </div>
                   <button
                     onClick={() => {
+                      setShowExportModal(true)
+                      setExportMode('export')
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Data
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportModal(true)
+                      setExportMode('import')
+                      setShowMobileMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import Data
+                  </button>
+                  <button
+                    onClick={() => {
                       handleLogout()
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 mt-2 pt-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -573,6 +628,14 @@ function RecurringExpenses() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Export/Import Modal */}
+      {showExportModal && (
+        <ExportImportModal
+          mode={exportMode}
+          onClose={() => setShowExportModal(false)}
+        />
       )}
     </div>
   )
