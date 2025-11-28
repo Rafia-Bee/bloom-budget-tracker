@@ -58,14 +58,21 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
 
-    # SSL configuration for PostgreSQL
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'connect_args': {
-            'sslmode': 'require'
+    # SSL configuration for PostgreSQL only
+    database_url = os.getenv('DATABASE_URL', 'sqlite:///bloom.db')
+    if database_url.startswith(('postgres://', 'postgresql://')):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'connect_args': {
+                'sslmode': 'require'
+            }
         }
-    }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+        }
 
 
 config = {
