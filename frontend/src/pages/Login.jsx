@@ -52,13 +52,15 @@ function Login({ setIsAuthenticated }) {
   }
 
   const handleForgotPasswordSuccess = (message, token) => {
-    setResetMessage(message)
     if (token) {
-      // In development, show the reset token for testing
-      setResetMessage(`${message}\n\nDevelopment Token: ${token}\nUse this URL: http://localhost:3001/reset-password/${token}`)
+      // Development mode: Email service not configured, show token for testing
+      setResetMessage(`${message}\n\n🔧 Development Mode: Email not configured\n\nReset Token: ${token}\n\nTest URL: http://localhost:5173/reset-password?token=${token}`)
+    } else {
+      // Production mode: Email sent
+      setResetMessage('✅ Password reset email sent!\n\nCheck your email inbox for a link to reset your password. The link will expire in 1 hour.')
     }
     setShowForgotPassword(false)
-    setTimeout(() => setResetMessage(''), 10000) // Clear message after 10 seconds
+    setTimeout(() => setResetMessage(''), 15000) // Clear message after 15 seconds
   }
 
   return (

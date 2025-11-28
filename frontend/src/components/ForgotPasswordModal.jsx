@@ -29,7 +29,8 @@ function ForgotPasswordModal({ onClose, onSuccess }) {
       const data = await response.json()
 
       if (response.ok) {
-        onSuccess(data.message, data.reset_token) // reset_token for development only
+        // Pass message and optional development token
+        onSuccess(data.message, data.reset_token)
         onClose()
       } else {
         setError(data.error || 'An error occurred')

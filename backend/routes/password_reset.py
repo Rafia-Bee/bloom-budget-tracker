@@ -5,15 +5,19 @@ Handles password reset functionality including token generation and validation.
 """
 
 import secrets
+import os
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from backend.models.database import db, User, PasswordResetToken
 from backend.utils.validators import validate_email
+from backend.utils.rate_limiter import rate_limit
+from backend.services.email_service import email_service
 
 password_reset_bp = Blueprint('password_reset', __name__)
 
 
 @password_reset_bp.route('/forgot-password', methods=['POST'])
+@rate_limit('password_reset.forgot_password')
 def forgot_password():
     """Request a password reset token for the given email address."""
     try:
@@ -47,12 +51,29 @@ def forgot_password():
         db.session.add(reset_token)
         db.session.commit()
 
-        # In a real app, you would send an email here
-        # For development, we'll return the token (remove in production!)
-        return jsonify({
-            'message': 'If an account exists with this email, a password reset link has been sent.',
-            'reset_token': token  # Remove this in production!
-        }), 200
+        # Send password reset email
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:5173')
+        email_result = email_service.send_password_reset_email(
+            to_email=user.email,
+            reset_token=token,
+            frontend_url=frontend_url
+        )
+
+        # Log email sending result but don't expose it to user
+        if not email_result.get('success'):
+            current_app.logger.error(f"Failed to send password reset email: {email_result.get('error')}")
+
+        # Always return success message for security (don't reveal if email exists)
+        # In development with no email configured, also return token for testing
+        response_data = {
+            'message': 'If an account exists with this email, a password reset link has been sent.'
+        }
+
+        # Only include token in development mode when email is not configured
+        if current_app.config.get('DEBUG') and not email_service.enabled:
+            response_data['reset_token'] = token  # Development only!
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         db.session.rollback()

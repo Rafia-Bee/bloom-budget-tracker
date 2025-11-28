@@ -25,6 +25,17 @@ Security best practices and implementation:
 - Environment variables
 - Production deployment security
 
+### [EMAIL_SETUP.md](EMAIL_SETUP.md)
+
+**📧 Email Integration Setup & Deployment:**
+
+- SendGrid setup and configuration
+- Environment variables
+- Development vs Production modes
+- Email template customization
+- Troubleshooting and monitoring
+- Rate limiting configuration
+
 ### [EMAIL_INTEGRATION_ISSUE.md](EMAIL_INTEGRATION_ISSUE.md)
 
 Email integration feature specification (GitHub Issue #23):

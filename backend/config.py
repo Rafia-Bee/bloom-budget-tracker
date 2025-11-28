@@ -40,6 +40,11 @@ class Config:
 
     CREDIT_CARD_LIMIT = int(os.getenv('CREDIT_CARD_LIMIT', 1500))
 
+    # Email configuration
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+    SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@bloom-budget.com')
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
