@@ -27,7 +27,6 @@ def export_data():
 
         export_data = {
             'exported_at': datetime.utcnow().isoformat(),
-            'user_id': current_user_id,
             'data': {}
         }
 
