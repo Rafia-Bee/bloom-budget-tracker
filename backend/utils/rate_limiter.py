@@ -15,9 +15,9 @@ _request_history = defaultdict(list)
 
 # Rate limits: {endpoint: (max_requests, time_window_seconds)}
 RATE_LIMITS = {
-    'auth.login': (5, 300),      # 5 attempts per 5 minutes
-    'auth.register': (3, 3600),   # 3 registrations per hour
-    'default': (100, 60)          # 100 requests per minute for other endpoints
+    'auth.login': (50, 300),      # 50 attempts per 5 minutes (increased for dev)
+    'auth.register': (10, 3600),  # 10 registrations per hour
+    'default': (1000, 60)         # 1000 requests per minute for other endpoints
 }
 
 

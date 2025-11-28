@@ -31,11 +31,18 @@ def get_salary_periods():
         salary_periods = query.order_by(SalaryPeriod.start_date.desc()).all()
 
         return jsonify([{
+            'period_id': sp.id,  # Use period_id for consistency with budget periods
             'id': sp.id,
-            'salary_amount': sp.salary_amount,
+            'initial_debit_balance': sp.initial_debit_balance,
+            'initial_credit_balance': sp.initial_credit_balance,
+            'credit_limit': sp.credit_limit,
+            'credit_budget_allowance': sp.credit_budget_allowance,
+            'total_budget_amount': sp.total_budget_amount,
             'fixed_bills_total': sp.fixed_bills_total,
             'remaining_amount': sp.remaining_amount,
             'weekly_budget': sp.weekly_budget,
+            'weekly_debit_budget': sp.weekly_debit_budget,
+            'weekly_credit_budget': sp.weekly_credit_budget,
             'start_date': sp.start_date.isoformat(),
             'end_date': sp.end_date.isoformat(),
             'is_active': sp.is_active,
@@ -504,10 +511,206 @@ def get_week_leftover(id, week_number):
         return jsonify({'error': str(e)}), 500
 
 
+@salary_periods_bp.route('/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_salary_period_full(id):
+    """Update salary period with full recalculation (similar to creation)"""
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id,
+            user_id=current_user_id
+        ).first()
+
+        if not salary_period:
+            return jsonify({'error': 'Salary period not found'}), 404
+
+        data = request.get_json()
+
+        # Get updated balance-based inputs
+        debit_balance = data['debit_balance']
+        credit_balance = data.get('credit_balance', 0)
+        credit_limit = data.get('credit_limit', credit_balance)
+        credit_allowance = data.get('credit_allowance', 0)
+        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+
+        # Validate credit allowance
+        if credit_allowance > credit_balance:
+            return jsonify({'error': 'Credit allowance cannot exceed available credit'}), 400
+
+        # Get fixed bills
+        fixed_bill_adjustments = data.get('fixed_bills', [])
+
+        if fixed_bill_adjustments:
+            fixed_bills_total = sum(bill['amount'] for bill in fixed_bill_adjustments)
+        else:
+            # Auto-detect from recurring expenses
+            fixed_bills = RecurringExpense.query.filter_by(
+                user_id=current_user_id,
+                is_active=True,
+                is_fixed_bill=True
+            ).all()
+            fixed_bills_total = sum(bill.amount for bill in fixed_bills)
+
+        # Calculate budget: debit + credit allowance - fixed bills
+        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        remaining_amount = total_budget
+        weekly_budget = remaining_amount // 4
+
+        # Calculate debit vs credit portions of weekly budget
+        debit_after_bills = debit_balance - fixed_bills_total
+        if debit_after_bills >= weekly_budget * 4:
+            weekly_debit_budget = weekly_budget
+            weekly_credit_budget = 0
+        else:
+            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_credit_budget = weekly_budget - weekly_debit_budget
+
+        end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+
+        # Check for overlapping salary periods (excluding current one)
+        overlapping = SalaryPeriod.query.filter(
+            SalaryPeriod.user_id == current_user_id,
+            SalaryPeriod.id != id,
+            or_(
+                and_(
+                    SalaryPeriod.start_date <= start_date,
+                    SalaryPeriod.end_date >= start_date
+                ),
+                and_(
+                    SalaryPeriod.start_date <= end_date,
+                    SalaryPeriod.end_date >= end_date
+                ),
+                and_(
+                    SalaryPeriod.start_date >= start_date,
+                    SalaryPeriod.end_date <= end_date
+                )
+            )
+        ).first()
+
+        if overlapping:
+            return jsonify({
+                'error': f'This period overlaps with an existing period ({overlapping.start_date} to {overlapping.end_date}). Please choose different dates.'
+            }), 400
+
+        # Update salary period fields
+        salary_period.initial_debit_balance = debit_balance
+        salary_period.initial_credit_balance = credit_balance
+        salary_period.credit_limit = credit_limit
+        salary_period.credit_budget_allowance = credit_allowance
+        salary_period.total_budget_amount = total_budget
+        salary_period.fixed_bills_total = fixed_bills_total
+        salary_period.remaining_amount = remaining_amount
+        salary_period.weekly_budget = weekly_budget
+        salary_period.weekly_debit_budget = weekly_debit_budget
+        salary_period.weekly_credit_budget = weekly_credit_budget
+        salary_period.start_date = start_date
+        salary_period.end_date = end_date
+
+        # Update weekly budget periods
+        current_start = start_date
+        for week_num in range(1, 5):
+            if week_num < 4:
+                week_end = current_start + timedelta(days=6)
+            else:
+                week_end = end_date
+
+            budget_period = BudgetPeriod.query.filter_by(
+                salary_period_id=salary_period.id,
+                week_number=week_num
+            ).first()
+
+            if budget_period:
+                budget_period.budget_amount = weekly_budget
+                budget_period.start_date = current_start
+                budget_period.end_date = week_end
+            else:
+                # Create if doesn't exist
+                budget_period = BudgetPeriod(
+                    user_id=current_user_id,
+                    salary_period_id=salary_period.id,
+                    week_number=week_num,
+                    budget_amount=weekly_budget,
+                    start_date=current_start,
+                    end_date=week_end,
+                    period_type='weekly'
+                )
+                db.session.add(budget_period)
+
+            current_start = week_end + timedelta(days=1)
+
+        # Update Initial Balance income entry if it exists
+        initial_income = Income.query.filter_by(
+            user_id=current_user_id,
+            type='Initial Balance',
+            scheduled_date=salary_period.start_date
+        ).first()
+
+        if initial_income:
+            initial_income.amount = debit_balance
+            initial_income.actual_date = start_date
+            initial_income.scheduled_date = start_date
+        elif debit_balance > 0:
+            # Create if doesn't exist
+            initial_income = Income(
+                user_id=current_user_id,
+                budget_period_id=None,
+                type='Initial Balance',
+                amount=debit_balance,
+                scheduled_date=start_date,
+                actual_date=start_date
+            )
+            db.session.add(initial_income)
+
+        # Update Pre-existing Credit Card Debt expense if credit changed
+        pre_existing_debt = credit_limit - credit_balance
+        debt_expense = Expense.query.filter_by(
+            user_id=current_user_id,
+            name='Pre-existing Credit Card Debt',
+            category='Debt',
+            subcategory='Credit Card'
+        ).filter(
+            Expense.date < start_date
+        ).order_by(Expense.date.desc()).first()
+
+        if pre_existing_debt > 0:
+            if debt_expense:
+                debt_expense.amount = pre_existing_debt
+            else:
+                # Create if doesn't exist
+                debt_expense = Expense(
+                    user_id=current_user_id,
+                    budget_period_id=None,
+                    name='Pre-existing Credit Card Debt',
+                    amount=pre_existing_debt,
+                    category='Debt',
+                    subcategory='Credit Card',
+                    payment_method='Credit card',
+                    date=start_date - timedelta(days=1),
+                    is_fixed_bill=False,
+                    notes='Existing credit card balance at budget period start'
+                )
+                db.session.add(debt_expense)
+        elif debt_expense:
+            # If debt is now 0, delete the expense
+            db.session.delete(debt_expense)
+
+        db.session.commit()
+
+        return jsonify({
+            'id': salary_period.id,
+            'message': 'Salary period updated successfully'
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @salary_periods_bp.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
-def update_salary_period(id):
-    """Update salary period (e.g., deactivate it)"""
+def update_salary_period_partial(id):
+    """Partially update salary period (e.g., deactivate it)"""
     try:
         current_user_id = int(get_jwt_identity())
 

@@ -12,7 +12,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api'
 
-function SalaryPeriodWizard({ onClose, onComplete }) {
+function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null }) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,6 +24,17 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [preview, setPreview] = useState(null)
   const [fixedBills, setFixedBills] = useState([])
+
+  // Pre-fill form when editing existing salary period
+  useEffect(() => {
+    if (editPeriod) {
+      setDebitBalance((editPeriod.initial_debit_balance / 100).toFixed(2))
+      setCreditBalance((editPeriod.initial_credit_balance / 100).toFixed(2))
+      setCreditLimit((editPeriod.credit_limit / 100).toFixed(2))
+      setCreditAllowance(editPeriod.credit_budget_allowance || 0)
+      setStartDate(editPeriod.start_date)
+    }
+  }, [editPeriod])
 
   const formatCurrency = (cents) => {
     return `€${(cents / 100).toFixed(2)}`
@@ -96,18 +107,27 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
     setLoading(true)
 
     try {
-      await api.post('/salary-periods', {
+      const payload = {
         debit_balance: parseCurrency(debitBalance),
         credit_balance: parseCurrency(creditBalance),
         credit_limit: parseCurrency(creditLimit),
         credit_allowance: creditAllowance,
         start_date: startDate,
         fixed_bills: fixedBills
-      })
+      }
+
+      if (editPeriod) {
+        // Update existing salary period
+        const periodId = editPeriod.period_id || editPeriod.id
+        await api.put(`/salary-periods/${periodId}`, payload)
+      } else {
+        // Create new salary period
+        await api.post('/salary-periods', payload)
+      }
 
       onComplete()
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create budget period')
+      setError(err.response?.data?.error || `Failed to ${editPeriod ? 'update' : 'create'} budget period`)
       setLoading(false)
     }
   }
@@ -127,7 +147,9 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-bloom-pink">Setup Weekly Budget</h2>
+            <h2 className="text-2xl font-bold text-bloom-pink">
+              {editPeriod ? 'Edit' : 'Setup'} Weekly Budget
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl font-light"
@@ -433,7 +455,10 @@ function SalaryPeriodWizard({ onClose, onComplete }) {
                   disabled={loading}
                   className="flex-1 bg-bloom-pink text-white py-3 rounded-lg font-semibold hover:bg-pink-600 disabled:opacity-50"
                 >
-                  {loading ? 'Creating...' : 'Create Budget Plan'}
+                  {loading
+                    ? `${editPeriod ? 'Updating' : 'Creating'}...`
+                    : `${editPeriod ? 'Update' : 'Create'} Budget Plan`
+                  }
                 </button>
               </div>
             </div>

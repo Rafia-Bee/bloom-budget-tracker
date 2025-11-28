@@ -49,6 +49,7 @@ function Dashboard({ setIsAuthenticated }) {
   const [currentPeriodIncome, setCurrentPeriodIncome] = useState(0)
   const [warningModal, setWarningModal] = useState(null)
   const [showSalaryWizard, setShowSalaryWizard] = useState(false)
+  const [editSalaryPeriod, setEditSalaryPeriod] = useState(null) // Period to edit in wizard
   const [showLeftoverModal, setShowLeftoverModal] = useState(false)
   const [leftoverModalData, setLeftoverModalData] = useState(null)
   const [currentWeekPeriod, setCurrentWeekPeriod] = useState(null) // Current week from salary period
@@ -141,7 +142,7 @@ function Dashboard({ setIsAuthenticated }) {
       ])
 
       setAllPeriods(allPeriodsRes.data)
-      
+
       // Combine salary periods with standalone budget periods (for historical data access)
       // Filter out budget periods that belong to salary periods (they have salary_period_id)
       const standalonePeriods = allPeriodsRes.data.filter(p => !p.salary_period_id)
@@ -564,8 +565,12 @@ function Dashboard({ setIsAuthenticated }) {
                 onPeriodChange={handlePeriodChange}
                 onCreateNew={() => setShowSalaryWizard(true)}
                 onEdit={(period) => {
-                  // Only allow editing salary periods, not individual weeks
-                  if (!period.salary_period_id) {
+                  // Check if this is a salary period (has weekly_budget field)
+                  if (period.weekly_budget !== undefined) {
+                    setEditSalaryPeriod(period)
+                    setShowSalaryWizard(true)
+                  } else if (!period.salary_period_id) {
+                    // Only allow editing standalone budget periods, not individual weeks
                     setSelectedPeriod(period)
                     setShowEditPeriod(true)
                   }
@@ -655,8 +660,15 @@ function Dashboard({ setIsAuthenticated }) {
                       setShowMobileMenu(false)
                     }}
                     onEdit={(period) => {
-                      setSelectedPeriod(period)
-                      setShowEditPeriod(true)
+                      // Check if this is a salary period (has weekly_budget field)
+                      if (period.weekly_budget !== undefined) {
+                        setEditSalaryPeriod(period)
+                        setShowSalaryWizard(true)
+                      } else if (!period.salary_period_id) {
+                        // Only allow editing standalone budget periods, not individual weeks
+                        setSelectedPeriod(period)
+                        setShowEditPeriod(true)
+                      }
                       setShowMobileMenu(false)
                     }}
                     onDelete={handleDeletePeriod}
@@ -711,7 +723,19 @@ function Dashboard({ setIsAuthenticated }) {
             <div className="max-w-md mx-auto mb-8">
               <WeeklyBudgetCard
                 ref={weeklyBudgetCardRef}
-                onSetupClick={() => setShowSalaryWizard(true)}
+                onSetupClick={async () => {
+                  // Check if there's an active salary period to edit
+                  try {
+                    const response = await salaryPeriodAPI.getAll()
+                    const activePeriod = response.data?.find(p => p.is_active)
+                    if (activePeriod) {
+                      setEditSalaryPeriod(activePeriod)
+                    }
+                  } catch (err) {
+                    console.error('Failed to check for active period:', err)
+                  }
+                  setShowSalaryWizard(true)
+                }}
                 onAllocateClick={(salaryPeriodId, weekNumber) => {
                   setLeftoverModalData({ salaryPeriodId, weekNumber })
                   setShowLeftoverModal(true)
@@ -736,7 +760,19 @@ function Dashboard({ setIsAuthenticated }) {
           {/* Weekly Budget Card */}
           <WeeklyBudgetCard
             ref={weeklyBudgetCardRef}
-            onSetupClick={() => setShowSalaryWizard(true)}
+            onSetupClick={async () => {
+              // Check if there's an active salary period to edit
+              try {
+                const response = await salaryPeriodAPI.getAll()
+                const activePeriod = response.data?.find(p => p.is_active)
+                if (activePeriod) {
+                  setEditSalaryPeriod(activePeriod)
+                }
+              } catch (err) {
+                console.error('Failed to check for active period:', err)
+              }
+              setShowSalaryWizard(true)
+            }}
             onAllocateClick={(salaryPeriodId, weekNumber) => {
               setLeftoverModalData({ salaryPeriodId, weekNumber })
               setShowLeftoverModal(true)
@@ -1176,10 +1212,19 @@ function Dashboard({ setIsAuthenticated }) {
       {/* Creates 4-week salary periods with automatic weekly budgets */}
       {showSalaryWizard && (
         <SalaryPeriodWizard
-          onClose={() => setShowSalaryWizard(false)}
-          onComplete={() => {
+          editPeriod={editSalaryPeriod}
+          onClose={() => {
             setShowSalaryWizard(false)
-            loadPeriods()
+            setEditSalaryPeriod(null)
+          }}
+          onComplete={async () => {
+            setShowSalaryWizard(false)
+            setEditSalaryPeriod(null)
+            // Reload all data
+            await loadPeriodsAndCurrentWeek()
+            await loadExpenses()
+            // Force refresh the weekly budget card
+            weeklyBudgetCardRef.current?.refresh()
           }}
         />
       )}
