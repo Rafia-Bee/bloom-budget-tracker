@@ -8,12 +8,15 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../api'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState('test@bloom.com')
   const [password, setPassword] = useState('password123')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetMessage, setResetMessage] = useState('')
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -48,6 +51,16 @@ function Login({ setIsAuthenticated }) {
     }
   }
 
+  const handleForgotPasswordSuccess = (message, token) => {
+    setResetMessage(message)
+    if (token) {
+      // In development, show the reset token for testing
+      setResetMessage(`${message}\n\nDevelopment Token: ${token}\nUse this URL: http://localhost:3001/reset-password/${token}`)
+    }
+    setShowForgotPassword(false)
+    setTimeout(() => setResetMessage(''), 10000) // Clear message after 10 seconds
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bloom-light to-bloom-pink/20">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
@@ -72,6 +85,12 @@ function Login({ setIsAuthenticated }) {
             </div>
           )}
 
+          {resetMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              <pre className="text-sm whitespace-pre-wrap">{resetMessage}</pre>
+            </div>
+          )}
+
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Email</label>
             <input
@@ -85,7 +104,16 @@ function Login({ setIsAuthenticated }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Password</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-gray-700 font-semibold">Password</label>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-bloom-pink text-sm hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <input
               type="password"
               value={password}
@@ -112,6 +140,13 @@ function Login({ setIsAuthenticated }) {
           </Link>
         </p>
       </div>
+
+      {showForgotPassword && (
+        <ForgotPasswordModal
+          onClose={() => setShowForgotPassword(false)}
+          onSuccess={handleForgotPasswordSuccess}
+        />
+      )}
     </div>
   )
 }

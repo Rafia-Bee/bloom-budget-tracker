@@ -22,6 +22,7 @@ from backend.routes.debts import debts_bp
 from backend.routes.recurring_expenses import recurring_expenses_bp
 from backend.routes.recurring_generation import recurring_generation_bp
 from backend.routes.salary_periods import salary_periods_bp
+from backend.routes.password_reset import password_reset_bp
 
 
 def create_app(config_name='development'):
@@ -38,7 +39,8 @@ def create_app(config_name='development'):
             print('WARNING: JWT_SECRET_KEY not properly set in production!')
 
     # CORS configuration - restrict to frontend domain only
-    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(',')
+    cors_origins = os.getenv(
+        'CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001').split(',')
     CORS(app, origins=cors_origins, supports_credentials=True)
 
     db.init_app(app)
@@ -50,9 +52,12 @@ def create_app(config_name='development'):
     app.register_blueprint(income_bp, url_prefix='/income')
     app.register_blueprint(budget_periods_bp)
     app.register_blueprint(debts_bp)
-    app.register_blueprint(recurring_expenses_bp, url_prefix='/recurring-expenses')
-    app.register_blueprint(recurring_generation_bp, url_prefix='/recurring-generation')
+    app.register_blueprint(recurring_expenses_bp,
+                           url_prefix='/recurring-expenses')
+    app.register_blueprint(recurring_generation_bp,
+                           url_prefix='/recurring-generation')
     app.register_blueprint(salary_periods_bp, url_prefix='/salary-periods')
+    app.register_blueprint(password_reset_bp, url_prefix='/auth')
 
     with app.app_context():
         db.create_all()

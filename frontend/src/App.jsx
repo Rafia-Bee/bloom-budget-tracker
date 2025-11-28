@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard'
 import Debts from './pages/Debts'
 import RecurringExpenses from './pages/RecurringExpenses'
 import TestingTools from './pages/TestingTools'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -42,6 +43,10 @@ function App() {
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register setIsAuthenticated={setIsAuthenticated} />}
+        />
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
         />
         <Route
           path="/dashboard"

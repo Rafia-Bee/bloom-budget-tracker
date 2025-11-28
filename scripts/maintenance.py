@@ -11,16 +11,15 @@ Available commands:
   verify-db           - Verify database integrity
 """
 
+from datetime import datetime
+from sqlalchemy import text
+from backend.models.database import db, Expense, RecurringExpense, Debt
+from backend.app import create_app
 import sys
 import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from backend.app import create_app
-from backend.models.database import db, Expense, RecurringExpense, Debt
-from sqlalchemy import text
-from datetime import datetime
 
 
 def print_header(title):
@@ -41,7 +40,8 @@ def migrate_add_archived():
 
             if 'archived' not in columns:
                 print("Adding 'archived' column to debts table...")
-                conn.execute(text("ALTER TABLE debts ADD COLUMN archived BOOLEAN DEFAULT 0 NOT NULL"))
+                conn.execute(
+                    text("ALTER TABLE debts ADD COLUMN archived BOOLEAN DEFAULT 0 NOT NULL"))
                 conn.commit()
                 print("✓ 'archived' column added successfully")
             else:
@@ -116,6 +116,39 @@ def migrate_add_recurring_expenses():
         raise
 
 
+def migrate_add_password_reset_tokens():
+    """Add password_reset_tokens table."""
+    print("Checking for password_reset_tokens table...")
+
+    with db.engine.connect() as conn:
+        try:
+            # Check if table exists
+            result = conn.execute(text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='password_reset_tokens'"))
+            table_exists = result.fetchone() is not None
+
+            if not table_exists:
+                print("Creating password_reset_tokens table...")
+                conn.execute(text("""
+                    CREATE TABLE password_reset_tokens (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        token VARCHAR(255) UNIQUE NOT NULL,
+                        expires_at DATETIME NOT NULL,
+                        is_used BOOLEAN DEFAULT 0 NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users (id)
+                    )
+                """))
+                conn.commit()
+                print("✓ password_reset_tokens table created successfully")
+            else:
+                print("✓ password_reset_tokens table already exists")
+        except Exception as e:
+            print(f"✗ Error: {e}")
+            conn.rollback()
+
+
 def run_all_migrations():
     """Run all database migrations."""
     print_header("Running Database Migrations")
@@ -123,6 +156,8 @@ def run_all_migrations():
     migrate_add_archived()
     print()
     migrate_add_recurring_expenses()
+    print()
+    migrate_add_password_reset_tokens()
 
     print("\n✓ All migrations completed successfully!")
 
@@ -144,7 +179,8 @@ def cleanup_recurring_expenses():
     for expense in orphaned:
         print(f"  • {expense.name} - €{expense.amount/100:.2f} on {expense.date}")
 
-    confirm = input(f"\nDelete these {len(orphaned)} expenses? (yes/no): ").lower()
+    confirm = input(
+        f"\nDelete these {len(orphaned)} expenses? (yes/no): ").lower()
 
     if confirm == 'yes':
         for expense in orphaned:
@@ -196,12 +232,18 @@ def verify_database():
 
     try:
         # Count records
-        user_count = db.session.execute(text("SELECT COUNT(*) FROM users")).scalar()
-        expense_count = db.session.execute(text("SELECT COUNT(*) FROM expenses")).scalar()
-        income_count = db.session.execute(text("SELECT COUNT(*) FROM income")).scalar()
-        debt_count = db.session.execute(text("SELECT COUNT(*) FROM debts")).scalar()
-        recurring_count = db.session.execute(text("SELECT COUNT(*) FROM recurring_expenses")).scalar()
-        period_count = db.session.execute(text("SELECT COUNT(*) FROM budget_periods")).scalar()
+        user_count = db.session.execute(
+            text("SELECT COUNT(*) FROM users")).scalar()
+        expense_count = db.session.execute(
+            text("SELECT COUNT(*) FROM expenses")).scalar()
+        income_count = db.session.execute(
+            text("SELECT COUNT(*) FROM income")).scalar()
+        debt_count = db.session.execute(
+            text("SELECT COUNT(*) FROM debts")).scalar()
+        recurring_count = db.session.execute(
+            text("SELECT COUNT(*) FROM recurring_expenses")).scalar()
+        period_count = db.session.execute(
+            text("SELECT COUNT(*) FROM budget_periods")).scalar()
 
         print("Record Counts:")
         print(f"  Users:              {user_count}")

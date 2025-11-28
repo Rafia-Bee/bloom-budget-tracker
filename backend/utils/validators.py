@@ -8,6 +8,7 @@ and ensure data integrity.
 import re
 from datetime import datetime
 
+
 def validate_expense_name(name):
     """Validate expense name (max 200 chars, no special chars that could cause issues)."""
     if not name or len(name) > 200:
@@ -111,3 +112,12 @@ ALLOWED_RECURRING_FREQUENCIES = [
     'monthly',
     'custom'
 ]
+
+
+def validate_email(email):
+    """Validate email address format."""
+    if not email or len(email) > 120:
+        return False
+    # Basic email regex pattern
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(email_pattern, email) is not None

@@ -41,7 +41,7 @@ Start-Sleep -Seconds 1
 
 # Get the script directory (Bloom folder)
 $BloomDir = $PSScriptRoot
-$VenvPath = Split-Path $BloomDir -Parent | Join-Path -ChildPath ".venv"
+$VenvPath = Join-Path $BloomDir ".venv"
 
 # Start Flask Backend
 Write-Host "`n🔧 Starting Flask Backend (Port 5000)..." -ForegroundColor Cyan
