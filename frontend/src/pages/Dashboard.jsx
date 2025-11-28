@@ -206,22 +206,27 @@ function Dashboard({ setIsAuthenticated }) {
       // First, get ALL income (including Initial Balance which has no budget_period_id)
       const allIncomeRes = await incomeAPI.getAll({})
       const allIncome = allIncomeRes.data
+      const today = new Date()
 
-      // Add all income to totals (Initial Balance income has no budget_period_id)
+      // Add only realized income to totals (income that has already occurred)
       allIncome.forEach(income => {
         const amount = income.amount / 100
-        cumulativeIncome += amount
+        const incomeDate = new Date(income.date || income.actual_date)
 
-        // If this income belongs to current period, add to current period income
-        if (income.budget_period_id === currentPeriod.id) {
-          currentIncome += amount
-        }
-        // If it's Initial Balance (no budget_period_id), add to current if it's within period dates
-        else if (!income.budget_period_id && income.actual_date) {
-          const incomeDate = new Date(income.actual_date)
-          const periodStart = new Date(currentPeriod.start_date)
-          if (incomeDate >= periodStart) {
+        // Only include income that has already occurred
+        if (incomeDate <= today) {
+          cumulativeIncome += amount
+
+          // If this income belongs to current period, add to current period income
+          if (income.budget_period_id === currentPeriod.id) {
             currentIncome += amount
+          }
+          // If it's Initial Balance (no budget_period_id), add to current if it's within period dates
+          else if (!income.budget_period_id) {
+            const periodStart = new Date(currentPeriod.start_date)
+            if (incomeDate >= periodStart) {
+              currentIncome += amount
+            }
           }
         }
       })
