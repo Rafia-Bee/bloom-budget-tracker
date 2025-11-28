@@ -10,10 +10,11 @@ Endpoints:
 - GET /auth/me: Get current user info
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
+from backend.services.email_service import email_service
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -51,6 +52,20 @@ def register():
     db.session.add(defaults)
     db.session.add(credit_settings)
     db.session.commit()
+
+    # Send welcome email
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:5173')
+    email_result = email_service.send_welcome_email(
+        to_email=user.email,
+        user_name=user.email,
+        frontend_url=frontend_url
+    )
+
+    # Log email result but don't block registration if email fails
+    if email_result.get('success'):
+        current_app.logger.info(f"Welcome email sent to {user.email}")
+    else:
+        current_app.logger.warning(f"Failed to send welcome email to {user.email}: {email_result.get('error')}")
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))

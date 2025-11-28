@@ -143,11 +143,11 @@ class EmailService:
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                     overflow: hidden;
                 }}
-                .header {{
-                    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+                .header {
+                    background: linear-gradient(135deg, #ffc1e0 0%, #d4b5ff 100%);
                     padding: 40px 20px;
                     text-align: center;
-                }}
+                }
                 .logo {{
                     font-size: 32px;
                     font-weight: bold;
@@ -166,27 +166,28 @@ class EmailService:
                     margin: 0 0 20px 0;
                     color: #4b5563;
                 }}
-                .button {{
+                .button {
                     display: inline-block;
                     padding: 14px 32px;
-                    background-color: #ec4899;
+                    background-color: #ff9dcd;
                     color: #ffffff;
                     text-decoration: none;
                     border-radius: 8px;
                     font-weight: 600;
                     margin: 20px 0;
                     transition: background-color 0.3s;
-                }}
-                .button:hover {{
-                    background-color: #db2777;
-                }}
-                .expiry-notice {{
-                    background-color: #fef3c7;
-                    border-left: 4px solid #f59e0b;
+                    box-shadow: 0 2px 4px rgba(255, 157, 205, 0.3);
+                }
+                .button:hover {
+                    background-color: #ff7cbd;
+                }
+                .expiry-notice {
+                    background-color: #fff5e6;
+                    border-left: 4px solid #ffcc99;
                     padding: 12px 16px;
                     margin: 20px 0;
                     border-radius: 4px;
-                }}
+                }
                 .security-notice {{
                     font-size: 14px;
                     color: #6b7280;
@@ -269,6 +270,217 @@ class EmailService:
         return self.send_email(
             to_email=to_email,
             subject="Reset Your Password - Bloom Budget",
+            html_content=html_content,
+            plain_text_content=plain_text_content
+        )
+
+    def send_welcome_email(
+        self,
+        to_email: str,
+        user_name: str,
+        frontend_url: str
+    ) -> Dict[str, Any]:
+        """
+        Send a welcome email to newly registered users.
+
+        Args:
+            to_email: Recipient email address
+            user_name: User's name or email
+            frontend_url: Frontend URL for login link
+
+        Returns:
+            Dict with success status and message/error
+        """
+        login_link = f"{frontend_url}/login"
+
+        # HTML email content with pastel theme
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Welcome to Bloom Budget</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #fef8f5;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background-color: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 12px rgba(255, 157, 205, 0.15);
+                    overflow: hidden;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #ffc1e0 0%, #d4b5ff 100%);
+                    padding: 50px 20px;
+                    text-align: center;
+                }}
+                .logo {{
+                    font-size: 48px;
+                    margin-bottom: 10px;
+                }}
+                .header-text {{
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    margin: 0;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                }}
+                .content {{
+                    padding: 40px 30px;
+                }}
+                h1 {{
+                    color: #ff9dcd;
+                    font-size: 26px;
+                    margin: 0 0 20px 0;
+                }}
+                p {{
+                    margin: 0 0 20px 0;
+                    color: #4b5563;
+                    font-size: 16px;
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 14px 32px;
+                    background-color: #ff9dcd;
+                    color: #ffffff;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    margin: 20px 0;
+                    transition: background-color 0.3s;
+                    box-shadow: 0 2px 4px rgba(255, 157, 205, 0.3);
+                }}
+                .button:hover {{
+                    background-color: #ff7cbd;
+                }}
+                .features {{
+                    background-color: #fef8f5;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 30px 0;
+                }}
+                .features h2 {{
+                    color: #ff9dcd;
+                    font-size: 20px;
+                    margin: 0 0 15px 0;
+                }}
+                .feature-item {{
+                    display: flex;
+                    align-items: start;
+                    margin-bottom: 12px;
+                }}
+                .feature-icon {{
+                    font-size: 20px;
+                    margin-right: 10px;
+                }}
+                .footer {{
+                    background-color: #fef8f5;
+                    padding: 25px;
+                    text-align: center;
+                    font-size: 14px;
+                    color: #9ca3af;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="logo">🌸</div>
+                    <div class="header-text">Welcome to Bloom!</div>
+                </div>
+                <div class="content">
+                    <h1>Hi there! 👋</h1>
+                    <p>We're thrilled to have you join the Bloom community! Your account has been successfully created and you're ready to start building better financial habits.</p>
+
+                    <center>
+                        <a href="{login_link}" class="button">Get Started</a>
+                    </center>
+
+                    <div class="features">
+                        <h2>What you can do with Bloom:</h2>
+                        <div class="feature-item">
+                            <span class="feature-icon">💰</span>
+                            <span>Track your 4-week salary periods with weekly budgets</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">💳</span>
+                            <span>Manage debit and credit card balances in one place</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🔄</span>
+                            <span>Automate recurring expenses and bills</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">📊</span>
+                            <span>Visualize your spending with beautiful insights</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🌱</span>
+                            <span>Build financial habits that grow with you</span>
+                        </div>
+                    </div>
+
+                    <p><strong>Getting Started:</strong></p>
+                    <ol style="margin: 0 0 20px 0; padding-left: 20px; color: #4b5563;">
+                        <li style="margin-bottom: 8px;">Set up your first salary period</li>
+                        <li style="margin-bottom: 8px;">Enter your initial balances</li>
+                        <li style="margin-bottom: 8px;">Add recurring expenses to automate tracking</li>
+                        <li style="margin-bottom: 8px;">Start logging transactions and watch your budget bloom!</li>
+                    </ol>
+
+                    <p>If you have any questions or need help getting started, just reply to this email. We're here to help! 💕</p>
+                </div>
+                <div class="footer">
+                    <p><strong>Bloom Budget</strong></p>
+                    <p>Financial Habits That Grow With You</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Plain text fallback
+        plain_text_content = f"""
+        Welcome to Bloom Budget!
+
+        Hi there!
+
+        We're thrilled to have you join the Bloom community! Your account has been successfully created and you're ready to start building better financial habits.
+
+        What you can do with Bloom:
+        💰 Track your 4-week salary periods with weekly budgets
+        💳 Manage debit and credit card balances in one place
+        🔄 Automate recurring expenses and bills
+        📊 Visualize your spending with beautiful insights
+        🌱 Build financial habits that grow with you
+
+        Getting Started:
+        1. Set up your first salary period
+        2. Enter your initial balances
+        3. Add recurring expenses to automate tracking
+        4. Start logging transactions and watch your budget bloom!
+
+        Login here: {login_link}
+
+        If you have any questions or need help getting started, just reply to this email. We're here to help!
+
+        ---
+        Bloom Budget
+        Financial Habits That Grow With You
+        """
+
+        return self.send_email(
+            to_email=to_email,
+            subject="Welcome to Bloom Budget! 🌸",
             html_content=html_content,
             plain_text_content=plain_text_content
         )

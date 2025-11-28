@@ -6,10 +6,11 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 function ResetPassword() {
-  const { token } = useParams()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token')
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

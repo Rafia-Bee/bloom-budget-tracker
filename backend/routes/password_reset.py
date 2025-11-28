@@ -64,14 +64,14 @@ def forgot_password():
             current_app.logger.error(f"Failed to send password reset email: {email_result.get('error')}")
 
         # Always return success message for security (don't reveal if email exists)
-        # In development with no email configured, also return token for testing
         response_data = {
             'message': 'If an account exists with this email, a password reset link has been sent.'
         }
 
-        # Only include token in development mode when email is not configured
-        if current_app.config.get('DEBUG') and not email_service.enabled:
+        # In development mode, always include token for testing (even if email is configured)
+        if current_app.config.get('DEBUG'):
             response_data['reset_token'] = token  # Development only!
+            current_app.logger.info(f"Development mode: Reset token for {user.email}: {token}")
 
         return jsonify(response_data), 200
 

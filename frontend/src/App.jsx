@@ -44,7 +44,7 @@ function App() {
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register setIsAuthenticated={setIsAuthenticated} />}
         />
         <Route
-          path="/reset-password/:token"
+          path="/reset-password"
           element={<ResetPassword />}
         />
         <Route
