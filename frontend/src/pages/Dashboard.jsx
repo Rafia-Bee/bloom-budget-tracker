@@ -48,6 +48,7 @@ function Dashboard({ setIsAuthenticated }) {
   const [currentPeriodCreditSpent, setCurrentPeriodCreditSpent] = useState(0)
   const [currentPeriodIncome, setCurrentPeriodIncome] = useState(0)
   const [warningModal, setWarningModal] = useState(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null) // {type: 'expense'|'income', id, transaction}
   const [showSalaryWizard, setShowSalaryWizard] = useState(false)
   const [editSalaryPeriod, setEditSalaryPeriod] = useState(null) // Period to edit in wizard
   const [showLeftoverModal, setShowLeftoverModal] = useState(false)
@@ -995,10 +996,11 @@ function Dashboard({ setIsAuthenticated }) {
                           </svg>
                         </button>
                         <button
-                          onClick={() => transaction.transactionType === 'income'
-                            ? handleDeleteIncome(transaction.id)
-                            : handleDeleteExpense(transaction.id)
-                          }
+                          onClick={() => setDeleteConfirmation({
+                            type: transaction.transactionType,
+                            id: transaction.id,
+                            transaction: transaction
+                          })}
                           className="text-red-500 hover:text-red-700 transition"
                           title="Delete"
                         >
@@ -1248,6 +1250,56 @@ function Dashboard({ setIsAuthenticated }) {
             loadTransactionsAndBalances()
           }}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Transaction?</h3>
+            <p className="text-gray-600 mb-2">
+              Are you sure you want to delete this {deleteConfirmation.type}?
+            </p>
+            <div className="bg-gray-50 rounded-lg p-3 mb-6">
+              <p className="text-sm text-gray-500">
+                {deleteConfirmation.type === 'income' ? 'Type' : 'Name'}
+              </p>
+              <p className="font-semibold text-gray-800">
+                {deleteConfirmation.type === 'income'
+                  ? deleteConfirmation.transaction.type
+                  : deleteConfirmation.transaction.name}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">Amount</p>
+              <p className="font-semibold text-gray-800">
+                €{(deleteConfirmation.transaction.amount / 100).toFixed(2)}
+              </p>
+            </div>
+            <p className="text-sm text-red-600 mb-6">
+              ⚠️ This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmation(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (deleteConfirmation.type === 'income') {
+                    handleDeleteIncome(deleteConfirmation.id)
+                  } else {
+                    handleDeleteExpense(deleteConfirmation.id)
+                  }
+                  setDeleteConfirmation(null)
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Export/Import Modal */}
