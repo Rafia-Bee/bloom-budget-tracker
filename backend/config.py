@@ -47,6 +47,12 @@ class DevelopmentConfig(Config):
     FLASK_ENV = 'development'
     USE_RELOADER = False  # Disable auto-reloader to prevent server restarts
 
+    # Override for SQLite - no SSL config
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
+
 
 class ProductionConfig(Config):
     DEBUG = False
