@@ -350,9 +350,11 @@ function RecurringExpenses() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setShowConfirmGenerate(true)}
-              disabled={generating}
+              disabled={generating || recurringExpenses.filter(e => e.is_active).length === 0}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              title="Generate due recurring expenses now"
+              title={recurringExpenses.filter(e => e.is_active).length === 0
+                ? "No active recurring expenses to generate"
+                : "Generate due recurring expenses now"}
             >
               {generating ? 'Generating...' : '⚡ Generate Now'}
             </button>
