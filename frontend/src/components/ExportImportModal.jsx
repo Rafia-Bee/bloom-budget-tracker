@@ -13,9 +13,32 @@ function ExportImportModal({ onClose, mode = 'export' }) {
     recurring_expenses: true,
     salary_periods: true
   })
+  const [exportFormat, setExportFormat] = useState('json') // 'json' or 'csv'
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  const convertToCSV = (data, type) => {
+    if (!data || data.length === 0) return ''
+
+    const headers = Object.keys(data[0])
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(header => {
+          const value = row[header]
+          // Escape quotes and wrap in quotes if contains comma or quote
+          if (value === null || value === undefined) return ''
+          const stringValue = String(value)
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`
+          }
+          return stringValue
+        }).join(',')
+      )
+    ]
+    return csvRows.join('\n')
+  }
 
   const handleExport = async () => {
     setLoading(true)
@@ -43,16 +66,37 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         }
       )
 
-      // Download as JSON file
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `bloom-export-${new Date().toISOString().split('T')[0]}.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      if (exportFormat === 'json') {
+        // Download as JSON file
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `bloom-export-${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } else {
+        // Download as CSV files (one per type)
+        const exportData = response.data.data
+        const dateStr = new Date().toISOString().split('T')[0]
+
+        for (const type of selectedTypes) {
+          if (exportData[type] && exportData[type].length > 0) {
+            const csv = convertToCSV(exportData[type], type)
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `bloom-${type}-${dateStr}.csv`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+          }
+        }
+      }
 
       setMessage('Data exported successfully!')
       setTimeout(() => onClose(), 2000)
@@ -169,6 +213,39 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                 />
                 <span className="text-gray-700">Salary Periods</span>
               </label>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700 font-semibold mb-3">Export Format:</p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="format"
+                    value="json"
+                    checked={exportFormat === 'json'}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                    className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
+                  />
+                  <span className="text-gray-700">JSON (for import)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="format"
+                    value="csv"
+                    checked={exportFormat === 'csv'}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                    className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
+                  />
+                  <span className="text-gray-700">CSV (for Excel)</span>
+                </label>
+              </div>
+              {exportFormat === 'csv' && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Note: CSV exports create separate files for each data type
+                </p>
+              )}
             </div>
 
             <button
