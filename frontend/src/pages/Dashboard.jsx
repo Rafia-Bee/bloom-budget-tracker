@@ -535,9 +535,9 @@ function Dashboard({ setIsAuthenticated }) {
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center md:hidden">
-            <div>
+            <div className="max-w-[70%]">
               <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-xs text-gray-600">Financial Habits</p>
+              <p className="text-[10px] leading-tight text-gray-600">Financial Habits That Grow With You</p>
             </div>
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
