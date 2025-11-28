@@ -2,61 +2,54 @@
 
 Comprehensive documentation for the Bloom budget tracking application.
 
-## Documentation Files
-
-### [FEATURES.md](FEATURES.md)
-Detailed feature specifications including:
-- Quick expense entry workflow
-- Category hierarchy and structure
-- AI subcategorization system
-- Income types and calculations
-- Payment method tracking
-- Balance calculations
-- End-of-period suggestions
-- Database schema
-- Future feature roadmap
-
-### [FRONTEND_REQUIREMENTS.md](FRONTEND_REQUIREMENTS.md)
-Frontend design system and requirements:
-- Pastel pink color scheme
-- Typography and spacing guidelines
-- Dashboard layout specifications
-- Component designs (modals, forms, cards)
-- Responsive breakpoints
-- Accessibility requirements
-- Performance goals
-- Browser support
-- State management recommendations
-- Future UI enhancements
+## Active Documentation
 
 ### [RECURRING_EXPENSES.md](RECURRING_EXPENSES.md)
-Recurring expenses automation documentation:
-- Feature overview
-- Data model and API endpoints
-- Auto-generation system
+
+Recurring expenses automation system:
+
+- Feature overview and data model
+- API endpoints and auto-generation
 - Frontend components
 - Scheduling options (weekly/biweekly/monthly/custom)
 - Windows Task Scheduler setup
 - Usage examples
 
+### [SECURITY.md](SECURITY.md)
+
+Security best practices and implementation:
+
+- Authentication & JWT tokens
+- Password hashing
+- API security
+- Environment variables
+- Production deployment security
+
+### [EMAIL_INTEGRATION_ISSUE.md](EMAIL_INTEGRATION_ISSUE.md)
+
+Email integration feature specification (GitHub Issue #23):
+
+- Password reset flow
+- Email service integration (SendGrid/SES)
+- Email templates
+- Implementation roadmap
+
 ## Quick Links
 
-- [Main README](../README.md) - Project overview and getting started
+- [Main README](../README.md) - Project overview and setup
 - [Scripts Documentation](../scripts/README.md) - Maintenance and utility scripts
-- [Backend API](../backend/README.md) - API documentation (if available)
+- [GitHub Issues](https://github.com/Rafia-Bee/bloom-budget-tracker/issues) - Feature tracking
+- [Archive](archive/) - Historical documentation
+
+## Feature Tracking
+
+Active features and enhancements are tracked in [GitHub Issues](https://github.com/Rafia-Bee/bloom-budget-tracker/issues).
 
 ## Contributing
 
 When adding new features:
-1. Update relevant documentation files
-2. Add examples and usage instructions
-3. Include screenshots if UI-related
-4. Update the main README if needed
 
-## Documentation Standards
-
-- Use Markdown formatting
-- Include code examples with proper syntax highlighting
-- Add table of contents for long documents
-- Keep documentation in sync with code changes
-- Use clear, concise language
+1. Create or update GitHub issue
+2. Add technical documentation here if complex
+3. Update main README for setup changes
+4. Keep documentation concise and current
