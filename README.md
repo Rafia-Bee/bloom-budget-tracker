@@ -266,6 +266,7 @@ The app is deployed to Netlify and accessible at:
 
 ## Documentation
 
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment setup and troubleshooting
 - **[Feature Specifications](docs/FEATURES.md)** - Detailed feature documentation
 - **[Frontend Requirements](docs/FRONTEND_REQUIREMENTS.md)** - UI/UX design system
 - **[Recurring Expenses](docs/RECURRING_EXPENSES.md)** - Automation setup and usage
