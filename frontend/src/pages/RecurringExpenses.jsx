@@ -54,6 +54,14 @@ function RecurringExpenses() {
   const handleAdd = async (data) => {
     try {
       await recurringExpenseAPI.create(data)
+
+      // Automatically generate the first instance
+      try {
+        await recurringExpenseAPI.generateNow(false, 90)
+      } catch (err) {
+        console.warn('Failed to auto-generate recurring expense:', err)
+      }
+
       await loadRecurringExpenses()
       setShowAddModal(false)
     } catch (error) {
