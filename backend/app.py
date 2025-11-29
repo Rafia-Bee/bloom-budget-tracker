@@ -9,7 +9,8 @@ Functions:
 """
 
 import os
-from flask import Flask
+import time
+from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from backend.config import config
@@ -63,6 +64,17 @@ def create_app(config_name='development'):
 
     with app.app_context():
         db.create_all()
+
+    # DEVELOPMENT ONLY: Simulate cold start delay (only on first request)
+    first_request_done = {'value': False}
+
+    @app.before_request
+    def simulate_cold_start():
+        if config_name == 'development' and os.getenv('SIMULATE_COLD_START') == 'true':
+            if not first_request_done['value'] and request.path != '/' and not request.path.startswith('/auth/'):
+                first_request_done['value'] = True
+                print(f"Simulating cold start delay for: {request.path}")
+                time.sleep(4)
 
     # Security headers
     @app.after_request

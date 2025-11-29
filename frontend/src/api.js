@@ -10,6 +10,12 @@ import axios from "axios";
 // Use environment variable for API URL in production, proxy in development
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
+let loadingCallback = null;
+
+export const setLoadingCallback = (callback) => {
+    loadingCallback = callback;
+};
+
 const api = axios.create({
     baseURL: API_URL,
 });
@@ -19,12 +25,37 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    config.metadata = { startTime: Date.now() };
+
+    const timeoutId = setTimeout(() => {
+        if (loadingCallback) {
+            loadingCallback(true);
+        }
+    }, 500);
+    config.metadata.timeoutId = timeoutId;
+
     return config;
 });
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (response.config.metadata?.timeoutId) {
+            clearTimeout(response.config.metadata.timeoutId);
+        }
+        if (loadingCallback) {
+            loadingCallback(false);
+        }
+        return response;
+    },
     async (error) => {
+        if (error.config?.metadata?.timeoutId) {
+            clearTimeout(error.config.metadata.timeoutId);
+        }
+        if (loadingCallback) {
+            loadingCallback(false);
+        }
+
         const originalRequest = error.config;
 
         // Don't redirect if the 401 is from login/register endpoints

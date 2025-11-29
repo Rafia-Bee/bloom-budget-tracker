@@ -69,3 +69,6 @@ Thumbs.db
 
 # Local Netlify folder
 .netlify
+
+# Design resources and working files
+docs/resources/
