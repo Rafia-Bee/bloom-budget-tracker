@@ -11,8 +11,8 @@ import { authAPI } from '../api'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 function Login({ setIsAuthenticated }) {
-  const [email, setEmail] = useState('test@bloom.com')
-  const [password, setPassword] = useState('password123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
@@ -107,6 +107,7 @@ function Login({ setIsAuthenticated }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@example.com"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
               pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
               required
@@ -128,6 +129,7 @@ function Login({ setIsAuthenticated }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
               minLength={6}
               required
