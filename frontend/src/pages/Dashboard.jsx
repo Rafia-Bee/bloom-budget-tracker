@@ -19,6 +19,7 @@ import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
 import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
 import ExportImportModal from '../components/ExportImportModal'
+import DraggableFloatingButton from '../components/DraggableFloatingButton'
 import BankImportModal from '../components/BankImportModal'
 
 function Dashboard({ setIsAuthenticated }) {
@@ -1205,53 +1206,44 @@ function Dashboard({ setIsAuthenticated }) {
 
       {/* Floating Add Button with Menu - Only show if period exists */}
       {currentPeriod && (
-        <div className="fixed bottom-8 right-8 add-menu">
-          {showAddMenu && (
-            <div className="absolute bottom-20 right-0 bg-white rounded-lg shadow-xl p-2 mb-2 min-w-[150px]">
-              <button
-                onClick={() => {
-                  setModalType('income')
-                  setShowAddModal(true)
-                  setShowAddMenu(false)
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
-              >
-                <span className="text-2xl">💰</span>
-                <span className="font-semibold text-gray-700">Add Income</span>
-              </button>
-              <button
-                onClick={() => {
-                  setModalType('expense')
-                  setShowAddModal(true)
-                  setShowAddMenu(false)
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
-              >
-                <span className="text-2xl">💸</span>
-                <span className="font-semibold text-gray-700">Add Expense</span>
-              </button>
-              <button
-                onClick={() => {
-                  setModalType('debt')
-                  setShowAddModal(true)
-                  setShowAddMenu(false)
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
-              >
-                <span className="text-2xl">💳</span>
-                <span className="font-semibold text-gray-700">Debt Payment</span>
-              </button>
-            </div>
-          )}
+        <DraggableFloatingButton
+          showMenu={showAddMenu}
+          onToggleMenu={() => setShowAddMenu(!showAddMenu)}
+        >
           <button
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className="bg-bloom-pink text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-bloom-pink/90 transition-transform hover:scale-110"
+            onClick={() => {
+              setModalType('income')
+              setShowAddModal(true)
+              setShowAddMenu(false)
+            }}
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <span className="text-2xl">💰</span>
+            <span className="font-semibold text-gray-700">Add Income</span>
           </button>
-        </div>
+          <button
+            onClick={() => {
+              setModalType('expense')
+              setShowAddModal(true)
+              setShowAddMenu(false)
+            }}
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+          >
+            <span className="text-2xl">💸</span>
+            <span className="font-semibold text-gray-700">Add Expense</span>
+          </button>
+          <button
+            onClick={() => {
+              setModalType('debt')
+              setShowAddModal(true)
+              setShowAddMenu(false)
+            }}
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+          >
+            <span className="text-2xl">💳</span>
+            <span className="font-semibold text-gray-700">Debt Payment</span>
+          </button>
+        </DraggableFloatingButton>
       )}
 
       {/* Add Modals */}
