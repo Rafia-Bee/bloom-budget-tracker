@@ -97,20 +97,27 @@ class BudgetPeriod(db.Model):
     __tablename__ = 'budget_periods'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'users.id'), nullable=False, index=True)
     salary_period_id = db.Column(db.Integer, db.ForeignKey(
         'salary_periods.id'), nullable=True)
     # 1-4 for weekly budgets
     week_number = db.Column(db.Integer, nullable=True)
     # Weekly budget allocation
     budget_amount = db.Column(db.Integer, nullable=True)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    start_date = db.Column(db.Date, nullable=False, index=True)
+    end_date = db.Column(db.Date, nullable=False, index=True)
     period_type = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     expenses = db.relationship('Expense', backref='budget_period', lazy=True)
     income = db.relationship('Income', backref='budget_period', lazy=True)
+
+    # Composite index for active period queries
+    __table_args__ = (
+        db.Index('idx_budget_period_active',
+                 'user_id', 'start_date', 'end_date'),
+    )
 
 
 class Expense(db.Model):

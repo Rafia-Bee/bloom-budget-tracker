@@ -96,10 +96,11 @@ function AddExpenseModal({ onClose, onAdd }) {
         }
 
         await recurringExpenseAPI.create(recurringData)
-        onClose()
 
-        // Optionally show success message
-        alert('Recurring expense template created! Use "Generate Now" to create the first instance.')
+        // Automatically generate the first instance
+        await recurringExpenseAPI.generateNow(false, 60)
+
+        onClose()
       } else {
         // Create one-time expense
         await onAdd({
