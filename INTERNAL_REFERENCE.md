@@ -479,16 +479,18 @@ weeklyBudgetCardRef.current?.refresh()
 - **Publish Directory:** `frontend/dist`
 - **Auto-Deploy:** On push to `main` branch
 - **Environment Variables:**
-  - `VITE_API_URL=https://bloom-backend-b44r.onrender.com`
+  - `VITE_API_URL=https://bloom-backend-b44r.onrender.com/api/v1`
 - **Password Protection:** Netlify built-in (site-wide basic auth)
 - **Deploy Time:** ~2-3 minutes
 - **CDN:** Netlify Edge network (global)
+- **Security Headers:** Configured via `frontend/public/_headers` (CSP, X-Frame-Options, etc.)
 
 ### Backend (Render)
 - **Build Command:** `pip install -r backend/requirements.txt`
 - **Start Command:** `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
 - **Python Version:** 3.11.9 (specified in `runtime.txt`)
 - **Auto-Deploy:** On push to `main` branch
+- **API Versioning:** All routes available under `/api/v1/*` prefix (legacy routes maintained for compatibility)
 - **Environment Variables:**
   - `FLASK_ENV=production`
   - `SECRET_KEY=<64-char-random>`
@@ -497,12 +499,18 @@ weeklyBudgetCardRef.current?.refresh()
   - `CORS_ORIGINS=https://the-bloom-tracker.netlify.app`
   - `SENDGRID_API_KEY=<optional>`
   - `SENDGRID_FROM_EMAIL=<optional>`
+  - `GITHUB_BACKUP_TOKEN=<for automated backups>`
 - **Deploy Time:** ~3-5 minutes
 - **Cold Start:** 30-60 seconds after 15 minutes of inactivity (free tier)
 
 ### Database (Render PostgreSQL)
 - **Plan:** Free tier (1GB storage, 90-day retention)
-- **Backups:** Automatic daily backups (7-day retention on free tier)
+- **Backups:**
+  - **Render Automatic:** Daily backups (7-day retention on free tier)
+  - **Custom Automated:** GitHub Actions workflow runs daily at 2:00 AM UTC
+  - **Backup Script:** `scripts/backup_database.py` (PostgreSQL/SQLite support)
+  - **Storage:** GitHub Actions artifacts (30-day retention)
+  - **Documentation:** See `docs/DATABASE_BACKUP.md`
 - **SSL:** Required (`sslmode=require` in connection string)
 - **Connection Pooling:** Enabled (`pool_pre_ping`, `pool_recycle=300`)
 
@@ -549,10 +557,12 @@ git push origin main --no-verify
 - JWT tokens with 24-hour expiry
 - CORS restricted to frontend domain
 - Rate limiting on auth endpoints
-- Input validation and sanitization
+- Input validation and sanitization with maxLength constraints
 - Security headers (X-Frame-Options, X-Content-Type-Options, HSTS)
+- Content Security Policy (CSP) headers on backend and frontend
 - SQL injection protection via SQLAlchemy ORM
 - No secrets in version control
+- API versioning structure (`/api/v1`) for safe evolution
 
 ⚠️ Concerns:
 - JWT tokens in localStorage (XSS-vulnerable, but standard for SPAs)

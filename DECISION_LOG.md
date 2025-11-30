@@ -6,6 +6,24 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-11-30
 
+### Database Backup Automation & API Versioning
+**Issues:** #41, #42 (closed)
+**Decision:**
+- Implemented automated daily database backups via GitHub Actions
+- Added `/api/v1` versioned API structure with backward compatibility
+**Implementation:**
+- Created `scripts/backup_database.py` with PostgreSQL/SQLite support, gzip compression
+- GitHub Actions workflow runs daily at 2:00 AM UTC, stores artifacts for 30 days
+- Created `backend/routes/api_v1.py` blueprint aggregating all routes under `/api/v1`
+- Updated frontend `.env` files to use `/api/v1` endpoints
+- Maintained legacy routes (without version prefix) for backward compatibility
+**Files Changed:**
+- Backend: `backend/app.py` (registers v1 blueprint), `backend/routes/api_v1.py` (new)
+- Frontend: `frontend/.env`, `frontend/.env.production`, `frontend/src/api.js`
+- Infrastructure: `.github/workflows/backup.yml`, `scripts/backup_database.py`
+- Documentation: `docs/DATABASE_BACKUP.md`, `docs/API_VERSIONING.md`, `scripts/README.md`
+**Impact:** Data safety with automated backups, professional API structure for safe evolution
+
 ### Input Length Validation & CSP Headers
 **Issues:** #40, #39 (closed)
 **Decision:**
