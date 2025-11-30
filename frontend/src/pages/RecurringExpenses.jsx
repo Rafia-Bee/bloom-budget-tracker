@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { recurringExpenseAPI } from '../api'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
+import CatLoading from '../components/CatLoading'
 import { useNavigate } from 'react-router-dom'
 
 function RecurringExpenses() {
@@ -400,10 +401,7 @@ function RecurringExpenses() {
         )}
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-bloom-pink border-t-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading recurring expenses...</p>
-          </div>
+          <CatLoading message="Loading recurring expenses..." />
         ) : (
           <div className="space-y-6">
             {/* Active Recurring Expenses */}

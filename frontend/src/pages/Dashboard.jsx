@@ -22,6 +22,7 @@ import ExportImportModal from '../components/ExportImportModal'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
 import BankImportModal from '../components/BankImportModal'
 import FilterTransactionsModal from '../components/FilterTransactionsModal'
+import CatLoading from '../components/CatLoading'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -758,14 +759,7 @@ function Dashboard({ setIsAuthenticated }) {
   };
 
   if (isInitialLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-bloom-pink"></div>
-          <p className="mt-4 text-gray-600">Loading your budget...</p>
-        </div>
-      </div>
-    );
+    return <CatLoading message="Loading your budget..." />;
   }
 
   return (
