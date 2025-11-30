@@ -357,7 +357,7 @@ function Dashboard({ setIsAuthenticated }) {
 
       // First, get ALL income (including Initial Balance which has no budget_period_id)
       const allIncomeRes = await incomeAPI.getAll({})
-      const allIncome = allIncomeRes.data
+      const allIncome = Array.isArray(allIncomeRes.data) ? allIncomeRes.data : (allIncomeRes.data?.income || [])
       const today = new Date()
 
       // Add only realized income to totals (income that has already occurred)
@@ -384,7 +384,7 @@ function Dashboard({ setIsAuthenticated }) {
         }
       })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
       const allExpensesRes = await expenseAPI.getAll({})
-      const allExpenses = allExpensesRes.data
+      const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
       // Process all expenses
       allExpenses.forEach(expense => {
