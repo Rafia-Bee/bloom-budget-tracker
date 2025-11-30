@@ -77,6 +77,11 @@ function Dashboard({ setIsAuthenticated }) {
     search: '',
     transactionType: 'both'
   })
+  const [expensesPage, setExpensesPage] = useState(1)
+  const [incomePage, setIncomePage] = useState(1)
+  const [hasMoreExpenses, setHasMoreExpenses] = useState(false)
+  const [hasMoreIncome, setHasMoreIncome] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   useEffect(() => {
     loadPeriodsAndCurrentWeek()
@@ -126,11 +131,15 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }
 
-  const loadExpenses = async () => {
+  const loadExpenses = async (page = 1, append = false) => {
     if (!currentPeriod) return
     try {
       // Build query params with filters
-      const params = { budget_period_id: currentPeriod.id }
+      const params = {
+        budget_period_id: currentPeriod.id,
+        page,
+        limit: 50
+      }
 
       // Apply active filters
       if (activeFilters.startDate) params.start_date = activeFilters.startDate
@@ -148,7 +157,20 @@ function Dashboard({ setIsAuthenticated }) {
         ? currentResponse.data
         : currentResponse.data.expenses || []
 
-      setExpenses(expensesData)
+      // Handle pagination metadata
+      const pagination = currentResponse.data.pagination
+      if (pagination) {
+        setHasMoreExpenses(pagination.has_more)
+      } else {
+        setHasMoreExpenses(false)
+      }
+
+      if (append) {
+        setExpenses(prev => [...prev, ...expensesData])
+      } else {
+        setExpenses(expensesData)
+      }
+
       await calculateCumulativeBalances()
       // Refresh weekly budget card to update spent amount
       weeklyBudgetCardRef.current?.refresh()
@@ -157,11 +179,15 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }
 
-  const loadIncome = async () => {
+  const loadIncome = async (page = 1, append = false) => {
     if (!currentPeriod) return
     try {
       // Build query params with filters
-      const params = { budget_period_id: currentPeriod.id }
+      const params = {
+        budget_period_id: currentPeriod.id,
+        page,
+        limit: 50
+      }
 
       // Apply active filters
       if (activeFilters.startDate) params.start_date = activeFilters.startDate
@@ -176,7 +202,20 @@ function Dashboard({ setIsAuthenticated }) {
         ? response.data
         : response.data.income || []
 
-      setIncome(incomeData)
+      // Handle pagination metadata
+      const pagination = response.data.pagination
+      if (pagination) {
+        setHasMoreIncome(pagination.has_more)
+      } else {
+        setHasMoreIncome(false)
+      }
+
+      if (append) {
+        setIncome(prev => [...prev, ...incomeData])
+      } else {
+        setIncome(incomeData)
+      }
+
       await calculateCumulativeBalances()
       // Refresh weekly budget card to update balances
       weeklyBudgetCardRef.current?.refresh()
@@ -528,6 +567,34 @@ function Dashboard({ setIsAuthenticated }) {
 
   const handleApplyFilters = (filters) => {
     setActiveFilters(filters)
+    // Reset pagination when filters change
+    setExpensesPage(1)
+    setIncomePage(1)
+  }
+
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true)
+    try {
+      const promises = []
+
+      // Load more expenses if there are more and we're showing expenses
+      if (hasMoreExpenses && activeFilters.transactionType !== 'income') {
+        const nextExpensesPage = expensesPage + 1
+        promises.push(loadExpenses(nextExpensesPage, true))
+        setExpensesPage(nextExpensesPage)
+      }
+
+      // Load more income if there are more and we're showing income
+      if (hasMoreIncome && activeFilters.transactionType !== 'expense') {
+        const nextIncomePage = incomePage + 1
+        promises.push(loadIncome(nextIncomePage, true))
+        setIncomePage(nextIncomePage)
+      }
+
+      await Promise.all(promises)
+    } finally {
+      setIsLoadingMore(false)
+    }
   }
 
   const handleAddIncome = async (incomeData) => {
@@ -1283,6 +1350,34 @@ function Dashboard({ setIsAuthenticated }) {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {(hasMoreExpenses || hasMoreIncome) && transactions.length > 0 && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Load More
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
