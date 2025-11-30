@@ -15,6 +15,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from backend.config import config
 from backend.models.database import db
+from backend.routes.api_v1 import create_v1_blueprint
 from backend.routes.auth import auth_bp
 from backend.routes.expenses import expenses_bp
 from backend.routes.income import income_bp
@@ -51,6 +52,11 @@ def create_app(config_name="development"):
 
     jwt = JWTManager(app)
 
+    # Register versioned API (v1)
+    v1_bp = create_v1_blueprint()
+    app.register_blueprint(v1_bp)
+
+    # Keep legacy routes for backward compatibility (will deprecate later)
     app.register_blueprint(auth_bp)
     app.register_blueprint(expenses_bp)
     app.register_blueprint(income_bp, url_prefix="/income")

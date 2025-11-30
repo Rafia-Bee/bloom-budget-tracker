@@ -8,7 +8,7 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ### Input Length Validation & CSP Headers
 **Issues:** #40, #39 (closed)
-**Decision:** 
+**Decision:**
 - Added maxLength validation to all text inputs (200 for names, 50 for types, 1000 for notes)
 - Implemented Content Security Policy headers on backend and frontend
 **Files Changed:**

@@ -8,7 +8,7 @@
 import axios from "axios";
 
 // Use environment variable for API URL in production, proxy in development
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 let loadingCallback = null;
 

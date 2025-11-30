@@ -49,6 +49,22 @@ Display help message with all available commands.
 python scripts/maintenance.py help
 ```
 
+## Database Backup
+
+Automated database backup system with PostgreSQL/SQLite support.
+
+### Manual Execution
+
+```powershell
+python scripts/backup_database.py
+```
+
+Creates compressed backup in `scripts/backups/` directory. See [DATABASE_BACKUP.md](../docs/DATABASE_BACKUP.md) for full documentation.
+
+### Automated Backups
+
+GitHub Actions runs daily backups at 2:00 AM UTC. Backups are stored as workflow artifacts with 30-day retention.
+
 ## Scheduled Task: Generate Recurring Expenses
 
 Script to automatically generate recurring expenses based on templates.
