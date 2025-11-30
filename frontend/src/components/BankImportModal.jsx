@@ -236,6 +236,7 @@ function BankImportModal({ onClose, onImportComplete }) {
               <textarea
                 value={transactionsText}
                 onChange={(e) => setTransactionsText(e.target.value)}
+                maxLength={50000}
                 placeholder="Paste your bank transactions here...&#10;&#10;Example:&#10;Transaction Date	Amount	Name&#10;2025/11/22	-42,33	Wise Europe SA&#10;2025/11/24	-38,88	Wise"
                 rows={12}
                 required

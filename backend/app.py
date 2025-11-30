@@ -56,8 +56,10 @@ def create_app(config_name="development"):
     app.register_blueprint(income_bp, url_prefix="/income")
     app.register_blueprint(budget_periods_bp)
     app.register_blueprint(debts_bp)
-    app.register_blueprint(recurring_expenses_bp, url_prefix="/recurring-expenses")
-    app.register_blueprint(recurring_generation_bp, url_prefix="/recurring-generation")
+    app.register_blueprint(recurring_expenses_bp,
+                           url_prefix="/recurring-expenses")
+    app.register_blueprint(recurring_generation_bp,
+                           url_prefix="/recurring-generation")
     app.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     app.register_blueprint(password_reset_bp, url_prefix="/auth")
     app.register_blueprint(export_import_bp)
@@ -86,6 +88,22 @@ def create_app(config_name="development"):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+
+        # Content Security Policy
+        csp_policy = (
+            "default-src 'self'; "
+            f"connect-src 'self' {' '.join(cors_origins)}; "
+            "img-src 'self' data: blob:; "
+            "media-src 'self' blob:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "font-src 'self' data:; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'; "
+            "base-uri 'self';"
+        )
+        response.headers["Content-Security-Policy"] = csp_policy
+
         if config_name == "production":
             response.headers[
                 "Strict-Transport-Security"

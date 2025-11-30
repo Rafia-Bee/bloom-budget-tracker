@@ -147,6 +147,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={200}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
                 required
               />
@@ -332,10 +333,12 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              maxLength={1000}
               rows="2"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               placeholder="Add any additional details..."
             />
+            <p className="text-xs text-gray-500 mt-1">{notes.length}/1000 characters</p>
           </div>
 
           {/* Buttons */}

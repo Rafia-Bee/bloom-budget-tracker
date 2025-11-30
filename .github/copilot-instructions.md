@@ -220,6 +220,34 @@ Remove `console.log('Current period ID:', ...)` statements from `Dashboard.jsx` 
 - `backend/routes/` contains blueprints (auth, expenses, income, debts, salary_periods, budget_periods)
 - `frontend/src/api.js` centralizes all API calls with axios interceptors for auth
 
+## Decision Log
+
+**Location**: `DECISION_LOG.md` in project root
+
+**Purpose**: Track all significant decisions, bug fixes, and architectural changes across sessions.
+
+**Agent Responsibility**:
+- Read `DECISION_LOG.md` at the start of each session to understand recent changes
+- Update the log after completing significant work (fixes, features, architectural decisions)
+- Use format: Date, Issue/Context, Decision, Rationale, Impact (files changed)
+- Keep entries concise but accurate (2-5 lines per entry)
+
+**When to Update**:
+- After fixing bugs (include root cause)
+- After implementing features
+- After making architectural decisions
+- After investigating issues (even if no code change)
+- When closing GitHub issues
+
+**Example Entry**:
+```markdown
+### Credit Card Debt Display Bug Fix
+**Issue:** #46 - Not showing on Debts page despite having balance
+**Root Cause:** Fetched expenses per-period, missing those without `budget_period_id`
+**Solution:** Fetch ALL expenses, then filter by period (matches Dashboard logic)
+**Files:** `frontend/src/pages/Debts.jsx`
+```
+
 ## Ongoing Development (Current Todo List)
 
 **Balance-Based Budgeting System**:

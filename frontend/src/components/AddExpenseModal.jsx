@@ -154,6 +154,7 @@ function AddExpenseModal({ onClose, onAdd }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              maxLength={200}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
               required
             />

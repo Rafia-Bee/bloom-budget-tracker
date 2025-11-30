@@ -118,12 +118,13 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Date</label>
+            <label className="block text-gray-700 font-semibold mb-2">Type</label>
             <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-mint"
+              type="text"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              maxLength={50}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
               required
             />
           </div>
