@@ -256,20 +256,25 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                 </div>
               )}
 
-              {/* Day of Month (for monthly) */}
+              {/* Due Date (for monthly) */}
               {frequency === 'monthly' && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Day of Month
+                    Due Date (Day of Month)
                   </label>
                   <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={dayOfMonth}
-                    onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      const selectedDate = new Date(e.target.value)
+                      setDayOfMonth(selectedDate.getDate())
+                      setStartDate(e.target.value)
+                    }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Recurring on day {dayOfMonth} of each month
+                  </p>
                 </div>
               )}
 
