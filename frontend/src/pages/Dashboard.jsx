@@ -119,7 +119,10 @@ function Dashboard({ setIsAuthenticated }) {
         setExpenses([])
       }
 
-      if (activeFilters.transactionType !== 'expense') {
+      // Skip income if expense-only filters are active (category, subcategory, payment_method)
+      const hasExpenseOnlyFilters = activeFilters.category || activeFilters.subcategory || activeFilters.paymentMethod
+
+      if (activeFilters.transactionType !== 'expense' && !hasExpenseOnlyFilters) {
         promises.push(loadIncome())
       } else {
         setIncome([])
