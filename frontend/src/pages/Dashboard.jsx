@@ -22,6 +22,7 @@ import ExportImportModal from '../components/ExportImportModal'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
 import BankImportModal from '../components/BankImportModal'
 import FilterTransactionsModal from '../components/FilterTransactionsModal'
+import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
 
 function Dashboard({ setIsAuthenticated }) {
@@ -39,6 +40,8 @@ function Dashboard({ setIsAuthenticated }) {
   const [allPeriods, setAllPeriods] = useState([])
   const [salaryPeriods, setSalaryPeriods] = useState([]) // Salary periods for selector
   const [showCreatePeriod, setShowCreatePeriod] = useState(false)
+  const [showRolloverPrompt, setShowRolloverPrompt] = useState(false)
+  const [rolloverData, setRolloverData] = useState(null)
   const [showEditPeriod, setShowEditPeriod] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -319,6 +322,17 @@ function Dashboard({ setIsAuthenticated }) {
           setCurrentPeriod(activeRes.data)
         } else if (allPeriodsRes.data.length > 0) {
           setCurrentPeriod(allPeriodsRes.data[0])
+        }
+      }
+
+      // Check if rollover prompt should be shown
+      if (salaryPeriodRes?.data?.current_week?.week_number === 4) {
+        const dismissedRollover = localStorage.getItem('dismissedRollover')
+        const periodEndDate = salaryPeriodRes.data.salary_period.end_date
+
+        // Only show if not dismissed or if it's a different period
+        if (dismissedRollover !== periodEndDate) {
+          setShowRolloverPrompt(true)
         }
       }
 
@@ -1005,6 +1019,25 @@ function Dashboard({ setIsAuthenticated }) {
           </>
         ) : (
           <>
+        {/* Rollover Prompt - Show when Week 4 is ending */}
+        {showRolloverPrompt && (
+          <SalaryPeriodRolloverPrompt
+            onCreateNext={(data) => {
+              setRolloverData(data)
+              setShowSalaryWizard(true)
+              setShowRolloverPrompt(false)
+            }}
+            onDismiss={() => {
+              // Remember dismissal for this period
+              const currentSalaryPeriod = salaryPeriods.find(p => p.is_active)
+              if (currentSalaryPeriod) {
+                localStorage.setItem('dismissedRollover', currentSalaryPeriod.end_date)
+              }
+              setShowRolloverPrompt(false)
+            }}
+          />
+        )}
+
         {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Weekly Budget Card */}
@@ -1590,13 +1623,16 @@ function Dashboard({ setIsAuthenticated }) {
       {showSalaryWizard && (
         <SalaryPeriodWizard
           editPeriod={editSalaryPeriod}
+          rolloverData={rolloverData}
           onClose={() => {
             setShowSalaryWizard(false)
             setEditSalaryPeriod(null)
+            // Don't clear rolloverData on cancel - keep prompt visible
           }}
           onComplete={async () => {
             setShowSalaryWizard(false)
             setEditSalaryPeriod(null)
+            setRolloverData(null)
             // Reload all data
             await loadPeriodsAndCurrentWeek()
             await loadExpenses()

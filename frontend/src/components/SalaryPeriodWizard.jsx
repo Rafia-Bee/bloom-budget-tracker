@@ -12,7 +12,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api'
 
-function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null }) {
+function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverData = null }) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +25,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null }) {
   const [preview, setPreview] = useState(null)
   const [fixedBills, setFixedBills] = useState([])
 
-  // Pre-fill form when editing existing salary period
+  // Pre-fill form when editing existing salary period OR rolling over
   useEffect(() => {
     if (editPeriod) {
       setDebitBalance((editPeriod.initial_debit_balance / 100).toFixed(2))
@@ -33,8 +33,19 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null }) {
       setCreditLimit((editPeriod.credit_limit / 100).toFixed(2))
       setCreditAllowance(editPeriod.credit_budget_allowance || 0)
       setStartDate(editPeriod.start_date)
+    } else if (rolloverData) {
+      // Pre-fill with rollover balances
+      setDebitBalance((rolloverData.suggestedDebitBalance / 100).toFixed(2))
+      setCreditBalance((rolloverData.suggestedCreditBalance / 100).toFixed(2))
+      setCreditLimit((rolloverData.creditLimit / 100).toFixed(2))
+      setCreditAllowance(rolloverData.creditAllowance || 0)
+
+      // Set start date to day after previous period ended
+      const nextDay = new Date(rolloverData.endDate)
+      nextDay.setDate(nextDay.getDate() + 1)
+      setStartDate(nextDay.toISOString().split('T')[0])
     }
-  }, [editPeriod])
+  }, [editPeriod, rolloverData])
 
   const formatCurrency = (cents) => {
     return `€${(cents / 100).toFixed(2)}`
