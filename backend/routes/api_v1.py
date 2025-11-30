@@ -22,7 +22,7 @@ def create_v1_blueprint():
     """
     Create and configure API v1 blueprint with all routes
     """
-    v1_bp = Blueprint('api_v1', __name__, url_prefix='/api/v1')
+    v1_bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
     # Register all route blueprints under v1
     v1_bp.register_blueprint(auth_bp)
@@ -30,10 +30,10 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(income_bp, url_prefix="/income")
     v1_bp.register_blueprint(budget_periods_bp)
     v1_bp.register_blueprint(debts_bp)
-    v1_bp.register_blueprint(recurring_expenses_bp,
-                             url_prefix="/recurring-expenses")
-    v1_bp.register_blueprint(recurring_generation_bp,
-                             url_prefix="/recurring-generation")
+    v1_bp.register_blueprint(recurring_expenses_bp, url_prefix="/recurring-expenses")
+    v1_bp.register_blueprint(
+        recurring_generation_bp, url_prefix="/recurring-generation"
+    )
     v1_bp.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     v1_bp.register_blueprint(password_reset_bp, url_prefix="/auth")
     v1_bp.register_blueprint(export_import_bp)

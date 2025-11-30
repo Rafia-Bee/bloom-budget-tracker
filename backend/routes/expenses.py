@@ -70,8 +70,7 @@ def get_expenses():
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
-            (Expense.name.ilike(search_pattern)) | (
-                Expense.notes.ilike(search_pattern))
+            (Expense.name.ilike(search_pattern)) | (Expense.notes.ilike(search_pattern))
         )
 
     # Get total count before pagination
@@ -164,7 +163,7 @@ def create_expense():
         and_(
             BudgetPeriod.user_id == current_user_id,
             BudgetPeriod.start_date <= date_obj,
-            BudgetPeriod.end_date >= date_obj
+            BudgetPeriod.end_date >= date_obj,
         )
     ).first()
 
@@ -194,12 +193,10 @@ def create_expense():
         and subcategory
         and subcategory != "Credit Card"
     ):
-        debt = Debt.query.filter_by(
-            user_id=current_user_id, name=subcategory).first()
+        debt = Debt.query.filter_by(user_id=current_user_id, name=subcategory).first()
         if debt:
             # Reduce the debt balance by the payment amount
-            debt.current_balance = max(
-                0, debt.current_balance - data["amount"])
+            debt.current_balance = max(0, debt.current_balance - data["amount"])
             # Auto-archive if fully paid
             if debt.current_balance == 0:
                 debt.archived = True
@@ -230,8 +227,7 @@ def create_expense():
 @jwt_required()
 def get_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(
-        id=expense_id, user_id=current_user_id).first()
+    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404
@@ -260,8 +256,7 @@ def get_expense(expense_id):
 @jwt_required()
 def update_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(
-        id=expense_id, user_id=current_user_id).first()
+    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404
@@ -292,8 +287,7 @@ def update_expense(expense_id):
         except ValueError:
             try:
                 # Fallback to display format (dd MMM, YYYY)
-                expense.date = datetime.strptime(
-                    data["date"], "%d %b, %Y").date()
+                expense.date = datetime.strptime(data["date"], "%d %b, %Y").date()
             except ValueError:
                 return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
     if "due_date" in data:
@@ -329,8 +323,7 @@ def update_expense(expense_id):
             user_id=current_user_id, name=expense.subcategory
         ).first()
         if new_debt:
-            new_debt.current_balance = max(
-                0, new_debt.current_balance - expense.amount)
+            new_debt.current_balance = max(0, new_debt.current_balance - expense.amount)
             # Auto-archive if fully paid
             if new_debt.current_balance == 0:
                 new_debt.archived = True
@@ -344,8 +337,7 @@ def update_expense(expense_id):
 @jwt_required()
 def delete_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(
-        id=expense_id, user_id=current_user_id).first()
+    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404
