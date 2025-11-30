@@ -81,7 +81,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 onClick={() => setFilters({ ...filters, transactionType: 'both' })}
                 className={`py-2 px-4 rounded-lg font-medium transition-colors ${
                   filters.transactionType === 'both'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-bloom-pink text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -91,7 +91,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 onClick={() => setFilters({ ...filters, transactionType: 'expense' })}
                 className={`py-2 px-4 rounded-lg font-medium transition-colors ${
                   filters.transactionType === 'expense'
-                    ? 'bg-red-500 text-white'
+                    ? 'bg-bloom-pink text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -101,7 +101,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 onClick={() => setFilters({ ...filters, transactionType: 'income' })}
                 className={`py-2 px-4 rounded-lg font-medium transition-colors ${
                   filters.transactionType === 'income'
-                    ? 'bg-green-500 text-white'
+                    ? 'bg-bloom-mint text-green-800'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -120,7 +120,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               placeholder="Search transactions..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
             />
           </div>
 
@@ -134,7 +134,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               />
             </div>
             <div>
@@ -145,7 +145,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
               <select
                 value={filters.category}
                 onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               >
                 <option value="">All Categories</option>
                 <option value="Food">Food</option>
@@ -186,7 +186,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
               <select
                 value={filters.paymentMethod}
                 onChange={(e) => setFilters({ ...filters, paymentMethod: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               >
                 <option value="">All Methods</option>
                 <option value="Debit card">Debit Card</option>
@@ -207,7 +207,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 value={filters.minAmount}
                 onChange={(e) => setFilters({ ...filters, minAmount: e.target.value })}
                 placeholder="0.00"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               />
             </div>
             <div>
@@ -220,7 +220,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 value={filters.maxAmount}
                 onChange={(e) => setFilters({ ...filters, maxAmount: e.target.value })}
                 placeholder="999.99"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               />
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
           </button>
           <button
             onClick={handleApply}
-            className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            className="flex-1 bg-bloom-pink text-white py-3 rounded-lg font-medium hover:bg-pink-600 transition-colors"
           >
             Apply Filters
           </button>

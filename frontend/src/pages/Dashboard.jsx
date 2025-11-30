@@ -136,9 +136,13 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       // Build query params with filters
       const params = {
-        budget_period_id: currentPeriod.id,
         page,
         limit: 50
+      }
+
+      // Only filter by current period if no custom date range is specified
+      if (!activeFilters.startDate && !activeFilters.endDate) {
+        params.budget_period_id = currentPeriod.id
       }
 
       // Apply active filters
@@ -184,9 +188,13 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       // Build query params with filters
       const params = {
-        budget_period_id: currentPeriod.id,
         page,
         limit: 50
+      }
+
+      // Only filter by current period if no custom date range is specified
+      if (!activeFilters.startDate && !activeFilters.endDate) {
+        params.budget_period_id = currentPeriod.id
       }
 
       // Apply active filters
@@ -1135,7 +1143,7 @@ function Dashboard({ setIsAuthenticated }) {
               {/* Advanced Filter Button */}
               <button
                 onClick={() => setShowFilterModal(true)}
-                className="relative px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2"
+                className="relative px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 bg-bloom-pink text-white hover:bg-pink-600 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1359,7 +1367,7 @@ function Dashboard({ setIsAuthenticated }) {
               <button
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-bloom-pink text-white rounded-lg font-medium hover:bg-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isLoadingMore ? (
                   <>
