@@ -94,21 +94,26 @@ function Debts({ setIsAuthenticated }) {
 
       let cumulativeCredit = 0
 
-      // Calculate credit balance from all periods chronologically (matches Dashboard logic)
-      for (const period of periodsToInclude) {
-        const expensesRes = await expenseAPI.getAll({ budget_period_id: period.id })
-        const periodExpenses = expensesRes.data
+      // Get ALL expenses (including those without budget_period_id)
+      const allExpensesRes = await expenseAPI.getAll({})
+      const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
-        periodExpenses.forEach(expense => {
-          const amount = expense.amount / 100
+      // Calculate credit balance from all expenses (matches Dashboard logic)
+      allExpenses.forEach(expense => {
+        const amount = expense.amount / 100
 
-          if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
-            cumulativeCredit -= amount // Payment reduces credit card debt
-          } else if (expense.payment_method === 'Credit card') {
-            cumulativeCredit += amount // Credit card purchase increases debt
-          }
-        })
-      }
+        // Check if expense is from a period we're including in cumulative totals
+        const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
+        const isInIncludedPeriod = periodToCheck || !expense.budget_period_id
+
+        if (!isInIncludedPeriod) return // Skip expenses from future periods
+
+        if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
+          cumulativeCredit -= amount // Payment reduces credit card debt
+        } else if (expense.payment_method === 'Credit card') {
+          cumulativeCredit += amount // Credit card purchase increases debt
+        }
+      })
 
       const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
       const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
