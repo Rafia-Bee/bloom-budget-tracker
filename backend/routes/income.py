@@ -19,24 +19,68 @@ def get_income():
     """Get all income entries for the current user, optionally filtered by budget period."""
     user_id = int(get_jwt_identity())
 
-    # Get optional budget_period_id filter from query params
+    # Pagination parameters
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 50, type=int)
+
+    # Filter parameters
     budget_period_id = request.args.get('budget_period_id', type=int)
+    income_type = request.args.get('type')
+    start_date = request.args.get('start_date')  # YYYY-MM-DD
+    end_date = request.args.get('end_date')      # YYYY-MM-DD
+    min_amount = request.args.get('min_amount', type=int)
+    max_amount = request.args.get('max_amount', type=int)
 
     query = Income.query.filter_by(user_id=user_id)
 
+    # Apply filters
     if budget_period_id:
         query = query.filter_by(budget_period_id=budget_period_id)
+    if income_type:
+        query = query.filter_by(type=income_type)
+    if start_date:
+        try:
+            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Income.actual_date >= start)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Income.actual_date <= end)
+        except ValueError:
+            pass
+    if min_amount is not None:
+        query = query.filter(Income.amount >= min_amount)
+    if max_amount is not None:
+        query = query.filter(Income.amount <= max_amount)
 
-    income_entries = query.order_by(Income.actual_date.desc()).all()
+    # Get total count before pagination
+    total = query.count()
 
-    return jsonify([{
-        'id': entry.id,
-        'type': entry.type,
-        'amount': entry.amount,
-        'date': entry.actual_date.strftime('%d %b, %Y') if entry.actual_date else None,
-        'scheduled_date': entry.scheduled_date.strftime('%d %b, %Y') if entry.scheduled_date else None,
-        'budget_period_id': entry.budget_period_id
-    } for entry in income_entries]), 200
+    # Apply pagination
+    income_entries = query.order_by(Income.actual_date.desc()).limit(
+        limit).offset((page - 1) * limit).all()
+
+    return jsonify({
+        'income': [{
+            'id': entry.id,
+            'type': entry.type,
+            'amount': entry.amount,
+            'date': entry.actual_date.strftime('%d %b, %Y') if entry.actual_date else None,
+            'scheduled_date': entry.scheduled_date.strftime('%d %b, %Y') if entry.scheduled_date else None,
+            'budget_period_id': entry.budget_period_id
+        } for entry in income_entries],
+        'pagination': {
+            'page': page,
+            'limit': limit,
+            'total': total,
+            'pages': (total + limit - 1) // limit,
+            'has_more': page * limit < total
+        }
+    }), 200
+
+
 @income_bp.route('', methods=['POST'])
 @jwt_required()
 def create_income():
@@ -91,6 +135,8 @@ def create_income():
             'budget_period_id': income.budget_period_id
         }
     }), 201
+
+
 @income_bp.route('/<int:income_id>', methods=['PUT'])
 @jwt_required()
 def update_income(income_id):
@@ -118,7 +164,8 @@ def update_income(income_id):
 
     if 'date' in data:
         try:
-            income.actual_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            income.actual_date = datetime.strptime(
+                data['date'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
@@ -133,6 +180,8 @@ def update_income(income_id):
             'date': income.actual_date.strftime('%d %b, %Y') if income.actual_date else None
         }
     }), 200
+
+
 @income_bp.route('/<int:income_id>', methods=['DELETE'])
 @jwt_required()
 def delete_income(income_id):
