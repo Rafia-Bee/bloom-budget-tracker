@@ -508,42 +508,28 @@ weeklyBudgetCardRef.current?.refresh()
 
 ### Continuous Deployment Workflow
 
-**Standard workflow (branch protection disabled):**
+**Our workflow relies on a local pre-push hook as the primary defense against bad deploys.** Branch protection is not enforced on free private repositories, so the remote CI/CD pipeline serves as a secondary notification system.
+
+**Standard workflow:**
 ```powershell
-# Pre-push hook runs automatically (black, flake8, npm build)
+# 1. Make changes and commit
 git add .
 git commit -m "feat: add feature X"
-git push origin main  # Hook checks locally, then pushes
 
-# Auto-triggers:
-# 1. GitHub Actions CI/CD (flake8, black, pytest, npm build)
-# 2. Netlify build + deploy (frontend)
-# 3. Render build + deploy (backend)
-# 4. ~5-8 minutes total deployment time
+# 2. Push to main (pre-push hook runs automatically)
+git push origin main
 ```
 
-**PR workflow (if branch protection enabled):**
+**What Happens:**
+1.  **Local Check (Pre-Push Hook):** Before anything is sent to GitHub, the hook runs `black`, `flake8`, and `npm run build`.
+    -   **If it fails:** The push is aborted. No deployment occurs.
+    -   **If it passes:** The code is pushed to GitHub.
+2.  **Remote Deploy (Netlify/Render):** Your hosting providers start their build and deploy process immediately.
+3.  **Remote CI (GitHub Actions):** In parallel, the CI pipeline runs. It will notify you via email if it fails, but it **will not stop the deployment**.
+
+**Emergency bypass (skips local hook):**
 ```powershell
-# Create feature branch
-git checkout -b fix/issue-name
-git add .
-git commit -m "fix: something"
-
-# Push to feature branch (pre-push hook runs)
-git push origin fix/issue-name
-
-# Create PR and auto-merge when CI passes
-gh pr create --fill
-gh pr merge --auto --squash
-
-# Pull merged changes to main
-git checkout main
-git pull origin main
-```
-
-**Emergency bypass:**
-```powershell
-# Skip pre-push hook (CI still runs on GitHub)
+# Use this if the pre-push hook is faulty, but be aware CI will not block the deploy.
 git push origin main --no-verify
 ```
 
@@ -631,7 +617,7 @@ JWT_SECRET_KEY=jwt-secret-key-change-in-production
 - **Commit Convention:** Semantic commit messages (feat:, fix:, docs:, refactor:)
 - **Auto-Deploy:** Push to main triggers Netlify + Render deployments
 - **Pre-Push Hook:** `.git/hooks/pre-push` runs local checks (black, flake8, npm build) before allowing push
-- **Branch Protection:** Optional GitHub branch protection requiring CI/CD to pass before merge (see `docs/BRANCH_PROTECTION_SETUP.md`)
+- **Branch Protection:** Not available on free private repos. Our strategy relies on the local pre-push hook. See `docs/DEPLOYMENT_SAFEGUARDS.md`.
 
 ### Todo Tracking System (Multi-Level)
 1. **GitHub Issues:** Primary tracker for features (12 active issues)
@@ -865,11 +851,11 @@ Transaction Date	Amount	Name
    - Zero automated tests for backend or frontend
    - **Fix:** Add pytest tests for critical backend routes, React Testing Library for frontend
 
-8. ~~**No CI/CD Pipeline:**~~ ⏳ **IN PROGRESS** (Nov 30, 2025 - Issue #47)
-   - GitHub Actions workflow created: `.github/workflows/ci.yml`
-   - Backend: flake8, black --check, pytest
-   - Frontend: npm build, console.log detection
-   - **Status:** Ready to push and test
+8. **CI/CD Pipeline Implemented (with limitations):**
+   - ✅ GitHub Actions workflow created: `.github/workflows/ci.yml`
+   - ✅ Backend checks: `flake8`, `black --check`
+   - ✅ Frontend checks: `npm build`, `console.log` detection
+   - ⚠️ **Limitation:** On a free private repository, this CI pipeline **cannot block deployments**. It serves as a notification system for failures. Our primary defense is the local pre-push hook.
 
 9. ~~**Large Transaction Lists Slow Down:**~~ ✅ **RESOLVED** (Nov 30, 2025 - Issue #30)
    - Implemented pagination (50 items/page) with Load More button
