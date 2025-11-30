@@ -70,6 +70,19 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
     setSubcategory(newSubcategories[0])
   }
 
+  const handleSubcategoryChange = (value) => {
+    setSubcategory(value)
+
+    // If Debt Payments category and a debt is selected, autofill the amount and name
+    if (category === 'Debt Payments' && value !== 'Credit Card') {
+      const selectedDebt = debts.find(d => d.name === value)
+      if (selectedDebt && selectedDebt.monthly_payment) {
+        setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
+        setName(`${value} Payment`)
+      }
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -193,7 +206,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
               </label>
               <select
                 value={subcategory}
-                onChange={(e) => setSubcategory(e.target.value)}
+                onChange={(e) => handleSubcategoryChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               >
                 {subcategories[category]?.map(sub => (
