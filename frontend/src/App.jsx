@@ -14,6 +14,7 @@ import Debts from './pages/Debts'
 import RecurringExpenses from './pages/RecurringExpenses'
 import ResetPassword from './pages/ResetPassword'
 import CatLoading from './components/CatLoading'
+import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback } from './api'
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
 
   return (
     <>
+      <OfflineIndicator />
       {apiLoading && (
         <div className="fixed inset-0 z-50">
           <CatLoading message="Waking up the server..." />
