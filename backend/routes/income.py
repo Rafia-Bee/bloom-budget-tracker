@@ -30,6 +30,7 @@ def get_income():
     end_date = request.args.get('end_date')      # YYYY-MM-DD
     min_amount = request.args.get('min_amount', type=int)
     max_amount = request.args.get('max_amount', type=int)
+    search = request.args.get('search')  # Search in type field
 
     query = Income.query.filter_by(user_id=user_id)
 
@@ -54,6 +55,9 @@ def get_income():
         query = query.filter(Income.amount >= min_amount)
     if max_amount is not None:
         query = query.filter(Income.amount <= max_amount)
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(Income.type.ilike(search_pattern))
 
     # Get total count before pagination
     total = query.count()

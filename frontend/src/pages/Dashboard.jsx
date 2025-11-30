@@ -215,6 +215,7 @@ function Dashboard({ setIsAuthenticated }) {
       if (activeFilters.endDate) params.end_date = activeFilters.endDate
       if (activeFilters.minAmount) params.min_amount = Math.round(parseFloat(activeFilters.minAmount) * 100)
       if (activeFilters.maxAmount) params.max_amount = Math.round(parseFloat(activeFilters.maxAmount) * 100)
+      if (activeFilters.search) params.search = activeFilters.search
 
       const response = await incomeAPI.getAll(params)
 
