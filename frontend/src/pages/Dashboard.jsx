@@ -71,6 +71,7 @@ function Dashboard({ setIsAuthenticated }) {
     startDate: '',
     endDate: '',
     category: '',
+    subcategory: '',
     paymentMethod: '',
     minAmount: '',
     maxAmount: '',
@@ -149,6 +150,7 @@ function Dashboard({ setIsAuthenticated }) {
       if (activeFilters.startDate) params.start_date = activeFilters.startDate
       if (activeFilters.endDate) params.end_date = activeFilters.endDate
       if (activeFilters.category) params.category = activeFilters.category
+      if (activeFilters.subcategory) params.subcategory = activeFilters.subcategory
       if (activeFilters.paymentMethod) params.payment_method = activeFilters.paymentMethod
       if (activeFilters.minAmount) params.min_amount = Math.round(parseFloat(activeFilters.minAmount) * 100)
       if (activeFilters.maxAmount) params.max_amount = Math.round(parseFloat(activeFilters.maxAmount) * 100)

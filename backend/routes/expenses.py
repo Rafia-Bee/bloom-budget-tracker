@@ -31,6 +31,7 @@ def get_expenses():
     # Filter parameters
     period_id = request.args.get('budget_period_id', type=int)
     category = request.args.get('category')
+    subcategory = request.args.get('subcategory')
     payment_method = request.args.get('payment_method')
     start_date = request.args.get('start_date')  # YYYY-MM-DD
     end_date = request.args.get('end_date')      # YYYY-MM-DD
@@ -45,6 +46,8 @@ def get_expenses():
         query = query.filter_by(budget_period_id=period_id)
     if category:
         query = query.filter_by(category=category)
+    if subcategory:
+        query = query.filter_by(subcategory=subcategory)
     if payment_method:
         query = query.filter_by(payment_method=payment_method)
     if start_date:

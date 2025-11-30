@@ -17,6 +17,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
     startDate: '',
     endDate: '',
     category: '',
+    subcategory: '',
     paymentMethod: '',
     minAmount: '',
     maxAmount: '',
@@ -40,6 +41,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
       startDate: '',
       endDate: '',
       category: '',
+      subcategory: '',
       paymentMethod: '',
       minAmount: '',
       maxAmount: '',
@@ -162,17 +164,35 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
               >
                 <option value="">All Categories</option>
-                <option value="Food">Food</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Bills & Utilities">Bills & Utilities</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Education">Education</option>
-                <option value="Personal Care">Personal Care</option>
-                <option value="Subscriptions">Subscriptions</option>
+                <option value="Flexible Expenses">Flexible Expenses</option>
+                <option value="Fixed Expenses">Fixed Expenses</option>
                 <option value="Debt Payments">Debt Payments</option>
-                <option value="Other">Other</option>
+                <option value="Debt">Debt</option>
+              </select>
+            </div>
+          )}
+
+          {/* Subcategory (Expenses only) */}
+          {filters.transactionType !== 'income' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subcategory
+              </label>
+              <select
+                value={filters.subcategory || ''}
+                onChange={(e) => setFilters({ ...filters, subcategory: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+              >
+                <option value="">All Subcategories</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Food">Food</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Subscriptions">Subscriptions</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Rent">Rent</option>
+                <option value="Credit Card">Credit Card</option>
               </select>
             </div>
           )}
