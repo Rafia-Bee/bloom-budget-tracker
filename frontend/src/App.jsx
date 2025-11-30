@@ -22,8 +22,6 @@ function App() {
   const [apiLoading, setApiLoading] = useState(false)
   const pendingRequests = useRef(0)
   const initialLoadComplete = useRef(false)
-  const loadingStartTime = useRef(null)
-  const minLoadingDuration = 3000 // Show loading for minimum 3 seconds (one GIF loop)
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -40,18 +38,12 @@ function App() {
       if (isLoading) {
         pendingRequests.current += 1
         if (pendingRequests.current === 1) {
-          loadingStartTime.current = Date.now()
           setApiLoading(true)
         }
       } else {
         pendingRequests.current = Math.max(0, pendingRequests.current - 1)
         if (pendingRequests.current === 0) {
-          const elapsedTime = Date.now() - loadingStartTime.current
-          const remainingTime = Math.max(0, minLoadingDuration - elapsedTime)
-
-          setTimeout(() => {
-            setApiLoading(false)
-          }, remainingTime)
+          setApiLoading(false)
         }
       }
     })
