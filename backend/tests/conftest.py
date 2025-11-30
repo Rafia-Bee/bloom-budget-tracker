@@ -17,6 +17,7 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     JWT_SECRET_KEY = 'test-secret-key-for-testing-only'
     WTF_CSRF_ENABLED = False
+    RATELIMIT_ENABLED = False  # Disable rate limiting for tests
 
 
 @pytest.fixture(scope='function')
@@ -41,20 +42,29 @@ def client(app):
 @pytest.fixture(scope='function')
 def auth_headers(client):
     """Register and login a test user, return auth headers"""
-    # Register
-    client.post('/api/v1/auth/register', json={
+    # Register and use token directly from registration
+    register_response = client.post('/api/v1/auth/register', json={
         'username': 'testuser',
         'email': 'test@example.com',
         'password': 'TestPassword123!'
     })
 
-    # Login
-    response = client.post('/api/v1/auth/login', json={
-        'username': 'testuser',
+    if register_response.status_code == 201:
+        # Registration successful, use that token
+        token = register_response.json['access_token']
+        return {'Authorization': f'Bearer {token}'}
+
+    # If registration failed, try login (user might exist)
+    login_response = client.post('/api/v1/auth/login', json={
+        'email': 'test@example.com',
         'password': 'TestPassword123!'
     })
 
-    token = response.json['access_token']
+    if login_response.status_code != 200:
+        raise Exception(
+            f"Auth failed - Register: {register_response.status_code}, Login: {login_response.status_code}")
+
+    token = login_response.json['access_token']
     return {'Authorization': f'Bearer {token}'}
 
 
@@ -78,4 +88,9 @@ def salary_period(client, auth_headers):
         'recurring_expenses': []
     }, headers=auth_headers)
 
-    return response.json['salary_period']
+    if response.status_code != 201:
+        raise Exception(
+            f"Failed to create salary period: {response.status_code} - {response.json}")
+
+    # Return just the salary period data
+    return response.json.get('salary_period', response.json)
