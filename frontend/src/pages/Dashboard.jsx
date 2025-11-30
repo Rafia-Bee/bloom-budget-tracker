@@ -141,8 +141,13 @@ function Dashboard({ setIsAuthenticated }) {
         limit: 50
       }
 
-      // Only filter by current period if no custom date range is specified
-      if (!activeFilters.startDate && !activeFilters.endDate) {
+      // Only filter by current period if NO filters are active
+      const hasActiveFilters = activeFilters.startDate || activeFilters.endDate ||
+        activeFilters.category || activeFilters.subcategory ||
+        activeFilters.paymentMethod || activeFilters.minAmount ||
+        activeFilters.maxAmount || activeFilters.search
+
+      if (!hasActiveFilters) {
         params.budget_period_id = currentPeriod.id
       }
 
@@ -194,8 +199,11 @@ function Dashboard({ setIsAuthenticated }) {
         limit: 50
       }
 
-      // Only filter by current period if no custom date range is specified
-      if (!activeFilters.startDate && !activeFilters.endDate) {
+      // Only filter by current period if NO filters are active
+      const hasActiveFilters = activeFilters.startDate || activeFilters.endDate ||
+        activeFilters.minAmount || activeFilters.maxAmount || activeFilters.search
+
+      if (!hasActiveFilters) {
         params.budget_period_id = currentPeriod.id
       }
 
