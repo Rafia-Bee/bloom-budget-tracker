@@ -165,10 +165,11 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                   const isPast = isPeriodPast(period)
                   const isFuture = isPeriodFuture(period)
                   const isSelected = currentPeriod.id === period.id
+                  const keyPrefix = period.weekly_budget !== undefined ? 'salary' : 'week'
 
                   return (
                     <div
-                      key={period.id}
+                      key={`${keyPrefix}-${period.id}`}
                       className={`group rounded-lg border-2 transition ${
                         isSelected
                           ? 'border-bloom-pink bg-pink-50'
@@ -227,20 +228,23 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Group by salary periods */}
-                {periods.filter(p => p.weekly_budget !== undefined).sort((a, b) => new Date(b.start_date) - new Date(a.start_date)).map((salaryPeriod) => {
-                  const isCurrent = isPeriodCurrent(salaryPeriod)
-                  const isPast = isPeriodPast(salaryPeriod)
-                  const isFuture = isPeriodFuture(salaryPeriod)
-                  const isSelected = currentPeriod.id === salaryPeriod.id
+                {/* Group by salary periods - only show salary periods, not weeks */}
+                {periods
+                  .filter(p => p.weekly_budget !== undefined)
+                  .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+                  .map((salaryPeriod) => {
+                    const isCurrent = isPeriodCurrent(salaryPeriod)
+                    const isPast = isPeriodPast(salaryPeriod)
+                    const isFuture = isPeriodFuture(salaryPeriod)
+                    const isSelected = currentPeriod.id === salaryPeriod.id
 
-                  // Find weeks that belong to this salary period
-                  const relatedWeeks = periods.filter(p =>
-                    p.salary_period_id === salaryPeriod.id && p.week_number
-                  ).sort((a, b) => a.week_number - b.week_number)
+                    // Find weeks that belong to this salary period
+                    const relatedWeeks = periods.filter(p =>
+                      p.salary_period_id === salaryPeriod.id && p.week_number
+                    ).sort((a, b) => a.week_number - b.week_number)
 
-                  return (
-                    <div key={salaryPeriod.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    return (
+                      <div key={`salary-${salaryPeriod.id}`} className="border border-gray-200 rounded-lg overflow-hidden">
                       {/* Salary Period Header */}
                       <div
                         className={`group transition ${
@@ -319,7 +323,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
                             return (
                               <div
-                                key={week.id}
+                                key={`week-${week.id}`}
                                 className={`group border-t border-gray-100 transition ${
                                   weekSelected
                                     ? 'bg-pink-50'
