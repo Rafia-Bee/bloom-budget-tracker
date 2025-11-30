@@ -26,11 +26,13 @@ class EmailService:
             from_email: Sender email address (defaults to SENDGRID_FROM_EMAIL env var)
         """
         self.api_key = api_key or os.getenv('SENDGRID_API_KEY')
-        self.from_email = from_email or os.getenv('SENDGRID_FROM_EMAIL', 'noreply@bloom-budget.com')
+        self.from_email = from_email or os.getenv(
+            'SENDGRID_FROM_EMAIL', 'noreply@bloom-budget.com')
         self.enabled = bool(self.api_key)
 
         if not self.enabled:
-            logger.warning("SendGrid API key not configured. Email sending is disabled.")
+            logger.warning(
+                "SendGrid API key not configured. Email sending is disabled.")
         else:
             logger.info("Email service initialized with SendGrid")
 
@@ -57,7 +59,8 @@ class EmailService:
             Exception: If email sending fails and error handling is needed by caller
         """
         if not self.enabled:
-            logger.warning(f"Email sending disabled. Would have sent to {to_email}: {subject}")
+            logger.warning(
+                f"Email sending disabled. Would have sent to {to_email}: {subject}")
             return {
                 'success': False,
                 'error': 'Email service is not configured'
@@ -84,7 +87,8 @@ class EmailService:
             sg = SendGridAPIClient(self.api_key)
             response = sg.send(message)
 
-            logger.info(f"Email sent successfully to {to_email}. Status: {response.status_code}")
+            logger.info(
+                f"Email sent successfully to {to_email}. Status: {response.status_code}")
 
             return {
                 'success': True,
@@ -144,7 +148,7 @@ class EmailService:
                     overflow: hidden;
                 }}
                 .header {
-                    background: linear-gradient(135deg, #ffc1e0 0%, #d4b5ff 100%);
+            background: linear-gradient(135deg, #ffc1e0 0%, #d4b5ff 100%);
                     padding: 40px 20px;
                     text-align: center;
                 }
@@ -167,7 +171,7 @@ class EmailService:
                     color: #4b5563;
                 }}
                 .button {
-                    display: inline-block;
+            display: inline-block;
                     padding: 14px 32px;
                     background-color: #ff9dcd;
                     color: #ffffff;
@@ -179,10 +183,10 @@ class EmailService:
                     box-shadow: 0 2px 4px rgba(255, 157, 205, 0.3);
                 }
                 .button:hover {
-                    background-color: #ff7cbd;
+            background-color: #ff7cbd;
                 }
                 .expiry-notice {
-                    background-color: #fff5e6;
+            background-color: #fff5e6;
                     border-left: 4px solid #ffcc99;
                     padding: 12px 16px;
                     margin: 20px 0;
@@ -238,7 +242,7 @@ class EmailService:
                 </div>
                 <div class="footer">
                     <p>This email was sent from Bloom Budget</p>
-                    <p>If you have any questions, please contact support</p>
+                    <p>Questions? Email us at <a href="mailto:support@bloom-tracker.app" style="color: #ff9dcd;">support@bloom-tracker.app</a></p>
                 </div>
             </div>
         </body>
@@ -265,6 +269,7 @@ class EmailService:
 
         ---
         Bloom Budget
+        Questions? Email us at support@bloom-tracker.app
         """
 
         return self.send_email(
@@ -442,6 +447,7 @@ class EmailService:
                 <div class="footer">
                     <p><strong>Bloom Budget</strong></p>
                     <p>Financial Habits That Grow With You</p>
+                    <p style="margin-top: 10px;">Need help? <a href="mailto:support@bloom-tracker.app" style="color: #ff9dcd;">support@bloom-tracker.app</a></p>
                 </div>
             </div>
         </body>
@@ -471,11 +477,12 @@ class EmailService:
 
         Login here: {login_link}
 
-        If you have any questions or need help getting started, just reply to this email. We're here to help!
+        If you have any questions or need help getting started, email us at support@bloom-tracker.app
 
         ---
         Bloom Budget
         Financial Habits That Grow With You
+        Need help? support@bloom-tracker.app
         """
 
         return self.send_email(

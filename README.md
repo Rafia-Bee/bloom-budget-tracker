@@ -292,6 +292,12 @@ python scripts/maintenance.py verify-db
 
 See [scripts/README.md](scripts/README.md) for full documentation.
 
+## Support
+
+- **Email**: support@bloom-tracker.app
+- **Questions**: Email support for help with features or issues
+- **Bug Reports**: Send bug details to support@bloom-tracker.app
+
 ## Next Steps
 
 1. ~~Set up development environment~~ ✅
@@ -303,9 +309,10 @@ See [scripts/README.md](scripts/README.md) for full documentation.
 7. ~~Add PWA support for offline access~~ ✅
 8. ~~Deploy to production (Netlify)~~ ✅
 9. ~~Mobile UI optimization~~ ✅
-10. Add end-of-period suggestions
-11. Add budget categories with spending limits
-12. Deploy backend to cloud (Render/Railway)
-13. Add budget visualizations and spending trends
-14. Cross-browser testing
-15. Performance optimization for large datasets
+10. ~~Set up support email (CloudFlare Email Routing)~~ ✅
+11. Add end-of-period suggestions
+12. Add budget categories with spending limits
+13. Deploy backend to cloud (Render/Railway)
+14. Add budget visualizations and spending trends
+15. Cross-browser testing
+16. Performance optimization for large datasets

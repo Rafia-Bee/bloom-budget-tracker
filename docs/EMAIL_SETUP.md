@@ -107,13 +107,15 @@ No frontend environment variables needed. The frontend URL is only used by the b
 ### Testing Production Emails
 
 1. Deploy backend with SendGrid configuration
-2. Request password reset with a real email address
-3. Check your inbox (and spam folder)
-4. Verify the email:
+2. Set up CloudFlare Email Routing for support@bloom-tracker.app (see above)
+3. Request password reset with a real email address
+4. Check your inbox (and spam folder)
+5. Verify the email:
    - Contains Bloom branding
    - Has working reset link
    - Shows 1-hour expiration
    - Mobile responsive design
+   - Support email link works
 
 ## Email Template Customization
 
@@ -197,6 +199,68 @@ INFO: Email sent successfully to user@example.com. Status: 202
 ERROR: Failed to send password reset email: <error details>
 WARNING: SendGrid API key not configured. Email sending is disabled.
 ```
+
+## Email Forwarding with CloudFlare (Recommended)
+
+For receiving emails at support@bloom-tracker.app and other domain emails, use CloudFlare Email Routing (free):
+
+### Setup Steps
+
+1. **Sign up for CloudFlare** (free plan)
+   - Go to [cloudflare.com](https://www.cloudflare.com) and create account
+
+2. **Add your domain**
+   - Add bloom-tracker.app to CloudFlare
+   - Select Free plan
+
+3. **Update nameservers at Namecheap**
+   - Change from Netlify nameservers to CloudFlare nameservers
+   - Wait for DNS propagation (15 min - 48 hours, usually ~1 hour)
+
+4. **Enable Email Routing in CloudFlare**
+   - Dashboard → Email → Email Routing → Get Started
+   - CloudFlare auto-adds required MX records
+
+5. **Create forwarding rules**
+   - Add destination: your Gmail address
+   - Verify Gmail by clicking CloudFlare's verification email
+   - Create routing rule: `support@bloom-tracker.app` → your Gmail
+   - Add more addresses: `no-reply@bloom-tracker.app`, `hello@bloom-tracker.app`, etc.
+
+6. **Test forwarding**
+   - Send email to support@bloom-tracker.app
+   - Should arrive in Gmail inbox within seconds
+
+### Benefits
+
+- ✅ Unlimited free email forwarding
+- ✅ Multiple email addresses on your domain
+- ✅ Better DNS performance
+- ✅ Built-in DDoS protection
+- ✅ Easy to manage forwarding rules
+
+### Sending FROM support@bloom-tracker.app
+
+Once email routing is set up:
+
+1. **Verify sender in SendGrid**
+   - Settings → Sender Authentication → Single Sender Verification
+   - Use `support@bloom-tracker.app`
+   - Verification email forwards to your Gmail
+   - Click verification link
+
+2. **Configure Gmail "Send As"** (optional)
+   - Gmail Settings → Accounts → Add another email address
+   - Name: "Bloom Support"
+   - Email: support@bloom-tracker.app
+   - SMTP: smtp.sendgrid.net, Port 587
+   - Username: `apikey`
+   - Password: Your SendGrid API key
+   - TLS enabled
+
+3. **Update backend configuration**
+   - Set `SENDGRID_FROM_EMAIL=support@bloom-tracker.app` in production
+   - Deploy with updated environment variable
 
 ## Alternative Email Providers
 
