@@ -21,6 +21,7 @@ import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
 import ExportImportModal from '../components/ExportImportModal'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
 import BankImportModal from '../components/BankImportModal'
+import FilterTransactionsModal from '../components/FilterTransactionsModal'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -64,6 +65,19 @@ function Dashboard({ setIsAuthenticated }) {
   const [isInitialLoading, setIsInitialLoading] = useState(true) // Prevent flickering on initial load
   const weeklyBudgetCardRef = useRef(null)
 
+  // Filter and pagination state
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [activeFilters, setActiveFilters] = useState({
+    startDate: '',
+    endDate: '',
+    category: '',
+    paymentMethod: '',
+    minAmount: '',
+    maxAmount: '',
+    search: '',
+    transactionType: 'both'
+  })
+
   useEffect(() => {
     loadPeriodsAndCurrentWeek()
   }, [])
@@ -90,17 +104,23 @@ function Dashboard({ setIsAuthenticated }) {
   const loadTransactionsAndBalances = async () => {
     if (!currentPeriod) return
     try {
-      // Load current period transactions
-      const [expensesRes, incomeRes] = await Promise.all([
-        expenseAPI.getAll({ budget_period_id: currentPeriod.id }),
-        incomeAPI.getAll({ budget_period_id: currentPeriod.id })
-      ])
+      // Load based on transactionType filter
+      const promises = []
 
-      setExpenses(expensesRes.data)
-      setIncome(incomeRes.data)
+      if (activeFilters.transactionType !== 'income') {
+        promises.push(loadExpenses())
+      } else {
+        setExpenses([])
+      }
 
-      // Calculate cumulative balances from all periods
-      await calculateCumulativeBalances()
+      if (activeFilters.transactionType !== 'expense') {
+        promises.push(loadIncome())
+      } else {
+        setIncome([])
+      }
+
+      await Promise.all(promises)
+      // calculateCumulativeBalances is called within loadExpenses/loadIncome
     } catch (error) {
       console.error('Failed to load transactions and balances:', error)
     }
@@ -109,8 +129,26 @@ function Dashboard({ setIsAuthenticated }) {
   const loadExpenses = async () => {
     if (!currentPeriod) return
     try {
-      const currentResponse = await expenseAPI.getAll({ budget_period_id: currentPeriod.id })
-      setExpenses(currentResponse.data)
+      // Build query params with filters
+      const params = { budget_period_id: currentPeriod.id }
+
+      // Apply active filters
+      if (activeFilters.startDate) params.start_date = activeFilters.startDate
+      if (activeFilters.endDate) params.end_date = activeFilters.endDate
+      if (activeFilters.category) params.category = activeFilters.category
+      if (activeFilters.paymentMethod) params.payment_method = activeFilters.paymentMethod
+      if (activeFilters.minAmount) params.min_amount = Math.round(parseFloat(activeFilters.minAmount) * 100)
+      if (activeFilters.maxAmount) params.max_amount = Math.round(parseFloat(activeFilters.maxAmount) * 100)
+      if (activeFilters.search) params.search = activeFilters.search
+
+      const currentResponse = await expenseAPI.getAll(params)
+
+      // Handle both old (array) and new (object with expenses array) response formats
+      const expensesData = Array.isArray(currentResponse.data)
+        ? currentResponse.data
+        : currentResponse.data.expenses || []
+
+      setExpenses(expensesData)
       await calculateCumulativeBalances()
       // Refresh weekly budget card to update spent amount
       weeklyBudgetCardRef.current?.refresh()
@@ -122,8 +160,23 @@ function Dashboard({ setIsAuthenticated }) {
   const loadIncome = async () => {
     if (!currentPeriod) return
     try {
-      const response = await incomeAPI.getAll({ budget_period_id: currentPeriod.id })
-      setIncome(response.data)
+      // Build query params with filters
+      const params = { budget_period_id: currentPeriod.id }
+
+      // Apply active filters
+      if (activeFilters.startDate) params.start_date = activeFilters.startDate
+      if (activeFilters.endDate) params.end_date = activeFilters.endDate
+      if (activeFilters.minAmount) params.min_amount = Math.round(parseFloat(activeFilters.minAmount) * 100)
+      if (activeFilters.maxAmount) params.max_amount = Math.round(parseFloat(activeFilters.maxAmount) * 100)
+
+      const response = await incomeAPI.getAll(params)
+
+      // Handle both old (array) and new (object with income array) response formats
+      const incomeData = Array.isArray(response.data)
+        ? response.data
+        : response.data.income || []
+
+      setIncome(incomeData)
       await calculateCumulativeBalances()
       // Refresh weekly budget card to update balances
       weeklyBudgetCardRef.current?.refresh()
@@ -148,6 +201,13 @@ function Dashboard({ setIsAuthenticated }) {
     setSelectedTransactions([])
     setSelectionMode(false)
   }, [filter])
+
+  useEffect(() => {
+    // Reload transactions when active filters change
+    if (currentPeriod) {
+      loadTransactionsAndBalances()
+    }
+  }, [activeFilters])
 
   const loadPeriodsAndCurrentWeek = async () => {
     try {
@@ -464,6 +524,10 @@ function Dashboard({ setIsAuthenticated }) {
       console.error('Failed to add expense:', error)
       throw error
     }
+  }
+
+  const handleApplyFilters = (filters) => {
+    setActiveFilters(filters)
   }
 
   const handleAddIncome = async (incomeData) => {
@@ -1001,6 +1065,28 @@ function Dashboard({ setIsAuthenticated }) {
 
             {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
             <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
+              {/* Advanced Filter Button */}
+              <button
+                onClick={() => setShowFilterModal(true)}
+                className="relative px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter
+                {(() => {
+                  const activeCount = Object.entries(activeFilters).filter(([key, value]) => {
+                    if (key === 'transactionType') return value !== 'both'
+                    return value !== ''
+                  }).length
+                  return activeCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {activeCount}
+                    </span>
+                  ) : null
+                })()}
+              </button>
+
               <button
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'all'
@@ -1543,6 +1629,14 @@ function Dashboard({ setIsAuthenticated }) {
           }}
         />
       )}
+
+      {/* Filter Transactions Modal */}
+      <FilterTransactionsModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApply={handleApplyFilters}
+        initialFilters={activeFilters}
+      />
     </div>
   )
 }
