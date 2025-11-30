@@ -37,7 +37,7 @@ function OfflineIndicator() {
 
   return (
     <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center text-white transition-colors ${
-      isOnline ? 'bg-green-500' : 'bg-orange-500'
+      isOnline ? 'bg-emerald-600' : 'bg-orange-300'
     }`}>
       {isOnline ? (
         <div className="flex items-center justify-center gap-2">
