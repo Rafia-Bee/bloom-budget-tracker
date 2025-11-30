@@ -10,27 +10,27 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, Income
 from datetime import datetime
 
-income_bp = Blueprint('income', __name__)
+income_bp = Blueprint("income", __name__)
 
 
-@income_bp.route('', methods=['GET'])
+@income_bp.route("", methods=["GET"])
 @jwt_required()
 def get_income():
     """Get all income entries for the current user, optionally filtered by budget period."""
     user_id = int(get_jwt_identity())
 
     # Pagination parameters
-    page = request.args.get('page', 1, type=int)
-    limit = request.args.get('limit', 50, type=int)
+    page = request.args.get("page", 1, type=int)
+    limit = request.args.get("limit", 50, type=int)
 
     # Filter parameters
-    budget_period_id = request.args.get('budget_period_id', type=int)
-    income_type = request.args.get('type')
-    start_date = request.args.get('start_date')  # YYYY-MM-DD
-    end_date = request.args.get('end_date')      # YYYY-MM-DD
-    min_amount = request.args.get('min_amount', type=int)
-    max_amount = request.args.get('max_amount', type=int)
-    search = request.args.get('search')  # Search in type field
+    budget_period_id = request.args.get("budget_period_id", type=int)
+    income_type = request.args.get("type")
+    start_date = request.args.get("start_date")  # YYYY-MM-DD
+    end_date = request.args.get("end_date")  # YYYY-MM-DD
+    min_amount = request.args.get("min_amount", type=int)
+    max_amount = request.args.get("max_amount", type=int)
+    search = request.args.get("search")  # Search in type field
 
     query = Income.query.filter_by(user_id=user_id)
 
@@ -41,13 +41,13 @@ def get_income():
         query = query.filter_by(type=income_type)
     if start_date:
         try:
-            start = datetime.strptime(start_date, '%Y-%m-%d').date()
+            start = datetime.strptime(start_date, "%Y-%m-%d").date()
             query = query.filter(Income.actual_date >= start)
         except ValueError:
             pass
     if end_date:
         try:
-            end = datetime.strptime(end_date, '%Y-%m-%d').date()
+            end = datetime.strptime(end_date, "%Y-%m-%d").date()
             query = query.filter(Income.actual_date <= end)
         except ValueError:
             pass
@@ -63,29 +63,45 @@ def get_income():
     total = query.count()
 
     # Apply pagination
-    income_entries = query.order_by(Income.actual_date.desc()).limit(
-        limit).offset((page - 1) * limit).all()
+    income_entries = (
+        query.order_by(Income.actual_date.desc())
+        .limit(limit)
+        .offset((page - 1) * limit)
+        .all()
+    )
 
-    return jsonify({
-        'income': [{
-            'id': entry.id,
-            'type': entry.type,
-            'amount': entry.amount,
-            'date': entry.actual_date.strftime('%d %b, %Y') if entry.actual_date else None,
-            'scheduled_date': entry.scheduled_date.strftime('%d %b, %Y') if entry.scheduled_date else None,
-            'budget_period_id': entry.budget_period_id
-        } for entry in income_entries],
-        'pagination': {
-            'page': page,
-            'limit': limit,
-            'total': total,
-            'pages': (total + limit - 1) // limit,
-            'has_more': page * limit < total
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "income": [
+                    {
+                        "id": entry.id,
+                        "type": entry.type,
+                        "amount": entry.amount,
+                        "date": entry.actual_date.strftime("%d %b, %Y")
+                        if entry.actual_date
+                        else None,
+                        "scheduled_date": entry.scheduled_date.strftime("%d %b, %Y")
+                        if entry.scheduled_date
+                        else None,
+                        "budget_period_id": entry.budget_period_id,
+                    }
+                    for entry in income_entries
+                ],
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": total,
+                    "pages": (total + limit - 1) // limit,
+                    "has_more": page * limit < total,
+                },
+            }
+        ),
+        200,
+    )
 
 
-@income_bp.route('', methods=['POST'])
+@income_bp.route("", methods=["POST"])
 @jwt_required()
 def create_income():
     """Create a new income entry."""
@@ -93,55 +109,60 @@ def create_income():
     data = request.get_json()
 
     # Validate required fields
-    if not data.get('type') or not data.get('amount'):
-        return jsonify({'error': 'Type and amount are required'}), 400
+    if not data.get("type") or not data.get("amount"):
+        return jsonify({"error": "Type and amount are required"}), 400
 
-    if not data.get('budget_period_id'):
-        return jsonify({'error': 'Budget period is required'}), 400
+    if not data.get("budget_period_id"):
+        return jsonify({"error": "Budget period is required"}), 400
 
     try:
-        amount = int(data['amount'])
+        amount = int(data["amount"])
         if amount <= 0:
-            return jsonify({'error': 'Amount must be positive'}), 400
+            return jsonify({"error": "Amount must be positive"}), 400
     except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid amount'}), 400
+        return jsonify({"error": "Invalid amount"}), 400
 
     # Parse date
-    date_str = data.get('date')
+    date_str = data.get("date")
     if date_str:
         try:
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
     else:
         date = datetime.utcnow().date()
 
     # Create income entry
     income = Income(
         user_id=user_id,
-        budget_period_id=data['budget_period_id'],
-        type=data['type'],
+        budget_period_id=data["budget_period_id"],
+        type=data["type"],
         amount=amount,
         actual_date=date,
-        scheduled_date=date
+        scheduled_date=date,
     )
 
     db.session.add(income)
     db.session.commit()
 
-    return jsonify({
-        'message': 'Income created successfully',
-        'income': {
-            'id': income.id,
-            'type': income.type,
-            'amount': income.amount,
-            'date': income.actual_date.strftime('%d %b, %Y'),
-            'budget_period_id': income.budget_period_id
-        }
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "Income created successfully",
+                "income": {
+                    "id": income.id,
+                    "type": income.type,
+                    "amount": income.amount,
+                    "date": income.actual_date.strftime("%d %b, %Y"),
+                    "budget_period_id": income.budget_period_id,
+                },
+            }
+        ),
+        201,
+    )
 
 
-@income_bp.route('/<int:income_id>', methods=['PUT'])
+@income_bp.route("/<int:income_id>", methods=["PUT"])
 @jwt_required()
 def update_income(income_id):
     """Update an existing income entry."""
@@ -149,44 +170,50 @@ def update_income(income_id):
     income = Income.query.filter_by(id=income_id, user_id=user_id).first()
 
     if not income:
-        return jsonify({'error': 'Income not found'}), 404
+        return jsonify({"error": "Income not found"}), 404
 
     data = request.get_json()
 
     # Update fields if provided
-    if 'type' in data:
-        income.type = data['type']
+    if "type" in data:
+        income.type = data["type"]
 
-    if 'amount' in data:
+    if "amount" in data:
         try:
-            amount = int(data['amount'])
+            amount = int(data["amount"])
             if amount <= 0:
-                return jsonify({'error': 'Amount must be positive'}), 400
+                return jsonify({"error": "Amount must be positive"}), 400
             income.amount = amount
         except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid amount'}), 400
+            return jsonify({"error": "Invalid amount"}), 400
 
-    if 'date' in data:
+    if "date" in data:
         try:
-            income.actual_date = datetime.strptime(
-                data['date'], '%Y-%m-%d').date()
+            income.actual_date = datetime.strptime(data["date"], "%Y-%m-%d").date()
         except ValueError:
-            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 
     db.session.commit()
 
-    return jsonify({
-        'message': 'Income updated successfully',
-        'income': {
-            'id': income.id,
-            'type': income.type,
-            'amount': income.amount,
-            'date': income.actual_date.strftime('%d %b, %Y') if income.actual_date else None
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": "Income updated successfully",
+                "income": {
+                    "id": income.id,
+                    "type": income.type,
+                    "amount": income.amount,
+                    "date": income.actual_date.strftime("%d %b, %Y")
+                    if income.actual_date
+                    else None,
+                },
+            }
+        ),
+        200,
+    )
 
 
-@income_bp.route('/<int:income_id>', methods=['DELETE'])
+@income_bp.route("/<int:income_id>", methods=["DELETE"])
 @jwt_required()
 def delete_income(income_id):
     """Delete an income entry."""
@@ -194,9 +221,9 @@ def delete_income(income_id):
     income = Income.query.filter_by(id=income_id, user_id=user_id).first()
 
     if not income:
-        return jsonify({'error': 'Income not found'}), 404
+        return jsonify({"error": "Income not found"}), 404
 
     db.session.delete(income)
     db.session.commit()
 
-    return jsonify({'message': 'Income deleted successfully'}), 200
+    return jsonify({"message": "Income deleted successfully"}), 200

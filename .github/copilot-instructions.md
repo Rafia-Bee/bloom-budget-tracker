@@ -13,7 +13,24 @@
 **Terminal & Git**:
 - Provide copy-paste ready commands (NEVER execute git/terminal via tools)
 - Use `.venv` virtual environment for Python commands
-- Example: `git add . && git commit -m "feat: add weekly carryover logic"`
+- **Pre-push hook**: Automatically runs before every push (black, flake8, npm build, console.log check)
+- **Branch protection**: If enabled, requires PR with passing CI/CD before merging to main
+- Standard workflow (direct push):
+  ```powershell
+  git add .
+  git commit -m "feat: add feature"
+  git push origin main  # Pre-push hook runs automatically
+  ```
+- PR workflow (if branch protection enabled):
+  ```powershell
+  git checkout -b fix/issue-name
+  git add .
+  git commit -m "fix: something"
+  git push origin fix/issue-name
+  gh pr create --fill
+  gh pr merge --auto --squash  # Auto-merge when CI passes
+  ```
+- Emergency bypass: `git push origin main --no-verify` (skips hook, CI still runs)
 
 **Uncertainty Handling**: Infer 1-2 reasonable defaults and proceed. Ask only if blocked.
 

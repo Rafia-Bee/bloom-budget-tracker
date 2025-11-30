@@ -25,7 +25,7 @@ db = SQLAlchemy()
 
 
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -33,15 +33,20 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     budget_periods = db.relationship(
-        'BudgetPeriod', backref='user', lazy=True, cascade='all, delete-orphan')
+        "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
+    )
     salary_periods = db.relationship(
-        'SalaryPeriod', backref='user', lazy=True, cascade='all, delete-orphan')
+        "SalaryPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
+    )
     expenses = db.relationship(
-        'Expense', backref='user', lazy=True, cascade='all, delete-orphan')
-    income = db.relationship('Income', backref='user',
-                             lazy=True, cascade='all, delete-orphan')
-    debts = db.relationship('Debt', backref='user',
-                            lazy=True, cascade='all, delete-orphan')
+        "Expense", backref="user", lazy=True, cascade="all, delete-orphan"
+    )
+    income = db.relationship(
+        "Income", backref="user", lazy=True, cascade="all, delete-orphan"
+    )
+    debts = db.relationship(
+        "Debt", backref="user", lazy=True, cascade="all, delete-orphan"
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -51,10 +56,10 @@ class User(db.Model):
 
 
 class SalaryPeriod(db.Model):
-    __tablename__ = 'salary_periods'
+    __tablename__ = "salary_periods"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     # Balance-based budgeting fields
     # Starting debit balance in cents
@@ -90,17 +95,20 @@ class SalaryPeriod(db.Model):
 
     # Relationships
     budget_periods = db.relationship(
-        'BudgetPeriod', backref='salary_period', lazy=True, cascade='all, delete-orphan')
+        "BudgetPeriod", backref="salary_period", lazy=True, cascade="all, delete-orphan"
+    )
 
 
 class BudgetPeriod(db.Model):
-    __tablename__ = 'budget_periods'
+    __tablename__ = "budget_periods"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'users.id'), nullable=False, index=True)
-    salary_period_id = db.Column(db.Integer, db.ForeignKey(
-        'salary_periods.id'), nullable=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
+    salary_period_id = db.Column(
+        db.Integer, db.ForeignKey("salary_periods.id"), nullable=True
+    )
     # 1-4 for weekly budgets
     week_number = db.Column(db.Integer, nullable=True)
     # Weekly budget allocation
@@ -110,32 +118,33 @@ class BudgetPeriod(db.Model):
     period_type = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    expenses = db.relationship('Expense', backref='budget_period', lazy=True)
-    income = db.relationship('Income', backref='budget_period', lazy=True)
+    expenses = db.relationship("Expense", backref="budget_period", lazy=True)
+    income = db.relationship("Income", backref="budget_period", lazy=True)
 
     # Composite index for active period queries
     __table_args__ = (
-        db.Index('idx_budget_period_active',
-                 'user_id', 'start_date', 'end_date'),
+        db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
     )
 
 
 class Expense(db.Model):
-    __tablename__ = 'expenses'
+    __tablename__ = "expenses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    budget_period_id = db.Column(db.Integer, db.ForeignKey(
-        'budget_periods.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    budget_period_id = db.Column(
+        db.Integer, db.ForeignKey("budget_periods.id"), nullable=True
+    )
     recurring_template_id = db.Column(
-        db.Integer, db.ForeignKey('recurring_expenses.id'), nullable=True)
+        db.Integer, db.ForeignKey("recurring_expenses.id"), nullable=True
+    )
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), nullable=False)
     subcategory = db.Column(db.String(100), nullable=True)
     date = db.Column(db.Date, nullable=False)
-    due_date = db.Column(db.String(50), nullable=True, default='N/A')
-    payment_method = db.Column(db.String(20), nullable=False, default='credit')
+    due_date = db.Column(db.String(50), nullable=True, default="N/A")
+    payment_method = db.Column(db.String(20), nullable=False, default="credit")
     notes = db.Column(db.Text, nullable=True)
     receipt_url = db.Column(db.String(500), nullable=True)
     # True for fixed bills that don't count against weekly budget
@@ -144,12 +153,13 @@ class Expense(db.Model):
 
 
 class Income(db.Model):
-    __tablename__ = 'income'
+    __tablename__ = "income"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    budget_period_id = db.Column(db.Integer, db.ForeignKey(
-        'budget_periods.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    budget_period_id = db.Column(
+        db.Integer, db.ForeignKey("budget_periods.id"), nullable=True
+    )
     type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     scheduled_date = db.Column(db.Date, nullable=True)
@@ -158,10 +168,10 @@ class Income(db.Model):
 
 
 class Debt(db.Model):
-    __tablename__ = 'debts'
+    __tablename__ = "debts"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     original_amount = db.Column(db.Integer, nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
@@ -169,19 +179,20 @@ class Debt(db.Model):
     archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class RecurringExpense(db.Model):
-    __tablename__ = 'recurring_expenses'
+    __tablename__ = "recurring_expenses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), nullable=False)
     subcategory = db.Column(db.String(100), nullable=True)
-    payment_method = db.Column(db.String(20), nullable=False, default='credit')
+    payment_method = db.Column(db.String(20), nullable=False, default="credit")
     # 'weekly', 'biweekly', 'monthly', 'custom'
     frequency = db.Column(db.String(20), nullable=False)
     # For custom frequency (days)
@@ -198,69 +209,79 @@ class RecurringExpense(db.Model):
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationship to generated expenses
     generated_expenses = db.relationship(
-        'Expense', backref='recurring_template', lazy=True, foreign_keys='Expense.recurring_template_id')
+        "Expense",
+        backref="recurring_template",
+        lazy=True,
+        foreign_keys="Expense.recurring_template_id",
+    )
 
 
 class ExpenseNameMapping(db.Model):
-    __tablename__ = 'expense_name_mappings'
+    __tablename__ = "expense_name_mappings"
 
     id = db.Column(db.Integer, primary_key=True)
     expense_name = db.Column(db.String(200), unique=True, nullable=False)
     subcategory = db.Column(db.String(100), nullable=False)
     confidence = db.Column(db.Float, default=1.0)
     last_updated = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class UserDefaults(db.Model):
-    __tablename__ = 'user_defaults'
+    __tablename__ = "user_defaults"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'users.id'), nullable=False, unique=True)
-    default_expense_name = db.Column(db.String(200), default='Wolt')
-    default_category = db.Column(db.String(100), default='Flexible Expenses')
-    default_subcategory = db.Column(db.String(100), default='Food')
-    default_payment_method = db.Column(db.String(20), default='credit')
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True
+    )
+    default_expense_name = db.Column(db.String(200), default="Wolt")
+    default_category = db.Column(db.String(100), default="Flexible Expenses")
+    default_subcategory = db.Column(db.String(100), default="Food")
+    default_payment_method = db.Column(db.String(20), default="credit")
 
 
 class CreditCardSettings(db.Model):
-    __tablename__ = 'credit_card_settings'
+    __tablename__ = "credit_card_settings"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'users.id'), nullable=False, unique=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True
+    )
     credit_limit = db.Column(db.Integer, default=150000)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class PeriodSuggestion(db.Model):
-    __tablename__ = 'period_suggestions'
+    __tablename__ = "period_suggestions"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    budget_period_id = db.Column(db.Integer, db.ForeignKey(
-        'budget_periods.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    budget_period_id = db.Column(
+        db.Integer, db.ForeignKey("budget_periods.id"), nullable=False
+    )
     suggestion_type = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(20), default='pending')
+    status = db.Column(db.String(20), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class PasswordResetToken(db.Model):
-    __tablename__ = 'password_reset_tokens'
+    __tablename__ = "password_reset_tokens"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     token = db.Column(db.String(255), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref='password_reset_tokens')
+    user = db.relationship("User", backref="password_reset_tokens")

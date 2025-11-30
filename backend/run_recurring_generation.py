@@ -31,21 +31,21 @@ with app.app_context():
     print(f"  - Expenses generated: {result['generated_count']}")
     print(f"  - Errors: {len(result['errors'])}")
 
-    if result['templates']:
+    if result["templates"]:
         print(f"\n📝 Details:")
-        for template in result['templates']:
-            action = template.get('action', 'unknown')
-            name = template.get('name', 'Unknown')
-            if action == 'generated':
-                amount = template.get('amount', 0)
-                date = template.get('date', 'unknown')
+        for template in result["templates"]:
+            action = template.get("action", "unknown")
+            name = template.get("name", "Unknown")
+            if action == "generated":
+                amount = template.get("amount", 0)
+                date = template.get("date", "unknown")
                 print(f"  ✓ Generated: {name} - ${amount:.2f} on {date}")
-            elif action == 'skipped (already exists)':
+            elif action == "skipped (already exists)":
                 print(f"  ⊘ Skipped: {name} (already exists)")
 
-    if result['errors']:
+    if result["errors"]:
         print(f"\n❌ Errors:")
-        for error in result['errors']:
+        for error in result["errors"]:
             print(f"  - {error['name']}: {error['error']}")
 
     print(f"\n{'='*60}")

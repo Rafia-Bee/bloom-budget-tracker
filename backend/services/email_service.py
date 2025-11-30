@@ -9,7 +9,14 @@ import os
 import logging
 from typing import Optional, Dict, Any
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content, PlainTextContent, HtmlContent
+from sendgrid.helpers.mail import (
+    Mail,
+    Email,
+    To,
+    Content,
+    PlainTextContent,
+    HtmlContent,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +32,16 @@ class EmailService:
             api_key: SendGrid API key (defaults to SENDGRID_API_KEY env var)
             from_email: Sender email address (defaults to SENDGRID_FROM_EMAIL env var)
         """
-        self.api_key = api_key or os.getenv('SENDGRID_API_KEY')
+        self.api_key = api_key or os.getenv("SENDGRID_API_KEY")
         self.from_email = from_email or os.getenv(
-            'SENDGRID_FROM_EMAIL', 'noreply@bloom-budget.com')
+            "SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com"
+        )
         self.enabled = bool(self.api_key)
 
         if not self.enabled:
             logger.warning(
-                "SendGrid API key not configured. Email sending is disabled.")
+                "SendGrid API key not configured. Email sending is disabled."
+            )
         else:
             logger.info("Email service initialized with SendGrid")
 
@@ -41,7 +50,7 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        plain_text_content: Optional[str] = None
+        plain_text_content: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Send an email using SendGrid.
@@ -60,25 +69,23 @@ class EmailService:
         """
         if not self.enabled:
             logger.warning(
-                f"Email sending disabled. Would have sent to {to_email}: {subject}")
-            return {
-                'success': False,
-                'error': 'Email service is not configured'
-            }
+                f"Email sending disabled. Would have sent to {to_email}: {subject}"
+            )
+            return {"success": False, "error": "Email service is not configured"}
 
         try:
             # Create message
             message = Mail(
                 from_email=Email(self.from_email, "Bloom Budget"),
                 to_emails=To(to_email),
-                subject=subject
+                subject=subject,
             )
 
             # Add plain text content
             if plain_text_content:
                 message.content = [
                     PlainTextContent(plain_text_content),
-                    HtmlContent(html_content)
+                    HtmlContent(html_content),
                 ]
             else:
                 message.content = HtmlContent(html_content)
@@ -88,26 +95,21 @@ class EmailService:
             response = sg.send(message)
 
             logger.info(
-                f"Email sent successfully to {to_email}. Status: {response.status_code}")
+                f"Email sent successfully to {to_email}. Status: {response.status_code}"
+            )
 
             return {
-                'success': True,
-                'message': 'Email sent successfully',
-                'status_code': response.status_code
+                "success": True,
+                "message": "Email sent successfully",
+                "status_code": response.status_code,
             }
 
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {str(e)}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def send_password_reset_email(
-        self,
-        to_email: str,
-        reset_token: str,
-        frontend_url: str
+        self, to_email: str, reset_token: str, frontend_url: str
     ) -> Dict[str, Any]:
         """
         Send a password reset email with a reset link.
@@ -147,11 +149,11 @@ class EmailService:
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                     overflow: hidden;
                 }}
-                .header {
+                .header {{
             background: linear-gradient(135deg, #ffc1e0 0%, #d4b5ff 100%);
                     padding: 40px 20px;
                     text-align: center;
-                }
+                }}
                 .logo {{
                     font-size: 32px;
                     font-weight: bold;
@@ -170,7 +172,7 @@ class EmailService:
                     margin: 0 0 20px 0;
                     color: #4b5563;
                 }}
-                .button {
+                .button {{
             display: inline-block;
                     padding: 14px 32px;
                     background-color: #ff9dcd;
@@ -181,17 +183,17 @@ class EmailService:
                     margin: 20px 0;
                     transition: background-color 0.3s;
                     box-shadow: 0 2px 4px rgba(255, 157, 205, 0.3);
-                }
-                .button:hover {
+                }}
+                .button:hover {{
             background-color: #ff7cbd;
-                }
-                .expiry-notice {
+                }}
+                .expiry-notice {{
             background-color: #fff5e6;
                     border-left: 4px solid #ffcc99;
                     padding: 12px 16px;
                     margin: 20px 0;
                     border-radius: 4px;
-                }
+                }}
                 .security-notice {{
                     font-size: 14px;
                     color: #6b7280;
@@ -276,14 +278,11 @@ class EmailService:
             to_email=to_email,
             subject="Reset Your Password - Bloom Budget",
             html_content=html_content,
-            plain_text_content=plain_text_content
+            plain_text_content=plain_text_content,
         )
 
     def send_welcome_email(
-        self,
-        to_email: str,
-        user_name: str,
-        frontend_url: str
+        self, to_email: str, user_name: str, frontend_url: str
     ) -> Dict[str, Any]:
         """
         Send a welcome email to newly registered users.
@@ -489,7 +488,7 @@ class EmailService:
             to_email=to_email,
             subject="Welcome to Bloom Budget! 🌸",
             html_content=html_content,
-            plain_text_content=plain_text_content
+            plain_text_content=plain_text_content,
         )
 
 

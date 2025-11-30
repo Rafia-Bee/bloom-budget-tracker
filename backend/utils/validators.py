@@ -14,7 +14,7 @@ def validate_expense_name(name):
     if not name or len(name) > 200:
         return False, "Expense name must be 1-200 characters"
     # Allow letters, numbers, spaces, and common punctuation
-    if not re.match(r'^[\w\s\-\.\,\&\(\)]+$', name, re.UNICODE):
+    if not re.match(r"^[\w\s\-\.\,\&\(\)]+$", name, re.UNICODE):
         return False, "Expense name contains invalid characters"
     return True, None
 
@@ -35,13 +35,16 @@ def validate_amount(amount):
 def validate_category(category, allowed_categories):
     """Validate category against allowed list."""
     if category not in allowed_categories:
-        return False, f"Invalid category. Must be one of: {', '.join(allowed_categories)}"
+        return (
+            False,
+            f"Invalid category. Must be one of: {', '.join(allowed_categories)}",
+        )
     return True, None
 
 
 def validate_payment_method(method):
     """Validate payment method."""
-    allowed = ['credit', 'debit', 'cash']
+    allowed = ["credit", "debit", "cash"]
     if method not in allowed:
         return False, f"Invalid payment method. Must be one of: {', '.join(allowed)}"
     return True, None
@@ -54,12 +57,12 @@ def validate_date_string(date_str):
 
     try:
         # Try ISO format (YYYY-MM-DD)
-        datetime.strptime(date_str, '%Y-%m-%d')
+        datetime.strptime(date_str, "%Y-%m-%d")
         return True, None
     except ValueError:
         try:
             # Try display format (dd MMM, YYYY)
-            datetime.strptime(date_str, '%d %b, %Y')
+            datetime.strptime(date_str, "%d %b, %Y")
             return True, None
         except ValueError:
             return False, "Invalid date format. Use YYYY-MM-DD"
@@ -79,39 +82,24 @@ def sanitize_string(value):
     # Strip leading/trailing whitespace
     value = value.strip()
     # Remove null bytes
-    value = value.replace('\x00', '')
+    value = value.replace("\x00", "")
     return value
 
 
 # Allowed categories for expenses
 ALLOWED_CATEGORIES = [
-    'Fixed Expenses',
-    'Flexible Expenses',
-    'Leisure',
-    'Debt Payments',
-    'Savings'
+    "Fixed Expenses",
+    "Flexible Expenses",
+    "Leisure",
+    "Debt Payments",
+    "Savings",
 ]
 
-ALLOWED_INCOME_TYPES = [
-    'salary',
-    'freelance',
-    'investment',
-    'gift',
-    'other'
-]
+ALLOWED_INCOME_TYPES = ["salary", "freelance", "investment", "gift", "other"]
 
-ALLOWED_PERIOD_TYPES = [
-    'monthly',
-    'weekly',
-    'custom'
-]
+ALLOWED_PERIOD_TYPES = ["monthly", "weekly", "custom"]
 
-ALLOWED_RECURRING_FREQUENCIES = [
-    'weekly',
-    'biweekly',
-    'monthly',
-    'custom'
-]
+ALLOWED_RECURRING_FREQUENCIES = ["weekly", "biweekly", "monthly", "custom"]
 
 
 def validate_email(email):
@@ -119,5 +107,5 @@ def validate_email(email):
     if not email or len(email) > 120:
         return False
     # Basic email regex pattern
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return re.match(email_pattern, email) is not None

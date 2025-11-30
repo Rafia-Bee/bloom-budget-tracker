@@ -507,16 +507,44 @@ weeklyBudgetCardRef.current?.refresh()
 - **Connection Pooling:** Enabled (`pool_pre_ping`, `pool_recycle=300`)
 
 ### Continuous Deployment Workflow
-```bash
-# Development workflow
+
+**Standard workflow (branch protection disabled):**
+```powershell
+# Pre-push hook runs automatically (black, flake8, npm build)
 git add .
 git commit -m "feat: add feature X"
-git push origin main
+git push origin main  # Hook checks locally, then pushes
 
 # Auto-triggers:
-# 1. Netlify build + deploy (frontend)
-# 2. Render build + deploy (backend)
-# 3. ~5-8 minutes total deployment time
+# 1. GitHub Actions CI/CD (flake8, black, pytest, npm build)
+# 2. Netlify build + deploy (frontend)
+# 3. Render build + deploy (backend)
+# 4. ~5-8 minutes total deployment time
+```
+
+**PR workflow (if branch protection enabled):**
+```powershell
+# Create feature branch
+git checkout -b fix/issue-name
+git add .
+git commit -m "fix: something"
+
+# Push to feature branch (pre-push hook runs)
+git push origin fix/issue-name
+
+# Create PR and auto-merge when CI passes
+gh pr create --fill
+gh pr merge --auto --squash
+
+# Pull merged changes to main
+git checkout main
+git pull origin main
+```
+
+**Emergency bypass:**
+```powershell
+# Skip pre-push hook (CI still runs on GitHub)
+git push origin main --no-verify
 ```
 
 ### Monitoring & Logs
@@ -602,6 +630,8 @@ JWT_SECRET_KEY=jwt-secret-key-change-in-production
 - **Branch Strategy:** Main branch only (single developer)
 - **Commit Convention:** Semantic commit messages (feat:, fix:, docs:, refactor:)
 - **Auto-Deploy:** Push to main triggers Netlify + Render deployments
+- **Pre-Push Hook:** `.git/hooks/pre-push` runs local checks (black, flake8, npm build) before allowing push
+- **Branch Protection:** Optional GitHub branch protection requiring CI/CD to pass before merge (see `docs/BRANCH_PROTECTION_SETUP.md`)
 
 ### Todo Tracking System (Multi-Level)
 1. **GitHub Issues:** Primary tracker for features (12 active issues)
@@ -682,7 +712,9 @@ sqlite3 instance\bloom.db
 9. Allocate leftover → Verify debt payment appears in correct week
 
 ### Pre-Deployment Checklist
-- [ ] Remove debug `console.log` statements
+- [ ] Remove debug `console.log` statements (pre-push hook checks this)
+- [ ] Run backend formatting: `.venv\Scripts\Activate.ps1 ; black backend/`
+- [ ] Test frontend build: `cd frontend ; npm run build ; cd ..`
 - [ ] Run `python scripts/maintenance.py verify-db`
 - [ ] Backup database: `Copy-Item instance\bloom.db instance\bloom_backup.db`
 - [ ] Test critical flows (login, create period, add expense, recurring generation)
@@ -690,6 +722,8 @@ sqlite3 instance\bloom.db
 - [ ] Verify CORS origins in backend `.env`
 - [ ] Ensure all secrets in Render environment variables
 - [ ] Commit with descriptive message: `git commit -m "feat: ..."`
+- [ ] Pre-push hook will automatically run checks before allowing push
+- [ ] Monitor GitHub Actions CI/CD for any failures
 
 ---
 
@@ -795,19 +829,20 @@ Transaction Date	Amount	Name
 ### Current Known Issues
 
 1. **Legacy Budget Period System Confusion (Issue #28):**
-   - Unused legacy code for manual budget period creation
-   - `CreatePeriodModal.jsx`, `EditPeriodModal.jsx`, and `budget_periods.py` routes exist but aren't used
-   - `period_type` field in BudgetPeriod is vestigial (always 'weekly' now)
-   - **Impact:** Architectural confusion, technical debt, misleading documentation
-   - **Fix:** Remove legacy CRUD routes, delete unused modals, update docs
+   - ⚠️ **PARTIALLY RESOLVED:** Legacy modals are still used in Dashboard.jsx (not dead code)
+   - Users can still manually create/edit budget periods via UI
+   - `CreatePeriodModal.jsx`, `EditPeriodModal.jsx` used at lines 909, 813, 920
+   - `budget_periods.py` routes are still functional
+   - **Impact:** Two ways to manage periods (wizard vs. manual) - confusing UX
+   - **Fix:** Decide whether to keep or remove legacy period management UI
 
-2. **Console Logs Not Cleaned Up:**
-   - `Dashboard.jsx` lines 230-231 have debug logs: `console.log('Current period ID:', ...)`
-   - **Fix:** Remove before next production deploy
+2. ~~**Console Logs Not Cleaned Up:**~~ ✅ **RESOLVED** (Nov 30, 2025)
+   - All debug console.logs removed from frontend/src
+   - Only build scripts have logs (acceptable)
 
-3. **No Automated Recurring Generation:**
-   - Recurring expenses require manual "⚡ Generate Now" button click
-   - **Fix:** Set up Render cron job or external scheduler (cron-job.org)
+3. ~~**No Automated Recurring Generation:**~~ ✅ **RESOLVED** (Nov 30, 2025 - Issue #29)
+   - GitHub Actions workflow created: `.github/workflows/recurring-expenses.yml`
+   - Runs daily at 2 AM UTC with 60-day lookahead
 
 3. **Render Free Tier Cold Starts:**
    - 30-60 second delay after 15 minutes of inactivity
@@ -830,17 +865,21 @@ Transaction Date	Amount	Name
    - Zero automated tests for backend or frontend
    - **Fix:** Add pytest tests for critical backend routes, React Testing Library for frontend
 
-8. **No CI/CD Pipeline:**
-   - No automated testing or linting before deployment
-   - **Fix:** Add GitHub Actions workflow (test, lint, build)
+8. ~~**No CI/CD Pipeline:**~~ ⏳ **IN PROGRESS** (Nov 30, 2025 - Issue #47)
+   - GitHub Actions workflow created: `.github/workflows/ci.yml`
+   - Backend: flake8, black --check, pytest
+   - Frontend: npm build, console.log detection
+   - **Status:** Ready to push and test
 
-9. **Large Transaction Lists Slow Down:**
-   - Dashboard.jsx becomes sluggish with 500+ transactions
-   - **Fix:** Implement pagination or virtualized scrolling (react-window)
+9. ~~**Large Transaction Lists Slow Down:**~~ ✅ **RESOLVED** (Nov 30, 2025 - Issue #30)
+   - Implemented pagination (50 items/page) with Load More button
+   - Added comprehensive filtering (category, subcategory, payment method, dates, amounts, search)
+   - **Performance:** Handles thousands of transactions without slowdown
 
-10. **No Offline Indication:**
-    - PWA works offline, but no UI indicator when offline
-    - **Fix:** Add offline banner: "You're offline. Changes will sync when online."
+10. ~~**No Offline Indication:**~~ ✅ **RESOLVED** (Nov 30, 2025 - Issue #36)
+    - Added `OfflineIndicator` component with network status monitoring
+    - Pastel orange banner when offline, emerald green when back online
+    - Graceful error handling for offline API responses
 
 ---
 
