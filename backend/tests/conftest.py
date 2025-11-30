@@ -80,12 +80,11 @@ def salary_period(client, auth_headers):
     """Create a test salary period"""
     response = client.post('/api/v1/salary-periods', json={
         'start_date': '2025-11-20',
-        'end_date': '2025-12-19',
-        'initial_debit_balance': 500000,  # €5000
-        'initial_credit_balance': 100000,  # €1000 available
+        'debit_balance': 500000,  # €5000
+        'credit_balance': 100000,  # €1000 available
         'credit_limit': 150000,  # €1500 limit
-        'credit_budget_allowance': 30000,  # €300 per week
-        'recurring_expenses': []
+        'credit_allowance': 30000,  # €300 per week
+        'fixed_bills': []
     }, headers=auth_headers)
 
     if response.status_code != 201:
