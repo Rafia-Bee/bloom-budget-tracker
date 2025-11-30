@@ -221,7 +221,10 @@ Remove `console.log('Current period ID:', ...)` statements from `Dashboard.jsx` 
 ## Post-Implementation Checklist
 
 After successful code changes:
-1. Test functionality (run `bstart`, verify in browser)
+1. **Test functionality thoroughly** (run `bstart`, verify in browser)
+   - Test all affected features and edge cases
+   - Verify UI displays correctly on mobile and desktop
+   - Check browser console for errors
 2. Remove debug `console.log` statements
 3. Run database verification: `python scripts/maintenance.py verify-db`
 4. Backup database if schema changed
@@ -230,3 +233,7 @@ After successful code changes:
    git add .
    git commit -m "feat: implement automatic weekly carryover logic"
    ```
+6. **IMPORTANT: Do NOT push to remote until user confirms testing is complete**
+   - User will test the changes locally first
+   - Only push after explicit confirmation from user
+   - Command ready: `git push origin main`
