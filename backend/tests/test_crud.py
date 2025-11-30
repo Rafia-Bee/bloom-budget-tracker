@@ -1,0 +1,190 @@
+"""
+Bloom - CRUD Operations Tests
+
+Test expense, income, and salary period creation/update/delete operations.
+"""
+
+import pytest
+from datetime import date, timedelta
+
+
+class TestExpenseCRUD:
+    """Test expense CRUD operations"""
+
+    def test_create_expense(self, client, auth_headers, salary_period):
+        """Should create expense successfully"""
+        response = client.post('/api/v1/expenses', json={
+            'name': 'Groceries',
+            'amount': 5000,  # €50
+            'category': 'Food & Dining',
+            'subcategory': 'Groceries',
+            'payment_method': 'Debit card',
+            'date': '2025-11-25'
+        }, headers=auth_headers)
+
+        assert response.status_code == 201
+        assert response.json['expense']['name'] == 'Groceries'
+        assert response.json['expense']['amount'] == 5000
+
+    def test_create_expense_auto_assigns_period(self, client, auth_headers, salary_period):
+        """Should auto-assign budget period based on expense date"""
+        # Expense in first week (Nov 20-26)
+        response = client.post('/api/v1/expenses', json={
+            'name': 'Test Expense',
+            'amount': 1000,
+            'category': 'Shopping',
+            'date': '2025-11-22'
+        }, headers=auth_headers)
+
+        assert response.status_code == 201
+
+        # Verify it's assigned to correct week
+        expense_id = response.json['expense']['id']
+        expense_response = client.get(
+            f'/api/v1/expenses/{expense_id}', headers=auth_headers)
+
+        # Should have budget_period_id set
+        assert expense_response.json['budget_period_id'] is not None
+
+    def test_get_all_expenses(self, client, auth_headers, salary_period):
+        """Should retrieve all expenses"""
+        # Create expenses
+        client.post('/api/v1/expenses', json={
+            'name': 'Expense 1',
+            'amount': 1000,
+            'category': 'Food & Dining',
+            'date': '2025-11-25'
+        }, headers=auth_headers)
+
+        client.post('/api/v1/expenses', json={
+            'name': 'Expense 2',
+            'amount': 2000,
+            'category': 'Shopping',
+            'date': '2025-11-26'
+        }, headers=auth_headers)
+
+        response = client.get('/api/v1/expenses', headers=auth_headers)
+
+        assert response.status_code == 200
+        assert len(response.json['expenses']) == 2
+
+    def test_update_expense(self, client, auth_headers, salary_period):
+        """Should update expense successfully"""
+        # Create expense
+        create_response = client.post('/api/v1/expenses', json={
+            'name': 'Original Name',
+            'amount': 1000,
+            'category': 'Food & Dining',
+            'date': '2025-11-25'
+        }, headers=auth_headers)
+
+        expense_id = create_response.json['expense']['id']
+
+        # Update expense
+        response = client.put(f'/api/v1/expenses/{expense_id}', json={
+            'name': 'Updated Name',
+            'amount': 1500
+        }, headers=auth_headers)
+
+        assert response.status_code == 200
+        assert response.json['expense']['name'] == 'Updated Name'
+        assert response.json['expense']['amount'] == 1500
+
+    def test_delete_expense(self, client, auth_headers, salary_period):
+        """Should delete expense successfully"""
+        # Create expense
+        create_response = client.post('/api/v1/expenses', json={
+            'name': 'To Delete',
+            'amount': 1000,
+            'category': 'Shopping',
+            'date': '2025-11-25'
+        }, headers=auth_headers)
+
+        expense_id = create_response.json['expense']['id']
+
+        # Delete expense
+        response = client.delete(
+            f'/api/v1/expenses/{expense_id}', headers=auth_headers)
+
+        assert response.status_code == 200
+
+        # Verify deleted
+        get_response = client.get(
+            f'/api/v1/expenses/{expense_id}', headers=auth_headers)
+        assert get_response.status_code == 404
+
+
+class TestIncomeCRUD:
+    """Test income CRUD operations"""
+
+    def test_create_income(self, client, auth_headers, salary_period):
+        """Should create income successfully"""
+        response = client.post('/api/v1/income', json={
+            'source': 'Salary',
+            'amount': 300000,  # €3000
+            'date': '2025-11-20',
+            'budget_period_id': salary_period['id']
+        }, headers=auth_headers)
+
+        assert response.status_code == 201
+        assert response.json['income']['source'] == 'Salary'
+        assert response.json['income']['amount'] == 300000
+
+    def test_get_all_income(self, client, auth_headers, salary_period):
+        """Should retrieve all income"""
+        # Create income entries
+        client.post('/api/v1/income', json={
+            'source': 'Salary',
+            'amount': 300000,
+            'date': '2025-11-20',
+            'budget_period_id': salary_period['id']
+        }, headers=auth_headers)
+
+        response = client.get('/api/v1/income', headers=auth_headers)
+
+        assert response.status_code == 200
+        assert 'income' in response.json
+        assert len(response.json['income']) >= 1
+
+
+class TestSalaryPeriodCRUD:
+    """Test salary period CRUD operations"""
+
+    def test_create_salary_period(self, client, auth_headers):
+        """Should create salary period with 4 weekly budgets"""
+        response = client.post('/api/v1/salary-periods', json={
+            'start_date': '2025-12-20',
+            'end_date': '2026-01-19',
+            'initial_debit_balance': 600000,
+            'initial_credit_balance': 120000,
+            'credit_limit': 150000,
+            'credit_budget_allowance': 30000,
+            'recurring_expenses': []
+        }, headers=auth_headers)
+
+        assert response.status_code == 201
+        assert 'salary_period' in response.json
+        assert response.json['salary_period']['weekly_budget'] > 0
+
+    def test_get_current_salary_period(self, client, auth_headers, salary_period):
+        """Should retrieve current active salary period"""
+        response = client.get(
+            '/api/v1/salary-periods/current', headers=auth_headers)
+
+        assert response.status_code == 200
+        assert 'salary_period' in response.json
+        assert 'current_week' in response.json
+
+    def test_delete_salary_period(self, client, auth_headers, salary_period):
+        """Should delete salary period and its weeks"""
+        period_id = salary_period['id']
+
+        response = client.delete(
+            f'/api/v1/salary-periods/{period_id}', headers=auth_headers)
+
+        assert response.status_code == 200
+
+        # Verify deleted
+        get_response = client.get(
+            '/api/v1/salary-periods/current', headers=auth_headers)
+        assert get_response.status_code == 404

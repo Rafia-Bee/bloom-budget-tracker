@@ -1,0 +1,81 @@
+"""
+Bloom - Test Configuration
+
+Pytest fixtures and configuration for backend tests.
+Sets up test database, test client, and common fixtures.
+"""
+
+import pytest
+from backend.app import create_app
+from backend.models.database import db
+from backend.config import Config
+
+
+class TestConfig(Config):
+    """Test configuration - uses in-memory SQLite"""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    JWT_SECRET_KEY = 'test-secret-key-for-testing-only'
+    WTF_CSRF_ENABLED = False
+
+
+@pytest.fixture(scope='function')
+def app():
+    """Create Flask app for testing"""
+    app = create_app()
+    app.config.from_object(TestConfig)
+
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.fixture(scope='function')
+def client(app):
+    """Create test client"""
+    return app.test_client()
+
+
+@pytest.fixture(scope='function')
+def auth_headers(client):
+    """Register and login a test user, return auth headers"""
+    # Register
+    client.post('/api/v1/auth/register', json={
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'password': 'TestPassword123!'
+    })
+
+    # Login
+    response = client.post('/api/v1/auth/login', json={
+        'username': 'testuser',
+        'password': 'TestPassword123!'
+    })
+
+    token = response.json['access_token']
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture(scope='function')
+def test_user(client, auth_headers):
+    """Return test user info"""
+    response = client.get('/api/v1/auth/user', headers=auth_headers)
+    return response.json
+
+
+@pytest.fixture(scope='function')
+def salary_period(client, auth_headers):
+    """Create a test salary period"""
+    response = client.post('/api/v1/salary-periods', json={
+        'start_date': '2025-11-20',
+        'end_date': '2025-12-19',
+        'initial_debit_balance': 500000,  # €5000
+        'initial_credit_balance': 100000,  # €1000 available
+        'credit_limit': 150000,  # €1500 limit
+        'credit_budget_allowance': 30000,  # €300 per week
+        'recurring_expenses': []
+    }, headers=auth_headers)
+
+    return response.json['salary_period']
