@@ -166,10 +166,23 @@ git push origin main --no-verify
 ## What Gets Checked
 
 ### Local (Pre-Push Hook)
+
+**Security Checks:**
+- ✅ Merge conflict markers detection
+- ✅ Hardcoded secrets/API keys detection
+- ✅ Large file detection (>1MB)
+
+**Backend Checks:**
 - ✅ Black code formatting
 - ✅ Flake8 critical errors
-- ✅ Frontend build
+- ✅ Python import validation
+- ✅ Requirements.txt sync check (warning only)
+
+**Frontend Checks:**
 - ✅ Console.log detection
+- ✅ ESLint linting (warnings allowed)
+- ✅ npm vulnerability audit (critical only)
+- ✅ Frontend build
 
 ### Remote (GitHub Actions CI)
 - ✅ Backend: flake8, black --check, pytest
