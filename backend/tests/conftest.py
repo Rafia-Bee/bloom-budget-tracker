@@ -28,18 +28,18 @@ class TestConfig(Config):
 def app():
     """Create Flask app for testing with mocked email service"""
     # Mock email service to prevent real emails from being sent
-    with patch('backend.services.email_service.EmailService') as mock_email_class:
+    with patch("backend.services.email_service.EmailService") as mock_email_class:
         mock_email_instance = MagicMock()
         mock_email_instance.enabled = False
         mock_email_instance.send_email.return_value = {
-            'success': True,
-            'status_code': 200,
-            'message': 'Mocked email (not actually sent)'
+            "success": True,
+            "status_code": 200,
+            "message": "Mocked email (not actually sent)",
         }
         mock_email_instance.send_password_reset_email.return_value = {
-            'success': True,
-            'status_code': 200,
-            'message': 'Mocked email (not actually sent)'
+            "success": True,
+            "status_code": 200,
+            "message": "Mocked email (not actually sent)",
         }
         mock_email_class.return_value = mock_email_instance
 
