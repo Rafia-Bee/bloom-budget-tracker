@@ -4,6 +4,32 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-02
+
+### Dark Mode Implementation (Partial)
+
+**Issue:** #24 (in progress)
+
+**Status:** ~60% complete
+
+**What Changed:**
+
+- Built dark mode infrastructure: ThemeContext with localStorage, ThemeToggle component in user menu
+- Configured Tailwind with custom warm plum-tinted palette (user rejected default blue-grays)
+- Updated Dashboard, WeeklyBudgetCard, PeriodSelector, CatLoading components
+- Fixed toggle bug (CSS selector), body background hardcode issue
+
+**Color Palette:** #19171A base, #221F24 surface, #2B272F elevated, #FF8EA9 pink accent, #F2EDF5/#C7C1CC/#938D99 text hierarchy
+
+**Still TODO:**
+
+- All modal forms (Add/Edit for expenses, income, debts, recurring)
+- FilterTransactionsModal, ExportImportModal, BankImportModal
+- FAB menu, mobile menu, Debts page, RecurringExpenses page
+- Complete Dashboard gray color replacements (9 duplicates need unique context)
+
+---
+
 ## 2025-11-30
 
 ### Database Backup Automation & API Versioning
