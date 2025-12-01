@@ -20,7 +20,7 @@ function ExportImportModal({ onClose, mode = 'export' }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  const convertToCSV = (data, type) => {
+  const convertToCSV = (data) => {
     if (!data || data.length === 0) return ''
 
     const headers = Object.keys(data[0])

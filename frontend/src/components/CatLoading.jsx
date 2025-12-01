@@ -5,7 +5,7 @@
  * Randomly selects from a collection of cat animations on each load.
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 const catAnimations = [
   '/bloom-kitty-banker.mp4',     // Concept A: Cat stamping and organizing coins

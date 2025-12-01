@@ -53,31 +53,23 @@ function RecurringExpenses() {
   }
 
   const handleAdd = async (data) => {
+    await recurringExpenseAPI.create(data)
+
+    // Automatically generate the first instance
     try {
-      await recurringExpenseAPI.create(data)
-
-      // Automatically generate the first instance
-      try {
-        await recurringExpenseAPI.generateNow(false, 90)
-      } catch (err) {
-        console.warn('Failed to auto-generate recurring expense:', err)
-      }
-
-      await loadRecurringExpenses()
-      setShowAddModal(false)
-    } catch (error) {
-      throw error
+      await recurringExpenseAPI.generateNow(false, 90)
+    } catch (err) {
+      console.warn('Failed to auto-generate recurring expense:', err)
     }
+
+    await loadRecurringExpenses()
+    setShowAddModal(false)
   }
 
   const handleEdit = async (data) => {
-    try {
-      await recurringExpenseAPI.update(editingExpense.id, data)
-      await loadRecurringExpenses()
-      setEditingExpense(null)
-    } catch (error) {
-      throw error
-    }
+    await recurringExpenseAPI.update(editingExpense.id, data)
+    await loadRecurringExpenses()
+    setEditingExpense(null)
   }
 
   const handleToggle = async (id) => {

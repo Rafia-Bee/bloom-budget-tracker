@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI, expenseAPI, incomeAPI, budgetPeriodAPI } from '../api'
+import { debtAPI, expenseAPI, budgetPeriodAPI } from '../api'
 import AddDebtModal from '../components/AddDebtModal'
 import EditDebtModal from '../components/EditDebtModal'
 import ExportImportModal from '../components/ExportImportModal'

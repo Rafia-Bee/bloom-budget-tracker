@@ -1785,7 +1785,7 @@ function Dashboard({ setIsAuthenticated }) {
         <BankImportModal
           onClose={() => setShowBankImportModal(false)}
           onImportComplete={() => {
-            loadTransactions()
+            loadTransactionsAndBalances()
             setShowBankImportModal(false)
           }}
         />

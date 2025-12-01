@@ -9,7 +9,7 @@ import React, { useState } from 'react'
 import api from '../api'
 import PropTypes from 'prop-types';
 
-function BankImportModal({ onClose, onImportComplete }) {
+function BankImportModal({ onClose /* onImportComplete */ }) {
   const [transactionsText, setTransactionsText] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('Debit card')
   const [markAsFixedBills, setMarkAsFixedBills] = useState(false)
