@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react'
 import api from '../api'
+import PropTypes from 'prop-types';
 
 function BankImportModal({ onClose, onImportComplete }) {
   const [transactionsText, setTransactionsText] = useState('')
@@ -382,5 +383,10 @@ function BankImportModal({ onClose, onImportComplete }) {
     </div>
   )
 }
+
+BankImportModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onImportComplete: PropTypes.func,
+};
 
 export default BankImportModal

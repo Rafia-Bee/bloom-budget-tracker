@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI, recurringExpenseAPI } from '../api'
+import PropTypes from 'prop-types';
 
 function AddExpenseModal({ onClose, onAdd }) {
   const [name, setName] = useState('Wolt')
@@ -329,5 +330,10 @@ function AddExpenseModal({ onClose, onAdd }) {
     </div>
   )
 }
+
+AddExpenseModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onAdd: PropTypes.func,
+};
 
 export default AddExpenseModal

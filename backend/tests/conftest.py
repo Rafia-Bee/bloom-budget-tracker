@@ -6,6 +6,7 @@ Sets up test database, test client, and common fixtures.
 """
 
 import pytest
+from unittest.mock import patch, MagicMock
 from backend.app import create_app
 from backend.models.database import db
 from backend.config import Config
@@ -19,19 +20,37 @@ class TestConfig(Config):
     JWT_SECRET_KEY = "test-secret-key-for-testing-only"
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False  # Disable rate limiting for tests
+    # Disable SendGrid to prevent real emails
+    SENDGRID_API_KEY = None
 
 
 @pytest.fixture(scope="function")
 def app():
-    """Create Flask app for testing"""
-    app = create_app()
-    app.config.from_object(TestConfig)
+    """Create Flask app for testing with mocked email service"""
+    # Mock email service to prevent real emails from being sent
+    with patch('backend.services.email_service.EmailService') as mock_email_class:
+        mock_email_instance = MagicMock()
+        mock_email_instance.enabled = False
+        mock_email_instance.send_email.return_value = {
+            'success': True,
+            'status_code': 200,
+            'message': 'Mocked email (not actually sent)'
+        }
+        mock_email_instance.send_password_reset_email.return_value = {
+            'success': True,
+            'status_code': 200,
+            'message': 'Mocked email (not actually sent)'
+        }
+        mock_email_class.return_value = mock_email_instance
 
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
+        app = create_app()
+        app.config.from_object(TestConfig)
+
+        with app.app_context():
+            db.create_all()
+            yield app
+            db.session.remove()
+            db.drop_all()
 
 
 @pytest.fixture(scope="function")

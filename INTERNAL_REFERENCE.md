@@ -1208,6 +1208,23 @@ None currently. The app is secure enough for single-user personal use with Netli
    - Large numbers (€99,999,999)
    - Negative amounts (refunds)
 
+### Free Tier Resource Limits (CRITICAL!)
+
+⚠️ **BE MINDFUL OF THESE LIMITS WHEN TESTING:**
+
+- **Netlify**: 100GB bandwidth/month, 300 build minutes/month (Current billing period runs from Nov 17 to Dec 16.)
+- **Render**: 750 hours/month (free tier sleeps after 15min inactivity), 1GB storage
+- **SendGrid**: 100 emails/day (DO NOT send real emails in tests!)
+- **Cloudflare**: 1,000 DNS queries/day on free plan
+- **GitHub Actions**: 2,000 minutes/month for private repos
+
+**Email Testing Best Practices:**
+
+- ✅ **Automated Tests**: Email service is now mocked in `conftest.py` to prevent real sends
+- ✅ **Manual Testing**: Use `scripts/test_email.py` sparingly (counts toward 100/day limit)
+- ⚠️ **Password Reset**: When testing forgot password flow, use development mode token display instead of triggering email
+- 🚫 **Never**: Run tests that send real emails repeatedly - you'll exhaust daily quota
+
 ---
 
 ## Document Maintenance

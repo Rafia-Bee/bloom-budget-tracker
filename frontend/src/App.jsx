@@ -16,6 +16,7 @@ import ResetPassword from './pages/ResetPassword'
 import CatLoading from './components/CatLoading'
 import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback } from './api'
+import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -55,7 +56,7 @@ function App() {
   }
 
   return (
-    <>
+    <FeatureFlagProvider>
       <OfflineIndicator />
       {apiLoading && (
         <div className="fixed inset-0 z-50">
@@ -91,7 +92,7 @@ function App() {
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>
     </Router>
-    </>
+    </FeatureFlagProvider>
   )
 }
 

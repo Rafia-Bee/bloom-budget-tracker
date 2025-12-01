@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI } from '../api'
+import PropTypes from 'prop-types';
 
 function EditExpenseModal({ onClose, onEdit, expense }) {
   const [name, setName] = useState('')
@@ -243,5 +244,11 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
     </div>
   )
 }
+
+EditExpenseModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onEdit: PropTypes.func,
+  expense: PropTypes.object,
+};
 
 export default EditExpenseModal

@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types';
 
 function EditIncomeModal({ onClose, onEdit, income }) {
   const [type, setType] = useState('')
@@ -150,5 +151,11 @@ function EditIncomeModal({ onClose, onEdit, income }) {
     </div>
   )
 }
+
+EditIncomeModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onEdit: PropTypes.func,
+  income: PropTypes.object,
+};
 
 export default EditIncomeModal
