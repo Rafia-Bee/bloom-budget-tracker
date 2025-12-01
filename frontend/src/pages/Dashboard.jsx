@@ -409,6 +409,9 @@ function Dashboard({ setIsAuthenticated }) {
         const currentPeriodStart = new Date(currentPeriod.start_date)
         const currentPeriodEnd = new Date(currentPeriod.end_date)
 
+        // Skip future expenses (expenses dated after today)
+        if (expenseDate > today) return
+
         // Determine if expense belongs to current period:
         // - Has matching budget_period_id, OR
         // - Has no budget_period_id but date is within current period
@@ -418,9 +421,16 @@ function Dashboard({ setIsAuthenticated }) {
 
         // Check if expense is from a period we're including in cumulative totals
         const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
-        const isInIncludedPeriod = periodToCheck || !expense.budget_period_id
 
-        if (!isInIncludedPeriod) return // Skip expenses from future periods
+        // For expenses with budget_period_id: check if period is in range
+        // For expenses without budget_period_id: check if date is >= earliest period start
+        const earliestPeriodStart = periodsToInclude.length > 0
+          ? new Date(periodsToInclude[0].start_date)
+          : currentPeriodStart
+        const isInIncludedPeriod = periodToCheck ||
+          (!expense.budget_period_id && expenseDate >= earliestPeriodStart)
+
+        if (!isInIncludedPeriod) return // Skip expenses from other periods not in cumulative range
 
         if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
           cumulativeCredit -= amount // Payment reduces credit card debt
