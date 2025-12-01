@@ -356,7 +356,7 @@ RATE_LIMITS = {
 #### 4. CORS Configuration
 ```python
 # backend/app.py
-cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173,...').split(',')
+cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000,...').split(',')
 CORS(app, origins=cors_origins, supports_credentials=True)
 ```
 **Production:** Restricted to `https://bloom-tracker.app`

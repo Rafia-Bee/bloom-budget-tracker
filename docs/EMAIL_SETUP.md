@@ -57,7 +57,7 @@ Add these to your `.env` file:
 # Email Configuration
 SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 SENDGRID_FROM_EMAIL=noreply@yourdomain.com
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 ```
 
 **Production values:**
@@ -85,7 +85,7 @@ When `SENDGRID_API_KEY` is not set, the application runs in development mode:
 **Development testing:**
 1. Request password reset
 2. Copy the token from the success message
-3. Use the provided test URL: `http://localhost:5173/reset-password?token=YOUR_TOKEN`
+3. Use the provided test URL: `http://localhost:3000/reset-password?token=YOUR_TOKEN`
 4. Complete password reset
 
 ## Production Deployment

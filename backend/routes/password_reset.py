@@ -60,7 +60,8 @@ def forgot_password():
         db.session.commit()
 
         # Send password reset email
-        frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
+        frontend_url = current_app.config.get(
+            "FRONTEND_URL", "http://localhost:3000")
         email_result = email_service.send_password_reset_email(
             to_email=user.email, reset_token=token, frontend_url=frontend_url
         )

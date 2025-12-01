@@ -135,7 +135,7 @@ function Debts({ setIsAuthenticated }) {
           cumulativeCredit += amount // Credit card purchase or pre-existing debt increases balance
         }
       });
-      
+
       const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
       const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
 
