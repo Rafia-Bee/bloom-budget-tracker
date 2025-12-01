@@ -210,7 +210,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
               >
                 <option value="">All Methods</option>
                 <option value="Debit card">Debit Card</option>
-                <option value="credit">Credit Card</option>
+                <option value="Credit card">Credit Card</option>
               </select>
             </div>
           )}
