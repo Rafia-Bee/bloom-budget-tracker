@@ -1,0 +1,3 @@
+# Ignore Python scripts - let Python formatters handle them
+scripts/*.py
+backend/**/*.py

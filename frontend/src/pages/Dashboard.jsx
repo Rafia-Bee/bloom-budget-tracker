@@ -399,7 +399,8 @@ function Dashboard({ setIsAuthenticated }) {
           }
         }
       })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
-      const allExpensesRes = await expenseAPI.getAll({})
+      // Use high limit to avoid pagination cutting off expenses
+      const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
       // Process all expenses
@@ -422,12 +423,19 @@ function Dashboard({ setIsAuthenticated }) {
         // Check if expense is from a period we're including in cumulative totals
         const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
 
+        // Special case: Pre-existing Credit Card Debt should always be included
+        const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
+          expense.category === 'Debt' &&
+          expense.subcategory === 'Credit Card'
+
         // For expenses with budget_period_id: check if period is in range
         // For expenses without budget_period_id: check if date is >= earliest period start
+        // Exception: Pre-existing debt is always included (represents starting balance)
         const earliestPeriodStart = periodsToInclude.length > 0
           ? new Date(periodsToInclude[0].start_date)
           : currentPeriodStart
         const isInIncludedPeriod = periodToCheck ||
+          isPreExistingDebt ||
           (!expense.budget_period_id && expenseDate >= earliestPeriodStart)
 
         if (!isInIncludedPeriod) return // Skip expenses from other periods not in cumulative range

@@ -32,7 +32,7 @@ Most budgeting apps are designed around monthly income-based budgeting. But many
 1. **4-Week Salary Period System:** Break your monthly paycheck into 4 manageable weekly budgets
 2. **Balance-Based Budgeting:** Enter what you HAVE, not what you EARN (more realistic for people with variable income)
 3. **Automatic Carryover:** Overspend in Week 1? Week 2's budget automatically adjusts downward
-4. **Recurring Expense Automation:** Set it once, expenses auto-generate for 60 days ahead
+4. **Recurring Expense Automation:** Set it once, expenses auto-generate for 60 days ahead // add note here that the expense wont auto generate if the next due date is outside a budget period.
 5. **Debt Progress Tracking:** Visual progress bars, payoff projections, and automatic archiving when paid off
 6. **Offline-First PWA:** Works on flights, trains, anywhere without internet (24-hour token cache)
 

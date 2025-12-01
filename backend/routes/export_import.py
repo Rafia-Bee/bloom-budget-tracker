@@ -35,11 +35,13 @@ def export_data():
         if not export_types:
             return jsonify({"error": "No data types selected for export"}), 400
 
-        export_data = {"exported_at": datetime.utcnow().isoformat(), "data": {}}
+        export_data = {"exported_at": datetime.utcnow().isoformat(),
+                       "data": {}}
 
         # Export Debts
         if "debts" in export_types:
-            debts = Debt.query.filter_by(user_id=current_user_id, archived=False).all()
+            debts = Debt.query.filter_by(
+                user_id=current_user_id, archived=False).all()
             export_data["data"]["debts"] = [
                 {
                     "name": d.name,
@@ -253,10 +255,12 @@ def import_data():
                             next_year += 1
                         day = recurring_data.get("day_of_month", next_due.day)
                         try:
-                            next_due = datetime(next_year, next_month, day).date()
+                            next_due = datetime(
+                                next_year, next_month, day).date()
                         except ValueError:
                             # Handle invalid day (e.g., Feb 30)
-                            next_due = datetime(next_year, next_month, 28).date()
+                            next_due = datetime(
+                                next_year, next_month, 28).date()
                     elif recurring_data["frequency"] == "weekly":
                         next_due = next_due + timedelta(days=7)
                     elif recurring_data["frequency"] == "biweekly":
@@ -306,7 +310,8 @@ def import_data():
                             # Calculate next weekly occurrence
                             days_diff = (today - next_due).days
                             weeks_passed = days_diff // 7
-                            next_due = next_due + timedelta(days=(weeks_passed + 1) * 7)
+                            next_due = next_due + \
+                                timedelta(days=(weeks_passed + 1) * 7)
                         elif recurring_data["frequency"] == "biweekly":
                             days_diff = (today - next_due).days
                             periods_passed = days_diff // 14
@@ -315,7 +320,8 @@ def import_data():
                             )
                         elif recurring_data["frequency"] == "custom":
                             days_diff = (today - next_due).days
-                            freq_value = recurring_data.get("frequency_value", 1)
+                            freq_value = recurring_data.get(
+                                "frequency_value", 1)
                             periods_passed = days_diff // freq_value
                             next_due = next_due + timedelta(
                                 days=(periods_passed + 1) * freq_value
@@ -432,6 +438,7 @@ def import_data():
                     sp_data["credit_limit"] - sp_data["initial_credit_balance"]
                 )
                 if pre_existing_debt > 0:
+                    debt_date = start_date - timedelta(days=1)
                     debt_expense = Expense(
                         user_id=current_user_id,
                         budget_period_id=None,  # Not tied to a specific week
@@ -441,7 +448,7 @@ def import_data():
                         subcategory="Credit Card",
                         payment_method="Credit card",
                         # Date it before the period starts
-                        date=start_date - timedelta(days=1),
+                        date=debt_date,
                         is_fixed_bill=False,
                         notes="Existing credit card balance at budget period start",
                     )
@@ -477,10 +484,9 @@ def import_data():
                     current_user_id, expense_date
                 )
 
-                if not budget_period:
-                    # Skip if no budget period found
-                    skipped_counts["expenses"] += 1
-                    continue
+                # Allow expenses without budget periods (e.g., pre-existing debt, initial balance expenses)
+                # These are intentionally dated outside any period and should be imported as-is
+                budget_period_id = budget_period.id if budget_period else None
 
                 # Link to new recurring template if this expense was generated from one
                 new_recurring_template_id = None
@@ -498,7 +504,7 @@ def import_data():
 
                 expense = Expense(
                     user_id=current_user_id,
-                    budget_period_id=budget_period.id,
+                    budget_period_id=budget_period_id,
                     name=exp_data["name"],
                     amount=exp_data["amount"],
                     category=exp_data["category"],
@@ -578,7 +584,8 @@ def import_data():
                     f"{skipped_counts['salary_periods']} salary period(s)"
                 )
             if skipped_counts["expenses"] > 0:
-                skipped_details.append(f"{skipped_counts['expenses']} expense(s)")
+                skipped_details.append(
+                    f"{skipped_counts['expenses']} expense(s)")
             if skipped_counts["income"] > 0:
                 skipped_details.append(f"{skipped_counts['income']} income(s)")
             message_parts.append(
@@ -651,10 +658,12 @@ def parse_bank_transactions(
             parts = [p.strip() for p in line.split("\t") if p.strip()]
             if len(parts) < 3:
                 # Try splitting by multiple spaces instead
-                parts = [p.strip() for p in re.split(r"\s{2,}", line) if p.strip()]
+                parts = [p.strip()
+                         for p in re.split(r"\s{2,}", line) if p.strip()]
 
             if len(parts) < 3:
-                errors.append(f"Line {line_num}: Invalid format (expected 3 columns)")
+                errors.append(
+                    f"Line {line_num}: Invalid format (expected 3 columns)")
                 skipped_count += 1
                 continue
 
@@ -688,7 +697,8 @@ def parse_bank_transactions(
                     skipped_count += 1
                     continue
             except ValueError:
-                errors.append(f"Line {line_num}: Invalid amount '{amount_str}'")
+                errors.append(
+                    f"Line {line_num}: Invalid amount '{amount_str}'")
                 skipped_count += 1
                 continue
 
@@ -697,7 +707,8 @@ def parse_bank_transactions(
 
             # Try to find matching expense name mapping for smart categorization
             mapping = ExpenseNameMapping.query.filter(
-                ExpenseNameMapping.expense_name.ilike(f"%{merchant_name.lower()}%")
+                ExpenseNameMapping.expense_name.ilike(
+                    f"%{merchant_name.lower()}%")
             ).first()
 
             if mapping:

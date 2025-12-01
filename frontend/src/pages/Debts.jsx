@@ -95,26 +95,47 @@ function Debts({ setIsAuthenticated }) {
       let cumulativeCredit = 0
 
       // Get ALL expenses (including those without budget_period_id)
-      const allExpensesRes = await expenseAPI.getAll({})
+      // Use high limit to avoid pagination cutting off expenses like pre-existing debt
+      const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
       // Calculate credit balance from all expenses (matches Dashboard logic)
+      const today = new Date()
+
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
+        const expenseDate = new Date(expense.date)
+
+        // Skip future expenses (expenses dated after today)
+        if (expenseDate > today) return
 
         // Check if expense is from a period we're including in cumulative totals
         const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
-        const isInIncludedPeriod = periodToCheck || !expense.budget_period_id
 
-        if (!isInIncludedPeriod) return // Skip expenses from future periods
+        // Special case: Pre-existing Credit Card Debt should always be included
+        const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
+          expense.category === 'Debt' &&
+          expense.subcategory === 'Credit Card'
+
+        // For expenses with budget_period_id: check if period is in range
+        // For expenses without budget_period_id: check if date is >= earliest period start
+        // Exception: Pre-existing debt is always included (represents starting balance)
+        const earliestPeriodStart = periodsToInclude.length > 0
+          ? new Date(periodsToInclude[0].start_date)
+          : new Date(currentPeriod.start_date)
+        const isInIncludedPeriod = periodToCheck ||
+          isPreExistingDebt ||
+          (!expense.budget_period_id && expenseDate >= earliestPeriodStart)
+
+        if (!isInIncludedPeriod) return
 
         if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
           cumulativeCredit -= amount // Payment reduces credit card debt
         } else if (expense.payment_method === 'Credit card') {
-          cumulativeCredit += amount // Credit card purchase increases debt
+          cumulativeCredit += amount // Credit card purchase or pre-existing debt increases balance
         }
-      })
-
+      });
+      
       const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
       const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
 
