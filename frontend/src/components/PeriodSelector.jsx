@@ -83,10 +83,10 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
   if (!currentPeriod) {
     return (
-      <div className="bg-white rounded-lg shadow px-4 py-2">
+      <div className="bg-white dark:bg-dark-surface rounded-lg shadow px-4 py-2">
         <button
           onClick={onCreateNew}
-          className="text-bloom-pink font-semibold hover:underline"
+          className="text-bloom-pink dark:text-dark-pink font-semibold hover:underline"
         >
           + Create Salary Period
         </button>
@@ -98,11 +98,11 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
     <div className="period-selector relative">
       <button
         onClick={() => setShowCalendar(!showCalendar)}
-        className="bg-white border-2 border-gray-300 rounded-lg shadow px-4 py-2 hover:border-bloom-pink hover:shadow-md transition flex items-center gap-3"
+        className="bg-white dark:bg-dark-surface border-2 border-gray-300 dark:border-dark-border rounded-lg shadow px-4 py-2 hover:border-bloom-pink dark:hover:border-dark-pink hover:shadow-md transition flex items-center gap-3"
       >
         <div className="text-left">
           <div className="flex items-center gap-2">
-            <p className="text-xs text-bloom-pink font-semibold uppercase">{getPeriodTypeLabel(currentPeriod)}</p>
+            <p className="text-xs text-bloom-pink dark:text-dark-pink font-semibold uppercase">{getPeriodTypeLabel(currentPeriod)}</p>
             {isPeriodCurrent(currentPeriod) && (
               <span className="bg-bloom-mint text-green-800 text-xs px-2 py-0.5 rounded-full">Current</span>
             )}
@@ -113,10 +113,10 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
               <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Future</span>
             )}
           </div>
-          <p className="font-semibold text-gray-800">{getPeriodLabel(currentPeriod)}</p>
+          <p className="font-semibold text-gray-800 dark:text-dark-text">{getPeriodLabel(currentPeriod)}</p>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-500 transition-transform ${showCalendar ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-gray-500 dark:text-dark-text-tertiary transition-transform ${showCalendar ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -126,13 +126,13 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
       </button>
 
       {showCalendar && (
-        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-white rounded-lg shadow-xl border border-gray-200 w-[95vw] sm:w-auto sm:min-w-[500px] max-w-[500px] z-50">
+        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border w-[95vw] sm:w-auto sm:min-w-[500px] max-w-[500px] z-50">
           {/* Header with view toggle and quick actions */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 dark:border-dark-border">
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h3 className="font-semibold text-gray-800">Salary Periods</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Each period has 4 weekly budgets</p>
+                <h3 className="font-semibold text-gray-800 dark:text-dark-text">Salary Periods</h3>
+                <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-0.5">Each period has 4 weekly budgets</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -390,15 +390,15 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Budget Period?</h3>
-            <p className="text-gray-600 mb-2">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Budget Period?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-2">
               Are you sure you want to delete the period:
             </p>
-            <p className="text-gray-800 font-semibold mb-4">
+            <p className="text-gray-800 dark:text-dark-text font-semibold mb-4">
               {getPeriodLabel(deleteConfirm.period)}
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-6">
               This action cannot be undone. All transactions in this period will be deleted.
             </p>
             <div className="flex gap-3 justify-end">

@@ -798,15 +798,15 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-dark-base dark:to-dark-surface">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+      <header className="bg-white dark:bg-dark-surface shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center md:hidden">
             <div className="max-w-[70%]">
               <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-[10px] leading-tight text-gray-600">Financial Habits That Grow With You</p>
+              <p className="text-[10px] leading-tight text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
             </div>
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -829,7 +829,7 @@ function Dashboard({ setIsAuthenticated }) {
           <div className="hidden md:flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-sm text-gray-600">Financial Habits That Grow With You</p>
+              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
             </div>
             <div className="flex items-center gap-4">
               <PeriodSelector
@@ -852,31 +852,33 @@ function Dashboard({ setIsAuthenticated }) {
               />
               <a
                 href="/debts"
-                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold"
               >
                 Debts
               </a>
               <a
                 href="/recurring-expenses"
-                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold"
               >
                 Recurring
               </a>
-              <ThemeToggle />
               <div className="relative user-menu">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-10 h-10 rounded-full bg-bloom-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
+                  className="w-10 h-10 rounded-full bg-bloom-pink dark:bg-dark-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
                   title="User menu"
                 >
                   {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-xs text-gray-500">Signed in as</p>
-                      <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
+                      <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
+                    </div>
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
+                      <ThemeToggle />
                     </div>
                     <button
                       onClick={() => {
@@ -884,7 +886,7 @@ function Dashboard({ setIsAuthenticated }) {
                         setExportMode('export')
                         setShowUserMenu(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -897,7 +899,7 @@ function Dashboard({ setIsAuthenticated }) {
                         setExportMode('import')
                         setShowUserMenu(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -909,7 +911,7 @@ function Dashboard({ setIsAuthenticated }) {
                         setShowBankImportModal(true)
                         setShowUserMenu(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -921,7 +923,7 @@ function Dashboard({ setIsAuthenticated }) {
                         setShowExperimentalModal(true)
                         setShowUserMenu(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -930,7 +932,7 @@ function Dashboard({ setIsAuthenticated }) {
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200 mt-2 pt-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2 border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1101,16 +1103,16 @@ function Dashboard({ setIsAuthenticated }) {
           />
 
           {/* Debit Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-mint">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-bloom-mint dark:border-bloom-mint/50">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <p className="text-gray-600 font-semibold mb-1">Debit Card</p>
-                <p className="text-sm text-gray-500 mb-3">Spent this period</p>
-                <h2 className="text-4xl font-bold text-gray-800 mb-1">
+                <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Debit Card</p>
+                <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
+                <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
                   €{currentPeriodDebitSpent.toFixed(2)}
                 </h2>
-                <p className="text-2xl font-semibold text-bloom-mint mt-2">
-                  €{getDebitAvailable().toFixed(2)} <span className="text-sm text-gray-500 font-normal">available</span>
+                <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
+                  €{getDebitAvailable().toFixed(2)} <span className="text-sm text-gray-500 dark:text-dark-text-tertiary font-normal">available</span>
                 </p>
               </div>
               <div className="bg-bloom-mint rounded-full p-3">
@@ -1120,11 +1122,11 @@ function Dashboard({ setIsAuthenticated }) {
               </div>
             </div>
             <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
                 <span>Period income: €{currentPeriodIncome.toFixed(2)}</span>
                 <span>Total spent: €{debitBalance.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <span>All-time income: €{totalIncome.toFixed(2)}</span>
                 <span>{totalIncome > 0 ? ((debitBalance / totalIncome) * 100).toFixed(0) : 0}% of total</span>
               </div>
@@ -1133,16 +1135,16 @@ function Dashboard({ setIsAuthenticated }) {
 
           {/* Credit Card */}
           {creditLimit !== null && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-pink">
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-bloom-pink dark:border-bloom-pink/50">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <p className="text-gray-600 font-semibold mb-1">Credit Card</p>
-                  <p className="text-sm text-gray-500 mb-3">Spent this period</p>
-                  <h2 className="text-4xl font-bold text-gray-800 mb-1">
+                  <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Credit Card</p>
+                  <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
+                  <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
                     €{currentPeriodCreditSpent.toFixed(2)}
                   </h2>
-                  <p className="text-2xl font-semibold text-bloom-mint mt-2">
-                    €{getCreditAvailable().toFixed(2)} <span className="text-sm text-gray-500 font-normal">available</span>
+                  <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
+                    €{getCreditAvailable().toFixed(2)} <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">available</span>
                   </p>
                 </div>
                 <div className="bg-bloom-pink rounded-full p-3">
@@ -1152,11 +1154,11 @@ function Dashboard({ setIsAuthenticated }) {
                 </div>
               </div>
               <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                   <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
                   <span>Total balance: €{creditBalance.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
                   <span>Credit limit: €{creditLimit}</span>
                   <span>{((creditBalance / creditLimit) * 100).toFixed(0)}% used</span>
                 </div>
@@ -1166,17 +1168,17 @@ function Dashboard({ setIsAuthenticated }) {
         </div>
 
         {/* Transactions Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-4 sm:p-6">
           <div className="mb-6">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">Transactions</h2>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Transactions</h2>
 
               {/* Selection Mode Controls */}
               <div className="flex items-center gap-2">
                 {!selectionMode ? (
                   <button
                     onClick={() => setSelectionMode(true)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-semibold flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -1187,7 +1189,7 @@ function Dashboard({ setIsAuthenticated }) {
                   <>
                     {selectedTransactions.length > 0 && (
                       <>
-                        <span className="text-sm text-gray-600">{selectedTransactions.length} selected</span>
+                        <span className="text-sm text-gray-600 dark:text-dark-text-secondary">{selectedTransactions.length} selected</span>
                         <button
                           onClick={() => setShowBulkDeleteConfirm(true)}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold flex items-center gap-2"
@@ -1204,7 +1206,7 @@ function Dashboard({ setIsAuthenticated }) {
                         setSelectionMode(false)
                         setSelectedTransactions([])
                       }}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-semibold"
+                      className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
                     >
                       Cancel
                     </button>
@@ -1241,7 +1243,7 @@ function Dashboard({ setIsAuthenticated }) {
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'all'
                     ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
               >
                 All
@@ -1250,7 +1252,7 @@ function Dashboard({ setIsAuthenticated }) {
                 onClick={() => setFilter('income')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'income'
                     ? 'bg-bloom-mint text-green-800'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
               >
                 Income
@@ -1259,7 +1261,7 @@ function Dashboard({ setIsAuthenticated }) {
                 onClick={() => setFilter('expense')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'expense'
                     ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
               >
                 Expenses
@@ -1268,7 +1270,7 @@ function Dashboard({ setIsAuthenticated }) {
                 onClick={() => setFilter('debit')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'debit'
                     ? 'bg-bloom-mint text-green-800'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
               >
                 Debit
@@ -1277,7 +1279,7 @@ function Dashboard({ setIsAuthenticated }) {
                 onClick={() => setFilter('credit')}
                 className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'credit'
                     ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
               >
                 Credit
@@ -1308,7 +1310,7 @@ function Dashboard({ setIsAuthenticated }) {
                   onChange={toggleSelectAll}
                   className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
                 />
-                <label htmlFor="select-all" className="text-gray-700 cursor-pointer select-none">
+                <label htmlFor="select-all" className="text-gray-700 dark:text-dark-text-secondary cursor-pointer select-none">
                   Select All
                 </label>
               </div>
@@ -1323,8 +1325,8 @@ function Dashboard({ setIsAuthenticated }) {
             if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
             return true
           }).length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p>No transactions yet. Start tracking your finances!</p>
@@ -1344,8 +1346,8 @@ function Dashboard({ setIsAuthenticated }) {
                 return (
                   <div
                     key={`${transaction.transactionType}-${transaction.id}`}
-                    className={`flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition ${transaction.transactionType === 'income' ? 'bg-bloom-mint/20' : 'bg-gray-50'
-                      } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300' : ''} ${isSelected ? 'ring-2 ring-bloom-pink' : ''}`}
+                    className={`flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition ${transaction.transactionType === 'income' ? 'bg-bloom-mint/20 dark:bg-bloom-mint/10' : 'bg-gray-50 dark:bg-dark-elevated'
+                      } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300 dark:border-gray-600' : ''} ${isSelected ? 'ring-2 ring-bloom-pink' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       {/* Checkbox */}
@@ -1369,7 +1371,7 @@ function Dashboard({ setIsAuthenticated }) {
 
                     <div className="flex-1 ml-3">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-800">
+                        <h3 className="font-semibold text-gray-800 dark:text-dark-text">
                           {transaction.transactionType === 'income' ? transaction.type : transaction.name}
                         </h3>
                         {isFuture && (
@@ -1386,7 +1388,7 @@ function Dashboard({ setIsAuthenticated }) {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {transaction.transactionType === 'expense'
                           ? `${transaction.category} • ${transaction.subcategory}`
                           : 'Income'}
@@ -1395,11 +1397,11 @@ function Dashboard({ setIsAuthenticated }) {
 
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className={`font-bold ${transaction.transactionType === 'income' ? 'text-green-700' : 'text-gray-800'
+                        <p className={`font-bold ${transaction.transactionType === 'income' ? 'text-green-700 dark:text-dark-success' : 'text-gray-800 dark:text-dark-text'
                           }`}>
                           {transaction.transactionType === 'income' ? '+' : ''}€{(transaction.amount / 100).toFixed(2)}
                         </p>
-                        <p className="text-sm text-gray-500">{transaction.date}</p>
+                        <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">{transaction.date}</p>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -1408,7 +1410,7 @@ function Dashboard({ setIsAuthenticated }) {
                             setEditType(transaction.transactionType)
                             setShowEditModal(true)
                           }}
-                          className="text-blue-500 hover:text-blue-700 transition"
+                          className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition"
                           title="Edit"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1421,7 +1423,7 @@ function Dashboard({ setIsAuthenticated }) {
                             id: transaction.id,
                             transaction: transaction
                           })}
-                          className="text-red-500 hover:text-red-700 transition"
+                          className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                           title="Delete"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1697,32 +1699,32 @@ function Dashboard({ setIsAuthenticated }) {
       {/* Delete Confirmation Modal */}
       {deleteConfirmation && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Transaction?</h3>
-            <p className="text-gray-600 mb-2">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Transaction?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-2">
               Are you sure you want to delete this {deleteConfirmation.type}?
             </p>
-            <div className="bg-gray-50 rounded-lg p-3 mb-6">
-              <p className="text-sm text-gray-500">
+            <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-3 mb-6">
+              <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
                 {deleteConfirmation.type === 'income' ? 'Type' : 'Name'}
               </p>
-              <p className="font-semibold text-gray-800">
+              <p className="font-semibold text-gray-800 dark:text-gray-100">
                 {deleteConfirmation.type === 'income'
                   ? deleteConfirmation.transaction.type
                   : deleteConfirmation.transaction.name}
               </p>
-              <p className="text-sm text-gray-500 mt-2">Amount</p>
-              <p className="font-semibold text-gray-800">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Amount</p>
+              <p className="font-semibold text-gray-800 dark:text-gray-100">
                 €{(deleteConfirmation.transaction.amount / 100).toFixed(2)}
               </p>
             </div>
-            <p className="text-sm text-red-600 mb-6">
+            <p className="text-sm text-red-600 dark:text-red-400 mb-6">
               ⚠️ This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirmation(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-semibold"
               >
                 Cancel
               </button>
@@ -1747,13 +1749,13 @@ function Dashboard({ setIsAuthenticated }) {
       {/* Bulk Delete Confirmation Modal */}
       {showBulkDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Multiple Transactions?</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Multiple Transactions?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
               Are you sure you want to delete <strong>{selectedTransactions.length}</strong> transaction(s)?
             </p>
-            <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-48 overflow-y-auto">
-              <p className="text-sm text-gray-500 mb-2">Selected transactions:</p>
+            <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-3 mb-4 max-h-48 overflow-y-auto">
+              <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-2">Selected transactions:</p>
               {selectedTransactions.map(txn => {
                 const transaction = transactions.find(t =>
                   t.transactionType === txn.type && t.id === txn.id
@@ -1761,23 +1763,23 @@ function Dashboard({ setIsAuthenticated }) {
                 if (!transaction) return null
                 return (
                   <div key={txn.key} className="flex justify-between items-center py-1 text-sm">
-                    <span className="text-gray-700">
+                    <span className="text-gray-700 dark:text-dark-text-secondary">
                       {txn.type === 'income' ? transaction.type : transaction.name}
                     </span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-semibold text-gray-800 dark:text-dark-text">
                       €{(transaction.amount / 100).toFixed(2)}
                     </span>
                   </div>
                 )
               })}
             </div>
-            <p className="text-sm text-red-600 mb-6">
+            <p className="text-sm text-red-600 dark:text-red-400 mb-6">
               ⚠️ This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowBulkDeleteConfirm(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-semibold"
               >
                 Cancel
               </button>

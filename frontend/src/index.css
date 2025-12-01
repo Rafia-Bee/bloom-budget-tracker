@@ -10,6 +10,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #FFF5F7;
+  transition: background-color 0.3s ease;
+}
+
+html.dark body {
+  background-color: #19171A;
 }
 
 #root {

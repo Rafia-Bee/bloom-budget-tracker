@@ -81,17 +81,17 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-bloom-pink animate-pulse">
-        <div className="h-32 bg-gray-200 rounded" />
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-bloom-pink dark:border-dark-pink animate-pulse">
+        <div className="h-32 bg-gray-200 dark:bg-dark-elevated rounded" />
       </div>
     )
   }
 
   if (error === 'no_period') {
     return (
-      <div className="bg-gradient-to-br from-bloom-pink to-pink-600 rounded-2xl shadow-lg p-6 text-white">
+      <div className="bg-gradient-to-br from-bloom-pink to-pink-600 dark:from-dark-pink dark:to-dark-pink-hover rounded-2xl shadow-lg p-6 text-white">
         <div className="flex flex-col items-center text-center py-4">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-white/20 dark:bg-black/20 rounded-full flex items-center justify-center mb-4">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -102,7 +102,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
           </p>
           <button
             onClick={onSetupClick}
-            className="bg-white text-bloom-pink px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition"
+            className="bg-white dark:bg-dark-surface text-bloom-pink dark:text-dark-pink px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition"
           >
             Get Started
           </button>
@@ -113,8 +113,8 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
 
   if (error === 'failed') {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-red-200">
-        <p className="text-red-600 text-center">Failed to load weekly budget</p>
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-red-200 dark:border-dark-danger">
+        <p className="text-red-600 dark:text-dark-danger text-center">Failed to load weekly budget</p>
       </div>
     )
   }
@@ -125,10 +125,10 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
   const isCurrentWeek = displayWeek?.week_number === current_week?.week_number
 
   return (
-    <div className="bg-gradient-to-br from-bloom-pink to-pink-600 rounded-2xl shadow-lg p-6 text-white">
+    <div className="bg-gradient-to-br from-bloom-pink to-pink-600 dark:from-dark-pink-surface dark:to-dark-surface rounded-2xl shadow-lg p-6 text-white dark:border-2 dark:border-dark-border">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center font-bold text-xl">
+          <div className="w-12 h-12 bg-white/20 dark:bg-black/20 rounded-full flex items-center justify-center font-bold text-xl">
             {displayWeek?.week_number || '?'}
           </div>
           <div>
