@@ -17,6 +17,7 @@ import CatLoading from './components/CatLoading'
 import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback } from './api'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -56,14 +57,15 @@ function App() {
   }
 
   return (
-    <FeatureFlagProvider>
-      <OfflineIndicator />
-      {apiLoading && (
-        <div className="fixed inset-0 z-50">
-          <CatLoading message="Waking up the server..." />
-        </div>
-      )}
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <ThemeProvider>
+      <FeatureFlagProvider>
+        <OfflineIndicator />
+        {apiLoading && (
+          <div className="fixed inset-0 z-50">
+            <CatLoading message="Waking up the server..." />
+          </div>
+        )}
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
         <Route
           path="/login"
@@ -90,9 +92,10 @@ function App() {
           element={isAuthenticated ? <RecurringExpenses setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
         />
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
-      </Routes>
-    </Router>
-    </FeatureFlagProvider>
+        </Routes>
+      </Router>
+      </FeatureFlagProvider>
+    </ThemeProvider>
   )
 }
 

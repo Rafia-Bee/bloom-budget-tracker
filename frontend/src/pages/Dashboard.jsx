@@ -25,6 +25,7 @@ import FilterTransactionsModal from '../components/FilterTransactionsModal'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
+import ThemeToggle from '../components/ThemeToggle'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -797,9 +798,9 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
+    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
+      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center md:hidden">
@@ -861,6 +862,7 @@ function Dashboard({ setIsAuthenticated }) {
               >
                 Recurring
               </a>
+              <ThemeToggle />
               <div className="relative user-menu">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
