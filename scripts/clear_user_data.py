@@ -3,8 +3,16 @@ Clear all data for a specific user (LOCALHOST ONLY)
 
 Usage: python scripts/clear_user_data.py <user_email>
 """
+import sys
+import os
 
-from backend.models.database import (
+# Add parent directory to path FIRST (before any backend imports)
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")))
+
+# Import backend modules after path is set (do not reorder these imports)
+from backend.app import create_app  # noqa: E402
+from backend.models.database import (  # noqa: E402
     db,
     User,
     Expense,
@@ -15,15 +23,6 @@ from backend.models.database import (
     SalaryPeriod,
     ExpenseNameMapping,
 )
-from backend.app import create_app
-import sys
-import os
-
-# Add parent directory to path FIRST
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..")))
-
-# Now import backend modules
 
 
 def clear_user_data(email):

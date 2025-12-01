@@ -163,6 +163,10 @@ def import_data():
             "expenses": 0,
             "income": 0,
         }
+        skipped_items = {
+            "expenses": [],
+            "income": [],
+        }
 
         # Import Debts
         if "debts" in data["data"]:
@@ -472,6 +476,10 @@ def import_data():
                 ).first()
 
                 if existing_expense:
+                    skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
+                    print(
+                        f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})")
+                    skipped_items["expenses"].append(skipped_detail)
                     skipped_counts["expenses"] += 1
                     continue
 
@@ -539,6 +547,10 @@ def import_data():
                 ).first()
 
                 if existing_income:
+                    skipped_detail = f"{income_data['type']} (€{income_data['amount']/100:.2f} on {scheduled_date})"
+                    print(
+                        f"[IMPORT] SKIPPED INCOME: '{income_data['type']}' €{income_data['amount']/100:.2f} scheduled {scheduled_date} (already exists with ID {existing_income.id})")
+                    skipped_items["income"].append(skipped_detail)
                     skipped_counts["income"] += 1
                     continue
 
@@ -592,6 +604,14 @@ def import_data():
                 f"Skipped {', '.join(skipped_details)} (already exists)"
             )
 
+            # Add details of what was skipped
+            if skipped_items["expenses"]:
+                message_parts.append(
+                    f"Skipped expenses: {', '.join(skipped_items['expenses'])}")
+            if skipped_items["income"]:
+                message_parts.append(
+                    f"Skipped income: {', '.join(skipped_items['income'])}")
+
         return (
             jsonify(
                 {
@@ -600,6 +620,7 @@ def import_data():
                     else "No new data to import",
                     "imported": imported_counts,
                     "skipped": skipped_counts,
+                    "skipped_items": skipped_items,
                 }
             ),
             200,

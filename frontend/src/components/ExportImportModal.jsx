@@ -150,6 +150,15 @@ function ExportImportModal({ onClose, mode = 'export' }) {
 
       if (skippedSummary.length > 0) {
         message += `\n\nSkipped ${skippedSummary.join(', ')} (already exists)`
+
+        // Add details of what was skipped
+        const skippedItems = response.data.skipped_items
+        if (skippedItems?.expenses?.length > 0) {
+          message += `\n\nSkipped expenses:\n${skippedItems.expenses.map(e => `  • ${e}`).join('\n')}`
+        }
+        if (skippedItems?.income?.length > 0) {
+          message += `\n\nSkipped income:\n${skippedItems.income.map(i => `  • ${i}`).join('\n')}`
+        }
       }
 
       setMessage(message + '\n\nPlease close this dialog and refresh the page to see imported data.')
