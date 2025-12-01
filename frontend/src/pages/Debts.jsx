@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { debtAPI, expenseAPI, budgetPeriodAPI } from '../api'
 import AddDebtModal from '../components/AddDebtModal'
+import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditDebtModal from '../components/EditDebtModal'
 import ExportImportModal from '../components/ExportImportModal'
 
@@ -16,6 +17,7 @@ function Debts({ setIsAuthenticated }) {
   const [archivedDebts, setArchivedDebts] = useState([])
   const [showArchived, setShowArchived] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedDebt, setSelectedDebt] = useState(null)
   const [creditCardDebt, setCreditCardDebt] = useState(null)
@@ -553,31 +555,43 @@ function Debts({ setIsAuthenticated }) {
                           </div>
                         </div>
                       </div>
-                      {!debt.isVirtual && (
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => {
-                              setSelectedDebt(debt)
-                              setShowEditModal(true)
-                            }}
-                            className="text-blue-500 hover:text-blue-700 transition"
-                            title="Edit"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDebt(debt.id)}
-                            className="text-red-500 hover:text-red-700 transition"
-                            title="Delete"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setSelectedDebt(debt)
+                            setShowPaymentModal(true)
+                          }}
+                          className="bg-bloom-mint text-green-800 px-4 py-2 rounded-lg hover:bg-green-200 transition font-medium"
+                          title="Make Payment"
+                        >
+                          Pay
+                        </button>
+                        {!debt.isVirtual && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedDebt(debt)
+                                setShowEditModal(true)
+                              }}
+                              className="text-blue-500 hover:text-blue-700 transition"
+                              title="Edit"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDebt(debt.id)}
+                              className="text-red-500 hover:text-red-700 transition"
+                              title="Delete"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Progress Bar */}
@@ -802,6 +816,23 @@ function Debts({ setIsAuthenticated }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Debt Payment Modal */}
+      {showPaymentModal && selectedDebt && (
+        <AddDebtPaymentModal
+          onClose={() => {
+            setShowPaymentModal(false)
+            setSelectedDebt(null)
+          }}
+          onAdd={(payment) => {
+            loadDebts()
+            loadCreditCardDebt()
+            setShowPaymentModal(false)
+            setSelectedDebt(null)
+          }}
+          preSelectedDebt={selectedDebt.name}
+        />
       )}
 
       {/* Export/Import Modal */}

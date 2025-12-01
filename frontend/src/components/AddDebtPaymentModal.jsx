@@ -8,8 +8,8 @@
 import { useState, useEffect } from 'react'
 import { debtAPI } from '../api'
 
-function AddDebtPaymentModal({ onClose, onAdd }) {
-  const [selectedDebt, setSelectedDebt] = useState('')
+function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
+  const [selectedDebt, setSelectedDebt] = useState(preSelectedDebt || '')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('Debit card')
@@ -25,7 +25,15 @@ function AddDebtPaymentModal({ onClose, onAdd }) {
     try {
       const response = await debtAPI.getAll()
       setDebts(response.data)
-      if (response.data.length > 0) {
+
+      // If preSelectedDebt is provided, use it and set amount
+      if (preSelectedDebt) {
+        const debt = response.data.find(d => d.name === preSelectedDebt)
+        if (debt && debt.monthly_payment) {
+          setAmount((debt.monthly_payment / 100).toFixed(2))
+        }
+      } else if (response.data.length > 0) {
+        // Otherwise, default to first debt
         const firstDebt = response.data[0]
         setSelectedDebt(firstDebt.name)
         setAmount((firstDebt.monthly_payment / 100).toFixed(2))
