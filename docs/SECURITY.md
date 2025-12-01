@@ -14,7 +14,7 @@ JWT_SECRET_KEY=<generate-different-random-64-char-string>
 DATABASE_URL=<postgres-connection-string>
 
 # CORS - Your frontend domain
-CORS_ORIGINS=https://the-bloom-tracker.netlify.app
+CORS_ORIGINS=https://bloom-tracker.app
 
 # Application Settings
 CREDIT_CARD_LIMIT=1500

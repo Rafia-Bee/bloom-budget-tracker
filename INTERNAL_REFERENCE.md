@@ -43,7 +43,7 @@ A balance-based weekly budget tracking system where users manage their finances 
 - **Mobile-first responsive design** with touch-friendly UI
 
 ### Live Deployment
-- **Frontend:** https://the-bloom-tracker.netlify.app (Netlify, password protected)
+- **Frontend:** https://bloom-tracker.app (Custom domain via Netlify, password protected)
 - **Backend:** https://bloom-backend-b44r.onrender.com (Render, free tier)
 - **Database:** PostgreSQL on Render (free tier, 1GB storage)
 
@@ -359,7 +359,7 @@ RATE_LIMITS = {
 cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173,...').split(',')
 CORS(app, origins=cors_origins, supports_credentials=True)
 ```
-**Production:** Restricted to `https://the-bloom-tracker.netlify.app`
+**Production:** Restricted to `https://bloom-tracker.app`
 
 #### 5. Recurring Expense Generation
 - **Trigger:** Manual via `/recurring-generation/generate` endpoint
@@ -496,7 +496,7 @@ weeklyBudgetCardRef.current?.refresh()
   - `SECRET_KEY=<64-char-random>`
   - `JWT_SECRET_KEY=<64-char-random>`
   - `DATABASE_URL=<postgres-connection-string>`
-  - `CORS_ORIGINS=https://the-bloom-tracker.netlify.app`
+  - `CORS_ORIGINS=https://bloom-tracker.app`
   - `SENDGRID_API_KEY=<optional>`
   - `SENDGRID_FROM_EMAIL=<optional>`
   - `GITHUB_BACKUP_TOKEN=<for automated backups>`
@@ -1252,7 +1252,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 ## Quick Reference
 
 ### Important URLs
-- **Production Frontend:** https://the-bloom-tracker.netlify.app
+- **Production Frontend:** https://bloom-tracker.app (custom domain via Netlify)
 - **Production Backend:** https://bloom-backend-b44r.onrender.com
 - **GitHub Repo:** https://github.com/Rafia-Bee/bloom-budget-tracker
 - **GitHub Project:** https://github.com/users/Rafia-Bee/projects/1

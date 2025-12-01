@@ -122,7 +122,7 @@ sqlite3 instance\bloom.db < backup.sql
 **Frontend (Netlify)**:
 - Build: `cd frontend && npm run build`
 - Deploy: Auto-deploys from `main` branch
-- Live: https://the-bloom-tracker.netlify.app
+- Live: https://bloom-tracker.app
 - PWA enabled in production builds
 
 **Backend (Render)**:

@@ -4,7 +4,7 @@
 
 A flexible web-based budget tracking application accessible from any device (Android, iPad, PC).
 
-**🌐 Live Demo:** [https://the-bloom-tracker.netlify.app](https://the-bloom-tracker.netlify.app)
+**🌐 Live Demo:** [https://bloom-tracker.app](https://bloom-tracker.app)
 
 **📱 Progressive Web App:** Install on your device for offline access!
 
@@ -212,7 +212,7 @@ Access the app at `http://localhost:3000`
 ### Production Deployment
 
 The app is deployed to Netlify and accessible at:
-**https://the-bloom-tracker.netlify.app**
+**https://bloom-tracker.app** (custom domain via Netlify)
 
 **Features:**
 - ✅ Progressive Web App (PWA) - Install on any device

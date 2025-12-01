@@ -9,7 +9,7 @@ This guide covers the production deployment setup for Bloom Budget Tracker.
 ### Hosting Services
 
 **Frontend (Netlify)**
-- URL: https://the-bloom-tracker.netlify.app
+- URL: https://bloom-tracker.app (custom domain configured in Netlify)
 - Framework: React + Vite
 - Auto-deploys from: `main` branch
 - Build command: `npm run build`
@@ -46,8 +46,8 @@ JWT_SECRET_KEY=<generate-strong-jwt-secret>
 DATABASE_URL=<automatically-set-by-render-postgres>
 
 # CORS - Frontend URL
-CORS_ORIGINS=https://the-bloom-tracker.netlify.app
-FRONTEND_URL=https://the-bloom-tracker.netlify.app
+CORS_ORIGINS=https://bloom-tracker.app
+FRONTEND_URL=https://bloom-tracker.app
 
 # Optional: Email (SendGrid)
 SENDGRID_API_KEY=<your-sendgrid-api-key>
