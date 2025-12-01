@@ -40,7 +40,8 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     const deltaY = dragStart.y - e.clientY
 
     // Calculate new position (constrained to viewport, vertical only)
-    const newBottom = Math.max(8, Math.min(window.innerHeight - 80, dragStart.startBottom + deltaY))
+    // Min: 80px from bottom, Max: 80px from top
+    const newBottom = Math.max(80, Math.min(window.innerHeight - 80, dragStart.startBottom + deltaY))
 
     setPosition({
       bottom: newBottom,
@@ -75,7 +76,8 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     const touch = e.touches[0]
     const deltaY = dragStart.y - touch.clientY
 
-    const newBottom = Math.max(8, Math.min(window.innerHeight - 80, dragStart.startBottom + deltaY))
+    // Min: 80px from bottom, Max: 80px from top
+    const newBottom = Math.max(80, Math.min(window.innerHeight - 80, dragStart.startBottom + deltaY))
 
     setPosition({
       bottom: newBottom,
@@ -110,13 +112,20 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     }
   }, [isDragging, dragStart])
 
-  // Determine if menu should open upward or downward
-  const shouldOpenDownward = position.bottom > window.innerHeight / 2
+  // Calculate menu position - show above button unless too close to top
+  const menuHeight = 180 // Approximate height of 3-button menu
+  const buttonHeight = 64
+  const menuAboveButton = position.bottom + buttonHeight + 10
+  const showMenuBelow = menuAboveButton + menuHeight > window.innerHeight
+
+  const menuBottom = showMenuBelow
+    ? position.bottom - menuHeight - 10  // Below button
+    : position.bottom + buttonHeight + 10 // Above button
 
   return (
     <div
       ref={buttonRef}
-      className="fixed add-menu z-50"
+      className="fixed add-menu z-[100]"
       style={{
         bottom: `${position.bottom}px`,
         right: '32px',
@@ -125,10 +134,12 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     >
       {showMenu && (
         <div
-          className={`add-menu-popup absolute bg-white rounded-lg shadow-xl p-2 mb-2 min-w-[150px] ${
-            shouldOpenDownward ? 'top-20' : 'bottom-20'
-          }`}
-          style={{ right: '45px' }}
+          className="add-menu-popup fixed bg-white rounded-lg shadow-xl border-2 border-gray-200 p-2 min-w-[150px] z-[101]"
+          style={{
+            right: '77px',
+            bottom: `${menuBottom}px`,
+            backgroundColor: '#ffffff'
+          }}
         >
           {children}
         </div>
