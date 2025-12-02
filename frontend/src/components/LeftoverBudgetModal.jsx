@@ -140,9 +140,9 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
             </div>
           )}
 
-          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
+          <div className="bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-6 text-center">
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-2">Leftover Budget</p>
-            <p className="text-4xl font-bold text-green-600">{formatCurrency(leftoverData.leftover)}</p>
+            <p className="text-4xl font-bold text-green-600 dark:text-green-400">{formatCurrency(leftoverData.leftover)}</p>
             <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-2">
               from {formatCurrency(leftoverData.budget_amount)} budget
             </p>

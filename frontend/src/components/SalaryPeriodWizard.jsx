@@ -154,16 +154,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 rounded-t-2xl">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-bloom-pink">
+            <h2 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">
               {editPeriod ? 'Edit' : 'Setup'} Weekly Budget
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-light"
+              className="text-gray-400 dark:text-dark-text-secondary hover:text-gray-600 dark:hover:text-dark-text text-2xl font-light"
             >
               ×
             </button>
@@ -172,7 +172,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
           <div className="flex items-center gap-2">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center flex-1">
-                <div className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-bloom-pink' : 'bg-gray-200'}`} />
+                <div className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-bloom-pink dark:bg-dark-pink' : 'bg-gray-200 dark:bg-dark-elevated'}`} />
                 {s < 3 && <div className="w-2" />}
               </div>
             ))}
@@ -181,7 +181,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-dark-danger rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -190,13 +190,13 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-2">Enter Your Current Balances</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   We'll help you create a 4-week budget based on your available funds.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                   Debit Balance (Current Bank Account)
                 </label>
                 <div className="relative">
@@ -213,7 +213,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                   Credit Card Available (Remaining Limit)
                 </label>
                 <div className="relative">
@@ -226,11 +226,11 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     placeholder="1000.00"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">How much credit you have left to spend</p>
+                <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">How much credit you have left to spend</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                   Credit Card Limit (Total)
                 </label>
                 <div className="relative">
@@ -243,7 +243,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     placeholder="1500.00"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                   {parseCurrency(creditLimit) > parseCurrency(creditBalance)
                     ? `You currently owe €${((parseCurrency(creditLimit) - parseCurrency(creditBalance)) / 100).toFixed(2)}`
                     : 'No pre-existing debt'}
@@ -252,7 +252,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
               {parseCurrency(creditBalance) > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                     Credit Allowance (Optional)
                   </label>
                   <p className="text-xs text-gray-600 mb-3">
@@ -284,7 +284,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                   Budget Period Start Date
                 </label>
                 <input
@@ -309,7 +309,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-2">Review Fixed Bills</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   These recurring expenses won't count against your weekly budget. Adjust or remove as needed.
                 </p>
               </div>
@@ -324,7 +324,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               ) : (
                 <div className="space-y-3">
                   {fixedBills.map((bill, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{bill.name}</div>
                         <div className="text-sm text-gray-500">{bill.category}</div>
@@ -361,7 +361,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-dark-elevated"
                 >
                   Back
                 </button>
@@ -380,7 +380,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-2">Confirm Your Weekly Budget</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   Review the breakdown and create your 4-week budget plan.
                 </p>
               </div>
@@ -431,7 +431,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 </div>
                 <div className="space-y-2">
                   {preview.weeks.map((week) => (
-                    <div key={week.week_number} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={week.week_number} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg">
                       <div className="w-8 h-8 bg-bloom-pink text-white rounded-full flex items-center justify-center font-semibold">
                         {week.week_number}
                       </div>
@@ -457,7 +457,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-dark-elevated"
                 >
                   Back
                 </button>
@@ -481,3 +481,4 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 }
 
 export default SalaryPeriodWizard
+

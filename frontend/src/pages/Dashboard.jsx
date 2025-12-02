@@ -1587,30 +1587,30 @@ function Dashboard({ setIsAuthenticated }) {
 
       {/* Warning Modal for Exceeding Balance/Credit */}
       {warningModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-950/30 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text">
                 {warningModal.type === 'debit' ? 'Insufficient Funds' : 'Credit Limit Exceeded'}
               </h3>
             </div>
 
             {warningModal.type === 'debit' ? (
-              <div className="text-gray-700 mb-6 space-y-2">
+              <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
                 <p>You're trying to spend <strong>€{warningModal.expenseAmount.toFixed(2)}</strong> but only have <strong>€{warningModal.available.toFixed(2)}</strong> available in your debit account.</p>
-                <p className="text-red-600 font-semibold">This will result in a negative balance of €{(warningModal.available - warningModal.expenseAmount).toFixed(2)}.</p>
+                <p className="text-red-600 dark:text-dark-danger font-semibold">This will result in a negative balance of €{(warningModal.available - warningModal.expenseAmount).toFixed(2)}.</p>
                 <p className="text-sm">Do you want to proceed anyway?</p>
               </div>
             ) : (
-              <div className="text-gray-700 mb-6 space-y-2">
+              <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
                 <p>You're trying to spend <strong>€{warningModal.expenseAmount.toFixed(2)}</strong> but only have <strong>€{warningModal.available.toFixed(2)}</strong> available credit.</p>
                 <p>Your credit limit is €{creditLimit.toFixed(2)} and current balance is €{creditBalance.toFixed(2)}.</p>
-                <p className="text-red-600 font-semibold">This will exceed your limit by €{(warningModal.expenseAmount - warningModal.available).toFixed(2)}.</p>
+                <p className="text-red-600 dark:text-dark-danger font-semibold">This will exceed your limit by €{(warningModal.expenseAmount - warningModal.available).toFixed(2)}.</p>
                 <p className="text-sm">Do you want to proceed anyway?</p>
               </div>
             )}
@@ -1621,7 +1621,7 @@ function Dashboard({ setIsAuthenticated }) {
                   warningModal.reject(new Error('Transaction cancelled by user'))
                   setWarningModal(null)
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-elevated/80 transition font-semibold"
               >
                 Cancel
               </button>
@@ -1645,7 +1645,7 @@ function Dashboard({ setIsAuthenticated }) {
                     throw error
                   }
                 }}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold"
+                className="px-4 py-2 bg-yellow-600 dark:bg-yellow-700 text-white rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-600 transition font-semibold"
               >
                 Proceed Anyway
               </button>
