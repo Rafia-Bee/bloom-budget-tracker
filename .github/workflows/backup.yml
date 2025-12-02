@@ -42,7 +42,7 @@ jobs:
           python scripts/backup_database.py
 
       - name: Upload backup artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: database-backup-${{ github.run_number }}
           path: scripts/backups/*.gz
