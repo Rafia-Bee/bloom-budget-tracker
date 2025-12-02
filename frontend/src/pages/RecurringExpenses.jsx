@@ -411,7 +411,7 @@ function RecurringExpenses() {
                   {activeExpenses.map((expense) => (
                     <div
                       key={expense.id}
-                      className="border border-gray-200 dark:border-dark-border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated">
+                      className="border border-gray-200 dark:border-dark-border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated"
                     >
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
