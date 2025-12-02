@@ -29,7 +29,7 @@ Created Cloudflare Pages configuration files:
 3. Select your GitHub repository: `Rafia-Bee/bloom-budget-tracker`
 4. Configure build settings:
    - **Production branch:** `main`
-   - **Build command:** `cd frontend && npm run build`
+   - **Build command:** `cd frontend && npm install && npm run build`
    - **Build output directory:** `frontend/dist`
    - **Root directory:** `/` (leave empty or use root)
 
@@ -88,7 +88,7 @@ Once Cloudflare Pages is confirmed working:
 ### Cloudflare Pages Build Settings
 
 ```yaml
-Build command: cd frontend && npm run build
+Build command: cd frontend && npm install && npm run build
 Build output directory: frontend/dist
 Root directory: (leave empty)
 Node version: 18 (auto-detected from package.json engines or use CF default)
