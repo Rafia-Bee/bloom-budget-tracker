@@ -2,84 +2,107 @@
 
 Comprehensive documentation for the Bloom budget tracking application.
 
-## Active Documentation
+## 📚 Core Documentation
 
 ### [DEPLOYMENT.md](DEPLOYMENT.md)
 
-**🚀 Production Deployment Guide:**
-
-- Cloudflare Pages (frontend) configuration
-- Render (backend + database) setup
-- Environment variables
-- CORS configuration
+**Production deployment and hosting:**
+- Cloudflare Pages (frontend) + Render (backend/database)
+- Environment variables and CORS configuration
+- Build commands and continuous deployment
 - Troubleshooting and monitoring
 
-### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)
+### [USER_GUIDE.md](USER_GUIDE.md)
 
-**✅ Migration Complete (Dec 2, 2025):**
-
-- Netlify → Cloudflare Pages migration guide
-- Build configuration and setup steps
-- Post-migration checklist (all items completed)
-- Unlimited deploys and bandwidth
-
-### [RECURRING_EXPENSES.md](RECURRING_EXPENSES.md)
-
-Recurring expenses automation system:
-
-- Feature overview and data model
-- API endpoints and auto-generation
-- Frontend components
-- Scheduling options (weekly/biweekly/monthly/custom)
-- Windows Task Scheduler setup
-- Usage examples
+**End-user documentation:**
+- Getting started and account setup
+- Dashboard and transaction management
+- Salary periods and weekly budgets
+- Recurring expenses and debt tracking
+- Import/export functionality
 
 ### [SECURITY.md](SECURITY.md)
 
-Security best practices and implementation:
+**Security implementation:**
+- JWT authentication and password hashing
+- API security and rate limiting
+- Environment variable management
+- Production security best practices
 
-- Authentication & JWT tokens
-- Password hashing
-- API security
-- Environment variables
-- Production deployment security
+## 🔧 Feature Documentation
+
+### [RECURRING_EXPENSES.md](RECURRING_EXPENSES.md)
+
+**Automation system for repeating expenses:**
+- Data model and API endpoints
+- Frontend components and UI
+- Scheduling options (weekly/biweekly/monthly/custom)
+- Auto-generation with 60-day lookahead
+
+### [BANK_IMPORT.md](BANK_IMPORT.md)
+
+**CSV import functionality:**
+- Supported bank formats
+- Import workflow and validation
+- Duplicate detection
+- Troubleshooting
+
+### [FEATURE_FLAGS.md](FEATURE_FLAGS.md)
+
+**Experimental features system:**
+- Feature flag management
+- User opt-in/opt-out
+- Testing unreleased features
 
 ### [EMAIL_SETUP.md](EMAIL_SETUP.md)
 
-**📧 Email Integration Setup & Deployment:**
+**Email integration (SendGrid):**
+- Password reset emails
+- Configuration and environment variables
+- Development vs production modes
+- Troubleshooting and rate limiting
 
-- SendGrid setup and configuration
-- Environment variables
-- Development vs Production modes
-- Email template customization
-- Troubleshooting and monitoring
-- Rate limiting configuration
+## 🗄️ Infrastructure Documentation
 
-### [EMAIL_INTEGRATION_ISSUE.md](EMAIL_INTEGRATION_ISSUE.md)
+### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)
 
-Email integration feature specification (GitHub Issue #23):
+**✅ Completed migration (Dec 2, 2025):**
+- Netlify → Cloudflare Pages migration
+- Configuration and setup steps
+- Post-migration checklist
 
-- Password reset flow
-- Email service integration (SendGrid/SES)
-- Email templates
-- Implementation roadmap
+## 🧪 Development Documentation
 
-## Quick Links
+### [TESTING.md](TESTING.md)
 
-- [Main README](../README.md) - Project overview and setup
+**Testing setup and guidelines:**
+- Backend tests (pytest)
+- Frontend tests (Vitest + React Testing Library)
+- Running tests and coverage reports
+
+## 📦 Quick Links
+
+- [Main README](../README.md) - Project overview and local setup
 - [Scripts Documentation](../scripts/README.md) - Maintenance and utility scripts
-- [GitHub Issues](https://github.com/Rafia-Bee/bloom-budget-tracker/issues) - Feature tracking
-- [Archive](archive/) - Historical documentation
+- [Decision Log](../DECISION_LOG.md) - Development decisions and changes
+- [Internal Reference](../INTERNAL_REFERENCE.md) - Technical architecture
+- [Archive](archive/) - Historical and outdated documentation
 
-## Feature Tracking
+## 📋 Archived Documentation
 
-Active features and enhancements are tracked in [GitHub Issues](https://github.com/Rafia-Bee/bloom-budget-tracker/issues).
+The following documents have been moved to `archive/` as they're no longer current or have been consolidated:
 
-## Contributing
+- **API_VERSIONING.md** - Consolidated into DEPLOYMENT.md
+- **DATABASE_BACKUP.md** - Consolidated into DEPLOYMENT.md
+- **PRE_PUSH_SETUP_COMPLETE.md** - Pre-push hook setup (now integrated)
+- **EMAIL_INTEGRATION_ISSUE.md** - Feature spec (implemented, see EMAIL_SETUP.md)
+- **LOADING_ANIMATION_CONCEPTS.md** - Design concepts (implemented)
+- **DEPLOYMENT_SAFEGUARDS.md** - Early deployment strategies (superseded by DEPLOYMENT.md)
+- **CUSTOM_DOMAIN.md** - Netlify domain setup (migrated to Cloudflare Pages)
 
-When adding new features:
+## 🎯 Documentation Principles
 
-1. Create or update GitHub issue
-2. Add technical documentation here if complex
-3. Update main README for setup changes
-4. Keep documentation concise and current
+- **Actionable** - Focus on what to do, not just what exists
+- **Current** - Archive outdated docs, update regularly
+- **Concise** - Link to external docs when appropriate
+- **User-focused** - Write for the intended audience (users vs developers)

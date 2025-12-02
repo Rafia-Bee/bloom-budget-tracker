@@ -291,6 +291,76 @@ CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 
 ---
 
+## API Versioning
+
+**Current Version:** v1 - `/api/v1/*`
+
+All API endpoints use the `/api/v1/` prefix for version management and backward compatibility.
+
+**Endpoints:**
+```
+/api/v1/auth/login
+/api/v1/auth/register
+/api/v1/expenses
+/api/v1/income
+/api/v1/debts
+/api/v1/budget-periods
+/api/v1/salary-periods
+/api/v1/recurring-expenses
+```
+
+**Frontend Configuration:**
+- API URL automatically includes version prefix
+- No manual configuration needed
+- Hardcoded: `https://bloom-backend-b44r.onrender.com/api/v1`
+
+## Database Backup & Recovery
+
+### Automated Backups
+
+**GitHub Actions:** Daily at 2:00 AM UTC
+- Dumps PostgreSQL database
+- Compresses and uploads to GitHub artifacts
+- 30-day retention period
+
+**Manual Trigger:**
+```bash
+gh workflow run backup.yml
+```
+
+### Restore Process
+
+1. **Download backup:**
+   ```bash
+   gh run download <run-id> -n database-backup-<number>
+   ```
+
+2. **Decompress:**
+   ```powershell
+   gzip -d bloom_backup_20251202_020000.sql.gz
+   ```
+
+3. **Restore:**
+   ```bash
+   psql $DATABASE_URL < bloom_backup_20251202_020000.sql
+   ```
+
+**Render Built-in Backups:**
+- Free tier: 7-day retention
+- Automatic daily backups
+- Point-in-time recovery
+
+### Disaster Recovery
+
+If production database is lost:
+1. Download latest backup from GitHub Actions or Render
+2. Create new PostgreSQL instance on Render
+3. Restore backup to new instance
+4. Update `DATABASE_URL` environment variable
+5. Restart backend service
+
+---
+
 ## Environment Variable Reference
 
 ### Backend (.env)
