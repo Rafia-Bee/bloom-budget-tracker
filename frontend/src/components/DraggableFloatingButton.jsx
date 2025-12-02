@@ -134,11 +134,10 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     >
       {showMenu && (
         <div
-          className="add-menu-popup fixed bg-white rounded-lg shadow-xl border-2 border-gray-200 p-2 min-w-[150px] z-[101]"
+          className="add-menu-popup fixed bg-white dark:bg-dark-surface rounded-lg shadow-xl border-2 border-gray-200 dark:border-dark-border p-2 min-w-[150px] z-[101]"
           style={{
             right: '77px',
-            bottom: `${menuBottom}px`,
-            backgroundColor: '#ffffff'
+            bottom: `${menuBottom}px`
           }}
         >
           {children}
@@ -147,7 +146,7 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
       <button
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className={`bg-bloom-pink text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-bloom-pink/90 transition-transform ${
+        className={`bg-bloom-pink dark:bg-dark-pink text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink/80 transition-transform ${
           isDragging ? 'scale-110' : 'hover:scale-110'
         }`}
         style={{ touchAction: 'none' }}

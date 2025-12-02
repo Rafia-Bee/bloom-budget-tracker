@@ -947,7 +947,7 @@ function Dashboard({ setIsAuthenticated }) {
 
           {/* Mobile Menu Dropdown */}
           {showMobileMenu && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
               <div className="space-y-3">
                 {/* Period Selector - Mobile */}
                 <div className="mb-4">
@@ -978,31 +978,31 @@ function Dashboard({ setIsAuthenticated }) {
                 {/* Navigation Links */}
                 <a
                   href="/debts"
-                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block px-4 py-3 text-gray-700 dark:text-dark-text hover:bg-bloom-pink/10 dark:hover:bg-dark-pink/20 hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   💳 Debts
                 </a>
                 <a
                   href="/recurring-expenses"
-                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block px-4 py-3 text-gray-700 dark:text-dark-text hover:bg-bloom-pink/10 dark:hover:bg-dark-pink/20 hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   🔄 Recurring Expenses
                 </a>
 
                 {/* User Info & Logout */}
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
                   <div className="px-4 py-2 mb-2">
-                    <p className="text-xs text-gray-500">Signed in as</p>
-                    <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
                   </div>
                   <button
                     onClick={() => {
                       handleLogout()
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-4 py-3 text-red-600 dark:text-dark-danger hover:bg-red-50 dark:hover:bg-red-950/30 transition rounded-lg flex items-center gap-2 font-semibold"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1482,10 +1482,10 @@ function Dashboard({ setIsAuthenticated }) {
               setShowAddModal(true)
               setShowAddMenu(false)
             }}
-            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-lg transition flex items-center gap-3"
           >
             <span className="text-2xl">💰</span>
-            <span className="font-semibold text-gray-700">Add Income</span>
+            <span className="font-semibold text-gray-700 dark:text-dark-text">Add Income</span>
           </button>
           <button
             onClick={() => {
@@ -1493,10 +1493,10 @@ function Dashboard({ setIsAuthenticated }) {
               setShowAddModal(true)
               setShowAddMenu(false)
             }}
-            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-lg transition flex items-center gap-3"
           >
             <span className="text-2xl">💸</span>
-            <span className="font-semibold text-gray-700">Add Expense</span>
+            <span className="font-semibold text-gray-700 dark:text-dark-text">Add Expense</span>
           </button>
           <button
             onClick={() => {
@@ -1504,10 +1504,10 @@ function Dashboard({ setIsAuthenticated }) {
               setShowAddModal(true)
               setShowAddMenu(false)
             }}
-            className="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg transition flex items-center gap-3"
+            className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-dark-elevated rounded-lg transition flex items-center gap-3"
           >
             <span className="text-2xl">💳</span>
-            <span className="font-semibold text-gray-700">Debt Payment</span>
+            <span className="font-semibold text-gray-700 dark:text-dark-text">Debt Payment</span>
           </button>
         </DraggableFloatingButton>
       )}
