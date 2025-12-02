@@ -8,12 +8,13 @@ This guide covers the production deployment setup for Bloom Budget Tracker.
 
 ### Hosting Services
 
-**Frontend (Netlify)**
-- URL: https://bloom-tracker.app (custom domain configured in Netlify)
+**Frontend (Cloudflare Pages)**
+- URL: https://bloom-tracker.app (custom domain)
+- Default URL: https://bloom-budget-tracker.pages.dev
 - Framework: React + Vite
 - Auto-deploys from: `main` branch
-- Build command: `npm run build`
-- Publish directory: `dist`
+- Build command: `cd frontend && npm install && npm run build`
+- Build output: `frontend/dist`
 
 **Backend (Render)**
 - URL: https://bloom-backend-b44r.onrender.com
@@ -46,8 +47,8 @@ JWT_SECRET_KEY=<generate-strong-jwt-secret>
 DATABASE_URL=<automatically-set-by-render-postgres>
 
 # CORS - Frontend URL
-CORS_ORIGINS=https://bloom-tracker.app
-FRONTEND_URL=https://bloom-tracker.app
+CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
+FRONTEND_URL=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 
 # Optional: Email (SendGrid)
 SENDGRID_API_KEY=<your-sendgrid-api-key>
@@ -57,12 +58,13 @@ SENDGRID_FROM_EMAIL=noreply@bloom-budget.com
 CREDIT_CARD_LIMIT=1500
 ```
 
-### Frontend Environment Variables (Netlify)
+### Frontend Environment Variables (Cloudflare Pages)
 
-Create a `.env.production` file or set in Netlify dashboard:
+No environment variables needed - API URL is hardcoded in frontend for simplicity:
 
-```bash
-VITE_API_URL=https://your-render-app.onrender.com
+```javascript
+// Frontend uses runtime API URL from axios baseURL
+const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onrender.com';
 ```
 
 ---
@@ -83,14 +85,14 @@ VITE_API_URL=https://your-render-app.onrender.com
 5. Set environment variables
 6. Deploy
 
-**2. Frontend (Netlify)**
+**2. Frontend (Cloudflare Pages)**
 
-1. Connect GitHub repository to Netlify
+1. Connect GitHub repository to Cloudflare Pages
 2. Configure build settings:
-   - Base directory: `frontend`
-   - Build command: `npm run build`
-   - Publish directory: `frontend/dist`
-3. Set environment variables
+   - Build command: `cd frontend && npm install && npm run build`
+   - Build output directory: `frontend/dist`
+   - Root directory: `/` (leave empty)
+3. Add custom domain: `bloom-tracker.app`
 4. Deploy
 
 ### Continuous Deployment
@@ -103,7 +105,7 @@ git commit -m "your commit message"
 git push origin main
 ```
 
-- **Netlify**: Builds and deploys frontend automatically (~2-3 minutes)
+- **Cloudflare Pages**: Builds and deploys frontend automatically (~2-3 minutes)
 - **Render**: Builds and deploys backend automatically (~3-5 minutes)
 
 **Note:** Free tier services sleep after 15 minutes of inactivity. First request after sleep takes 30-60 seconds (cold start).
@@ -147,10 +149,10 @@ psql <DATABASE_URL>
 
 ### CORS Configuration
 
-Production CORS is restricted to frontend domain:
+Production CORS is restricted to frontend domains:
 
 ```python
-CORS_ORIGINS=https://the-bloom-tracker.netlify.app
+CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 ```
 
 Update in Render dashboard when domain changes.
@@ -177,13 +179,14 @@ Update in Render dashboard when domain changes.
 - Connection pooling enabled
 - JWT tokens with 24-hour expiry (offline support)
 
-### Frontend (Netlify)
+### Frontend (Cloudflare Pages)
 
 **Optimizations:**
 - Vite production build (minified, tree-shaken)
 - Progressive Web App (PWA) for offline support
 - Service worker caching
-- Asset compression
+- Cloudflare CDN edge caching
+- Unlimited bandwidth and builds
 
 ---
 
@@ -229,8 +232,8 @@ pip freeze > backend/requirements.txt
 **Check:**
 1. Node version compatibility (use Node 18+)
 2. All dependencies in `package.json`
-3. Build logs in Netlify dashboard
-4. Environment variables set
+3. Build logs in Cloudflare Pages dashboard
+4. Build command includes `npm install`
 
 **Common fixes:**
 ```bash
@@ -250,7 +253,7 @@ npm run build
 **Fix:**
 Update Render environment variable:
 ```bash
-CORS_ORIGINS=https://the-bloom-tracker.netlify.app
+CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 ```
 
 ### Database Connection Issues
@@ -274,16 +277,17 @@ CORS_ORIGINS=https://the-bloom-tracker.netlify.app
 - 1 GB storage → Upgrade for more space
 - 7-day backup retention → Upgrade for 30-day retention
 
-**Netlify Frontend:**
-- 100 GB bandwidth/month
-- 300 build minutes/month
+**Cloudflare Pages Frontend:**
+- Unlimited bandwidth
+- Unlimited builds
+- 500 builds/month for preview deployments
 
 ### Recommended Upgrades (When Needed)
 
 1. **Always-on backend**: Render Starter plan ($7/month)
 2. **More database storage**: Render PostgreSQL Starter ($7/month)
-3. **Custom domain**: Configure in Netlify dashboard
-4. **CDN caching**: Already included with Netlify
+3. **Custom domain**: Already configured (bloom-tracker.app)
+4. **CDN caching**: Already included with Cloudflare Pages
 
 ---
 
@@ -301,8 +305,8 @@ JWT_SECRET_KEY=<generate-with-secrets.token_urlsafe(32)>
 DATABASE_URL=postgresql://user:pass@host:port/database
 
 # CORS
-CORS_ORIGINS=https://frontend.netlify.app
-FRONTEND_URL=https://frontend.netlify.app
+CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
+FRONTEND_URL=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 
 # Optional
 SENDGRID_API_KEY=SG.xxx
@@ -310,11 +314,9 @@ SENDGRID_FROM_EMAIL=noreply@bloom-budget.com
 CREDIT_CARD_LIMIT=1500
 ```
 
-### Frontend (.env.production)
+### Frontend (Cloudflare Pages)
 
-```bash
-VITE_API_URL=https://backend.onrender.com
-```
+No environment variables needed - API URL configured in frontend code.
 
 ---
 
@@ -328,7 +330,7 @@ VITE_API_URL=https://backend.onrender.com
 - Check for security vulnerabilities
 
 **Automated deployment:**
-- Already handled by Netlify/Render
+- Already handled by Cloudflare Pages/Render
 - Could add pre-deployment checks
 
 **Example workflow** (to implement):
@@ -362,12 +364,12 @@ jobs:
 
 **Documentation:**
 - [Render Docs](https://render.com/docs)
-- [Netlify Docs](https://docs.netlify.com)
+- [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
 - [Flask Deployment](https://flask.palletsprojects.com/en/2.3.x/deploying/)
 
 **Monitoring:**
 - Render Dashboard: Monitor backend health
-- Netlify Dashboard: Monitor frontend builds
+- Cloudflare Pages Dashboard: Monitor frontend builds and analytics
 - PostgreSQL: Check database metrics
 
 ---
@@ -387,5 +389,5 @@ jobs:
 
 ---
 
-**Last Updated:** November 2025
-**Deployment Status:** ✅ Production Ready
+**Last Updated:** December 2, 2025
+**Deployment Status:** ✅ Production Ready (Migrated to Cloudflare Pages)
