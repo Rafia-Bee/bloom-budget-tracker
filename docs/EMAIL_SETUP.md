@@ -64,7 +64,7 @@ FRONTEND_URL=http://localhost:3000
 ```env
 SENDGRID_API_KEY=your_production_api_key
 SENDGRID_FROM_EMAIL=noreply@bloom-budget.com
-FRONTEND_URL=https://your-production-frontend.netlify.app
+FRONTEND_URL=https://your-production-frontend.pages.dev
 ```
 
 ### Configuration Details
@@ -97,10 +97,10 @@ When `SENDGRID_API_KEY` is not set, the application runs in development mode:
 3. Add environment variables:
    - `SENDGRID_API_KEY` = your API key
    - `SENDGRID_FROM_EMAIL` = your verified sender email
-   - `FRONTEND_URL` = your Netlify frontend URL
+   - `FRONTEND_URL` = your Cloudflare Pages frontend URL
 4. Save changes (service will auto-redeploy)
 
-### Netlify (Frontend)
+### Cloudflare Pages (Frontend)
 
 No frontend environment variables needed. The frontend URL is only used by the backend.
 
@@ -214,7 +214,7 @@ For receiving emails at support@bloom-tracker.app and other domain emails, use C
    - Select Free plan
 
 3. **Update nameservers at Namecheap**
-   - Change from Netlify nameservers to CloudFlare nameservers
+   - Use Cloudflare nameservers for domain management
    - Wait for DNS propagation (15 min - 48 hours, usually ~1 hour)
 
 4. **Enable Email Routing in CloudFlare**

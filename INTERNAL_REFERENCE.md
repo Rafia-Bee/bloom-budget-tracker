@@ -43,7 +43,7 @@ A balance-based weekly budget tracking system where users manage their finances 
 - **Mobile-first responsive design** with touch-friendly UI
 
 ### Live Deployment
-- **Frontend:** https://bloom-tracker.app (Custom domain via Netlify, password protected)
+- **Frontend:** https://bloom-tracker.app (Custom domain via Cloudflare Pages, unlimited builds)
 - **Backend:** https://bloom-backend-b44r.onrender.com (Render, free tier)
 - **Database:** PostgreSQL on Render (free tier, 1GB storage)
 
@@ -144,7 +144,7 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 - **Environment:** `.venv` virtual environment for Python
 
 ### Deployment
-- **Frontend:** Netlify (auto-deploy from main branch)
+- **Frontend:** Cloudflare Pages (auto-deploy from main branch, unlimited deploys)
 - **Backend:** Render (auto-deploy from main branch)
 - **Database:** Render PostgreSQL (free tier, 7-day backup retention)
 
@@ -508,15 +508,14 @@ weeklyBudgetCardRef.current?.refresh()
 
 ## Deployment & Infrastructure
 
-### Frontend (Netlify)
-- **Build Command:** `cd frontend && npm run build`
-- **Publish Directory:** `frontend/dist`
+### Frontend (Cloudflare Pages)
+- **Build Command:** `cd frontend && npm install && npm run build`
+- **Build Output Directory:** `frontend/dist`
 - **Auto-Deploy:** On push to `main` branch
-- **Environment Variables:**
-  - `VITE_API_URL=https://bloom-backend-b44r.onrender.com/api/v1`
-- **Password Protection:** Netlify built-in (site-wide basic auth)
+- **Environment Variables:** None needed (API URL hardcoded)
+- **Limits:** Unlimited builds and bandwidth (free tier)
 - **Deploy Time:** ~2-3 minutes
-- **CDN:** Netlify Edge network (global)
+- **CDN:** Cloudflare Edge network (global)
 - **Security Headers:** Configured via `frontend/public/_headers` (CSP, X-Frame-Options, etc.)
 
 ### Backend (Render)
@@ -566,7 +565,7 @@ git push origin main
 1.  **Local Check (Pre-Push Hook):** Before anything is sent to GitHub, the hook runs `black`, `flake8`, and `npm run build`.
     -   **If it fails:** The push is aborted. No deployment occurs.
     -   **If it passes:** The code is pushed to GitHub.
-2.  **Remote Deploy (Netlify/Render):** Your hosting providers start their build and deploy process immediately.
+2.  **Remote Deploy (Cloudflare Pages/Render):** Your hosting providers start their build and deploy process immediately.
 3.  **Remote CI (GitHub Actions):** In parallel, the CI pipeline runs. It will notify you via email if it fails, but it **will not stop the deployment**.
 
 **Emergency bypass (skips local hook):**
@@ -659,7 +658,7 @@ JWT_SECRET_KEY=jwt-secret-key-change-in-production
 - **Hosting:** GitHub (https://github.com/Rafia-Bee/bloom-budget-tracker)
 - **Branch Strategy:** Main branch only (single developer)
 - **Commit Convention:** Semantic commit messages (feat:, fix:, docs:, refactor:)
-- **Auto-Deploy:** Push to main triggers Netlify + Render deployments
+- **Auto-Deploy:** Push to main triggers Cloudflare Pages + Render deployments
 - **Pre-Push Hook:** `.git/hooks/pre-push` runs local checks (black, flake8, npm build) before allowing push
 - **Branch Protection:** Not available on free private repos. Our strategy relies on the local pre-push hook. See `docs/DEPLOYMENT_SAFEGUARDS.md`.
 
@@ -916,7 +915,7 @@ Transaction Date	Amount	Name
 ## Vulnerabilities & Security Concerns
 
 ### Critical Vulnerabilities (Need Immediate Attention)
-None currently. The app is secure enough for single-user personal use with Netlify password protection.
+None currently. The app is secure enough for single-user personal use with JWT authentication and HTTPS.
 
 ### Medium Severity (Future Production Concerns)
 1. **XSS via Stored Transactions:**
@@ -955,7 +954,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 ### Low Severity (Nice-to-Have Improvements)
 7. **No Content Security Policy (CSP):**
    - No CSP headers to prevent inline scripts
-   - **Fix:** Add CSP header in Netlify config
+   - **Fix:** Add CSP header in `_headers` file
 
 8. **No Input Length Validation:**
    - Expense names, notes, etc. have no max length on frontend
@@ -1029,7 +1028,7 @@ None currently. The app is secure enough for single-user personal use with Netli
     - Ideal: VPS (DigitalOcean, Hetzner) with Docker for consistent environment
 
 15. **Should we use a CDN for static assets?**
-    - Current: Netlify CDN (good)
+    - Current: Cloudflare Pages CDN (excellent)
     - Question: Any benefit to separate CDN for images/icons?
 
 ---
@@ -1174,7 +1173,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 **Recommendation:** Stick with GitHub Issues + Projects for now. Migrate to Linear if project becomes multi-developer.
 
 ### Deployment Tools (Current Stack)
-- **Frontend Hosting:** Netlify (free tier, 100GB bandwidth/month)
+- **Frontend Hosting:** Cloudflare Pages (free tier, unlimited bandwidth/builds)
 - **Backend Hosting:** Render (free tier, 750 hours/month)
 - **Database:** Render PostgreSQL (free tier, 1GB storage)
 - **Email:** SendGrid (free tier, 100 emails/day)
@@ -1187,7 +1186,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 - **No Staging Environment:** Deploy directly to production
 
 **Improvements:**
-1. **Add staging environment:** Separate Netlify + Render instances for testing
+1. **Add staging environment:** Separate Cloudflare Pages + Render instances for testing
 2. **Automate database backups:** Daily backup to AWS S3 or GitHub
 3. **Implement blue-green deployments:** Zero-downtime deploys
 4. **Add health check endpoint:** `/health` for monitoring
@@ -1246,7 +1245,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 
 ⚠️ **BE MINDFUL OF THESE LIMITS WHEN TESTING:**
 
-- **Netlify**: 100GB bandwidth/month, 300 build minutes/month (Current billing period runs from Nov 17 to Dec 16.)
+- **Cloudflare Pages**: Unlimited bandwidth/builds (migrated from Netlify Dec 2, 2025)
 - **Render**: 750 hours/month (free tier sleeps after 15min inactivity), 1GB storage
 - **SendGrid**: 100 emails/day (DO NOT send real emails in tests!)
 - **Cloudflare**: 1,000 DNS queries/day on free plan
@@ -1286,7 +1285,7 @@ None currently. The app is secure enough for single-user personal use with Netli
 ## Quick Reference
 
 ### Important URLs
-- **Production Frontend:** https://bloom-tracker.app (custom domain via Netlify)
+- **Production Frontend:** https://bloom-tracker.app (custom domain via Cloudflare Pages)
 - **Production Backend:** https://bloom-backend-b44r.onrender.com
 - **GitHub Repo:** https://github.com/Rafia-Bee/bloom-budget-tracker
 - **GitHub Project:** https://github.com/users/Rafia-Bee/projects/1

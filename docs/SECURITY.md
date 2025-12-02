@@ -36,7 +36,7 @@ Run this twice to get two different keys for `SECRET_KEY` and `JWT_SECRET_KEY`.
 ### ✅ Fixed (Applied in this update)
 
 1. **Strong Secret Key Enforcement** - Production config now requires environment variables
-2. **CORS Restricted** - Only allows requests from your Netlify domain
+2. **CORS Restricted** - Only allows requests from your Cloudflare Pages domain
 3. **Rate Limiting** - Login (5/5min), Register (3/hour), Other endpoints (100/min)
 4. **Input Validation** - Email format, password strength (min 8 chars), amount limits
 5. **Security Headers** - X-Frame-Options, X-Content-Type-Options, HSTS
@@ -72,7 +72,7 @@ Before going live, test:
 
 ## Current Security Posture
 
-**Risk Level**: Medium (for personal use with Netlify password protection)
+**Risk Level**: Medium (for personal use with Cloudflare Access password protection)
 
 - ✅ Authentication required for all endpoints
 - ✅ Password hashing with Werkzeug
@@ -84,4 +84,4 @@ Before going live, test:
 - ⚠️ Tokens in localStorage (standard for SPAs but XSS-vulnerable)
 - ⚠️ No email verification (acceptable for personal use)
 
-This is **secure enough for personal use** with Netlify password protection as an additional layer.
+This is **secure enough for personal use** with Cloudflare Access password protection as an additional layer.

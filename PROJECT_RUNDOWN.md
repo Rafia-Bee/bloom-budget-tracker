@@ -84,7 +84,7 @@ Most budgeting apps are designed around monthly income-based budgeting. But many
 - **PWA:** vite-plugin-pwa 1.1.0 with Workbox (offline support, installable)
 - **Routing:** React Router DOM 6.20.0
 - **HTTP:** Axios 1.6.2 (interceptors for JWT, 401 handling)
-- **Hosting:** Netlify (auto-deploy from main branch, password protected)
+- **Hosting:** Cloudflare Pages (unlimited deploys, auto-deploy from main branch)
 
 **Notable Frontend Patterns:**
 - **forwardRef + useImperativeHandle** for parent-child component refresh
@@ -317,7 +317,7 @@ User
 - No account lockout after failed attempts
 - No CSRF protection (less critical for JWT-based API)
 
-**Risk Level:** Acceptable for single-user personal app with Netlify password protection
+**Risk Level:** Acceptable for single-user personal app with JWT authentication
 
 ### Authentication Flow
 1. User registers: `POST /api/v1/auth/register`
@@ -467,7 +467,7 @@ None currently. App is secure and functional for single-user personal use.
 ```
 User Browser
     ↓ HTTPS
-Netlify CDN (bloom-tracker.app)
+Cloudflare Pages CDN (bloom-tracker.app)
     ↓ HTTPS/JSON
 Render (bloom-backend-b44r.onrender.com)
     ↓ SSL
@@ -475,7 +475,7 @@ PostgreSQL (Render managed, 1GB)
 ```
 
 ### Free Tier Limits (CRITICAL!)
-- **Netlify:** 100GB bandwidth/month, 300 build minutes/month
+- **Cloudflare Pages:** Unlimited bandwidth, unlimited builds
 - **Render:** 750 hours/month (sleeps after 15min inactivity)
 - **SendGrid:** 100 emails/day (DO NOT send real emails in tests!)
 - **CloudFlare:** 1,000 DNS queries/day
@@ -503,7 +503,7 @@ git commit -m "feat: add feature X"
 git push origin main
 
 # 4. GitHub Actions CI runs (secondary check)
-# 5. Netlify auto-deploys frontend (~2-3 min)
+# 5. Cloudflare Pages auto-deploys frontend (~2-3 min)
 # 6. Render auto-deploys backend (~3-5 min)
 ```
 
@@ -621,7 +621,7 @@ git push origin main  # Pre-push hook runs automatically
 - `DEPLOYMENT.md` - Production setup, environment variables, troubleshooting
 - `DEPLOYMENT_SAFEGUARDS.md` - Pre-push hooks, CI/CD, branch protection
 - `DATABASE_BACKUP.md` - Automated backups, restore procedures
-- `CUSTOM_DOMAIN.md` - DNS setup, Netlify configuration
+- `CUSTOM_DOMAIN.md` - (Archived) Old Netlify DNS setup, see CLOUDFLARE_MIGRATION.md
 
 **Features:**
 - `USER_GUIDE.md` - End-user documentation with screenshots
@@ -846,7 +846,7 @@ These questions appear in INTERNAL_REFERENCE.md but lack clear answers:
 - ✅ Single-user personal app (no data sharing)
 - ✅ No third-party tracking
 - ✅ No analytics (Google Analytics not installed)
-- ✅ Netlify password protection (site-wide basic auth)
+- ✅ JWT authentication with 24-hour offline support
 - ❌ No GDPR compliance tooling (not needed for personal use)
 
 ### Secrets Management
@@ -861,7 +861,7 @@ These questions appear in INTERNAL_REFERENCE.md but lack clear answers:
 
 ### Monthly Costs (Current)
 - **Namecheap Domain:** ~$1/month (bloom-tracker.app)
-- **Netlify:** $0 (free tier, 100GB bandwidth)
+- **Cloudflare Pages:** $0 (free tier, unlimited bandwidth/builds)
 - **Render Backend:** $0 (free tier, 750 hours)
 - **Render PostgreSQL:** $0 (free tier, 1GB)
 - **SendGrid:** $0 (free tier, 100 emails/day)
@@ -907,7 +907,7 @@ These questions appear in INTERNAL_REFERENCE.md but lack clear answers:
 
 **Key Takeaway:** This is NOT a beginner project. It demonstrates:
 - ✅ Full-stack development (React + Flask + PostgreSQL)
-- ✅ Production deployment (Netlify + Render + custom domain)
+- ✅ Production deployment (Cloudflare Pages + Render + custom domain)
 - ✅ Authentication & security best practices
 - ✅ PWA implementation (offline support)
 - ✅ Automated workflows (CI/CD, backups, recurring generation)

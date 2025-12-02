@@ -35,7 +35,7 @@
 **Uncertainty Handling**: Infer 1-2 reasonable defaults and proceed. Ask only if blocked.
 
 ## Project Overview
-Bloom is a balance-based weekly budget tracker with Flask backend (Render) and React frontend (Netlify). Users track expenses across 4 weekly periods within monthly salary cycles, with automatic carryover logic and debt payment allocation.
+Bloom is a balance-based weekly budget tracker with Flask backend (Render) and React frontend (Cloudflare Pages). Users track expenses across 4 weekly periods within monthly salary cycles, with automatic carryover logic and debt payment allocation.
 
 ## Architecture & Data Model
 
@@ -119,7 +119,7 @@ sqlite3 instance\bloom.db < backup.sql
 
 ### Deployment
 
-**Frontend (Netlify)**:
+**Frontend (Cloudflare Pages)**:
 - Build: `cd frontend && npm run build`
 - Deploy: Auto-deploys from `main` branch
 - Live: https://bloom-tracker.app

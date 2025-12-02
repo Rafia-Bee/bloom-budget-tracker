@@ -212,8 +212,8 @@ Access the app at `http://localhost:3000`
 
 ### Production Deployment
 
-The app is deployed to Netlify and accessible at:
-**https://bloom-tracker.app** (custom domain via Netlify)
+The app is deployed to Cloudflare Pages and accessible at:
+**https://bloom-tracker.app** (custom domain via Cloudflare Pages)
 
 **Features:**
 - ✅ Progressive Web App (PWA) - Install on any device
@@ -308,7 +308,7 @@ See [scripts/README.md](scripts/README.md) for full documentation.
 5. ~~Implement core features (expense tracking, budget monitoring)~~ ✅
 6. ~~Implement recurring expenses automation~~ ✅
 7. ~~Add PWA support for offline access~~ ✅
-8. ~~Deploy to production (Netlify)~~ ✅
+8. ~~Deploy to production (Cloudflare Pages)~~ ✅
 9. ~~Mobile UI optimization~~ ✅
 10. ~~Set up support email (CloudFlare Email Routing)~~ ✅
 11. Add end-of-period suggestions
