@@ -174,7 +174,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                         isSelected
                           ? 'border-bloom-pink dark:border-dark-pink bg-pink-50 dark:bg-dark-pink/20'
                           : isCurrent
-                          ? 'border-bloom-mint/60 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:border-bloom-mint dark:hover:border-green-700'
+                          ? 'border-gray-300 dark:border-gray-600 bg-green-50 dark:bg-green-950/30 hover:border-gray-400 dark:hover:border-gray-500'
                           : isPast
                           ? 'border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-elevated hover:border-gray-300 dark:hover:border-dark-text-secondary'
                           : 'border-gray-300 dark:border-gray-700 bg-blue-50 dark:bg-blue-950/30 hover:border-gray-400 dark:hover:border-gray-600'
@@ -193,7 +193,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                           }`}>
                             {getPeriodTypeLabel(period)}
                           </span>
-                          {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">Now</span>}
+                          {isCurrent && <span className="text-xs bg-green-600 dark:bg-green-700 text-white px-2 py-0.5 rounded-full font-medium">Now</span>}
                           {isPast && <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">Past</span>}
                           {isFuture && <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">Future</span>}
                         </div>
