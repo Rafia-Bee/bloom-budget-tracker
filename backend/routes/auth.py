@@ -59,8 +59,7 @@ def register():
     db.session.commit()
 
     # Send welcome email
-    frontend_url = current_app.config.get(
-        "FRONTEND_URL", "http://localhost:3000")
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
     email_result = email_service.send_welcome_email(
         to_email=user.email, user_name=user.email, frontend_url=frontend_url
     )

@@ -32,18 +32,15 @@ class Config:
         "pool_recycle": 300,
     }
 
-    JWT_SECRET_KEY = os.getenv(
-        "JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-        hours=24)  # Extended for offline PWA usage
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Extended for offline PWA usage
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     CREDIT_CARD_LIMIT = int(os.getenv("CREDIT_CARD_LIMIT", 1500))
 
     # Email configuration
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-    SENDGRID_FROM_EMAIL = os.getenv(
-        "SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
+    SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 

@@ -35,13 +35,11 @@ def export_data():
         if not export_types:
             return jsonify({"error": "No data types selected for export"}), 400
 
-        export_data = {"exported_at": datetime.utcnow().isoformat(),
-                       "data": {}}
+        export_data = {"exported_at": datetime.utcnow().isoformat(), "data": {}}
 
         # Export Debts
         if "debts" in export_types:
-            debts = Debt.query.filter_by(
-                user_id=current_user_id, archived=False).all()
+            debts = Debt.query.filter_by(user_id=current_user_id, archived=False).all()
             export_data["data"]["debts"] = [
                 {
                     "name": d.name,
@@ -259,12 +257,10 @@ def import_data():
                             next_year += 1
                         day = recurring_data.get("day_of_month", next_due.day)
                         try:
-                            next_due = datetime(
-                                next_year, next_month, day).date()
+                            next_due = datetime(next_year, next_month, day).date()
                         except ValueError:
                             # Handle invalid day (e.g., Feb 30)
-                            next_due = datetime(
-                                next_year, next_month, 28).date()
+                            next_due = datetime(next_year, next_month, 28).date()
                     elif recurring_data["frequency"] == "weekly":
                         next_due = next_due + timedelta(days=7)
                     elif recurring_data["frequency"] == "biweekly":
@@ -314,8 +310,7 @@ def import_data():
                             # Calculate next weekly occurrence
                             days_diff = (today - next_due).days
                             weeks_passed = days_diff // 7
-                            next_due = next_due + \
-                                timedelta(days=(weeks_passed + 1) * 7)
+                            next_due = next_due + timedelta(days=(weeks_passed + 1) * 7)
                         elif recurring_data["frequency"] == "biweekly":
                             days_diff = (today - next_due).days
                             periods_passed = days_diff // 14
@@ -324,8 +319,7 @@ def import_data():
                             )
                         elif recurring_data["frequency"] == "custom":
                             days_diff = (today - next_due).days
-                            freq_value = recurring_data.get(
-                                "frequency_value", 1)
+                            freq_value = recurring_data.get("frequency_value", 1)
                             periods_passed = days_diff // freq_value
                             next_due = next_due + timedelta(
                                 days=(periods_passed + 1) * freq_value
@@ -478,7 +472,8 @@ def import_data():
                 if existing_expense:
                     skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
                     print(
-                        f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})")
+                        f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})"
+                    )
                     skipped_items["expenses"].append(skipped_detail)
                     skipped_counts["expenses"] += 1
                     continue
@@ -549,7 +544,8 @@ def import_data():
                 if existing_income:
                     skipped_detail = f"{income_data['type']} (€{income_data['amount']/100:.2f} on {scheduled_date})"
                     print(
-                        f"[IMPORT] SKIPPED INCOME: '{income_data['type']}' €{income_data['amount']/100:.2f} scheduled {scheduled_date} (already exists with ID {existing_income.id})")
+                        f"[IMPORT] SKIPPED INCOME: '{income_data['type']}' €{income_data['amount']/100:.2f} scheduled {scheduled_date} (already exists with ID {existing_income.id})"
+                    )
                     skipped_items["income"].append(skipped_detail)
                     skipped_counts["income"] += 1
                     continue
@@ -596,8 +592,7 @@ def import_data():
                     f"{skipped_counts['salary_periods']} salary period(s)"
                 )
             if skipped_counts["expenses"] > 0:
-                skipped_details.append(
-                    f"{skipped_counts['expenses']} expense(s)")
+                skipped_details.append(f"{skipped_counts['expenses']} expense(s)")
             if skipped_counts["income"] > 0:
                 skipped_details.append(f"{skipped_counts['income']} income(s)")
             message_parts.append(
@@ -607,10 +602,12 @@ def import_data():
             # Add details of what was skipped
             if skipped_items["expenses"]:
                 message_parts.append(
-                    f"Skipped expenses: {', '.join(skipped_items['expenses'])}")
+                    f"Skipped expenses: {', '.join(skipped_items['expenses'])}"
+                )
             if skipped_items["income"]:
                 message_parts.append(
-                    f"Skipped income: {', '.join(skipped_items['income'])}")
+                    f"Skipped income: {', '.join(skipped_items['income'])}"
+                )
 
         return (
             jsonify(
@@ -679,12 +676,10 @@ def parse_bank_transactions(
             parts = [p.strip() for p in line.split("\t") if p.strip()]
             if len(parts) < 3:
                 # Try splitting by multiple spaces instead
-                parts = [p.strip()
-                         for p in re.split(r"\s{2,}", line) if p.strip()]
+                parts = [p.strip() for p in re.split(r"\s{2,}", line) if p.strip()]
 
             if len(parts) < 3:
-                errors.append(
-                    f"Line {line_num}: Invalid format (expected 3 columns)")
+                errors.append(f"Line {line_num}: Invalid format (expected 3 columns)")
                 skipped_count += 1
                 continue
 
@@ -718,8 +713,7 @@ def parse_bank_transactions(
                     skipped_count += 1
                     continue
             except ValueError:
-                errors.append(
-                    f"Line {line_num}: Invalid amount '{amount_str}'")
+                errors.append(f"Line {line_num}: Invalid amount '{amount_str}'")
                 skipped_count += 1
                 continue
 
@@ -728,8 +722,7 @@ def parse_bank_transactions(
 
             # Try to find matching expense name mapping for smart categorization
             mapping = ExpenseNameMapping.query.filter(
-                ExpenseNameMapping.expense_name.ilike(
-                    f"%{merchant_name.lower()}%")
+                ExpenseNameMapping.expense_name.ilike(f"%{merchant_name.lower()}%")
             ).first()
 
             if mapping:
