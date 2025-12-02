@@ -6,6 +6,55 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-02
 
+### Documentation Cleanup and Enhancement - COMPLETED
+
+**Status:** Major documentation reorganization complete
+
+**Actions Taken:**
+
+**1. Archived Outdated Documentation (7 files):**
+- PRE_PUSH_SETUP_COMPLETE.md → Setup now integrated into workflow
+- EMAIL_INTEGRATION_ISSUE.md → Feature implemented (see EMAIL_SETUP.md)
+- LOADING_ANIMATION_CONCEPTS.md → Design concepts implemented
+- DEPLOYMENT_SAFEGUARDS.md → Superseded by DEPLOYMENT.md
+- CUSTOM_DOMAIN.md → Netlify-specific, migrated to Cloudflare Pages
+- API_VERSIONING.md → Consolidated into DEPLOYMENT.md
+- DATABASE_BACKUP.md → Consolidated into DEPLOYMENT.md
+
+**2. Consolidated Infrastructure Docs:**
+- Added "API Versioning" section to DEPLOYMENT.md
+- Added "Database Backup & Recovery" section to DEPLOYMENT.md
+- Reduced duplication, maintained all critical information
+
+**3. Created New Documentation:**
+- **API.md** - Complete API reference with all endpoints, request/response examples, authentication, error codes, rate limiting (957 lines)
+- **Dark Mode section in USER_GUIDE.md** - Toggle instructions, color scheme, system preference support, troubleshooting
+
+**4. Reorganized docs/README.md:**
+- Categorized into: Core, Feature, Infrastructure, Development
+- Added descriptions for each document
+- Listed archived documents with archival reasons
+- Added documentation principles (Actionable, Current, Concise, User-focused)
+
+**Result:**
+- 9 active documents (down from 16)
+- Clear organization and categorization
+- No information loss - everything consolidated or archived
+- Better discoverability and navigation
+
+**Files Modified:**
+- `docs/README.md` - Complete reorganization
+- `docs/USER_GUIDE.md` - Added dark mode section
+- `docs/API.md` (new) - Complete API documentation
+- `docs/DEPLOYMENT.md` - Added API versioning and backup sections
+- Moved 7 files to `docs/archive/`
+
+**Commits:**
+- `e8060d8` - docs: cleanup and consolidation
+- `fb793c9` - docs: add dark mode and API documentation
+
+---
+
 ### Cloudflare Pages Migration - COMPLETED
 
 **Issue:** Netlify free tier deploy credits exhausted
