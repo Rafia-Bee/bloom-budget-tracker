@@ -397,8 +397,8 @@ function RecurringExpenses() {
         ) : (
           <div className="space-y-6">
             {/* Active Recurring Expenses */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">
                 Active ({activeExpenses.length})
               </h3>
 
