@@ -159,19 +159,19 @@ function RecurringExpenses() {
   const inactiveExpenses = recurringExpenses.filter(e => !e.is_active)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-green-50 dark:from-dark-base dark:via-dark-surface dark:to-dark-base">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center md:hidden">
             <div>
-              <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-xs text-gray-600">Recurring Expense Management</p>
+              <h1 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">Bloom</h1>
+              <p className="text-xs text-gray-600 dark:text-dark-text-secondary">Recurring Expense Management</p>
             </div>
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
+              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 dark:bg-dark-elevated dark:hover:bg-dark-border transition flex items-center justify-center text-bloom-pink dark:text-dark-pink"
               aria-label="Menu"
             >
               {showMobileMenu ? (
@@ -192,16 +192,16 @@ function RecurringExpenses() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-bloom-pink to-pink-400 bg-clip-text text-transparent">
                 Bloom
               </h1>
-              <p className="text-sm text-gray-600">Recurring Expense Management</p>
+              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Recurring Expense Management</p>
             </div>
 
             <div className="flex items-center gap-4">
-              <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
+              <a href="/dashboard" className="text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition">
                 ← Back to Dashboard
               </a>
               <a
                 href="/debts"
-                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition font-semibold"
               >
                 Debts
               </a>
@@ -213,15 +213,15 @@ function RecurringExpenses() {
                     e.stopPropagation()
                     setShowUserMenu(!showUserMenu)
                   }}
-                  className="w-10 h-10 rounded-full bg-bloom-pink text-white font-semibold hover:bg-pink-600 transition-colors flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-bloom-pink dark:bg-dark-pink text-white font-semibold hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors flex items-center justify-center"
                 >
                   {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm text-gray-600 truncate">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border py-2">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-dark-border">
+                      <p className="text-sm text-gray-600 dark:text-dark-text-secondary truncate">
                         {localStorage.getItem('user_email')}
                       </p>
                     </div>
@@ -253,7 +253,7 @@ function RecurringExpenses() {
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200 mt-2 pt-2"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
                     >
                       Logout
                     </button>
@@ -265,14 +265,14 @@ function RecurringExpenses() {
 
           {/* Mobile Menu Dropdown */}
           {showMobileMenu && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
               <div className="space-y-3">
                 <button
                   onClick={() => {
                     navigate('/dashboard')
                     setShowMobileMenu(false)
                   }}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                 >
                   🏠 Dashboard
                 </button>
@@ -281,16 +281,16 @@ function RecurringExpenses() {
                     navigate('/debts')
                     setShowMobileMenu(false)
                   }}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                 >
                   💳 Debts
                 </button>
 
                 {/* User Info & Logout */}
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
                   <div className="px-4 py-2 mb-2">
-                    <p className="text-xs text-gray-500">Signed in as</p>
-                    <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                    <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -323,7 +323,7 @@ function RecurringExpenses() {
                       handleLogout()
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 mt-2 pt-2"
+                    className="w-full text-left px-4 py-3 text-red-600 dark:text-dark-danger hover:bg-red-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -341,14 +341,14 @@ function RecurringExpenses() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Recurring Expenses</h2>
-            <p className="text-gray-600 mt-1">Manage your automatic expense templates</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Recurring Expenses</h2>
+            <p className="text-gray-600 dark:text-dark-text-secondary mt-1">Manage your automatic expense templates</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setShowConfirmGenerate(true)}
               disabled={generating || recurringExpenses.filter(e => e.is_active).length === 0}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-6 py-3 bg-green-600 dark:bg-dark-mint/30 text-white dark:text-dark-success rounded-lg hover:bg-green-700 dark:hover:bg-dark-mint/40 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               title={recurringExpenses.filter(e => e.is_active).length === 0
                 ? "No active recurring expenses to generate"
                 : "Generate due recurring expenses now"}
@@ -357,7 +357,7 @@ function RecurringExpenses() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold shadow-sm whitespace-nowrap"
+              className="px-6 py-3 bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors font-semibold shadow-sm whitespace-nowrap"
             >
               + Add Recurring Expense
             </button>
@@ -366,14 +366,14 @@ function RecurringExpenses() {
 
         {/* Generation Result */}
         {generationResult && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-700 rounded-lg">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-semibold text-green-800">
+                <h3 className="font-semibold text-green-800 dark:text-dark-success">
                   ✓ {generationResult.message}
                 </h3>
                 {generationResult.data?.templates && generationResult.data.templates.length > 0 && (
-                  <ul className="mt-2 text-sm text-green-700 space-y-1">
+                  <ul className="mt-2 text-sm text-green-700 dark:text-dark-success space-y-1">
                     {generationResult.data.templates.map((template, idx) => (
                       <li key={idx}>
                         • {template.name} - ${template.amount?.toFixed(2)} on {template.date}
@@ -384,7 +384,7 @@ function RecurringExpenses() {
               </div>
               <button
                 onClick={() => setGenerationResult(null)}
-                className="text-green-600 hover:text-green-800"
+                className="text-green-600 dark:text-dark-success hover:text-green-800 dark:hover:text-green-400"
               >
                 ✕
               </button>
@@ -403,7 +403,7 @@ function RecurringExpenses() {
               </h3>
 
               {activeExpenses.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
+                <p className="text-gray-500 dark:text-dark-text-tertiary text-center py-8">
                   No active recurring expenses. Click "Add Recurring Expense" to create one.
                 </p>
               ) : (
@@ -411,12 +411,12 @@ function RecurringExpenses() {
                   {activeExpenses.map((expense) => (
                     <div
                       key={expense.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      className="border border-gray-200 dark:border-dark-border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated">
                     >
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h4 className="font-semibold text-gray-800">{expense.name}</h4>
+                            <h4 className="font-semibold text-gray-800 dark:text-dark-text">{expense.name}</h4>
                             <span className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded">
                               {getFrequencyText(expense)}
                             </span>
@@ -429,25 +429,25 @@ function RecurringExpenses() {
 
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
                             <div>
-                              <span className="text-gray-500">Amount:</span>{' '}
-                              <span className="font-medium">${(expense.amount / 100).toFixed(2)}</span>
+                              <span className="text-gray-500 dark:text-dark-text-tertiary">Amount:</span>{' '}
+                              <span className="font-medium dark:text-dark-text">${(expense.amount / 100).toFixed(2)}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500">Category:</span>{' '}
-                              <span className="font-medium">{expense.category}</span>
+                              <span className="text-gray-500 dark:text-dark-text-tertiary">Category:</span>{' '}
+                              <span className="font-medium dark:text-dark-text">{expense.category}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500">Next due:</span>{' '}
-                              <span className="font-medium">{formatDate(expense.next_due_date)}</span>
+                              <span className="text-gray-500 dark:text-dark-text-tertiary">Next due:</span>{' '}
+                              <span className="font-medium dark:text-dark-text">{formatDate(expense.next_due_date)}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500">Payment:</span>{' '}
-                              <span className="font-medium">{expense.payment_method}</span>
+                              <span className="text-gray-500 dark:text-dark-text-tertiary">Payment:</span>{' '}
+                              <span className="font-medium dark:text-dark-text">{expense.payment_method}</span>
                             </div>
                           </div>
 
                           {expense.notes && (
-                            <p className="text-sm text-gray-600 mt-2 italic">{expense.notes}</p>
+                            <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2 italic">{expense.notes}</p>
                           )}
                         </div>
 
@@ -502,8 +502,8 @@ function RecurringExpenses() {
 
             {/* Inactive Recurring Expenses */}
             {inactiveExpenses.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">
                   Paused ({inactiveExpenses.length})
                 </h3>
 
@@ -511,18 +511,18 @@ function RecurringExpenses() {
                   {inactiveExpenses.map((expense) => (
                     <div
                       key={expense.id}
-                      className="border border-gray-200 rounded-lg p-4 bg-gray-50 opacity-75"
+                      className="border border-gray-200 dark:border-dark-border rounded-lg p-4 bg-gray-50 dark:bg-dark-elevated opacity-75"
                     >
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h4 className="font-semibold text-gray-600">{expense.name}</h4>
+                            <h4 className="font-semibold text-gray-600 dark:text-dark-text-secondary">{expense.name}</h4>
                             <span className="text-sm px-2 py-1 bg-gray-200 text-gray-600 rounded">
                               Paused
                             </span>
                           </div>
 
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-dark-text-tertiary">
                             ${(expense.amount / 100).toFixed(2)} • {getFrequencyText(expense)}
                           </div>
                         </div>
@@ -578,8 +578,8 @@ function RecurringExpenses() {
       {showConfirmGenerate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Generate Recurring Expenses?</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Generate Recurring Expenses?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
               This will create expense entries for all recurring expenses that are due. Do you want to continue?
             </p>
             <div className="flex gap-3 justify-end">
@@ -603,15 +603,15 @@ function RecurringExpenses() {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Recurring Expense?</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Recurring Expense?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
               Are you sure you want to delete this recurring expense? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-border transition font-semibold"
               >
                 Cancel
               </button>

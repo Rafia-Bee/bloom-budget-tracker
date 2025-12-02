@@ -63,21 +63,21 @@ function Login({ setIsAuthenticated }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bloom-light to-bloom-pink/20">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bloom-light to-bloom-pink/20 dark:from-dark-base dark:to-dark-surface">
+      <div className="bg-white dark:bg-dark-surface p-8 rounded-2xl shadow-xl w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-bloom-pink mb-2">Bloom</h1>
-          <p className="text-gray-600">Financial Habits That Grow With You</p>
+          <h1 className="text-4xl font-bold text-bloom-pink dark:text-dark-pink mb-2">Bloom</h1>
+          <p className="text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex justify-between items-start">
+            <div className="bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-dark-danger px-4 py-3 rounded flex justify-between items-start">
               <span>{error}</span>
               <button
                 type="button"
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+                className="text-red-700 dark:text-dark-danger hover:text-red-900 dark:hover:text-red-400 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -87,12 +87,12 @@ function Login({ setIsAuthenticated }) {
           )}
 
           {resetMessage && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex justify-between items-start">
+            <div className="bg-green-100 dark:bg-green-950/20 border border-green-400 dark:border-green-700 text-green-700 dark:text-dark-success px-4 py-3 rounded flex justify-between items-start">
               <pre className="text-sm whitespace-pre-wrap">{resetMessage}</pre>
               <button
                 type="button"
                 onClick={() => setResetMessage('')}
-                className="text-green-700 hover:text-green-900 ml-4 flex-shrink-0"
+                className="text-green-700 dark:text-dark-success hover:text-green-900 dark:hover:text-green-400 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -102,13 +102,13 @@ function Login({ setIsAuthenticated }) {
           )}
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Email</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
               pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
               required
             />
@@ -116,11 +116,11 @@ function Login({ setIsAuthenticated }) {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-gray-700 font-semibold">Password</label>
+              <label className="block text-gray-700 dark:text-dark-text font-semibold">Password</label>
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-bloom-pink text-sm hover:underline"
+                className="text-bloom-pink dark:text-dark-pink text-sm hover:underline"
               >
                 Forgot Password?
               </button>
@@ -130,7 +130,7 @@ function Login({ setIsAuthenticated }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
               minLength={6}
               required
             />
@@ -139,15 +139,15 @@ function Login({ setIsAuthenticated }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-bloom-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50"
+            className="w-full bg-bloom-pink dark:bg-dark-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink-hover transition disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="text-center mt-6 text-gray-600 dark:text-dark-text-secondary">
           Don't have an account?{' '}
-          <Link to="/register" className="text-bloom-pink font-semibold hover:underline">
+          <Link to="/register" className="text-bloom-pink dark:text-dark-pink font-semibold hover:underline">
             Register
           </Link>
         </p>

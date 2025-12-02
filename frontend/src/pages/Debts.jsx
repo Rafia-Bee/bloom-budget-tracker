@@ -267,19 +267,19 @@ function Debts({ setIsAuthenticated }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white">
+    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-dark-base dark:to-dark-surface">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <header className="bg-white dark:bg-dark-surface shadow-sm border-b dark:border-dark-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center md:hidden">
             <div>
-              <h1 className="text-2xl font-bold text-bloom-pink">Debts</h1>
-              <p className="text-xs text-gray-600">Track payoff progress</p>
+              <h1 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">Debts</h1>
+              <p className="text-xs text-gray-600 dark:text-dark-text-secondary">Track payoff progress</p>
             </div>
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
+              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 dark:bg-dark-elevated dark:hover:bg-dark-border transition flex items-center justify-center text-bloom-pink dark:text-dark-pink"
               aria-label="Menu"
             >
               {showMobileMenu ? (
@@ -297,33 +297,33 @@ function Debts({ setIsAuthenticated }) {
           {/* Desktop Header */}
           <div className="hidden md:flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-bloom-pink">Bloom - Debt Tracker</h1>
-              <p className="text-sm text-gray-600">Manage your debts and track payoff progress</p>
+              <h1 className="text-3xl font-bold text-bloom-pink dark:text-dark-pink">Bloom - Debt Tracker</h1>
+              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Manage your debts and track payoff progress</p>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/dashboard" className="text-gray-600 hover:text-bloom-pink transition">
+              <a href="/dashboard" className="text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition">
                 ← Back to Dashboard
               </a>
               <a
                 href="/recurring-expenses"
-                className="px-4 py-2 text-gray-600 hover:text-bloom-pink transition font-semibold"
+                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition font-semibold"
               >
                 Recurring
               </a>
               <div className="relative user-menu">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-10 h-10 rounded-full bg-bloom-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
+                  className="w-10 h-10 rounded-full bg-bloom-pink dark:bg-dark-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
                   title="User menu"
                 >
                   {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-xs text-gray-500">Signed in as</p>
-                      <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
+                      <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
                     </div>
                     <button
                       onClick={() => {
@@ -353,7 +353,7 @@ function Debts({ setIsAuthenticated }) {
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition flex items-center gap-2 border-t border-gray-200 mt-2 pt-2"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2 border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -368,28 +368,28 @@ function Debts({ setIsAuthenticated }) {
 
           {/* Mobile Menu Dropdown */}
           {showMobileMenu && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
               <div className="space-y-3">
                 <a
                   href="/dashboard"
-                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   🏠 Dashboard
                 </a>
                 <a
                   href="/recurring-expenses"
-                  className="block px-4 py-3 text-gray-700 hover:bg-bloom-pink/10 hover:text-bloom-pink transition rounded-lg font-semibold"
+                  className="block px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   🔄 Recurring Expenses
                 </a>
 
                 {/* User Info & Logout */}
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
                   <div className="px-4 py-2 mb-2">
-                    <p className="text-xs text-gray-500">Signed in as</p>
-                    <p className="text-sm font-semibold text-gray-800">{localStorage.getItem('user_email')}</p>
+                    <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -397,7 +397,7 @@ function Debts({ setIsAuthenticated }) {
                       setExportMode('export')
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -410,7 +410,7 @@ function Debts({ setIsAuthenticated }) {
                       setExportMode('import')
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -422,7 +422,7 @@ function Debts({ setIsAuthenticated }) {
                       handleLogout()
                       setShowMobileMenu(false)
                     }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 mt-2 pt-2"
+                    className="w-full text-left px-4 py-3 text-red-600 dark:text-dark-danger hover:bg-red-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -440,11 +440,11 @@ function Debts({ setIsAuthenticated }) {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 font-semibold mb-1">Total Debt</p>
-                <h2 className="text-4xl font-bold text-gray-800">
+                <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Total Debt</p>
+                <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
                   €{getTotalDebt().toFixed(2)}
                 </h2>
               </div>
@@ -454,16 +454,16 @@ function Debts({ setIsAuthenticated }) {
                 </svg>
               </div>
             </div>
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-sm text-gray-500 dark:text-dark-text-tertiary">
               Across {getAllDebts().length} {getAllDebts().length === 1 ? 'debt' : 'debts'}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 font-semibold mb-1">Monthly Payments</p>
-                <h2 className="text-4xl font-bold text-gray-800">
+                <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Monthly Payments</p>
+                <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
                   €{getTotalMonthlyPayment().toFixed(2)}
                 </h2>
               </div>
@@ -477,12 +477,12 @@ function Debts({ setIsAuthenticated }) {
         </div>
 
         {/* Debts List */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Your Debts</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Your Debts</h2>
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-bloom-pink text-white px-4 py-2 rounded-lg hover:bg-bloom-pink/90 transition flex items-center gap-2"
+              className="bg-bloom-pink dark:bg-dark-pink text-white px-4 py-2 rounded-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink-hover transition flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -496,11 +496,11 @@ function Debts({ setIsAuthenticated }) {
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No debts tracked</h3>
-              <p className="text-gray-600 mb-4">Add your debts to track payoff progress</p>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-dark-text mb-2">No debts tracked</h3>
+              <p className="text-gray-600 dark:text-dark-text-secondary mb-4">Add your debts to track payoff progress</p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="bg-bloom-pink text-white px-6 py-2 rounded-lg hover:bg-bloom-pink/90 transition"
+                className="bg-bloom-pink dark:bg-dark-pink text-white px-6 py-2 rounded-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink-hover transition"
               >
                 Add Your First Debt
               </button>
@@ -515,41 +515,41 @@ function Debts({ setIsAuthenticated }) {
                 const monthsLeft = calculatePayoffMonths(balance, monthly)
 
                 return (
-                  <div key={debt.id} className={`border rounded-lg p-6 hover:shadow-md transition ${debt.isVirtual ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}`}>
+                  <div key={debt.id} className={`border rounded-lg p-6 hover:shadow-md transition ${debt.isVirtual ? 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-950/30' : 'border-gray-200 dark:border-dark-border dark:bg-dark-elevated'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-bold text-gray-800">{debt.name}</h3>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text">{debt.name}</h3>
                           {debt.isVirtual && (
                             <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Auto-calculated</span>
                           )}
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-500">Current Balance</p>
-                            <p className="font-semibold text-gray-800">€{balance.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary">Current Balance</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text">€{balance.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">{debt.isVirtual ? 'Credit Limit' : 'Original Amount'}</p>
-                            <p className="font-semibold text-gray-800">€{original.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary">{debt.isVirtual ? 'Credit Limit' : 'Original Amount'}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text">€{original.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Monthly Payment</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary">Monthly Payment</p>
                             {monthly > 0 ? (
                               <>
-                                <p className="font-semibold text-gray-800">€{monthly.toFixed(2)}</p>
-                                {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">50% of balance</p>}
+                                <p className="font-semibold text-gray-800 dark:text-dark-text">€{monthly.toFixed(2)}</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">50% of balance</p>}
                               </>
                             ) : (
                               <>
-                                <p className="font-semibold text-green-600">€0 this period</p>
-                                {debt.isVirtual && <p className="text-xs text-gray-500 mt-1">Already paid 50%</p>}
+                                <p className="font-semibold text-green-600 dark:text-dark-success">€0 this period</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">Already paid 50%</p>}
                               </>
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-500">Payoff Time</p>
-                            <p className="font-semibold text-gray-800">
+                            <p className="text-gray-500 dark:text-dark-text-tertiary">Payoff Time</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text">
                               {monthsLeft ? `${monthsLeft} ${monthsLeft === 1 ? 'month' : 'months'}` : 'Set payment'}
                             </p>
                           </div>
@@ -561,7 +561,7 @@ function Debts({ setIsAuthenticated }) {
                             setSelectedDebt(debt)
                             setShowPaymentModal(true)
                           }}
-                          className="bg-bloom-mint text-green-800 px-4 py-2 rounded-lg hover:bg-green-200 transition font-medium"
+                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium"
                           title="Make Payment"
                         >
                           Pay
@@ -596,11 +596,11 @@ function Debts({ setIsAuthenticated }) {
 
                     {/* Progress Bar */}
                     <div className="mt-4">
-                      <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                         <span>Progress: {progress.toFixed(1)}% paid off</span>
                         <span>€{(original - balance).toFixed(2)} / €{original.toFixed(2)}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-3">
                         <div
                           className="bg-bloom-mint rounded-full h-3 transition-all"
                           style={{ width: `${progress}%` }}
@@ -609,10 +609,10 @@ function Debts({ setIsAuthenticated }) {
                     </div>
 
                     {/* Expand/Collapse Button */}
-                    <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-border">
                       <button
                         onClick={() => toggleDebtExpansion(debt.id, debt.name)}
-                        className="flex items-center gap-2 text-bloom-pink hover:text-bloom-pink/80 transition font-semibold"
+                        className="flex items-center gap-2 text-bloom-pink dark:text-dark-pink hover:text-bloom-pink/80 dark:hover:text-dark-pink-hover transition font-semibold"
                       >
                         <svg
                           className={`w-5 h-5 transition-transform ${expandedDebtId === debt.id ? 'rotate-180' : ''}`}
@@ -628,33 +628,33 @@ function Debts({ setIsAuthenticated }) {
 
                     {/* Transactions List (Expanded) */}
                     {expandedDebtId === debt.id && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="font-semibold text-gray-800 mb-3">Payment History</h4>
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-border">
+                        <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-3">Payment History</h4>
                         {debtTransactions[debt.id] && debtTransactions[debt.id].length > 0 ? (
                           <div className="space-y-2 max-h-96 overflow-y-auto">
                             {debtTransactions[debt.id].map(transaction => (
-                              <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                              <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg">
                                 <div className="flex-1">
-                                  <p className="font-semibold text-gray-800">{transaction.name}</p>
-                                  <p className="text-sm text-gray-500">{transaction.date}</p>
+                                  <p className="font-semibold text-gray-800 dark:text-dark-text">{transaction.name}</p>
+                                  <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">{transaction.date}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-green-600">-€{(transaction.amount / 100).toFixed(2)}</p>
-                                  <p className="text-xs text-gray-500">{transaction.payment_method}</p>
+                                  <p className="font-semibold text-green-600 dark:text-dark-success">-€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{transaction.payment_method}</p>
                                 </div>
                               </div>
                             ))}
-                            <div className="mt-3 pt-3 border-t border-gray-300">
-                              <div className="flex justify-between items-center font-bold text-gray-800">
+                            <div className="mt-3 pt-3 border-t border-gray-300 dark:border-dark-border">
+                              <div className="flex justify-between items-center font-bold text-gray-800 dark:text-dark-text">
                                 <span>Total Paid:</span>
-                                <span className="text-green-600">
+                                <span className="text-green-600 dark:text-dark-success">
                                   -€{debtTransactions[debt.id].reduce((sum, t) => sum + (t.amount / 100), 0).toFixed(2)}
                                 </span>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-gray-500 text-center py-4">No payments recorded yet</p>
+                          <p className="text-gray-500 dark:text-dark-text-tertiary text-center py-4">No payments recorded yet</p>
                         )}
                       </div>
                     )}
@@ -666,12 +666,12 @@ function Debts({ setIsAuthenticated }) {
         </div>
 
         {/* Archived Debts Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 mt-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Archived Debts</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Archived Debts</h2>
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className="text-bloom-pink hover:text-bloom-pink/80 transition flex items-center gap-2"
+              className="text-bloom-pink dark:text-dark-pink hover:text-bloom-pink/80 dark:hover:text-dark-pink-hover transition flex items-center gap-2"
             >
               <svg
                 className={`w-5 h-5 transition-transform ${showArchived ? 'rotate-180' : ''}`}
@@ -687,8 +687,8 @@ function Debts({ setIsAuthenticated }) {
 
           {showArchived && (
             archivedDebts.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="text-center py-8 text-gray-500 dark:text-dark-text-tertiary">
+                  <svg className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <p>No archived debts yet</p>
@@ -702,21 +702,21 @@ function Debts({ setIsAuthenticated }) {
                   const transactions = debtTransactions[debt.id] || []
 
                   return (
-                    <div key={debt.id} className="border border-green-300 bg-green-50 rounded-lg p-4">
+                    <div key={debt.id} className="border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-gray-800">{debt.name}</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-dark-text">{debt.name}</h3>
                             <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">Paid Off</span>
                           </div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="text-gray-500">Original Amount</p>
-                              <p className="font-semibold text-gray-800">€{original.toFixed(2)}</p>
+                              <p className="text-gray-500 dark:text-dark-text-tertiary">Original Amount</p>
+                              <p className="font-semibold text-gray-800 dark:text-dark-text">€{original.toFixed(2)}</p>
                             </div>
                             <div>
-                              <p className="text-gray-500">Paid On</p>
-                              <p className="font-semibold text-gray-800">{new Date(debt.updated_at).toLocaleDateString()}</p>
+                              <p className="text-gray-500 dark:text-dark-text-tertiary">Paid On</p>
+                              <p className="font-semibold text-gray-800 dark:text-dark-text">{new Date(debt.updated_at).toLocaleDateString()}</p>
                             </div>
                           </div>
                         </div>
@@ -744,19 +744,19 @@ function Debts({ setIsAuthenticated }) {
                       </div>
 
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-green-300">
-                          <h4 className="font-semibold text-gray-700 mb-2">Payment History</h4>
+                        <div className="mt-4 pt-4 border-t border-green-300 dark:border-green-700">
+                          <h4 className="font-semibold text-gray-700 dark:text-dark-text mb-2">Payment History</h4>
                           {transactions.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No payment history available</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-sm">No payment history available</p>
                           ) : (
                             <div className="space-y-2">
                               {transactions.map(transaction => (
-                                <div key={transaction.id} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-green-200">
+                                <div key={transaction.id} className="flex justify-between items-center text-sm bg-white dark:bg-dark-elevated p-2 rounded border border-green-200 dark:border-green-700">
                                   <div>
-                                    <p className="font-medium text-gray-800">{transaction.name}</p>
-                                    <p className="text-gray-500 text-xs">{new Date(transaction.date).toLocaleDateString()}</p>
+                                    <p className="font-medium text-gray-800 dark:text-dark-text">{transaction.name}</p>
+                                    <p className="text-gray-500 dark:text-dark-text-tertiary text-xs">{new Date(transaction.date).toLocaleDateString()}</p>
                                   </div>
-                                  <p className="font-semibold text-green-700">€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="font-semibold text-green-700 dark:text-dark-success">€{(transaction.amount / 100).toFixed(2)}</p>
                                 </div>
                               ))}
                             </div>
@@ -795,15 +795,15 @@ function Debts({ setIsAuthenticated }) {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Debt?</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Debt?</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
               Are you sure you want to delete this debt? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-border transition font-semibold"
               >
                 Cancel
               </button>
