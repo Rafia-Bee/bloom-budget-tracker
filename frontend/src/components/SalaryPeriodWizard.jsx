@@ -200,12 +200,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Debit Balance (Current Bank Account)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
                   <input
                     type="text"
                     value={debitBalance}
                     onChange={(e) => setDebitBalance(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1500.00"
                     autoFocus
                   />
@@ -217,12 +217,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Credit Card Available (Remaining Limit)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
                   <input
                     type="text"
                     value={creditBalance}
                     onChange={(e) => setCreditBalance(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1000.00"
                   />
                 </div>
@@ -234,12 +234,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Credit Card Limit (Total)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
                   <input
                     type="text"
                     value={creditLimit}
                     onChange={(e) => setCreditLimit(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1500.00"
                   />
                 </div>
@@ -255,7 +255,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                     Credit Allowance (Optional)
                   </label>
-                  <p className="text-xs text-gray-600 mb-3">
+                  <p className="text-xs text-gray-600 dark:text-dark-text-secondary mb-3">
                     How much of your available credit do you want to include in this budget?
                   </p>
                   <input
@@ -267,17 +267,17 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     onChange={(e) => setCreditAllowance(parseInt(e.target.value))}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-600 mt-1">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                     <span>€0</span>
-                    <span className="font-semibold text-bloom-pink">{formatCurrency(creditAllowance)}</span>
+                    <span className="font-semibold text-bloom-pink dark:text-dark-pink">{formatCurrency(creditAllowance)}</span>
                     <span>{formatCurrency(parseCurrency(creditBalance))}</span>
                   </div>
                 </div>
               )}
 
               {parseCurrency(creditBalance) === 0 && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-400">
                     ⚠️ No credit available (card is maxed out). Only your debit balance will be used for budgeting.
                   </p>
                 </div>
@@ -291,14 +291,14 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                 />
               </div>
 
               <button
                 onClick={handleStep1Next}
                 disabled={loading}
-                className="w-full bg-bloom-pink text-white py-3 rounded-lg font-semibold hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-bloom-pink dark:bg-dark-pink text-white py-3 rounded-lg font-semibold hover:bg-pink-600 dark:hover:bg-dark-pink/80 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Loading...' : 'Next: Review Fixed Bills'}
               </button>
@@ -315,9 +315,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               </div>
 
               {fixedBills.length === 0 ? (
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <p className="text-gray-600 mb-2">No fixed bills detected</p>
-                  <p className="text-sm text-gray-500">
+                <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-6 text-center">
+                  <p className="text-gray-600 dark:text-dark-text mb-2">No fixed bills detected</p>
+                  <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
                     Mark recurring expenses as "Fixed Bill" in the Recurring Expenses page first.
                   </p>
                 </div>
@@ -326,8 +326,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   {fixedBills.map((bill, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg">
                       <div className="flex-1">
-                        <div className="font-medium">{bill.name}</div>
-                        <div className="text-sm text-gray-500">{bill.category}</div>
+                        <div className="font-medium text-gray-800 dark:text-dark-text">{bill.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-dark-text-secondary">{bill.category}</div>
                       </div>
                       <div className="relative w-32">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>

@@ -172,12 +172,12 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                       key={`${keyPrefix}-${period.id}`}
                       className={`group rounded-lg border-2 transition ${
                         isSelected
-                          ? 'border-bloom-pink bg-pink-50'
+                          ? 'border-bloom-pink dark:border-dark-pink bg-pink-50 dark:bg-dark-pink/20'
                           : isCurrent
-                          ? 'border-green-300 bg-green-50 hover:border-green-400'
+                          ? 'border-bloom-mint/60 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:border-bloom-mint dark:hover:border-green-700'
                           : isPast
-                          ? 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                          : 'border-blue-200 bg-blue-50 hover:border-blue-300'
+                          ? 'border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-elevated hover:border-gray-300 dark:hover:border-dark-text-secondary'
+                          : 'border-gray-300 dark:border-gray-700 bg-blue-50 dark:bg-blue-950/30 hover:border-gray-400 dark:hover:border-gray-600'
                       }`}
                     >
                       <button
@@ -189,15 +189,15 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                       >
                         <div className="flex justify-between items-start mb-1">
                           <span className={`text-xs font-semibold uppercase ${
-                            isSelected ? 'text-bloom-pink' : isCurrent ? 'text-green-700' : isPast ? 'text-gray-600' : 'text-blue-700'
+                            isSelected ? 'text-bloom-pink dark:text-dark-pink' : isCurrent ? 'text-green-700 dark:text-green-400' : isPast ? 'text-gray-600 dark:text-dark-text-secondary' : 'text-blue-700 dark:text-blue-400'
                           }`}>
                             {getPeriodTypeLabel(period)}
                           </span>
-                          {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Now</span>}
-                          {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
-                          {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Future</span>}
+                          {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">Now</span>}
+                          {isPast && <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">Past</span>}
+                          {isFuture && <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">Future</span>}
                         </div>
-                        <p className="text-sm font-medium text-gray-800">{getPeriodShortLabel(period)}</p>
+                        <p className="text-sm font-medium text-gray-800 dark:text-dark-text">{getPeriodShortLabel(period)}</p>
                       </button>
                       <div className="flex gap-1 px-2 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -206,7 +206,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                             onEdit(period)
                             setShowCalendar(false)
                           }}
-                          className="flex-1 text-xs py-1 text-blue-600 hover:bg-blue-100 rounded transition"
+                          className="flex-1 text-xs py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/30 rounded transition"
                           title="Edit"
                         >
                           ✎ Edit
@@ -216,7 +216,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                             e.stopPropagation()
                             setDeleteConfirm({ period, closeCalendar: true })
                           }}
-                          className="flex-1 text-xs py-1 text-red-600 hover:bg-red-100 rounded transition"
+                          className="flex-1 text-xs py-1 text-red-600 dark:text-dark-danger hover:bg-red-100 dark:hover:bg-red-950/30 rounded transition"
                           title="Delete"
                         >
                           ✕ Delete
@@ -244,15 +244,15 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                     ).sort((a, b) => a.week_number - b.week_number)
 
                     return (
-                      <div key={`salary-${salaryPeriod.id}`} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div key={`salary-${salaryPeriod.id}`} className="border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden">
                       {/* Salary Period Header */}
                       <div
                         className={`group transition ${
                           isSelected
-                            ? 'bg-pink-100 border-b-2 border-pink-300'
+                            ? 'bg-pink-100 dark:bg-dark-pink/20 border-b-2 border-pink-300 dark:border-dark-pink'
                             : isCurrent
-                            ? 'bg-green-100 border-b-2 border-green-300 hover:bg-green-150'
-                            : 'bg-gray-50 border-b border-gray-200 hover:bg-gray-100'
+                            ? 'bg-green-100 dark:bg-green-950/30 border-b-2 border-green-300 dark:border-green-700 hover:bg-green-150'
+                            : 'bg-gray-50 dark:bg-dark-elevated border-b border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-dark-elevated/80'
                         }`}
                       >
                         <div className="flex items-center justify-between px-4 py-3">
@@ -266,12 +266,12 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                             <div className="flex justify-between items-center">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-xs font-bold text-bloom-pink uppercase">{getPeriodTypeLabel(salaryPeriod)}</p>
-                                  {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full font-semibold">Now</span>}
-                                  {isPast && <span className="text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full">Past</span>}
-                                  {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Future</span>}
+                                  <p className="text-xs font-bold text-bloom-pink dark:text-dark-pink uppercase">{getPeriodTypeLabel(salaryPeriod)}</p>
+                                  {isCurrent && <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full font-semibold">Now</span>}
+                                  {isPast && <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">Past</span>}
+                                  {isFuture && <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">Future</span>}
                                 </div>
-                                <p className="font-bold text-gray-900">{getPeriodLabel(salaryPeriod)}</p>
+                                <p className="font-bold text-gray-900 dark:text-dark-text">{getPeriodLabel(salaryPeriod)}</p>
                               </div>
                               {isSelected && (
                                 <svg className="w-5 h-5 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
@@ -291,7 +291,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                 onEdit(salaryPeriod)
                                 setShowCalendar(false)
                               }}
-                              className="p-1 text-blue-600 hover:text-blue-800 transition"
+                              className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
                               title="Edit salary period"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,7 +303,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                 e.stopPropagation()
                                 setDeleteConfirm({ period: salaryPeriod, closeCalendar: true })
                               }}
-                              className="p-1 text-red-600 hover:text-red-800 transition"
+                              className="p-1 text-red-600 dark:text-dark-danger hover:text-red-800 dark:hover:text-red-500 transition"
                               title="Delete salary period"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +316,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
                       {/* Weekly Budget Periods */}
                       {relatedWeeks.length > 0 && (
-                        <div className="bg-white">
+                        <div className="bg-white dark:bg-dark-surface">
                           {relatedWeeks.map((week) => {
                             const weekCurrent = isPeriodCurrent(week)
                             const weekSelected = currentPeriod.id === week.id
@@ -324,12 +324,12 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                             return (
                               <div
                                 key={`week-${week.id}`}
-                                className={`group border-t border-gray-100 transition ${
+                                className={`group border-t border-gray-100 dark:border-dark-border transition ${
                                   weekSelected
-                                    ? 'bg-pink-50'
+                                    ? 'bg-pink-50 dark:bg-dark-pink/20'
                                     : weekCurrent
-                                    ? 'bg-green-50 hover:bg-green-100'
-                                    : 'hover:bg-gray-50'
+                                    ? 'bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-950/40'
+                                    : 'hover:bg-gray-50 dark:hover:bg-dark-elevated/50'
                                 }`}
                               >
                                 <div className="flex items-center justify-between px-4 py-2 pl-8">
@@ -343,10 +343,10 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                     <div className="flex justify-between items-center">
                                       <div>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-xs text-gray-600 font-semibold">{getPeriodTypeLabel(week)}</span>
-                                          {weekCurrent && <span className="text-xs bg-bloom-mint text-green-800 px-2 py-0.5 rounded-full">Now</span>}
+                                          <span className="text-xs text-gray-600 dark:text-dark-text-secondary font-semibold">{getPeriodTypeLabel(week)}</span>
+                                          {weekCurrent && <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">Now</span>}
                                         </div>
-                                        <p className="text-sm text-gray-700">{getPeriodLabel(week)}</p>
+                                        <p className="text-sm text-gray-700 dark:text-dark-text">{getPeriodLabel(week)}</p>
                                       </div>
                                       {weekSelected && (
                                         <svg className="w-4 h-4 text-bloom-pink" fill="currentColor" viewBox="0 0 20 20">
@@ -379,7 +379,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                 onCreateNew()
                 setShowCalendar(false)
               }}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 transition text-bloom-pink font-semibold"
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated transition text-bloom-pink dark:text-dark-pink font-semibold"
             >
               + Create New Salary Period
             </button>
@@ -404,7 +404,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-elevated/80 transition font-semibold"
               >
                 Cancel
               </button>
@@ -429,3 +429,4 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 }
 
 export default PeriodSelector
+
