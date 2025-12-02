@@ -120,13 +120,13 @@ function AddExpenseModal({ onClose, onAdd }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 pb-4 border-b">
-          <h2 className="text-2xl font-bold text-bloom-pink">Add Expense</h2>
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center p-6 pb-4 border-b dark:border-dark-border">
+          <h2 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">Add Expense</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-dark-text dark:hover:text-dark-text-secondary"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -136,11 +136,11 @@ function AddExpenseModal({ onClose, onAdd }) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded flex justify-between items-start">
+            <div className="bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-2 rounded flex justify-between items-start">
               <span>{error}</span>
               <button
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+                className="text-red-700 dark:text-dark-danger hover:text-red-900 dark:hover:text-red-400 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -150,50 +150,50 @@ function AddExpenseModal({ onClose, onAdd }) {
           )}
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Name</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={200}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Amount (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
             <input
               type="number"
               step="0.01"
               min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Date</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Category</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Category</label>
             <select
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value)
                 setSubcategory(subcategories[e.target.value][0])
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -202,11 +202,11 @@ function AddExpenseModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Subcategory</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Subcategory</label>
             <select
               value={subcategory}
               onChange={(e) => handleSubcategoryChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
               {subcategories[category].map(sub => (
                 <option key={sub} value={sub}>{sub}</option>
@@ -215,11 +215,11 @@ function AddExpenseModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Payment Method</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Payment Method</label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
               <option value="Credit card">Credit card</option>
               <option value="Debit card">Debit card</option>
@@ -227,29 +227,29 @@ function AddExpenseModal({ onClose, onAdd }) {
           </div>
 
           {/* Recurring Expense Toggle */}
-          <div className="border-t pt-4">
+          <div className="border-t dark:border-dark-border pt-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isRecurring}
                 onChange={(e) => setIsRecurring(e.target.checked)}
-                className="w-5 h-5 text-bloom-pink focus:ring-bloom-pink rounded"
+                className="w-5 h-5 text-bloom-pink dark:text-dark-pink focus:ring-bloom-pink dark:focus:ring-dark-pink rounded"
               />
-              <span className="text-gray-700 font-semibold">Make this a recurring expense</span>
+              <span className="text-gray-700 dark:text-dark-text font-semibold">Make this a recurring expense</span>
             </label>
           </div>
 
           {/* Recurring Expense Options */}
           {isRecurring && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
-              <h3 className="font-semibold text-purple-900 mb-2">Recurrence Schedule</h3>
+            <div className="bg-purple-50 dark:bg-dark-elevated border border-purple-200 dark:border-dark-border rounded-lg p-4 space-y-3">
+              <h3 className="font-semibold text-purple-900 dark:text-dark-pink mb-2">Recurrence Schedule</h3>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Frequency</label>
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink text-sm"
                 >
                   <option value="weekly">Weekly</option>
                   <option value="biweekly">Biweekly (Every 2 weeks)</option>
@@ -260,11 +260,11 @@ function AddExpenseModal({ onClose, onAdd }) {
 
               {(frequency === 'weekly' || frequency === 'biweekly') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Day of Week</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Day of Week</label>
                   <select
                     value={dayOfWeek}
                     onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink text-sm"
                   >
                     {weekDays.map((day, index) => (
                       <option key={index} value={index}>{day}</option>
@@ -275,44 +275,44 @@ function AddExpenseModal({ onClose, onAdd }) {
 
               {frequency === 'monthly' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Day of Month</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Day of Month</label>
                   <input
                     type="number"
                     min="1"
                     max="31"
                     value={dayOfMonth}
                     onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink text-sm"
                   />
                 </div>
               )}
 
               {frequency === 'custom' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Repeat every X days</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Repeat every X days</label>
                   <input
                     type="number"
                     min="1"
                     value={frequencyValue}
                     onChange={(e) => setFrequencyValue(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink text-sm"
                   />
                 </div>
               )}
 
-              <p className="text-xs text-purple-700 mt-2">
+              <p className="text-xs text-purple-700 dark:text-dark-text-secondary mt-2">
                 Start date will be: {new Date(date).toLocaleDateString()}
               </p>
             </div>
           )}
         </form>
 
-        <div className="border-t p-6 pt-4">
+        <div className="border-t dark:border-dark-border p-6 pt-4">
           <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-elevated transition"
             >
               Cancel
             </button>
@@ -320,7 +320,7 @@ function AddExpenseModal({ onClose, onAdd }) {
               type="submit"
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 bg-bloom-pink text-white px-4 py-2 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50"
+              className="flex-1 bg-bloom-pink dark:bg-dark-pink text-white px-4 py-2 rounded-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink/80 transition disabled:opacity-50"
             >
               {loading ? 'Adding...' : isRecurring ? 'Create Template' : 'Add'}
             </button>

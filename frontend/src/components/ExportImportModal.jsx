@@ -170,15 +170,15 @@ function ExportImportModal({ onClose, mode = 'export' }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">
             {mode === 'export' ? 'Export Data' : 'Import Data'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="text-gray-400 hover:text-gray-600 dark:text-dark-text dark:hover:text-dark-text-secondary transition"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -187,11 +187,11 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         </div>
 
         {message && (
-          <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex justify-between items-start">
+          <div className="mb-4 bg-green-100 dark:bg-green-950/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded flex justify-between items-start">
             <span>{message}</span>
             <button
               onClick={() => setMessage('')}
-              className="text-green-700 hover:text-green-900 ml-4 flex-shrink-0"
+              className="text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 ml-4 flex-shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -201,11 +201,11 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         )}
 
         {error && (
-          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex justify-between items-start">
+          <div className="mb-4 bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-3 rounded flex justify-between items-start">
             <span>{error}</span>
             <button
               onClick={() => setError('')}
-              className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+              className="text-red-700 dark:text-dark-danger hover:text-red-900 dark:hover:text-red-400 ml-4 flex-shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -216,7 +216,7 @@ function ExportImportModal({ onClose, mode = 'export' }) {
 
         {mode === 'export' ? (
           <div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
               Select what you want to export:
             </p>
 
@@ -226,9 +226,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   type="checkbox"
                   checked={exportTypes.debts}
                   onChange={(e) => setExportTypes({ ...exportTypes, debts: e.target.checked })}
-                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
-                <span className="text-gray-700">Debts</span>
+                <span className="text-gray-700 dark:text-dark-text">Debts</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -236,9 +236,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   type="checkbox"
                   checked={exportTypes.recurring_expenses}
                   onChange={(e) => setExportTypes({ ...exportTypes, recurring_expenses: e.target.checked })}
-                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
-                <span className="text-gray-700">Recurring Expenses</span>
+                <span className="text-gray-700 dark:text-dark-text">Recurring Expenses</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -246,9 +246,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   type="checkbox"
                   checked={exportTypes.salary_periods}
                   onChange={(e) => setExportTypes({ ...exportTypes, salary_periods: e.target.checked })}
-                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
-                <span className="text-gray-700">Salary Periods</span>
+                <span className="text-gray-700 dark:text-dark-text">Salary Periods</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -256,9 +256,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   type="checkbox"
                   checked={exportTypes.expenses}
                   onChange={(e) => setExportTypes({ ...exportTypes, expenses: e.target.checked })}
-                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
-                <span className="text-gray-700">Expenses</span>
+                <span className="text-gray-700 dark:text-dark-text">Expenses</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -266,14 +266,14 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                   type="checkbox"
                   checked={exportTypes.income}
                   onChange={(e) => setExportTypes({ ...exportTypes, income: e.target.checked })}
-                  className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink"
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
-                <span className="text-gray-700">Income</span>
+                <span className="text-gray-700 dark:text-dark-text">Income</span>
               </label>
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-700 font-semibold mb-3">Export Format:</p>
+              <p className="text-gray-700 dark:text-dark-text font-semibold mb-3">Export Format:</p>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -282,9 +282,9 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                     value="json"
                     checked={exportFormat === 'json'}
                     onChange={(e) => setExportFormat(e.target.value)}
-                    className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
+                    className="w-4 h-4 text-bloom-pink dark:text-dark-pink focus:ring-bloom-pink dark:focus:ring-dark-pink"
                   />
-                  <span className="text-gray-700">JSON (for import)</span>
+                  <span className="text-gray-700 dark:text-dark-text">JSON (for import)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -293,13 +293,13 @@ function ExportImportModal({ onClose, mode = 'export' }) {
                     value="csv"
                     checked={exportFormat === 'csv'}
                     onChange={(e) => setExportFormat(e.target.value)}
-                    className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
+                    className="w-4 h-4 text-bloom-pink dark:text-dark-pink focus:ring-bloom-pink dark:focus:ring-dark-pink"
                   />
-                  <span className="text-gray-700">CSV (for Excel)</span>
+                  <span className="text-gray-700 dark:text-dark-text">CSV (for Excel)</span>
                 </label>
               </div>
               {exportFormat === 'csv' && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-2">
                   Note: CSV exports create separate files for each data type
                 </p>
               )}
@@ -308,19 +308,19 @@ function ExportImportModal({ onClose, mode = 'export' }) {
             <button
               onClick={handleExport}
               disabled={loading}
-              className="w-full bg-bloom-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50"
+              className="w-full bg-bloom-pink dark:bg-dark-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 dark:hover:bg-dark-pink/80 transition disabled:opacity-50"
             >
               {loading ? 'Exporting...' : 'Export Data'}
             </button>
           </div>
         ) : (
           <div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
               Select a Bloom export file to import. The system will automatically detect and import debts, recurring expenses, salary periods, expenses, and income.
             </p>
 
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
+            <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-400">
                 <strong>Note:</strong> Importing will add new items without removing existing data.
               </p>
             </div>
@@ -330,7 +330,7 @@ function ExportImportModal({ onClose, mode = 'export' }) {
               accept=".json"
               onChange={handleImport}
               disabled={loading}
-              className="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-bloom-pink file:text-white hover:file:bg-bloom-pink/90 file:cursor-pointer cursor-pointer disabled:opacity-50"
+              className="w-full text-sm text-gray-700 dark:text-dark-text file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-bloom-pink dark:file:bg-dark-pink file:text-white hover:file:bg-bloom-pink/90 dark:hover:file:bg-dark-pink/80 file:cursor-pointer cursor-pointer disabled:opacity-50"
             />
           </div>
         )}
@@ -338,7 +338,7 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         <button
           onClick={onClose}
           disabled={loading}
-          className="w-full mt-4 text-gray-600 font-semibold py-2 hover:text-gray-800 transition disabled:opacity-50"
+          className="w-full mt-4 text-gray-600 dark:text-dark-text font-semibold py-2 hover:text-gray-800 dark:hover:text-dark-text-secondary transition disabled:opacity-50"
         >
           Cancel
         </button>

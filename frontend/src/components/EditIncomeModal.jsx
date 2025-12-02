@@ -63,13 +63,13 @@ function EditIncomeModal({ onClose, onEdit, income }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-bloom-mint">Edit Income</h2>
+          <h2 className="text-2xl font-bold text-bloom-mint dark:text-bloom-mint">Edit Income</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-dark-text dark:hover:text-dark-text-secondary"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -79,11 +79,11 @@ function EditIncomeModal({ onClose, onEdit, income }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded flex justify-between items-start">
+            <div className="bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-2 rounded flex justify-between items-start">
               <span>{error}</span>
               <button
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+                className="text-red-700 dark:text-dark-danger hover:text-red-900 dark:hover:text-red-400 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -93,11 +93,11 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           )}
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Type</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-mint"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint dark:focus:ring-bloom-mint"
             >
               {incomeTypes.map(t => (
                 <option key={t} value={t}>{t}</option>
@@ -106,26 +106,26 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Amount (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
             <input
               type="number"
               step="0.01"
               min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-mint"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint dark:focus:ring-bloom-mint"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Type</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Type</label>
             <input
               type="text"
               value={type}
               onChange={(e) => setType(e.target.value)}
               maxLength={50}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
               required
             />
           </div>
@@ -134,14 +134,14 @@ function EditIncomeModal({ onClose, onEdit, income }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-elevated transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-bloom-mint text-green-800 px-4 py-2 rounded-lg hover:bg-bloom-mint/80 transition disabled:opacity-50 font-semibold"
+              className="flex-1 bg-bloom-mint text-green-800 dark:text-green-900 px-4 py-2 rounded-lg hover:bg-bloom-mint/80 transition disabled:opacity-50 font-semibold"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

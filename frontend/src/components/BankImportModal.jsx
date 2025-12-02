@@ -81,7 +81,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Import Bank Transactions</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Import Bank Transactions</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition"
@@ -101,7 +101,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 : 'bg-yellow-100 border-yellow-400 text-yellow-800'
             }`}>
               <div className="flex justify-between items-start mb-2">
-                <p className="font-semibold">{result.message}</p>
+                <p className="font-semibold text-gray-800 dark:text-dark-text">{result.message}</p>
                 <button
                   onClick={() => setResult(null)}
                   className={`ml-4 flex-shrink-0 ${
@@ -181,7 +181,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
             {/* Payment Method Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                 Payment Method
               </label>
               <div className="flex gap-4">
@@ -231,7 +231,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
             {/* Transaction Data Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                 Bank Transaction Data
               </label>
               <textarea
@@ -243,7 +243,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                 Supports tab-separated or multi-space separated values. Only negative amounts (expenses) will be imported.
               </p>
             </div>
@@ -390,3 +390,4 @@ BankImportModal.propTypes = {
 };
 
 export default BankImportModal
+
