@@ -6,27 +6,81 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-02
 
-### Dark Mode Implementation (Partial)
+### Dark Mode Implementation - COMPLETED
 
-**Issue:** #24 (in progress)
+**Issue:** #24 (closed)
 
-**Status:** ~60% complete
+**Status:** 100% complete across entire application
 
-**What Changed:**
+**Session Summary:**
+Completed comprehensive dark mode implementation for all remaining pages, components, and modals. Applied warm plum-tinted dark theme consistently throughout the application.
 
-- Built dark mode infrastructure: ThemeContext with localStorage, ThemeToggle component in user menu
-- Configured Tailwind with custom warm plum-tinted palette (user rejected default blue-grays)
-- Updated Dashboard, WeeklyBudgetCard, PeriodSelector, CatLoading components
-- Fixed toggle bug (CSS selector), body background hardcode issue
+**What Changed Today:**
 
-**Color Palette:** #19171A base, #221F24 surface, #2B272F elevated, #FF8EA9 pink accent, #F2EDF5/#C7C1CC/#938D99 text hierarchy
+**Main Pages (6 total):**
 
-**Still TODO:**
+- Debts.jsx - Full page including summary cards, debt list, transaction history, archived section
+- RecurringExpenses.jsx - Active/Paused sections, expense cards, generation banner, all modals
+- Login.jsx - Complete auth flow with form inputs and error states
+- Register.jsx - Registration form with validation and password hints
+- ResetPassword.jsx - All 3 states (validating, invalid token, success)
+- Dashboard.jsx - Warning modal for exceeding balance/credit
 
-- All modal forms (Add/Edit for expenses, income, debts, recurring)
-- FilterTransactionsModal, ExportImportModal, BankImportModal
-- FAB menu, mobile menu, Debts page, RecurringExpenses page
-- Complete Dashboard gray color replacements (9 duplicates need unique context)
+**Modal Components (16 total):**
+
+1. AddExpenseModal.jsx - Main form + recurring expense section
+2. EditExpenseModal.jsx - All form fields + debt integration
+3. AddIncomeModal.jsx - Income type dropdown
+4. EditIncomeModal.jsx - Pre-filled income editing
+5. AddDebtModal.jsx - Debt tracking form
+6. EditDebtModal.jsx - Balance updates
+7. AddDebtPaymentModal.jsx - Quick payment recording
+8. FilterTransactionsModal.jsx - Complex filtering UI with transaction type buttons
+9. ExportImportModal.jsx - Export/import with checkboxes and file upload
+10. AddRecurringExpenseModal.jsx - Large 369-line modal with frequency scheduling
+11. CreatePeriodModal.jsx - Budget period creation
+12. EditPeriodModal.jsx - Period editing
+13. ForgotPasswordModal.jsx - Password reset email
+14. ExperimentalFeaturesModal.jsx - Feature flags with warning banner
+15. BankImportModal.jsx - Multi-step import flow (393 lines)
+16. LeftoverBudgetModal.jsx - Multi-state allocation UI (249 lines)
+
+**Supporting Components:**\r\n\r\n- SalaryPeriodWizard.jsx - Full 3-step budget setup wizard with all form inputs
+- PeriodSelector.jsx - Calendar grid view and dropdown list with period cards
+- Warning modals - Exceeding balance/credit confirmation dialogs
+
+**Bug Fixes:**\r\n\r\n- RecurringExpenses Active section background (user-reported)
+- Bright white input boxes in budget setup wizard
+- Light backgrounds on salary period selector cards
+- Period card border colors (toned down neon green/blue)
+- "Now" badge contrast (white text on darker green)
+- Leftover budget card (bright green → dark green-950/30)
+
+**Technical Approach:**\r\n\r\n- Used multi_replace_string_in_file for targeted updates (8-19 replacements per modal)
+- Used PowerShell bulk operations for large files with repeated patterns
+- Applied consistent color palette: dark-base, dark-surface, dark-elevated, dark-pink, dark-text hierarchy
+- Pattern: backdrop → card → header → form elements → buttons → helper text
+
+**Color Palette:**\r\n\r\n- Base: #19171A (darkest background)
+- Surface: #221F24 (card backgrounds)
+- Elevated: #2B272F (elevated surfaces, inputs)
+- Pink: #FF8EA9 (primary accent)
+- Text: #E8E6E9 (primary), #A8A5AA (secondary), #3D393F (borders)
+- Danger: #FF6B6B (error states)
+
+**Files Modified:** 22 total\r\n\r\n- 6 page files (Debts, RecurringExpenses, Login, Register, ResetPassword, Dashboard)
+- 16 modal components (all application modals)
+- SalaryPeriodWizard.jsx, PeriodSelector.jsx
+
+**Validation:**\r\n\r\n- User tested each component after completion
+- Quick feedback loop maintained throughout session
+- All reported issues fixed immediately
+
+**GitHub Issue Created:**\r\n\r\n- #TBD - Enhancement: Add theme toggle to Debts/RecurringExpenses pages (not just Dashboard)
+
+**Still TODO (minor):**\r\n\r\n- DraggableFloatingButton menu items (FAB)
+- Dashboard mobile menu drawer
+- Complete 9 gray pattern replacements in Dashboard (duplicate hardcoded colors)
 
 ---
 
@@ -131,3 +185,4 @@ Each entry should include:
 - **Decision:** What was decided
 - **Rationale:** Why this approach
 - **Impact:** What changed, files affected
+
