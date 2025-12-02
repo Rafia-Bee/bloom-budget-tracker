@@ -576,8 +576,8 @@ function RecurringExpenses() {
 
       {/* Confirm Generate Modal */}
       {showConfirmGenerate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Generate Recurring Expenses?</h3>
             <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
               This will create expense entries for all recurring expenses that are due. Do you want to continue?
@@ -585,13 +585,13 @@ function RecurringExpenses() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowConfirmGenerate(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-elevated/80 transition font-semibold"
               >
                 Cancel
               </button>
               <button
                 onClick={handleGenerateNow}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+                className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition font-semibold"
               >
                 ⚡ Generate Now
               </button>
