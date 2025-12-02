@@ -45,42 +45,59 @@ Completed comprehensive dark mode implementation for all remaining pages, compon
 15. BankImportModal.jsx - Multi-step import flow (393 lines)
 16. LeftoverBudgetModal.jsx - Multi-state allocation UI (249 lines)
 
-**Supporting Components:**\r\n\r\n- SalaryPeriodWizard.jsx - Full 3-step budget setup wizard with all form inputs
+**Supporting Components:**
+
+- SalaryPeriodWizard.jsx - Full 3-step budget setup wizard with all form inputs
 - PeriodSelector.jsx - Calendar grid view and dropdown list with period cards
+- DraggableFloatingButton.jsx - FAB popup menu (Add Income/Expense/Debt Payment buttons)
+- Dashboard mobile menu - Navigation drawer with links and user info
 - Warning modals - Exceeding balance/credit confirmation dialogs
+- Generate Now confirmation modal - RecurringExpenses generation prompt
 
-**Bug Fixes:**\r\n\r\n- RecurringExpenses Active section background (user-reported)
+**Bug Fixes:**
+
+- RecurringExpenses Active section background (user-reported)
 - Bright white input boxes in budget setup wizard
-- Light backgrounds on salary period selector cards
-- Period card border colors (toned down neon green/blue)
-- "Now" badge contrast (white text on darker green)
+- Light backgrounds on salary period selector cards (calendar grid and dropdown)
+- Period card border colors (toned down neon green/blue to subtle grays)
+- "Now" badge contrast (white text on green-600 background)
 - Leftover budget card (bright green → dark green-950/30)
+- Generate Now modal (white background → dark-surface)
+- JSX syntax error in RecurringExpenses (stray closing bracket)
 
-**Technical Approach:**\r\n\r\n- Used multi_replace_string_in_file for targeted updates (8-19 replacements per modal)
+**Technical Approach:**
+
+- Used multi_replace_string_in_file for targeted updates (8-19 replacements per modal)
 - Used PowerShell bulk operations for large files with repeated patterns
 - Applied consistent color palette: dark-base, dark-surface, dark-elevated, dark-pink, dark-text hierarchy
 - Pattern: backdrop → card → header → form elements → buttons → helper text
+- Fixed pre-push hook failures (black formatting, JSX syntax)
 
-**Color Palette:**\r\n\r\n- Base: #19171A (darkest background)
+**Color Palette:**
+
+- Base: #19171A (darkest background)
 - Surface: #221F24 (card backgrounds)
 - Elevated: #2B272F (elevated surfaces, inputs)
 - Pink: #FF8EA9 (primary accent)
 - Text: #E8E6E9 (primary), #A8A5AA (secondary), #3D393F (borders)
 - Danger: #FF6B6B (error states)
 
-**Files Modified:** 22 total\r\n\r\n- 6 page files (Debts, RecurringExpenses, Login, Register, ResetPassword, Dashboard)
+**Files Modified:** 25 total
+
+- 6 page files (Debts, RecurringExpenses, Login, Register, ResetPassword, Dashboard)
 - 16 modal components (all application modals)
-- SalaryPeriodWizard.jsx, PeriodSelector.jsx
+- 3 supporting components (SalaryPeriodWizard, PeriodSelector, DraggableFloatingButton)
 
-**Validation:**\r\n\r\n- User tested each component after completion
+**Validation:**
+
+- User tested each component after completion with iterative feedback
 - Quick feedback loop maintained throughout session
-- All reported issues fixed immediately
+- All 8 reported issues fixed immediately
+- Pre-push hooks passed (black formatting, build validation)
 
-**GitHub Issue Created:**\r\n\r\n- #TBD - Enhancement: Add theme toggle to Debts/RecurringExpenses pages (not just Dashboard)
+**Status:** 100% complete - All pages, modals, and components now support dark mode
 
-**Still TODO (minor):**\r\n\r\n- DraggableFloatingButton menu items (FAB)
-- Dashboard mobile menu drawer
-- Complete 9 gray pattern replacements in Dashboard (duplicate hardcoded colors)
+**GitHub Issue:** #24 - Closed (Dark mode implementation complete)
 
 ---
 

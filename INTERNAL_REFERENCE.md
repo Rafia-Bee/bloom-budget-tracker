@@ -1,6 +1,6 @@
 # Bloom Budget Tracker - Comprehensive Internal Reference
 
-**Last Updated:** November 30, 2025
+**Last Updated:** December 2, 2025
 **Purpose:** Internal AI assistant reference document for understanding project architecture, workflows, and development patterns.
 
 ---
@@ -415,13 +415,47 @@ frontend/
 │       ├── CatLoading.jsx  # Cute loading animation
 │       └── ForgotPasswordModal.jsx
 ├── vite.config.js       # Vite + PWA config
-├── tailwind.config.js   # Tailwind customization
+├── tailwind.config.js   # Tailwind customization (includes dark mode colors)
 └── package.json
 ```
 
 ### Key Frontend Patterns
 
-#### 1. Expense Date → Period Assignment (Critical Pattern)
+#### 1. Dark Mode Implementation (Issue #24 - COMPLETED Dec 2, 2025)
+
+**Architecture:**
+- Tailwind CSS `class` strategy with manual toggle
+- ThemeContext provider wraps entire app
+- Theme persisted in localStorage ('bloom-theme': 'light' or 'dark')
+- Toggle in user menu on Dashboard, accessible from all pages
+
+**Color Palette (Warm Plum-Tinted):**
+```javascript
+// tailwind.config.js
+colors: {
+  'dark-base': '#19171A',      // Darkest background
+  'dark-surface': '#221F24',   // Card backgrounds
+  'dark-elevated': '#2B272F',  // Elevated surfaces, inputs
+  'dark-pink': '#FF8EA9',      // Primary accent
+  'dark-text': '#E8E6E9',      // Primary text
+  'dark-text-secondary': '#A8A5AA', // Secondary text
+  'dark-border': '#3D393F',    // Borders
+  'dark-danger': '#FF6B6B',    // Error states
+}
+```
+
+**Pattern Applied:**
+All components follow consistent pattern: backdrop → card → header → form elements → buttons → helper text
+
+**Coverage (100% Complete):**
+- 6 main pages: Dashboard, Debts, RecurringExpenses, Login, Register, ResetPassword
+- 16 modal components: All Add/Edit forms, filtering, import/export, budget setup
+- All supporting components: WeeklyBudgetCard, PeriodSelector, DraggableFloatingButton, SalaryPeriodWizard
+- All interactive states: hover, focus, active, disabled
+
+**Files Modified:** 25 total (see DECISION_LOG.md for complete list)
+
+#### 2. Expense Date → Period Assignment (Critical Pattern)
 ```javascript
 // In Dashboard.jsx handleAddExpense()
 const matchingPeriod = allPeriods.find(period => {

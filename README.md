@@ -36,6 +36,7 @@ A flexible web-based budget tracking application accessible from any device (And
 - ✅ **PWA Support** - Installable as offline-capable app
 - ✅ **Production Deployment** - Live on Netlify with password protection
 - ✅ **Mobile Optimized** - Responsive hamburger navigation and touch-friendly UI
+- ✅ **Dark Mode** - Warm plum-tinted theme with system/manual toggle across entire app
 
 ### In Development
 
