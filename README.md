@@ -34,7 +34,7 @@ A flexible web-based budget tracking application accessible from any device (And
 - ✅ Purple "Recurring" badge on Dashboard transactions
 - ✅ Comprehensive seed data for testing
 - ✅ **PWA Support** - Installable as offline-capable app
-- ✅ **Production Deployment** - Live on Netlify with password protection
+- ✅ **Production Deployment** - Live on Cloudflare Pages with unlimited builds
 - ✅ **Mobile Optimized** - Responsive hamburger navigation and touch-friendly UI
 - ✅ **Dark Mode** - Warm plum-tinted theme with system/manual toggle across entire app
 
@@ -115,7 +115,7 @@ A flexible web-based budget tracking application accessible from any device (And
 - **Styling**: Tailwind CSS
 - **Authentication**: JWT tokens
 - **PWA**: Service Worker for offline support
-- **Hosting**: Netlify (Frontend) with password protection
+- **Hosting**: Cloudflare Pages (Frontend), Render (Backend + Database)
 
 ## Project Structure
 
@@ -218,8 +218,8 @@ The app is deployed to Netlify and accessible at:
 **Features:**
 - ✅ Progressive Web App (PWA) - Install on any device
 - ✅ Offline support - Works without internet after first visit
-- ✅ Password protected - Private access only
 - ✅ Auto-updates - Always get the latest version
+- ✅ Unlimited deploys via Cloudflare Pages
 
 **Install on iPad/Mobile:**
 1. Open Safari (iOS) or Chrome (Android)

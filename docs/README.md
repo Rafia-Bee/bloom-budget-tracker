@@ -4,6 +4,25 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 ## Active Documentation
 
+### [DEPLOYMENT.md](DEPLOYMENT.md)
+
+**🚀 Production Deployment Guide:**
+
+- Cloudflare Pages (frontend) configuration
+- Render (backend + database) setup
+- Environment variables
+- CORS configuration
+- Troubleshooting and monitoring
+
+### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)
+
+**✅ Migration Complete (Dec 2, 2025):**
+
+- Netlify → Cloudflare Pages migration guide
+- Build configuration and setup steps
+- Post-migration checklist (all items completed)
+- Unlimited deploys and bandwidth
+
 ### [RECURRING_EXPENSES.md](RECURRING_EXPENSES.md)
 
 Recurring expenses automation system:

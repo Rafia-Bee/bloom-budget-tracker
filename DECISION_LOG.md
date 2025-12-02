@@ -6,6 +6,65 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-02
 
+### Cloudflare Pages Migration - COMPLETED
+
+**Issue:** Netlify free tier deploy credits exhausted
+
+**Status:** Migration complete, site live at https://bloom-tracker.app
+
+**Why Cloudflare Pages:**
+- ✅ Unlimited deploys (no build credits)
+- ✅ Unlimited bandwidth
+- ✅ Perfect Vite/PWA compatibility (zero config needed)
+- ✅ Already using Cloudflare for DNS (seamless integration)
+- ✅ Superior CDN edge caching
+- ✅ Free password protection via Cloudflare Access (up to 50 users)
+
+**Migration Steps Completed:**
+
+1. Created `frontend/public/_routes.json` for SPA routing fallback
+2. Created comprehensive migration guide: `docs/CLOUDFLARE_MIGRATION.md`
+3. Connected GitHub repo to Cloudflare Pages
+4. Configured build settings: `cd frontend && npm install && npm run build`
+5. Added custom domain: `bloom-tracker.app` (auto-configured via Cloudflare DNS)
+6. Updated backend CORS to include both domains:
+   - `https://bloom-tracker.app`
+   - `https://bloom-budget-tracker.pages.dev`
+7. Verified deployment and all functionality working
+8. Deleted Netlify site from dashboard
+9. Removed `netlify.toml` from repository (commit: 915b39f)
+10. Updated all documentation (DEPLOYMENT.md, README.md, docs/README.md)
+11. Archived CUSTOM_DOMAIN.md (Netlify-specific)
+
+**Files Modified:**
+- `frontend/public/_routes.json` (new) - SPA routing config
+- `docs/CLOUDFLARE_MIGRATION.md` (new) - Complete migration guide
+- `docs/DEPLOYMENT.md` - Updated all hosting references
+- `README.md` - Updated production deployment section
+- `docs/README.md` - Added migration guide reference
+- `docs/CUSTOM_DOMAIN.md` - Archived with warning notice
+- `netlify.toml` (deleted) - No longer needed
+
+**Build Configuration:**
+```yaml
+Build command: cd frontend && npm install && npm run build
+Build output: frontend/dist
+Root directory: / (empty)
+```
+
+**Deployment Time:** ~2 minutes per build
+**Result:** Zero deployment issues, all features working including PWA, service worker, dark mode, API connectivity
+
+**Cost Savings:** Unlimited deploys vs 300 build minutes/month on Netlify free tier
+
+**Commits:**
+- `1f0221d` - feat: add Cloudflare Pages migration configuration
+- `f3a0400` - fix: add npm install to Cloudflare Pages build command
+- `915b39f` - chore: remove Netlify configuration after migration to Cloudflare Pages
+- `ac4b2c7` - docs: update deployment guide for Cloudflare Pages migration
+
+---
+
 ### Dark Mode Implementation - COMPLETED
 
 **Issue:** #24 (closed)

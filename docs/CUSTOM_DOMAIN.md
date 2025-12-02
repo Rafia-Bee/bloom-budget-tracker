@@ -1,5 +1,7 @@
 # Custom Domain Setup - bloom-tracker.app
 
+> **⚠️ ARCHIVED:** This document describes the old Netlify setup. We've migrated to Cloudflare Pages. See [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md) for current setup.
+
 ## Overview
 
 The Bloom Budget Tracker is deployed at **https://bloom-tracker.app** (custom domain purchased from Namecheap).
