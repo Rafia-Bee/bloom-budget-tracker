@@ -13,6 +13,7 @@ Welcome to Bloom! This guide will help you get started with managing your financ
 - [Recurring Expenses](#recurring-expenses)
 - [Debt Management](#debt-management)
 - [Import/Export](#importexport)
+- [Dark Mode](#dark-mode)
 - [Tips & Best Practices](#tips--best-practices)
 
 ---
@@ -397,6 +398,40 @@ You can automate debt payments in two ways:
 - Check if all transactions are in the current period
 - Verify payment methods (debit vs credit)
 - Look for duplicate transactions
+
+---
+
+## Dark Mode
+
+Bloom features a warm plum-tinted dark theme for comfortable nighttime budgeting.
+
+### Toggling Dark Mode
+
+1. Click your **email** in the top right corner (mobile: hamburger menu)
+2. Click **Toggle Dark Mode**
+3. Your preference is saved automatically
+
+**Colors:**
+- Dark backgrounds with warm plum tones
+- Pink accents for important information
+- High contrast for easy reading
+- Consistent across all pages and modals
+
+### System Preference
+
+Dark mode respects your browser/system preference:
+- If your device is in dark mode, Bloom starts in dark mode
+- Manual toggle overrides system preference
+- Your choice persists across sessions
+
+### Troubleshooting
+
+**Dark mode not saving?**
+- Check browser local storage is enabled
+- Clear browser cache and try again
+
+**Some elements still light?**
+- Hard refresh: Ctrl + Shift + R (Windows) or Cmd + Shift + R (Mac)
 
 ---
 

@@ -73,6 +73,15 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 ## 🧪 Development Documentation
 
+### [API.md](API.md)
+
+**Complete API reference:**
+- All endpoints with request/response examples
+- Authentication and JWT tokens
+- Query parameters and filtering
+- Error responses and rate limiting
+- Amount/date formats and pagination
+
 ### [TESTING.md](TESTING.md)
 
 **Testing setup and guidelines:**
