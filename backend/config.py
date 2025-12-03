@@ -31,14 +31,17 @@ class Config:
         database_url = f"sqlite:///{db_path}"
     elif database_url.startswith("libsql://") or "turso.io" in str(database_url):
         # Turso (libSQL) - convert to SQLAlchemy dialect format
-        # libsql://db.turso.io -> libsql+web://db.turso.io?authToken=xxx
+        # Correct dialects: libsql+https, libsql+http, libsql+ws, libsql+wss
         if database_url.startswith("libsql://"):
-            database_url = database_url.replace("libsql://", "libsql+web://", 1)
+            # libsql://db.turso.io -> libsql+https://db.turso.io
+            database_url = database_url.replace("libsql://", "libsql+https://", 1)
         elif database_url.startswith("https://"):
-            database_url = database_url.replace("https://", "libsql+web://", 1)
-        # Add auth token as query parameter
-        if turso_auth_token and "authToken" not in database_url:
-            database_url = f"{database_url}?authToken={turso_auth_token}"
+            database_url = database_url.replace("https://", "libsql+https://", 1)
+        # Add auth token
+        if turso_auth_token and "authToken=" not in database_url:
+            sep = "&" if "?" in database_url else "?"
+            database_url = f"{database_url}{sep}authToken={turso_auth_token}"
+
     elif database_url.startswith("postgres://"):
         # Fix Render's postgres:// to postgresql://
         database_url = database_url.replace("postgres://", "postgresql://", 1)
