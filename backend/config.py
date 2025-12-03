@@ -30,9 +30,11 @@ class Config:
         db_path = os.getenv("DB_PATH", "instance/bloom.db")
         database_url = f"sqlite:///{db_path}"
     elif database_url.startswith("libsql://"):
-        # Turso (libSQL) - convert to SQLAlchemy format
-        # libsql://dbname-org.turso.io -> sqlite+libsql://dbname-org.turso.io
-        database_url = database_url.replace("libsql://", "sqlite+libsql://", 1)
+        # Turso (libSQL) - add auth token to URL and convert format
+        # libsql://db.turso.io?authToken=xxx -> libsql://db.turso.io?authToken=xxx
+        if turso_auth_token and "authToken" not in database_url:
+            database_url = f"{database_url}?authToken={turso_auth_token}"
+        # Don't add sqlite+ prefix - libsql:// is the correct dialect
     elif database_url.startswith("postgres://"):
         # Fix Render's postgres:// to postgresql://
         database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -41,15 +43,15 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Engine options - add auth token for Turso
+    # Engine options
     engine_options = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
     }
 
-    # Add Turso auth token if using libSQL
-    if database_url and "libsql" in database_url and turso_auth_token:
-        engine_options["connect_args"] = {"auth_token": turso_auth_token}
+    # Add secure flag for Turso
+    if database_url and "libsql" in database_url:
+        engine_options["connect_args"] = {"secure": True}
 
     SQLALCHEMY_ENGINE_OPTIONS = engine_options
 
