@@ -49,10 +49,7 @@ class Config:
 
     # Add Turso auth token if using libSQL
     if database_url and "libsql" in database_url and turso_auth_token:
-        engine_options["connect_args"] = {
-            "authToken": turso_auth_token,
-            "secure": True
-        }
+        engine_options["connect_args"] = {"auth_token": turso_auth_token}
 
     SQLALCHEMY_ENGINE_OPTIONS = engine_options
 
