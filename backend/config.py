@@ -29,12 +29,16 @@ class Config:
         # Default: Local SQLite
         db_path = os.getenv("DB_PATH", "instance/bloom.db")
         database_url = f"sqlite:///{db_path}"
-    elif database_url.startswith("libsql://"):
-        # Turso (libSQL) - add auth token to URL and convert format
-        # libsql://db.turso.io?authToken=xxx -> libsql://db.turso.io?authToken=xxx
+    elif database_url.startswith("libsql://") or "turso.io" in str(database_url):
+        # Turso (libSQL) - convert to SQLAlchemy dialect format
+        # libsql://db.turso.io -> libsql+https://db.turso.io?authToken=xxx
+        if database_url.startswith("libsql://"):
+            database_url = database_url.replace("libsql://", "libsql+https://", 1)
+        elif database_url.startswith("https://"):
+            database_url = database_url.replace("https://", "libsql+https://", 1)
+        # Add auth token as query parameter
         if turso_auth_token and "authToken" not in database_url:
             database_url = f"{database_url}?authToken={turso_auth_token}"
-        # Don't add sqlite+ prefix - libsql:// is the correct dialect
     elif database_url.startswith("postgres://"):
         # Fix Render's postgres:// to postgresql://
         database_url = database_url.replace("postgres://", "postgresql://", 1)
