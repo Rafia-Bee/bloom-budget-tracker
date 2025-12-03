@@ -21,13 +21,18 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
     # Database configuration
-    # Defaults to SQLite (perfect for personal use, no expiration)
-    # Set DATABASE_URL to postgresql:// when ready to scale to managed Postgres
+    # Supports: SQLite (local), Turso (libSQL cloud), PostgreSQL (scaling)
     database_url = os.getenv("DATABASE_URL")
+    turso_auth_token = os.getenv("TURSO_AUTH_TOKEN")
+
     if not database_url:
-        # Use persistent disk path on Render, fallback to instance/ locally
+        # Default: Local SQLite
         db_path = os.getenv("DB_PATH", "instance/bloom.db")
         database_url = f"sqlite:///{db_path}"
+    elif database_url.startswith("libsql://"):
+        # Turso (libSQL) - convert to SQLAlchemy format
+        # libsql://dbname-org.turso.io -> sqlite+libsql://dbname-org.turso.io
+        database_url = database_url.replace("libsql://", "sqlite+libsql://", 1)
     elif database_url.startswith("postgres://"):
         # Fix Render's postgres:// to postgresql://
         database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -35,20 +40,34 @@ class Config:
     SQLALCHEMY_DATABASE_URI = database_url
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
+
+    # Engine options - add auth token for Turso
+    engine_options = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
     }
 
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Extended for offline PWA usage
+    # Add Turso auth token if using libSQL
+    if database_url and "libsql" in database_url and turso_auth_token:
+        engine_options["connect_args"] = {
+            "authToken": turso_auth_token,
+            "secure": True
+        }
+
+    SQLALCHEMY_ENGINE_OPTIONS = engine_options
+
+    JWT_SECRET_KEY = os.getenv(
+        "JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        hours=24)  # Extended for offline PWA usage
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     CREDIT_CARD_LIMIT = int(os.getenv("CREDIT_CARD_LIMIT", 1500))
 
     # Email configuration
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-    SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
+    SENDGRID_FROM_EMAIL = os.getenv(
+        "SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
