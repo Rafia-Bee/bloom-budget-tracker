@@ -31,11 +31,11 @@ class Config:
         database_url = f"sqlite:///{db_path}"
     elif database_url.startswith("libsql://") or "turso.io" in str(database_url):
         # Turso (libSQL) - convert to SQLAlchemy dialect format
-        # libsql://db.turso.io -> libsql+https://db.turso.io?authToken=xxx
+        # libsql://db.turso.io -> libsql+web://db.turso.io?authToken=xxx
         if database_url.startswith("libsql://"):
-            database_url = database_url.replace("libsql://", "libsql+https://", 1)
+            database_url = database_url.replace("libsql://", "libsql+web://", 1)
         elif database_url.startswith("https://"):
-            database_url = database_url.replace("https://", "libsql+https://", 1)
+            database_url = database_url.replace("https://", "libsql+web://", 1)
         # Add auth token as query parameter
         if turso_auth_token and "authToken" not in database_url:
             database_url = f"{database_url}?authToken={turso_auth_token}"
