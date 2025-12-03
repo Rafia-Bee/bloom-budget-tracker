@@ -20,10 +20,18 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
-    # Handle DATABASE_URL and fix postgres:// to postgresql://
-    database_url = os.getenv("DATABASE_URL", "sqlite:///bloom.db")
-    if database_url.startswith("postgres://"):
+    # Database configuration
+    # Defaults to SQLite (perfect for personal use, no expiration)
+    # Set DATABASE_URL to postgresql:// when ready to scale to managed Postgres
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        # Use persistent disk path on Render, fallback to instance/ locally
+        db_path = os.getenv("DB_PATH", "instance/bloom.db")
+        database_url = f"sqlite:///{db_path}"
+    elif database_url.startswith("postgres://"):
+        # Fix Render's postgres:// to postgresql://
         database_url = database_url.replace("postgres://", "postgresql://", 1)
+
     SQLALCHEMY_DATABASE_URI = database_url
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

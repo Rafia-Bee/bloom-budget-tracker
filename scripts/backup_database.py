@@ -207,10 +207,17 @@ def main():
         database_url = get_database_url()
 
         if not database_url:
-            # Default to SQLite for development
+            # Default to SQLite (check Render path first, then local)
             print("No DATABASE_URL found, using SQLite...")
-            database_path = Path(__file__).parent.parent / \
-                "instance" / "bloom.db"
+
+            # Try Render persistent disk path first
+            render_db_path = Path("/opt/render/project/data/bloom.db")
+            if render_db_path.exists():
+                database_path = render_db_path
+            else:
+                # Fallback to local development path
+                database_path = Path(__file__).parent.parent / \
+                    "instance" / "bloom.db"
 
             if not database_path.exists():
                 print(f"✗ SQLite database not found at {database_path}")

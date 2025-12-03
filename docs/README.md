@@ -64,6 +64,14 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 ## 🗄️ Infrastructure Documentation
 
+### [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
+
+**Database management and scaling:**
+- Current: SQLite on Render persistent disk (free, no expiration)
+- Postgres → SQLite migration (⚠️ complete before Dec 28, 2025)
+- Future scaling: SQLite → Managed Postgres
+- Backup strategies and cost comparison
+
 ### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)
 
 **✅ Completed migration (Dec 2, 2025):**

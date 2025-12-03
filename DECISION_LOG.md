@@ -4,6 +4,44 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-03
+
+### Migration from PostgreSQL to SQLite
+
+**Context:** Render free PostgreSQL databases expire after 90 days (Dec 28, 2025)
+
+**Decision:** Migrate to SQLite on Render persistent disk
+
+**Rationale:**
+- ✅ No expiration (Postgres free tier = 90 days max)
+- ✅ Perfect for personal use (1GB storage sufficient)
+- ✅ Simpler architecture (no external database service)
+- ✅ Faster queries (no network latency)
+- ✅ Easy backups (copy file vs pg_dump)
+- ✅ Zero cost forever
+- ✅ Easy to scale later (migration script ready)
+
+**Implementation:**
+1. Created `scripts/migrate_postgres_to_sqlite.py` - Migration tool
+2. Updated `backend/config.py` - SQLite default, Postgres support retained
+3. Updated `render.yaml` - Added 1GB persistent disk mount
+4. Updated `scripts/backup_database.py` - SQLite backup support
+5. Created `docs/DATABASE_MIGRATION.md` - Complete migration guide
+6. Created `scripts/POSTGRES_MIGRATION.md` - Quick migration steps
+
+**Migration Path:** Postgres → SQLite (now) → Managed Postgres (when scaling to multi-instance)
+
+**Files Changed:**
+- `backend/config.py` - Database configuration
+- `render.yaml` - Persistent disk configuration
+- `scripts/migrate_postgres_to_sqlite.py` - NEW
+- `scripts/backup_database.py` - SQLite support
+- `docs/DATABASE_MIGRATION.md` - NEW
+- `docs/DEPLOYMENT.md` - Updated database section
+- `scripts/POSTGRES_MIGRATION.md` - NEW
+
+---
+
 ## 2025-12-02
 
 ### Documentation Cleanup and Enhancement - COMPLETED

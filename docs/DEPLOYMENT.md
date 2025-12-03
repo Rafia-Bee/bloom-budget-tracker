@@ -23,11 +23,12 @@ This guide covers the production deployment setup for Bloom Budget Tracker.
 - Auto-deploys from: `main` branch
 - Start command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
 
-**Database (Render)**
-- Type: PostgreSQL
-- Plan: Free tier
-- SSL: Required
-- Backup: Automatic daily backups
+**Database**
+- Type: SQLite (perfect for personal use, no expiration)
+- Storage: Render persistent disk (1GB free)
+- Location: `/opt/render/project/data/bloom.db`
+- Backup: Automatic daily backups via GitHub Actions
+- Future scaling: See [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
 
 ---
 
@@ -43,8 +44,11 @@ FLASK_ENV=production
 SECRET_KEY=<generate-strong-secret-key>
 JWT_SECRET_KEY=<generate-strong-jwt-secret>
 
-# Database
-DATABASE_URL=<automatically-set-by-render-postgres>
+# Database (SQLite on persistent disk)
+DB_PATH=/opt/render/project/data/bloom.db
+
+# Optional: Set DATABASE_URL to postgresql:// when scaling to managed Postgres
+# DATABASE_URL=<postgresql-connection-string>
 
 # CORS - Frontend URL
 CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
