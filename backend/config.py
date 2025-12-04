@@ -1,15 +1,3 @@
-"""
-Bloom - Configuration
-
-This module contains configuration settings for the Flask application.
-Loads environment variables and defines config classes for different environments.
-
-Config Classes:
-- Config: Base configuration
-- DevelopmentConfig: Development environment settings
-- ProductionConfig: Production environment settings
-"""
-
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -18,92 +6,64 @@ load_dotenv()
 
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+    def __init__(self):
+        # Basic Flask config
+        self.SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+        self.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
+        self.JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+        self.JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
-    # Database configuration
-    # Supports: SQLite (local), Turso (libSQL cloud), PostgreSQL (scaling)
-    database_url = os.getenv("DATABASE_URL")
-    turso_auth_token = os.getenv("TURSO_AUTH_TOKEN")
+        # DB configuration
+        raw_url = os.getenv("DATABASE_URL")
+        token = os.getenv("TURSO_AUTH_TOKEN")
 
-    if not database_url:
-        # Default: Local SQLite
-        db_path = os.getenv("DB_PATH", "instance/bloom.db")
-        database_url = f"sqlite:///{db_path}"
-    elif database_url.startswith("libsql://") or "turso.io" in str(database_url):
-        # Turso (libSQL) - convert to SQLAlchemy dialect format
-        # Correct dialects: libsql+https, libsql+http, libsql+ws, libsql+wss
-        if database_url.startswith("libsql://"):
-            # libsql://db.turso.io -> libsql+https://db.turso.io
-            database_url = database_url.replace("libsql://", "libsql+https://", 1)
-        elif database_url.startswith("https://"):
-            database_url = database_url.replace("https://", "libsql+https://", 1)
-        # Add auth token
-        if turso_auth_token and "authToken=" not in database_url:
-            sep = "&" if "?" in database_url else "?"
-            database_url = f"{database_url}{sep}authToken={turso_auth_token}"
+        self.SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    elif database_url.startswith("postgres://"):
-        # Fix Render's postgres:// to postgresql://
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+        # Most reliable Turso URL format
+        if raw_url and "turso.io" in raw_url:
+            # Normalize prefix
+            if raw_url.startswith("libsql://"):
+                raw_url = raw_url.replace("libsql://", "libsql+https://", 1)
+            if raw_url.startswith("https://"):
+                raw_url = raw_url.replace("https://", "libsql+https://", 1)
 
-    SQLALCHEMY_DATABASE_URI = database_url
+            # Append token
+            if token and "authToken=" not in raw_url:
+                sep = "&" if "?" in raw_url else "?"
+                raw_url = f"{raw_url}{sep}authToken={token}"
 
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+            self.SQLALCHEMY_DATABASE_URI = raw_url
 
-    # Engine options
-    engine_options = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-    }
+            # No connect_args needed for libsql
+            self.SQLALCHEMY_ENGINE_OPTIONS = {
+                "pool_pre_ping": True,
+                "pool_recycle": 300,
+            }
 
-    # Add secure flag for Turso
-    if database_url and "libsql" in database_url:
-        engine_options["connect_args"] = {"secure": True}
+        else:
+            # Default fallback (local dev)
+            db_path = "instance/bloom.db"
+            self.SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
+            self.SQLALCHEMY_ENGINE_OPTIONS = {
+                "pool_pre_ping": True,
+                "pool_recycle": 300,
+            }
 
-    SQLALCHEMY_ENGINE_OPTIONS = engine_options
-
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key-change-in-production")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Extended for offline PWA usage
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-
-    CREDIT_CARD_LIMIT = int(os.getenv("CREDIT_CARD_LIMIT", 1500))
-
-    # Email configuration
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-    SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
-    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        # Email
+        self.SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+        self.SENDGRID_FROM_EMAIL = os.getenv(
+            "SENDGRID_FROM_EMAIL", "noreply@bloom.com")
+        self.FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
-    FLASK_ENV = "development"
-    USE_RELOADER = False  # Disable auto-reloader to prevent server restarts
-
-    # Override for SQLite - no SSL config
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-    }
 
 
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-
-    # SSL configuration for PostgreSQL only
-    database_url = os.getenv("DATABASE_URL", "sqlite:///bloom.db")
-    if database_url.startswith(("postgres://", "postgresql://")):
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "connect_args": {"sslmode": "require"},
-        }
-    else:
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-        }
 
 
 config = {
