@@ -44,11 +44,8 @@ FLASK_ENV=production
 SECRET_KEY=<generate-strong-secret-key>
 JWT_SECRET_KEY=<generate-strong-jwt-secret>
 
-# Database (SQLite on persistent disk)
-DB_PATH=/opt/render/project/data/bloom.db
-
-# Optional: Set DATABASE_URL to postgresql:// when scaling to managed Postgres
-# DATABASE_URL=<postgresql-connection-string>
+# Database (Neon PostgreSQL)
+DATABASE_URL=<neon-postgresql-connection-string>
 
 # CORS - Frontend URL
 CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
@@ -77,7 +74,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onre
 
 ### Initial Setup
 
-**1. Backend (Render)**
+**1. Database (Neon)**
+
+1. Create Neon account at https://neon.tech
+2. Create new project (name: bloom-tracker)
+3. Select PostgreSQL 17, AWS region closest to Render backend
+4. Copy connection string (postgresql://...)
+5. No additional configuration needed - autosuspends after 5min
+
+**2. Backend (Render)**
 
 1. Connect GitHub repository to Render
 2. Create new Web Service
@@ -85,11 +90,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onre
    - Build Command: `pip install -r backend/requirements.txt`
    - Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
    - Python Version: 3.11.9
-4. Add PostgreSQL database
-5. Set environment variables
-6. Deploy
+4. Set environment variables (including DATABASE_URL from Neon)
+5. Deploy
 
-**2. Frontend (Cloudflare Pages)**
+**3. Frontend (Cloudflare Pages)**
 
 1. Connect GitHub repository to Cloudflare Pages
 2. Configure build settings:

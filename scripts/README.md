@@ -51,7 +51,7 @@ python scripts/maintenance.py help
 
 ## Database Backup
 
-Automated database backup system with PostgreSQL/SQLite support.
+Automated database backup system with Neon PostgreSQL/SQLite support.
 
 ### Manual Execution
 

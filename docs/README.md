@@ -7,7 +7,7 @@ Comprehensive documentation for the Bloom budget tracking application.
 ### [DEPLOYMENT.md](DEPLOYMENT.md)
 
 **Production deployment and hosting:**
-- Cloudflare Pages (frontend) + Render (backend/database)
+- Cloudflare Pages (frontend) + Render (backend) + Neon (database)
 - Environment variables and CORS configuration
 - Build commands and continuous deployment
 - Troubleshooting and monitoring
@@ -68,8 +68,8 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 **Database management and scaling:**
 - Current: SQLite on Render persistent disk (free, no expiration)
-- Postgres → SQLite migration (⚠️ complete before Dec 28, 2025)
-- Future scaling: SQLite → Managed Postgres
+- ✅ Migrated to Neon PostgreSQL (Dec 4, 2025)
+- Future scaling: Neon Launch ($19/month) for 3GB + unlimited compute
 - Backup strategies and cost comparison
 
 ### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)

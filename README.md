@@ -111,11 +111,11 @@ A flexible web-based budget tracking application accessible from any device (And
 
 - **Frontend**: React + Vite
 - **Backend**: Flask (Python) - RESTful API
-- **Database**: SQLite
+- **Database**: Neon PostgreSQL (serverless, 0.5GB free tier)
 - **Styling**: Tailwind CSS
 - **Authentication**: JWT tokens
 - **PWA**: Service Worker for offline support
-- **Hosting**: Cloudflare Pages (Frontend), Render (Backend + Database)
+- **Hosting**: Cloudflare Pages (Frontend), Render (Backend), Neon (Database)
 
 ## Project Structure
 

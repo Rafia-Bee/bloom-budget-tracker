@@ -4,41 +4,62 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-04
+
+### Final Database Migration: Neon PostgreSQL
+
+**Context:** Turso (libSQL) attempted but incompatible with Render free tier (requires Rust compilation for `sqlalchemy-libsql`)
+
+**Decision:** Migrate to Neon PostgreSQL instead
+
+**Rationale:**
+- ✅ Free tier with no expiration (vs Render Postgres 90-day limit)
+- ✅ 0.5GB storage (sufficient for 30-50 users)
+- ✅ 100 compute hours/month (autosuspends after 5min)
+- ✅ Instant cold starts (no delay like Render backend)
+- ✅ Fully compatible with Render free tier (standard `psycopg2-binary`)
+- ✅ PostgreSQL 17 (latest, no migration needed from Render Postgres)
+- ✅ Already have SQLAlchemy models (no code changes)
+- ❌ Turso failed: `sqlalchemy-libsql` requires Rust, incompatible with Render
+
+**Implementation:**
+1. Created Neon project: `bloom-tracker` (AWS EU-Central-1)
+2. Updated `backend/config.py` - Simplified to PostgreSQL + SQLite fallback
+3. Updated `backend/requirements.txt` - Removed Turso deps, added `psycopg2-binary>=2.9.9`
+4. Updated `PROMPT_INTRO.md` - All Turso references replaced with Neon
+5. Set Render env var: `DATABASE_URL` = Neon connection string
+6. Removed: `TURSO_AUTH_TOKEN` (no longer needed)
+
+**Timeline:**
+- Dec 3: Attempted Turso migration
+- Dec 4 AM: Discovered Render free tier incompatibility
+- Dec 4 PM: Switched to Neon, deployed successfully ✅
+
+**Files Changed:**
+- `backend/config.py` - Removed Turso logic, simplified to PostgreSQL/SQLite
+- `backend/requirements.txt` - Removed `libsql-client`, `sqlalchemy-libsql`
+- `PROMPT_INTRO.md` - Updated all database references
+- `DECISION_LOG.md` - This entry
+
+---
+
 ## 2025-12-03
 
-### Migration from PostgreSQL to SQLite
+### Attempted Migration to Turso (FAILED)
 
 **Context:** Render free PostgreSQL databases expire after 90 days (Dec 28, 2025)
 
-**Decision:** Migrate to SQLite on Render persistent disk
+**Decision:** Attempted migration to Turso (libSQL)
 
-**Rationale:**
-- ✅ No expiration (Postgres free tier = 90 days max)
-- ✅ Perfect for personal use (1GB storage sufficient)
-- ✅ Simpler architecture (no external database service)
-- ✅ Faster queries (no network latency)
-- ✅ Easy backups (copy file vs pg_dump)
-- ✅ Zero cost forever
-- ✅ Easy to scale later (migration script ready)
+**Outcome:** ❌ Failed - `sqlalchemy-libsql` requires Rust compilation, incompatible with Render free tier
 
-**Implementation:**
-1. Created `scripts/migrate_postgres_to_sqlite.py` - Migration tool
-2. Updated `backend/config.py` - SQLite default, Postgres support retained
-3. Updated `render.yaml` - Added 1GB persistent disk mount
-4. Updated `scripts/backup_database.py` - SQLite backup support
-5. Created `docs/DATABASE_MIGRATION.md` - Complete migration guide
-6. Created `scripts/POSTGRES_MIGRATION.md` - Quick migration steps
+**Lessons Learned:**
+- Render free tier has no Shell access, no build tools for Rust
+- `libsql-client` alone doesn't provide SQLAlchemy dialect
+- `sqlalchemy-libsql==0.1.0` works locally (Windows) but not on Render (Linux)
+- Free hosting requires packages with pre-built wheels
 
-**Migration Path:** Postgres → SQLite (now) → Managed Postgres (when scaling to multi-instance)
-
-**Files Changed:**
-- `backend/config.py` - Database configuration
-- `render.yaml` - Persistent disk configuration
-- `scripts/migrate_postgres_to_sqlite.py` - NEW
-- `scripts/backup_database.py` - SQLite support
-- `docs/DATABASE_MIGRATION.md` - NEW
-- `docs/DEPLOYMENT.md` - Updated database section
-- `scripts/POSTGRES_MIGRATION.md` - NEW
+**Next Action:** Switched to Neon PostgreSQL (see Dec 4 entry above)
 
 ---
 

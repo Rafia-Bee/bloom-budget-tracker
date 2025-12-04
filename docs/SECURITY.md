@@ -11,7 +11,7 @@ SECRET_KEY=<generate-random-64-char-string>
 JWT_SECRET_KEY=<generate-different-random-64-char-string>
 
 # Database (Render will provide this automatically)
-DATABASE_URL=<postgres-connection-string>
+DATABASE_URL=<neon-postgresql-connection-string>
 
 # CORS - Your frontend domain
 CORS_ORIGINS=https://bloom-tracker.app
@@ -45,7 +45,7 @@ Run this twice to get two different keys for `SECRET_KEY` and `JWT_SECRET_KEY`.
 
 ### 🔒 Additional Recommendations
 
-1. **Upgrade to PostgreSQL** - SQLite is not suitable for production (Render provides this)
+1. **PostgreSQL in use** - Using Neon PostgreSQL (serverless, production-ready)
 2. **Add CSRF Protection** - For state-changing operations (not critical for SPA with JWT)
 3. **Add Request ID Logging** - For debugging and security monitoring
 4. **Consider Redis Rate Limiter** - Current in-memory solution resets on server restart

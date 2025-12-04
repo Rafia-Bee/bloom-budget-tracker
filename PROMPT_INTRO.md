@@ -28,7 +28,7 @@ Bloom is a personal balance-based weekly budget tracking web application. It hel
 
 ### Backend
 - **Framework:** Flask 3.0 (Python 3.11)
-- **Database:** Turso (libSQL - SQLite-compatible cloud database)
+- **Database:** Neon PostgreSQL (serverless Postgres)
 - **ORM:** SQLAlchemy 2.0 with Flask-SQLAlchemy
 - **Authentication:** Flask-JWT-Extended (JWT tokens)
 - **Password Hashing:** Werkzeug
@@ -64,12 +64,12 @@ Bloom is a personal balance-based weekly budget tracking web application. It hel
 - **Server:** Gunicorn with 4 workers
 - **Cold Start:** ~30-60 seconds (free tier limitation)
 
-### Database: Turso
-- **Plan:** Free tier (5GB storage, 500M reads/month, 10M writes/month)
-- **Type:** libSQL (SQLite-compatible cloud database)
-- **Connection:** libsql+https:// protocol with auth token
-- **Location:** AWS EU-West-1 region
-- **Features:** Edge replication, point-in-time restore (1 day retention)
+### Database: Neon PostgreSQL
+- **Plan:** Free tier (0.5GB storage, 100 compute hours/month)
+- **Type:** Serverless PostgreSQL 17
+- **Connection:** postgresql:// protocol with SSL
+- **Location:** AWS EU-Central-1 (Frankfurt)
+- **Features:** Autoscaling, autosuspend after 5min inactivity, instant cold starts
 
 ### Email Service: SendGrid
 - **Plan:** Free tier (100 emails/day)
@@ -87,7 +87,7 @@ Bloom is a personal balance-based weekly budget tracking web application. It hel
 - **Plan:** Free tier (2,000 minutes/month for private repos)
 - **Workflows:**
   - CI/CD: Runs tests, linting, formatting checks on push
-  - Database Backup: Daily at 2 AM UTC (backs up Turso database)
+  - Database Backup: Daily at 2 AM UTC (backs up Neon database)
   - Recurring Expenses: Generates recurring expenses 60 days ahead
 
 ## Environment Variables
@@ -100,8 +100,7 @@ Bloom is a personal balance-based weekly budget tracking web application. It hel
 - `FLASK_ENV` - Environment (development/production)
 
 **Database:**
-- `DATABASE_URL` - Turso database URL (libsql://...)
-- `TURSO_AUTH_TOKEN` - Turso authentication token
+- `DATABASE_URL` - Neon PostgreSQL connection string (postgresql://...)
 
 **CORS:**
 - `CORS_ORIGINS` - Allowed frontend origins (comma-separated)
@@ -125,7 +124,7 @@ Bloom is a personal balance-based weekly budget tracking web application. It hel
 ### GitHub Secrets (Actions Workflows)
 
 **For automated workflows:**
-- `DATABASE_URL` - Turso database connection string (for backups)
+- `DATABASE_URL` - Neon PostgreSQL connection string (for backups)
 - `GITHUB_TOKEN` - Automatically provided by GitHub Actions
 
 ## Project Structure
@@ -165,9 +164,9 @@ bloom-budget-tracker/
 
 ### Database Migration History
 - **Original:** Render PostgreSQL (free tier, 90-day expiration limit)
-- **Migration Date:** December 3-4, 2025
-- **Current:** Turso (libSQL) - no expiration, better for personal use
-- **Migration Script:** `scripts/migrate_postgres_to_sqlite.py` (preserved for reference)
+- **Attempted:** Turso (libSQL) - December 3, 2025 (failed: incompatible with Render free tier)
+- **Final Migration:** December 4, 2025
+- **Current:** Neon PostgreSQL - no expiration, fully compatible with Render
 
 ### Two-Tier Period System
 - **Salary Periods:** 4-week parent periods with balance tracking
@@ -189,7 +188,7 @@ bloom-budget-tracker/
 **Monthly Costs:**
 - Cloudflare Pages: **$0** (free tier, unlimited)
 - Render Backend: **$0** (free tier, 750 hours/month)
-- Turso Database: **$0** (free tier, 5GB storage)
+- Neon Database: **$0** (free tier, 0.5GB storage, 100 compute hours/month)
 - SendGrid Email: **$0** (free tier, 100 emails/day)
 - Cloudflare DNS: **$0** (free tier)
 - GitHub Actions: **$0** (free tier, 2,000 minutes/month)
@@ -232,10 +231,10 @@ npm test
 - Cold start time: 30-60 seconds
 - 750 hours/month (enough for personal use)
 
-**Turso Free Tier:**
-- 5GB total storage (plenty for budget tracking)
-- 500 million rows read/month
-- 10 million rows written/month
+**Neon Free Tier:**
+- 0.5GB total storage (enough for 30-50 users)
+- 100 compute hours/month (autosuspends after 5min inactivity)
+- Instant wake-up on request (no cold start delay)
 
 **SendGrid Free Tier:**
 - 100 emails/day
@@ -260,9 +259,9 @@ npm test
 ## Future Scaling Path
 
 When ready to scale beyond personal use:
-- **Database:** Turso scales with usage-based pricing ($4.99/month for 500 active DBs)
-- **Backend:** Render Starter ($7/month) for always-on, faster cold starts
-- **Alternative:** Migrate to managed Postgres (Supabase, Neon) - already compatible via SQLAlchemy
+- **Database:** Neon Launch ($19/month) - 3GB storage, no compute limits, read replicas
+- **Backend:** Render Starter ($7/month) for always-on, no cold starts
+- **Alternative:** Neon Pro ($69/month) for high-scale production (10GB, autoscaling, 99.95% SLA)
 
 ## Documentation
 

@@ -45,7 +45,7 @@ A balance-based weekly budget tracking system where users manage their finances 
 ### Live Deployment
 - **Frontend:** https://bloom-tracker.app (Custom domain via Cloudflare Pages, unlimited builds)
 - **Backend:** https://bloom-backend-b44r.onrender.com (Render, free tier)
-- **Database:** PostgreSQL on Render (free tier, 1GB storage)
+- **Database:** Neon PostgreSQL (free tier, 0.5GB storage, AWS EU-Central-1)
 
 ---
 
@@ -53,7 +53,7 @@ A balance-based weekly budget tracking system where users manage their finances 
 
 ### High-Level Architecture
 ```
-Frontend (React + Vite) <--HTTPS/JSON--> Backend (Flask) <--SQLAlchemy--> Database (PostgreSQL/SQLite)
+Frontend (React + Vite) <--HTTPS/JSON--> Backend (Flask) <--SQLAlchemy--> Database (Neon PostgreSQL)
                                               |
                                               v
                                     Email Service (SendGrid)
@@ -127,7 +127,7 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 - **WSGI Server:** Gunicorn (production), Flask dev server (development)
 - **Database:**
   - Development: SQLite (`instance/bloom.db`)
-  - Production: PostgreSQL (Render managed)
+  - Production: Neon PostgreSQL (serverless, autosuspend)
 
 ### Frontend
 - **Framework:** React 18.2.0
@@ -144,9 +144,9 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 - **Environment:** `.venv` virtual environment for Python
 
 ### Deployment
-- **Frontend:** Cloudflare Pages (auto-deploy from main branch, unlimited deploys)
-- **Backend:** Render (auto-deploy from main branch)
-- **Database:** Render PostgreSQL (free tier, 7-day backup retention)
+- **Frontend:** Cloudflare Pages (manual deploys, unlimited builds)
+- **Backend:** Render (manual deploys, auto-deploy disabled)
+- **Database:** Neon PostgreSQL (free tier, 0.5GB, 100 compute hours/month)
 
 ---
 
@@ -528,7 +528,7 @@ weeklyBudgetCardRef.current?.refresh()
   - `FLASK_ENV=production`
   - `SECRET_KEY=<64-char-random>`
   - `JWT_SECRET_KEY=<64-char-random>`
-  - `DATABASE_URL=<postgres-connection-string>`
+  - `DATABASE_URL=<neon-postgresql-connection-string>`
   - `CORS_ORIGINS=https://bloom-tracker.app`
   - `SENDGRID_API_KEY=<optional>`
   - `SENDGRID_FROM_EMAIL=<optional>`
@@ -536,16 +536,20 @@ weeklyBudgetCardRef.current?.refresh()
 - **Deploy Time:** ~3-5 minutes
 - **Cold Start:** 30-60 seconds after 15 minutes of inactivity (free tier)
 
-### Database (Render PostgreSQL)
-- **Plan:** Free tier (1GB storage, 90-day retention)
+### Database (Neon PostgreSQL)
+- **Plan:** Free tier (0.5GB storage, 100 compute hours/month)
+- **Location:** AWS EU-Central-1 (Frankfurt)
+- **Features:**
+  - **Autosuspend:** Database sleeps after 5 minutes of inactivity
+  - **Instant Wake:** No cold start delay on first request
+  - **Connection Pooling:** Built-in connection pooling via `-pooler` endpoint
 - **Backups:**
-  - **Render Automatic:** Daily backups (7-day retention on free tier)
   - **Custom Automated:** GitHub Actions workflow runs daily at 2:00 AM UTC
-  - **Backup Script:** `scripts/backup_database.py` (PostgreSQL/SQLite support)
+  - **Backup Script:** `scripts/backup_database.py` (Neon PostgreSQL/SQLite support)
   - **Storage:** GitHub Actions artifacts (30-day retention)
   - **Documentation:** See `docs/DATABASE_BACKUP.md`
 - **SSL:** Required (`sslmode=require` in connection string)
-- **Connection Pooling:** Enabled (`pool_pre_ping`, `pool_recycle=300`)
+- **Connection Settings:** `pool_pre_ping=True`, `pool_recycle=300`, `pool_size=5`, `max_overflow=10`
 
 ### Continuous Deployment Workflow
 
