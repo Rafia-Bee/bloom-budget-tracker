@@ -8,7 +8,8 @@ SQLAlchemy>=2.0
 gunicorn==21.2.0
 
 # Turso / libsql driver stack
-libsql-client[sqlalchemy]
+libsql-client
+sqlalchemy-libsql
 sqlean-py
 
 # Data validation and serialization
