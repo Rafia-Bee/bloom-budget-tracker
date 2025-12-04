@@ -51,8 +51,7 @@ class Config:
 
         # Email
         self.SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-        self.SENDGRID_FROM_EMAIL = os.getenv(
-            "SENDGRID_FROM_EMAIL", "noreply@bloom.com")
+        self.SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom.com")
         self.FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
