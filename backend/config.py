@@ -20,7 +20,7 @@ class Config:
 
     # --- TURSO CONFIG -------------------------------------------------
     if raw_url and "turso.io" in raw_url:
-        SQLALCHEMY_DATABASE_URI = f"sqlite+libsql:///?url={raw_url}&authToken={token}"
+        SQLALCHEMY_DATABASE_URI = f"libsql://{raw_url}?authToken={token}"
 
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
