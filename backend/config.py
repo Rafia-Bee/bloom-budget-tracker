@@ -14,29 +14,17 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # DB configuration - handle Turso or local SQLite
+    # DB configuration - PostgreSQL or local SQLite
     _raw_url = os.getenv("DATABASE_URL", "")
-    _token = os.getenv("TURSO_AUTH_TOKEN", "")
 
-    if _raw_url and "turso.io" in _raw_url:
-        # Turso setup - normalize URL format
-        if _raw_url.startswith("libsql://"):
-            _raw_url = _raw_url.replace("libsql://", "libsql+https://", 1)
-        elif _raw_url.startswith("https://"):
-            _raw_url = _raw_url.replace("https://", "libsql+https://", 1)
-        elif not _raw_url.startswith("libsql+https://"):
-            # No scheme - add it
-            _raw_url = f"libsql+https://{_raw_url}"
-
-        # Append auth token
-        if _token and "authToken=" not in _raw_url:
-            _sep = "&" if "?" in _raw_url else "?"
-            _raw_url = f"{_raw_url}{_sep}authToken={_token}"
-
+    if _raw_url and "postgresql" in _raw_url:
+        # PostgreSQL (Neon or other)
         SQLALCHEMY_DATABASE_URI = _raw_url
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
             "pool_recycle": 300,
+            "pool_size": 5,
+            "max_overflow": 10,
         }
     else:
         # Local SQLite fallback - use absolute path
