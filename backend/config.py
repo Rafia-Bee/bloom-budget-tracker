@@ -41,6 +41,7 @@ class Config:
     else:
         # Local SQLite fallback - use absolute path
         import pathlib
+
         db_dir = pathlib.Path(__file__).parent.parent / "instance"
         db_dir.mkdir(exist_ok=True)
         db_path = db_dir / "bloom.db"
