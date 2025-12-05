@@ -30,8 +30,6 @@ jobs:
           # Remove default PostgreSQL client and install version 17
           sudo apt-get remove -y postgresql-client-common postgresql-client || true
           sudo apt-get install -y postgresql-client-17
-          # Verify installation
-          pg_dump --version
 
       - name: Install dependencies
         run: |
