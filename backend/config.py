@@ -21,10 +21,17 @@ class Config:
         # PostgreSQL (Neon or other)
         SQLALCHEMY_DATABASE_URI = _raw_url
         SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "pool_size": 5,
-            "max_overflow": 10,
+            "pool_pre_ping": True,  # Test connections before use
+            "pool_recycle": 280,  # Recycle before Neon's 5min timeout
+            "pool_size": 3,  # Smaller pool for serverless
+            "max_overflow": 2,
+            "connect_args": {
+                "connect_timeout": 10,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5,
+            },
         }
     else:
         # Local SQLite fallback - use absolute path
