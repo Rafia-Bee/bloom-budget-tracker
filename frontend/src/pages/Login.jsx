@@ -9,6 +9,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authAPI } from '../api'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
+import ThemeToggle from '../components/ThemeToggle'
 
 function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState('')
@@ -64,6 +65,9 @@ function Login({ setIsAuthenticated }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bloom-light to-bloom-pink/20 dark:from-dark-base dark:to-dark-surface">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="bg-white dark:bg-dark-surface p-8 rounded-2xl shadow-xl w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-bloom-pink dark:text-dark-pink mb-2">Bloom</h1>

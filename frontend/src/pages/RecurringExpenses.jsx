@@ -11,6 +11,7 @@ import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
 import CatLoading from '../components/CatLoading'
 import { useNavigate } from 'react-router-dom'
+import ThemeToggle from '../components/ThemeToggle'
 
 function RecurringExpenses() {
   const navigate = useNavigate()
@@ -224,6 +225,9 @@ function RecurringExpenses() {
                       <p className="text-sm text-gray-600 dark:text-dark-text-secondary truncate">
                         {localStorage.getItem('user_email')}
                       </p>
+                    </div>
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
+                      <ThemeToggle />
                     </div>
                     <button
                       onClick={() => {

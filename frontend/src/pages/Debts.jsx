@@ -11,6 +11,7 @@ import AddDebtModal from '../components/AddDebtModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditDebtModal from '../components/EditDebtModal'
 import ExportImportModal from '../components/ExportImportModal'
+import ThemeToggle from '../components/ThemeToggle'
 
 function Debts({ setIsAuthenticated }) {
   const [debts, setDebts] = useState([])
@@ -324,6 +325,9 @@ function Debts({ setIsAuthenticated }) {
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
                       <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
                       <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
+                    </div>
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
+                      <ThemeToggle />
                     </div>
                     <button
                       onClick={() => {

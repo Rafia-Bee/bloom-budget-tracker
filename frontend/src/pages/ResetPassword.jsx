@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api'
+import ThemeToggle from '../components/ThemeToggle'
 
 function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -136,6 +137,9 @@ function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 dark:from-dark-base dark:to-dark-surface flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 bg-bloom-pink/10 rounded-full flex items-center justify-center">
