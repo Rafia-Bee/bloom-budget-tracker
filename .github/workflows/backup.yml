@@ -27,9 +27,13 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-          # Remove default PostgreSQL client and install version 17
-          sudo apt-get remove -y postgresql-client-common postgresql-client || true
+          # Remove default PostgreSQL and install version 17
+          sudo apt-get remove -y postgresql-client-common postgresql-client postgresql-16 postgresql-client-16 || true
           sudo apt-get install -y postgresql-client-17
+          # Ensure pg_dump points to version 17
+          export PATH="/usr/lib/postgresql/17/bin:$PATH"
+          which pg_dump
+          pg_dump --version
 
       - name: Install dependencies
         run: |
@@ -43,6 +47,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_BACKUP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PATH: /usr/lib/postgresql/17/bin:${{ env.PATH }}
         run: |
           python scripts/backup_database.py
 
