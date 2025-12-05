@@ -15,7 +15,7 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [category, setCategory] = useState('Flexible Expenses')
   const [subcategory, setSubcategory] = useState('Food')
-  const [paymentMethod, setPaymentMethod] = useState('Credit card')
+  const [paymentMethod, setPaymentMethod] = useState('Debit card')
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState('monthly')
   const [dayOfMonth, setDayOfMonth] = useState(1)

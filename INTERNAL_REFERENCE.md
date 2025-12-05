@@ -21,6 +21,7 @@
 12. [Vulnerabilities & Security Concerns](#vulnerabilities--security-concerns)
 13. [Unanswered Questions](#unanswered-questions)
 14. [Future Improvements](#future-improvements)
+15. [Issue Prioritization by Effort](#issue-prioritization-by-effort)
 
 ---
 
@@ -1121,6 +1122,63 @@ None currently. The app is secure enough for single-user personal use with JWT a
 20. **Social features:**
     - Share budget templates with community
     - Leaderboards for savings challenges
+
+---
+
+## Issue Prioritization by Effort
+
+Of course! Here is a categorization of your project issues by estimated effort. I've broken them down into Small, Medium, and Large categories to help you prioritize.
+
+### High-Level Summary
+
+*   **Small Effort (1-3 days):** Quick wins, mostly UI tweaks and straightforward backend enhancements.
+*   **Medium Effort (3-7 days):** Foundational improvements, refactoring, and integrating new services. These will likely touch multiple parts of the codebase.
+*   **Large Effort (1-2+ weeks):** Major new features that will require significant design, implementation, and testing.
+
+---
+
+### Small Effort (1-3 days)
+
+These are good candidates for quick wins and building momentum.
+
+| ID | Title | Labels |
+| :--- | :--- | :--- |
+| #53 | Add theme toggle to user menu on Debts and Reports | `enhancement`, `ui-ux` |
+| #43 | Add Staging Environment | `enhancement` |
+| #34 | Implement Account Lockout After Failed Logins | `enhancement`, `backend`, `security` |
+| #33 | Add Email Verification Flow | `enhancement`, `backend`, `security` |
+| #24 | Feature: Add Dark Mode Support | `enhancement`, `ui-ux`, `frontend` |
+
+### Medium Effort (3-7 days)
+
+These tasks are more substantial and will likely require more planning.
+
+| ID | Title | Labels |
+| :--- | :--- | :--- |
+| #50 | Overhaul budget\_period\_id system with simple dates | `enhancement`, `refactoring`, `technical-debt` |
+| #38 | Add Error Tracking (Sentry Integration) | `enhancement`, `backend`, `frontend` |
+| #37 | Separate Debit/Credit Spending Visualization | `enhancement`, `ui-ux`, `analytics`, `frontend` |
+| #32 | Migrate Rate Limiting to Redis | `enhancement`, `backend`, `security` |
+| #28 | Remove Legacy Budget Period System (Use Only Simple Dates) | `documentation`, `enhancement`, `backend`, `frontend` |
+| #11 | Performance Optimization - Large Transaction Sets | `enhancement`, `backend`, `frontend` |
+| #10 | Cross-browser Testing & Compatibility | `enhancement`, `ui-ux`, `frontend` |
+
+### Large Effort (1-2+ weeks)
+
+These are major features that will form the core of your application. I'd recommend breaking these down into smaller tasks.
+
+| ID | Title | Labels |
+| :--- | :--- | :--- |
+| #54 | Habit-aware Conservative Budgets & End-of-Period... | |
+| #25 | Feature: Google Calendar Integration | `enhancement`, `feature`, `backend`, `frontend` |
+| #9 | Flexible Sub-Period Division - User Chooses Start/End | `enhancement`, `feature`, `ui-ux`, `backend`, `frontend` |
+| #8 | Receipt Upload & OCR Integration | `feature`, `ui-ux`, `backend`, `frontend` |
+| #7 | Multi-currency Support | `feature`, `backend`, `frontend` |
+| #6 | Notifications & Reminders System | `feature`, `ui-ux`, `backend`, `frontend` |
+| #4 | Goals & Savings Tracking | `feature`, `ui-ux`, `backend`, `frontend` |
+| #3 | Reports & Analytics Dashboard | `feature`, `ui-ux`, `analytics`, `backend`, `frontend` |
+| #2 | Budget Categories & Spending Limits | `feature`, `ui-ux`, `backend`, `frontend` |
+| #1 | End-of-Period Suggestions - Smart Budget Assistant | `feature`, `ui-ux`, `backend`, `frontend` |
 
 ---
 
