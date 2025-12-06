@@ -13,8 +13,6 @@ import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditExpenseModal from '../components/EditExpenseModal'
 import EditIncomeModal from '../components/EditIncomeModal'
 import PeriodSelector from '../components/PeriodSelector'
-import CreatePeriodModal from '../components/CreatePeriodModal'
-import EditPeriodModal from '../components/EditPeriodModal'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
 import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
@@ -41,11 +39,8 @@ function Dashboard({ setIsAuthenticated }) {
   const [currentPeriod, setCurrentPeriod] = useState(null)
   const [allPeriods, setAllPeriods] = useState([])
   const [salaryPeriods, setSalaryPeriods] = useState([]) // Salary periods for selector
-  const [showCreatePeriod, setShowCreatePeriod] = useState(false)
   const [showRolloverPrompt, setShowRolloverPrompt] = useState(false)
   const [rolloverData, setRolloverData] = useState(null)
-  const [showEditPeriod, setShowEditPeriod] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
@@ -457,31 +452,8 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }
 
-  const handleCreatePeriod = async (periodData) => {
-    try {
-      await budgetPeriodAPI.create(periodData)
-      await loadPeriods()
-      setShowCreatePeriod(false)
-    } catch (error) {
-      console.error('Failed to create period:', error)
-      throw error
-    }
-  }
-
   const handlePeriodChange = (period) => {
     setCurrentPeriod(period)
-  }
-
-  const handleEditPeriod = async (id, periodData) => {
-    try {
-      await budgetPeriodAPI.update(id, periodData)
-      await loadPeriods()
-      setShowEditPeriod(false)
-      setSelectedPeriod(null)
-    } catch (error) {
-      console.error('Failed to update period:', error)
-      throw error
-    }
   }
 
   const handleDeletePeriod = async (id) => {
@@ -827,15 +799,12 @@ function Dashboard({ setIsAuthenticated }) {
                 onPeriodChange={handlePeriodChange}
                 onCreateNew={() => setShowSalaryWizard(true)}
                 onEdit={(period) => {
-                  // Check if this is a salary period (has weekly_budget field)
+                  // Only allow editing salary periods (has weekly_budget field)
                   if (period.weekly_budget !== undefined) {
                     setEditSalaryPeriod(period)
                     setShowSalaryWizard(true)
-                  } else if (!period.salary_period_id) {
-                    // Only allow editing standalone budget periods, not individual weeks
-                    setSelectedPeriod(period)
-                    setShowEditPeriod(true)
                   }
+                  // Individual weeks (salary_period_id set) are not editable
                 }}
                 onDelete={handleDeletePeriod}
               />
@@ -945,19 +914,16 @@ function Dashboard({ setIsAuthenticated }) {
                     periods={allPeriods}
                     onPeriodChange={handlePeriodChange}
                     onCreateNew={() => {
-                      setShowCreatePeriod(true)
+                      setShowSalaryWizard(true)
                       setShowMobileMenu(false)
                     }}
                     onEdit={(period) => {
-                      // Check if this is a salary period (has weekly_budget field)
+                      // Only allow editing salary periods (has weekly_budget field)
                       if (period.weekly_budget !== undefined) {
                         setEditSalaryPeriod(period)
                         setShowSalaryWizard(true)
-                      } else if (!period.salary_period_id) {
-                        // Only allow editing standalone budget periods, not individual weeks
-                        setSelectedPeriod(period)
-                        setShowEditPeriod(true)
                       }
+                      // Individual weeks (salary_period_id set) are not editable
                       setShowMobileMenu(false)
                     }}
                     onDelete={handleDeletePeriod}
@@ -1551,26 +1517,6 @@ function Dashboard({ setIsAuthenticated }) {
           }}
           onEdit={handleEditIncome}
           income={selectedTransaction}
-        />
-      )}
-
-      {/* Create Period Modal */}
-      {showCreatePeriod && (
-        <CreatePeriodModal
-          onClose={() => setShowCreatePeriod(false)}
-          onCreate={handleCreatePeriod}
-        />
-      )}
-
-      {/* Edit Period Modal */}
-      {showEditPeriod && selectedPeriod && (
-        <EditPeriodModal
-          period={selectedPeriod}
-          onClose={() => {
-            setShowEditPeriod(false)
-            setSelectedPeriod(null)
-          }}
-          onEdit={handleEditPeriod}
         />
       )}
 
