@@ -6,6 +6,48 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-06
 
+### Phase 1: Date-Based Queries Replace budget_period_id Filters
+
+**Issue:** [#50 - Overhaul budget_period_id system](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50)
+
+**Context:** The `budget_period_id` foreign key system created complexity and data integrity bugs. Expenses with null `budget_period_id` or mismatched period assignments caused incorrect balance calculations.
+
+**Decision:** Implement date-range filtering as the primary query method, keeping `budget_period_id` column temporarily for backward compatibility (Phase 1 of 3-phase migration).
+
+**Changes Made:**
+
+1. **Backend Routes (salary_periods.py)**:
+   - Replaced `Expense.budget_period_id == period.id` with `Expense.date >= period.start_date AND Expense.date <= period.end_date`
+   - Updated carryover calculation queries (current week, all weeks loop)
+   - Updated leftover allocation queries (previous weeks, current week)
+
+2. **Testing**:
+   - All existing tests pass (test_business_logic.py: 7/7, test_crud.py: 10/10)
+   - Created `scripts/test_date_queries.py` to verify query equivalence
+   - Found data integrity bug: expenses dated October incorrectly assigned to November periods
+
+**Rationale:**
+- ✅ Date-based queries are more accurate (prevent misassigned expenses)
+- ✅ Eliminates null budget_period_id edge cases
+- ✅ Simplifies import/export logic
+- ✅ Natural filtering across custom date ranges
+- ✅ Backward compatible - both query methods work during transition
+
+**Impact:**
+- **Positive**: Fixed data integrity bug where expenses could be assigned to wrong periods
+- **Positive**: Carryover calculations now use actual expense dates, more accurate
+- **Neutral**: Frontend still uses budget_period_id but already has date-fallback logic
+- **Next Steps**: Phase 2 (update frontend to use dates), Phase 3 (remove column)
+
+**Files Changed:**
+- `backend/routes/salary_periods.py` - 3 query locations updated
+- `scripts/test_date_queries.py` - Created test script
+- `scripts/debug_expenses.py` - Created debug script
+
+---
+
+## 2025-12-06
+
 ### User Menu Consolidation - Shared Header Component
 
 **Context:** Three different user menu implementations across Dashboard, Debts, and Recurring pages causing inconsistency and maintenance issues

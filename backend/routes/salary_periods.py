@@ -100,12 +100,14 @@ def get_current_salary_period():
         # Calculate spending for current week (excluding fixed bills)
         week_spent = 0
         if current_week:
+            # Use date range instead of budget_period_id
             week_spent = (
                 db.session.query(func.sum(Expense.amount))
                 .filter(
                     and_(
                         Expense.user_id == current_user_id,
-                        Expense.budget_period_id == current_week.id,
+                        Expense.date >= current_week.start_date,
+                        Expense.date <= current_week.end_date,
                         Expense.is_fixed_bill == False,
                     )
                 )
@@ -124,12 +126,14 @@ def get_current_salary_period():
         cumulative_carryover = 0  # Track carryover from previous weeks
 
         for week in all_weeks:
+            # Use date range instead of budget_period_id
             week_expenses = (
                 db.session.query(func.sum(Expense.amount))
                 .filter(
                     and_(
                         Expense.user_id == current_user_id,
-                        Expense.budget_period_id == week.id,
+                        Expense.date >= week.start_date,
+                        Expense.date <= week.end_date,
                         Expense.is_fixed_bill == False,
                     )
                 )
@@ -522,12 +526,14 @@ def get_week_leftover(id, week_number):
         )
 
         for prev_week in previous_weeks:
+            # Use date range instead of budget_period_id
             prev_spent = (
                 db.session.query(func.sum(Expense.amount))
                 .filter(
                     and_(
                         Expense.user_id == current_user_id,
-                        Expense.budget_period_id == prev_week.id,
+                        Expense.date >= prev_week.start_date,
+                        Expense.date <= prev_week.end_date,
                         Expense.is_fixed_bill == False,
                     )
                 )
@@ -544,12 +550,14 @@ def get_week_leftover(id, week_number):
                 cumulative_carryover = prev_remaining
 
         # Calculate spending for this week (excluding fixed bills)
+        # Use date range instead of budget_period_id
         week_spent = (
             db.session.query(func.sum(Expense.amount))
             .filter(
                 and_(
                     Expense.user_id == current_user_id,
-                    Expense.budget_period_id == budget_period.id,
+                    Expense.date >= budget_period.start_date,
+                    Expense.date <= budget_period.end_date,
                     Expense.is_fixed_bill == False,
                 )
             )
