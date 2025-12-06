@@ -423,7 +423,6 @@ def import_data():
                 if sp_data["initial_debit_balance"] > 0:
                     initial_income = Income(
                         user_id=current_user_id,
-                        budget_period_id=None,  # Not tied to a specific week
                         type="Initial Balance",
                         amount=sp_data["initial_debit_balance"],
                         scheduled_date=start_date,
@@ -439,7 +438,6 @@ def import_data():
                     debt_date = start_date - timedelta(days=1)
                     debt_expense = Expense(
                         user_id=current_user_id,
-                        budget_period_id=None,  # Not tied to a specific week
                         name="Pre-existing Credit Card Debt",
                         amount=pre_existing_debt,
                         category="Debt",
@@ -478,19 +476,6 @@ def import_data():
                     skipped_counts["expenses"] += 1
                     continue
 
-                # Find the budget period for this date
-                from backend.utils.recurring_generator import (
-                    find_budget_period_for_date,
-                )
-
-                budget_period = find_budget_period_for_date(
-                    current_user_id, expense_date
-                )
-
-                # Allow expenses without budget periods (e.g., pre-existing debt, initial balance expenses)
-                # These are intentionally dated outside any period and should be imported as-is
-                budget_period_id = budget_period.id if budget_period else None
-
                 # Link to new recurring template if this expense was generated from one
                 new_recurring_template_id = None
                 if exp_data.get("recurring_template_id") is not None:
@@ -507,7 +492,6 @@ def import_data():
 
                 expense = Expense(
                     user_id=current_user_id,
-                    budget_period_id=budget_period_id,
                     name=exp_data["name"],
                     amount=exp_data["amount"],
                     category=exp_data["category"],
@@ -550,19 +534,8 @@ def import_data():
                     skipped_counts["income"] += 1
                     continue
 
-                # Find the budget period for this date
-                from backend.utils.recurring_generator import (
-                    find_budget_period_for_date,
-                )
-
-                income_date = actual_date if actual_date else scheduled_date
-                budget_period = find_budget_period_for_date(
-                    current_user_id, income_date
-                )
-
                 income = Income(
                     user_id=current_user_id,
-                    budget_period_id=budget_period.id if budget_period else None,
                     type=income_data["type"],
                     amount=income_data["amount"],
                     scheduled_date=scheduled_date,

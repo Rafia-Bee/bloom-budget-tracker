@@ -735,10 +735,8 @@ def seed_data():
 
         db.session.commit()
 
-        print(
-            f"\n✓ Added {len(incomes_data)} income entries across 4 weekly periods")
-        print(
-            f"✓ Added {len(expenses_data)} expense entries for scroll testing")
+        print(f"\n✓ Added {len(incomes_data)} income entries across 4 weekly periods")
+        print(f"✓ Added {len(expenses_data)} expense entries for scroll testing")
 
         # Sample Debts
         debts = [
@@ -845,8 +843,7 @@ def seed_data():
         db.session.commit()
 
         print(f"✓ Added {len(debts)} active debt entries")
-        print(
-            f"✓ Added {len(archived_debts_data)} archived debts with payment history")
+        print(f"✓ Added {len(archived_debts_data)} archived debts with payment history")
 
         # Sample Recurring Expenses
         recurring_expenses_data = [
@@ -988,8 +985,7 @@ def seed_data():
 
         db.session.commit()
 
-        print(
-            f"✓ Added {len(recurring_expenses_data)} recurring expense templates")
+        print(f"✓ Added {len(recurring_expenses_data)} recurring expense templates")
         print("\nSample data seeded successfully!")
         print("\nLogin credentials:")
         print("  Email: test@bloom.com")
@@ -1018,8 +1014,7 @@ def seed_data():
             / 100
         )
         total_debt = sum(d["current_balance"] for d in debts) / 100
-        total_monthly_debt_payment = sum(
-            d["monthly_payment"] for d in debts) / 100
+        total_monthly_debt_payment = sum(d["monthly_payment"] for d in debts) / 100
 
         print(f"\nWeek 3 Summary (Nov 15-21):")
         print(f"  Total Income: €{total_income:.2f}")

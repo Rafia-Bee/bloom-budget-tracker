@@ -185,8 +185,7 @@ def update_income(income_id):
 
     if "date" in data:
         try:
-            income.actual_date = datetime.strptime(
-                data["date"], "%Y-%m-%d").date()
+            income.actual_date = datetime.strptime(data["date"], "%Y-%m-%d").date()
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 

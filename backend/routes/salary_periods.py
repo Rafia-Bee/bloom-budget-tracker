@@ -28,8 +28,7 @@ def get_salary_periods():
     """Get all salary periods for the current user"""
     try:
         current_user_id = int(get_jwt_identity())
-        active_only = request.args.get(
-            "active_only", "false").lower() == "true"
+        active_only = request.args.get("active_only", "false").lower() == "true"
 
         query = SalaryPeriod.query.filter_by(user_id=current_user_id)
 
@@ -223,8 +222,7 @@ def preview_salary_period():
         # Validate credit allowance doesn't exceed available credit
         if credit_allowance > credit_balance:
             return (
-                jsonify(
-                    {"error": "Credit allowance cannot exceed available credit"}),
+                jsonify({"error": "Credit allowance cannot exceed available credit"}),
                 400,
             )
 
@@ -238,8 +236,7 @@ def preview_salary_period():
 
         # Calculate total - use adjustments if provided, otherwise use auto-detected
         if fixed_bill_adjustments:
-            fixed_bills_total = sum(bill["amount"]
-                                    for bill in fixed_bill_adjustments)
+            fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
             bills_list = fixed_bill_adjustments
         else:
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
@@ -336,8 +333,7 @@ def create_salary_period():
         # Validate credit allowance
         if credit_allowance > credit_balance:
             return (
-                jsonify(
-                    {"error": "Credit allowance cannot exceed available credit"}),
+                jsonify({"error": "Credit allowance cannot exceed available credit"}),
                 400,
             )
 
@@ -345,8 +341,7 @@ def create_salary_period():
         fixed_bill_adjustments = data.get("fixed_bills", [])
 
         if fixed_bill_adjustments:
-            fixed_bills_total = sum(bill["amount"]
-                                    for bill in fixed_bill_adjustments)
+            fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
         else:
             # Auto-detect from recurring expenses
             fixed_bills = RecurringExpense.query.filter_by(
@@ -635,8 +630,7 @@ def update_salary_period_full(id):
         # Validate credit allowance
         if credit_allowance > credit_balance:
             return (
-                jsonify(
-                    {"error": "Credit allowance cannot exceed available credit"}),
+                jsonify({"error": "Credit allowance cannot exceed available credit"}),
                 400,
             )
 
@@ -644,8 +638,7 @@ def update_salary_period_full(id):
         fixed_bill_adjustments = data.get("fixed_bills", [])
 
         if fixed_bill_adjustments:
-            fixed_bills_total = sum(bill["amount"]
-                                    for bill in fixed_bill_adjustments)
+            fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
         else:
             # Auto-detect from recurring expenses
             fixed_bills = RecurringExpense.query.filter_by(
