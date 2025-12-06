@@ -33,9 +33,11 @@
 **Target User:** Single user (developer's personal budget tracker with potential for multi-user expansion)
 
 ### Core Purpose
+
 A balance-based weekly budget tracking system where users manage their finances through 4-week salary periods, with automatic weekly budget allocation, recurring expense automation, and debt management.
 
 ### Key Differentiators
+
 - **Balance-based budgeting** rather than income-based (users enter current debit/credit balances)
 - **4-week salary period system** with weekly sub-budgets
 - **Automatic carryover logic** between weeks (overspending in Week 1 reduces Week 2's budget)
@@ -44,8 +46,9 @@ A balance-based weekly budget tracking system where users manage their finances 
 - **Mobile-first responsive design** with touch-friendly UI
 
 ### Live Deployment
-- **Frontend:** https://bloom-tracker.app (Custom domain via Cloudflare Pages, unlimited builds)
-- **Backend:** https://bloom-backend-b44r.onrender.com (Render, free tier)
+
+- **Frontend:** <https://bloom-tracker.app> (Custom domain via Cloudflare Pages, unlimited builds)
+- **Backend:** <https://bloom-backend-b44r.onrender.com> (Render, free tier)
 - **Database:** Neon PostgreSQL (free tier, 0.5GB storage, AWS EU-Central-1)
 
 ---
@@ -53,6 +56,7 @@ A balance-based weekly budget tracking system where users manage their finances 
 ## Architecture Summary
 
 ### High-Level Architecture
+
 ```
 Frontend (React + Vite) <--HTTPS/JSON--> Backend (Flask) <--SQLAlchemy--> Database (Neon PostgreSQL)
                                               |
@@ -61,6 +65,7 @@ Frontend (React + Vite) <--HTTPS/JSON--> Backend (Flask) <--SQLAlchemy--> Databa
 ```
 
 ### Two-Tier Period System (Critical Understanding)
+
 This is the most important architectural concept:
 
 1. **SalaryPeriod (Parent):**
@@ -84,12 +89,14 @@ This is the most important architectural concept:
 **IMPORTANT:** There is confusion in the codebase due to legacy code:
 
 **Original System (DEPRECATED):**
+
 - Users could manually create standalone `BudgetPeriod` records
 - Choose type: weekly, monthly, or custom date range
 - Used `CreatePeriodModal.jsx` and `EditPeriodModal.jsx` components
 - CRUD routes in `backend/routes/budget_periods.py`
 
 **Current System (ACTIVE):**
+
 - Users ONLY create `SalaryPeriod` via wizard
 - `BudgetPeriod` records are auto-generated (Week 1-4)
 - Legacy modals and routes are unused but still exist in codebase
@@ -98,19 +105,23 @@ This is the most important architectural concept:
 When the SalaryPeriod wizard was implemented, the legacy budget period creation system should have been removed. Instead, it remains in the code causing architectural confusion.
 
 **What Needs Cleanup (tracked in Issue #28):**
+
 - `backend/routes/budget_periods.py` - Legacy CRUD routes (never called)
 - `CreatePeriodModal.jsx` - Legacy UI component (not in use)
 - `EditPeriodModal.jsx` - Legacy UI component (not in use)
 - `period_type` field in BudgetPeriod model (always 'weekly' now)
 
 **Current Reality:**
+
 - BudgetPeriod is an **internal implementation detail**
 - Users never interact with BudgetPeriod directly
 - All period management happens through SalaryPeriod wizard
 - `period_type` field is vestigial (all are 'weekly')
 
 ### Money Storage Convention
+
 **Critical:** ALL monetary values stored as **integers in cents**:
+
 - Database: `amount = 1500` = €15.00
 - Frontend: `formatCurrency(1500)` displays as "€15.00"
 - API: Both request and response use cents, never euros
@@ -120,6 +131,7 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 ## Technology Stack
 
 ### Backend
+
 - **Framework:** Flask 3.0.0 (Python 3.11.9)
 - **Database ORM:** SQLAlchemy 2.0.23 with Flask-SQLAlchemy
 - **Authentication:** Flask-JWT-Extended 4.6.0 (24-hour token lifetime)
@@ -131,6 +143,7 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
   - Production: Neon PostgreSQL (serverless, autosuspend)
 
 ### Frontend
+
 - **Framework:** React 18.2.0
 - **Build Tool:** Vite 5.0.8
 - **Styling:** Tailwind CSS 3.3.6
@@ -139,12 +152,14 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 - **PWA:** vite-plugin-pwa 1.1.0 with Workbox
 
 ### Development Tools
+
 - **Version Control:** Git + GitHub (main branch auto-deploys)
 - **Testing:** pytest 7.4.3 (minimal test coverage currently)
 - **Code Quality:** black 23.12.1, flake8 7.0.0 (not enforced in CI)
 - **Environment:** `.venv` virtual environment for Python
 
 ### Deployment
+
 - **Frontend:** Cloudflare Pages (manual deploys, unlimited builds)
 - **Backend:** Render (manual deploys, auto-deploy disabled)
 - **Database:** Neon PostgreSQL (free tier, 0.5GB, 100 compute hours/month)
@@ -156,15 +171,18 @@ When the SalaryPeriod wizard was implemented, the legacy budget period creation 
 ### Core Models (in `backend/models/database.py`)
 
 #### User
+
 ```python
 id: Integer (PK)
 email: String(120) UNIQUE
 password_hash: String(255)  # Werkzeug bcrypt hashed
 created_at: DateTime
 ```
+
 **Relationships:** budget_periods, salary_periods, expenses, income, debts
 
 #### SalaryPeriod (4-week parent period)
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id)
@@ -184,9 +202,11 @@ end_date: Date
 is_active: Boolean (default True)
 created_at: DateTime
 ```
+
 **Relationships:** budget_periods (1-to-4 cascade delete)
 
 #### BudgetPeriod (weekly sub-period)
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id, indexed)
@@ -198,12 +218,15 @@ end_date: Date (indexed)
 period_type: String(50)  # 'weekly', 'monthly', 'custom'
 created_at: DateTime
 ```
+
 **Indexes:**
+
 - `idx_budget_period_active` on (user_id, start_date, end_date)
 
 **Relationships:** expenses, income
 
 #### Expense
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id)
@@ -223,6 +246,7 @@ created_at: DateTime
 ```
 
 #### Income
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id)
@@ -235,6 +259,7 @@ created_at: DateTime
 ```
 
 #### Debt
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id)
@@ -248,6 +273,7 @@ updated_at: DateTime
 ```
 
 #### RecurringExpense (templates)
+
 ```python
 id: Integer (PK)
 user_id: Integer (FK → users.id)
@@ -269,9 +295,11 @@ notes: Text (nullable)
 created_at: DateTime
 updated_at: DateTime
 ```
+
 **Relationship:** generated_expenses (Expense.recurring_template_id)
 
 #### Additional Models
+
 - **ExpenseNameMapping:** AI subcategorization mappings (currently manual)
 - **UserDefaults:** Default expense values per user
 - **CreditCardSettings:** User's credit card limit
@@ -279,6 +307,7 @@ updated_at: DateTime
 - **PasswordResetToken:** Password reset flow tokens (1-hour expiry)
 
 ### Database Relationships
+
 ```
 User (1) ---< (Many) SalaryPeriod
                        |
@@ -296,6 +325,7 @@ User (1) ---< (Many) RecurringExpense ---< (Many) Expense (generated)
 ## Backend Architecture
 
 ### Project Structure
+
 ```
 backend/
 ├── __init__.py
@@ -325,6 +355,7 @@ backend/
 ### Key Backend Patterns
 
 #### 1. App Factory Pattern
+
 ```python
 # backend/app.py
 def create_app(config_name='development'):
@@ -337,12 +368,14 @@ def create_app(config_name='development'):
 ```
 
 #### 2. JWT Authentication
+
 - **Token Lifetime:** 24 hours (extended for offline PWA support)
 - **Storage:** localStorage on frontend
 - **Interceptor:** Axios intercepts all requests, adds `Authorization: Bearer <token>`
 - **401 Handling:** Automatic redirect to /login (except on login/register endpoints)
 
 #### 3. Rate Limiting (In-Memory)
+
 ```python
 # backend/utils/rate_limiter.py
 RATE_LIMITS = {
@@ -352,17 +385,21 @@ RATE_LIMITS = {
     'default': (1000, 60)         # 1000 per minute
 }
 ```
+
 **Vulnerability:** Resets on server restart (Render free tier cold starts). Consider Redis-based solution for production.
 
 #### 4. CORS Configuration
+
 ```python
 # backend/app.py
 cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000,...').split(',')
 CORS(app, origins=cors_origins, supports_credentials=True)
 ```
+
 **Production:** Restricted to `https://bloom-tracker.app`
 
 #### 5. Recurring Expense Generation
+
 - **Trigger:** Manual via `/recurring-generation/generate` endpoint
 - **Logic:** `backend/utils/recurring_generator.py`
 - **Lookahead:** 60 days (generates expenses up to 2 months ahead)
@@ -378,6 +415,7 @@ CORS(app, origins=cors_origins, supports_credentials=True)
 ## Frontend Architecture
 
 ### Project Structure
+
 ```
 frontend/
 ├── public/
@@ -425,12 +463,14 @@ frontend/
 #### 1. Dark Mode Implementation (Issue #24 - COMPLETED Dec 2, 2025)
 
 **Architecture:**
+
 - Tailwind CSS `class` strategy with manual toggle
 - ThemeContext provider wraps entire app
 - Theme persisted in localStorage ('bloom-theme': 'light' or 'dark')
 - Toggle in user menu on Dashboard, accessible from all pages
 
 **Color Palette (Warm Plum-Tinted):**
+
 ```javascript
 // tailwind.config.js
 colors: {
@@ -449,6 +489,7 @@ colors: {
 All components follow consistent pattern: backdrop → card → header → form elements → buttons → helper text
 
 **Coverage (100% Complete):**
+
 - 6 main pages: Dashboard, Debts, RecurringExpenses, Login, Register, ResetPassword
 - 16 modal components: All Add/Edit forms, filtering, import/export, budget setup
 - All supporting components: WeeklyBudgetCard, PeriodSelector, DraggableFloatingButton, SalaryPeriodWizard
@@ -457,6 +498,7 @@ All components follow consistent pattern: backdrop → card → header → form 
 **Files Modified:** 25 total (see DECISION_LOG.md for complete list)
 
 #### 2. Expense Date → Period Assignment (Critical Pattern)
+
 ```javascript
 // In Dashboard.jsx handleAddExpense()
 const matchingPeriod = allPeriods.find(period => {
@@ -467,9 +509,11 @@ const matchingPeriod = allPeriods.find(period => {
 })
 const targetPeriodId = matchingPeriod?.id || currentPeriod.id
 ```
+
 **Never** assume current period - always match date to period boundaries.
 
 #### 2. Component Refresh Pattern (forwardRef)
+
 ```jsx
 // In WeeklyBudgetCard.jsx
 const WeeklyBudgetCard = forwardRef(({ ... }, ref) => {
@@ -484,6 +528,7 @@ weeklyBudgetCardRef.current?.refresh()
 ```
 
 #### 3. Mobile-First Responsive Design
+
 ```jsx
 // Hamburger menu pattern
 <div className="md:hidden">  {/* Show on mobile */}
@@ -495,12 +540,14 @@ weeklyBudgetCardRef.current?.refresh()
 ```
 
 #### 4. PWA Configuration
+
 - **Development:** PWA disabled (`devOptions.enabled = false` in vite.config.js)
 - **Production:** Full PWA with service worker caching
 - **Offline Strategy:** NetworkFirst for API calls (24-hour cache)
 - **Cache:** API responses cached for offline access during flights
 
 #### 5. Custom Modal System
+
 - **Replaced:** All native `confirm()` and `alert()` dialogs
 - **Pattern:** Reusable modal wrapper with backdrop, z-index, mobile-responsive
 - **Touch-Friendly:** Large buttons, proper spacing for mobile usability
@@ -510,6 +557,7 @@ weeklyBudgetCardRef.current?.refresh()
 ## Deployment & Infrastructure
 
 ### Frontend (Cloudflare Pages)
+
 - **Build Command:** `cd frontend && npm install && npm run build`
 - **Build Output Directory:** `frontend/dist`
 - **Auto-Deploy:** On push to `main` branch
@@ -520,6 +568,7 @@ weeklyBudgetCardRef.current?.refresh()
 - **Security Headers:** Configured via `frontend/public/_headers` (CSP, X-Frame-Options, etc.)
 
 ### Backend (Render)
+
 - **Build Command:** `pip install -r backend/requirements.txt`
 - **Start Command:** `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
 - **Python Version:** 3.11.9 (specified in `runtime.txt`)
@@ -538,6 +587,7 @@ weeklyBudgetCardRef.current?.refresh()
 - **Cold Start:** 30-60 seconds after 15 minutes of inactivity (free tier)
 
 ### Database (Neon PostgreSQL)
+
 - **Plan:** Free tier (0.5GB storage, 100 compute hours/month)
 - **Location:** AWS EU-Central-1 (Frankfurt)
 - **Features:**
@@ -557,6 +607,7 @@ weeklyBudgetCardRef.current?.refresh()
 **Our workflow relies on a local pre-push hook as the primary defense against bad deploys.** Branch protection is not enforced on free private repositories, so the remote CI/CD pipeline serves as a secondary notification system.
 
 **Standard workflow:**
+
 ```powershell
 # 1. Make changes and commit
 git add .
@@ -567,19 +618,22 @@ git push origin main
 ```
 
 **What Happens:**
-1.  **Local Check (Pre-Push Hook):** Before anything is sent to GitHub, the hook runs `black`, `flake8`, and `npm run build`.
-    -   **If it fails:** The push is aborted. No deployment occurs.
-    -   **If it passes:** The code is pushed to GitHub.
-2.  **Remote Deploy (Cloudflare Pages/Render):** Your hosting providers start their build and deploy process immediately.
-3.  **Remote CI (GitHub Actions):** In parallel, the CI pipeline runs. It will notify you via email if it fails, but it **will not stop the deployment**.
+
+1. **Local Check (Pre-Push Hook):** Before anything is sent to GitHub, the hook runs `black`, `flake8`, and `npm run build`.
+    - **If it fails:** The push is aborted. No deployment occurs.
+    - **If it passes:** The code is pushed to GitHub.
+2. **Remote Deploy (Cloudflare Pages/Render):** Your hosting providers start their build and deploy process immediately.
+3. **Remote CI (GitHub Actions):** In parallel, the CI pipeline runs. It will notify you via email if it fails, but it **will not stop the deployment**.
 
 **Emergency bypass (skips local hook):**
+
 ```powershell
 # Use this if the pre-push hook is faulty, but be aware CI will not block the deploy.
 git push origin main --no-verify
 ```
 
 ### Monitoring & Logs
+
 - **Backend Logs:** Render dashboard (real-time streaming)
 - **Frontend Logs:** Browser DevTools (no server-side logging)
 - **Database:** Render PostgreSQL dashboard (connection metrics)
@@ -590,7 +644,9 @@ git push origin main --no-verify
 ## Security & Authentication
 
 ### Current Security Posture: Medium (Personal Use)
+
 ✅ Good:
+
 - Password hashing with Werkzeug bcrypt
 - JWT tokens with 24-hour expiry
 - CORS restricted to frontend domain
@@ -603,6 +659,7 @@ git push origin main --no-verify
 - API versioning structure (`/api/v1`) for safe evolution
 
 ⚠️ Concerns:
+
 - JWT tokens in localStorage (XSS-vulnerable, but standard for SPAs)
 - In-memory rate limiting (resets on server restart)
 - No email verification (acceptable for personal use)
@@ -611,6 +668,7 @@ git push origin main --no-verify
 - No CSRF protection (less critical for JWT-based API)
 
 ### Authentication Flow
+
 1. User registers: `POST /auth/register` (email + password)
 2. Backend hashes password with Werkzeug, stores in DB
 3. Backend creates JWT token (24-hour lifetime)
@@ -620,6 +678,7 @@ git push origin main --no-verify
 7. On 401, frontend intercepts, clears tokens, redirects to /login
 
 ### Password Reset Flow
+
 1. User clicks "Forgot Password?" on login page
 2. `POST /auth/forgot-password` with email
 3. Backend generates random token, stores in `PasswordResetToken` table (1-hour expiry)
@@ -630,6 +689,7 @@ git push origin main --no-verify
 8. Backend validates token, updates password hash, marks token as used
 
 ### Rate Limiting Details
+
 ```python
 RATE_LIMITS = {
     'auth.login': (50, 300),      # 50 per 5 min
@@ -638,18 +698,22 @@ RATE_LIMITS = {
     'default': (1000, 60)
 }
 ```
+
 **Storage:** In-memory dictionary `{ip_address: [(timestamp, endpoint), ...]}`
 **Cleanup:** Automatic cleanup of expired entries on each request
 **Limitation:** Resets on server restart (Render cold starts)
 
 ### Environment Variable Security
+
 **Development (.env file):**
+
 ```env
 SECRET_KEY=dev-secret-key-change-in-production
 JWT_SECRET_KEY=jwt-secret-key-change-in-production
 ```
 
 **Production (Render environment):**
+
 - All secrets stored as environment variables
 - Generated with `secrets.token_urlsafe(64)`
 - Never committed to version control
@@ -660,7 +724,8 @@ JWT_SECRET_KEY=jwt-secret-key-change-in-production
 ## Development Workflow
 
 ### Version Control
-- **Hosting:** GitHub (https://github.com/Rafia-Bee/bloom-budget-tracker)
+
+- **Hosting:** GitHub (<https://github.com/Rafia-Bee/bloom-budget-tracker>)
 - **Branch Strategy:** Main branch only (single developer)
 - **Commit Convention:** Semantic commit messages (feat:, fix:, docs:, refactor:)
 - **Auto-Deploy:** Push to main triggers Cloudflare Pages + Render deployments
@@ -668,19 +733,22 @@ JWT_SECRET_KEY=jwt-secret-key-change-in-production
 - **Branch Protection:** Not available on free private repos. Our strategy relies on the local pre-push hook. See `docs/DEPLOYMENT_SAFEGUARDS.md`.
 
 ### Todo Tracking System (Multi-Level)
+
 1. **GitHub Issues:** Primary tracker for features (12 active issues)
-   - Project Board: https://github.com/users/Rafia-Bee/projects/1
+   - Project Board: <https://github.com/users/Rafia-Bee/projects/1>
    - Labels: feature, enhancement, ui-ux, analytics, backend, frontend
 2. **UNIVERSAL_TODO.md:** Backup/historical record in workspace root
 3. **Copilot Instructions:** Active development tasks in `.github/copilot-instructions.md`
 4. **This Document:** High-level roadmap and unanswered questions
 
 ### Bug Tracking
+
 - **No Formal System:** Issues tracked in GitHub Issues when discovered
 - **Development Mode:** Console logs and browser DevTools
 - **Production:** No error tracking service (Sentry recommended)
 
 ### Development Environment Setup
+
 ```powershell
 # 1. Clone repository
 git clone https://github.com/Rafia-Bee/bloom-budget-tracker.git
@@ -706,6 +774,7 @@ python -m backend.seed_data
 ```
 
 ### Development Commands (PowerShell Aliases)
+
 ```powershell
 # In PowerShell profile (per copilot-instructions.md):
 bstart   # .\start.ps1 (starts backend + frontend)
@@ -714,6 +783,7 @@ breset   # python scripts/maintenance.py reset-db
 ```
 
 ### Database Management
+
 ```powershell
 # Activate venv first
 .venv\Scripts\Activate.ps1
@@ -735,6 +805,7 @@ sqlite3 instance\bloom.db
 ```
 
 ### Testing Workflow
+
 1. Start fresh: `breset` (wipes DB, creates test user)
 2. Navigate to dashboard
 3. Click "Set Up Weekly Budget" wizard
@@ -746,6 +817,7 @@ sqlite3 instance\bloom.db
 9. Allocate leftover → Verify debt payment appears in correct week
 
 ### Pre-Deployment Checklist
+
 - [ ] Remove debug `console.log` statements (pre-push hook checks this)
 - [ ] Run backend formatting: `.venv\Scripts\Activate.ps1 ; black backend/`
 - [ ] Test frontend build: `cd frontend ; npm run build ; cd ..`
@@ -764,36 +836,44 @@ sqlite3 instance\bloom.db
 ## Feature-Specific Notes
 
 ### Salary Period Wizard (Balance-Based Budgeting)
+
 **Location:** `frontend/src/components/SalaryPeriodWizard.jsx`
 
 **3-Step Flow:**
+
 1. **Get Started:** Enter balances (debit, credit available, credit limit), choose start date
 2. **Review Fixed Bills:** Auto-loads recurring fixed bills, shows total
 3. **Confirm Budget:** Preview 4-week breakdown with weekly allocations
 
 **Backend Logic:** `backend/routes/salary_periods.py`
+
 - Calculates `total_budget_amount = debit + credit_allowance - fixed_bills`
 - Divides by 4 to get `weekly_budget`
 - Auto-creates 4 `BudgetPeriod` records (Week 1-4)
 
 ### Carryover Logic (Weekly Budgeting)
+
 **Location:** `backend/routes/salary_periods.py`
 
 **Endpoint:** `GET /salary-periods/<id>/week/<week_number>/leftover`
 
 **Logic:**
+
 ```python
 # Week 1: Budget - Spent = Leftover
 # Week 2: (Week1_Budget + Week1_Leftover) - Week2_Spent = Week2_Leftover
 # Week 3: (Week2_Budget + Week2_Leftover) - Week3_Spent = Week3_Leftover
 # Week 4: (Week3_Budget + Week3_Leftover) - Week4_Spent = Week4_Leftover
 ```
+
 Cumulative carryover ensures overspending in early weeks reduces later weeks.
 
 ### Leftover Budget Allocation
+
 **Location:** `frontend/src/components/LeftoverBudgetModal.jsx`
 
 **Flow:**
+
 1. User clicks "Allocate Leftover" on week card
 2. Modal shows leftover amount, debt list
 3. User selects debt(s), enters amounts
@@ -803,9 +883,11 @@ Cumulative carryover ensures overspending in early weeks reduces later weeks.
 **Critical:** Uses `leftoverData.end_date` to ensure expenses go to correct week.
 
 ### Recurring Expenses Generation
+
 **Location:** `backend/utils/recurring_generator.py`
 
 **Generation Logic:**
+
 ```python
 def generate_due_expenses(user_id, dry_run=False, days_ahead=60):
     # Find templates where next_due_date <= today + days_ahead
@@ -818,22 +900,26 @@ def generate_due_expenses(user_id, dry_run=False, days_ahead=60):
 ```
 
 **Frequency Calculation:**
+
 - **Weekly:** `next_due_date + 7 days`
 - **Biweekly:** `next_due_date + 14 days`
 - **Monthly:** Next month, same day (handles month boundaries, leap years)
 - **Custom:** `next_due_date + frequency_value days`
 
 ### Bank Transaction Import
+
 **Location:** `frontend/src/components/BankImportModal.jsx`
 
 **Format:** Tab-separated or multi-space separated
+
 ```
-Transaction Date	Amount	Name
-2025/11/22	-42,33	Wise Europe SA
-2025/11/24	-38,88	Wise
+Transaction Date Amount Name
+2025/11/22 -42,33 Wise Europe SA
+2025/11/24 -38,88 Wise
 ```
 
 **Processing:**
+
 1. Parse columns (Transaction Date, Amount, Name)
 2. Skip income (positive amounts)
 3. Auto-categorize based on merchant patterns:
@@ -848,9 +934,11 @@ Transaction Date	Amount	Name
 **Vulnerability:** No limit on batch size (could timeout with 1000+ transactions).
 
 ### Debt Auto-Archiving
+
 **Location:** `backend/routes/debts.py`
 
 **Logic:**
+
 - When debt balance reaches €0: Set `archived = True`
 - When archived debt receives payment: Set `archived = False`
 - Frontend filters: `?archived=false` (default), `?archived=true` (archived only)
@@ -920,9 +1008,11 @@ Transaction Date	Amount	Name
 ## Vulnerabilities & Security Concerns
 
 ### Critical Vulnerabilities (Need Immediate Attention)
+
 None currently. The app is secure enough for single-user personal use with JWT authentication and HTTPS.
 
 ### Medium Severity (Future Production Concerns)
+
 1. **XSS via Stored Transactions:**
    - User inputs (expense names, notes) not sanitized before storage
    - Displayed in Dashboard without escaping
@@ -957,6 +1047,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
    - **Fix:** Rate limit by email address (e.g., 1 reset per email per 15 min)
 
 ### Low Severity (Nice-to-Have Improvements)
+
 7. **No Content Security Policy (CSP):**
    - No CSP headers to prevent inline scripts
    - **Fix:** Add CSP header in `_headers` file
@@ -979,6 +1070,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
 ## Unanswered Questions
 
 ### Technical Questions
+
 1. **Why is salary_amount field deprecated but still in schema?**
    - Answer: Backward compatibility. Should we remove it in next migration?
 
@@ -998,6 +1090,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
    - Answer: Offline PWA support. Users can be offline for hours (flights) and still use app.
 
 ### Product/UX Questions
+
 7. **Should we auto-create next salary period when Week 4 ends?**
    - Current: User must manually create next period
    - Ideal: Auto-rollover with carryover of remaining balances
@@ -1015,6 +1108,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
     - Ideal: Weekly/monthly spending trends, budget vs. actual
 
 ### Architecture Questions
+
 11. **Should we migrate to a single-page architecture with client-side routing only?**
     - Current: React Router with full page refreshes on login/logout
     - Ideal: True SPA with no full page reloads
@@ -1028,6 +1122,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
     - Ideal: Cache user settings, period data, recurring templates
 
 ### Deployment Questions
+
 14. **Should we self-host backend + database for better control?**
     - Current: Render free tier (cold starts, limited resources)
     - Ideal: VPS (DigitalOcean, Hetzner) with Docker for consistent environment
@@ -1041,6 +1136,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
 ## Future Improvements
 
 ### Immediate Next Steps (High Priority)
+
 1. **Set up automated recurring expense generation:**
    - Render cron job: `0 0 * * * python backend/run_recurring_generation.py`
    - Or external: cron-job.org hitting `/recurring-generation/generate` endpoint
@@ -1061,6 +1157,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
    - Frontend: React Testing Library for critical flows (login, add expense)
 
 ### Short-Term Improvements (Medium Priority)
+
 6. **Auto-rollover salary periods:**
    - When Week 4 ends, prompt user to create next period
    - Carry over remaining balances from Week 4
@@ -1083,6 +1180,7 @@ None currently. The app is secure enough for single-user personal use with JWT a
     - Spending by category pie chart
 
 ### Long-Term Enhancements (Low Priority)
+
 11. **Multi-user support:**
     - Shared budgets for couples/families
     - Role-based permissions (admin, viewer)
@@ -1131,9 +1229,9 @@ Of course! Here is a categorization of your project issues by estimated effort. 
 
 ### High-Level Summary
 
-*   **Small Effort (1-3 days):** Quick wins, mostly UI tweaks and straightforward backend enhancements.
-*   **Medium Effort (3-7 days):** Foundational improvements, refactoring, and integrating new services. These will likely touch multiple parts of the codebase.
-*   **Large Effort (1-2+ weeks):** Major new features that will require significant design, implementation, and testing.
+- **Small Effort (1-3 days):** Quick wins, mostly UI tweaks and straightforward backend enhancements.
+- **Medium Effort (3-7 days):** Foundational improvements, refactoring, and integrating new services. These will likely touch multiple parts of the codebase.
+- **Large Effort (1-2+ weeks):** Major new features that will require significant design, implementation, and testing.
 
 ---
 
@@ -1185,6 +1283,7 @@ These are major features that will form the core of your application. I'd recomm
 ## Tools & Resources
 
 ### Development Tools We're Using
+
 - **Editor:** VS Code with GitHub Copilot
 - **Terminal:** PowerShell 5.1 (Windows)
 - **Version Control:** Git + GitHub
@@ -1193,26 +1292,30 @@ These are major features that will form the core of your application. I'd recomm
 - **Design:** No formal design tool (Tailwind + iteration)
 
 ### Version Control Workflow
+
 - **Single Branch:** main (no feature branches)
 - **Commit Convention:** Semantic commits (feat:, fix:, docs:, refactor:)
 - **No Pull Requests:** Direct push to main (single developer)
 - **Auto-Deploy:** Every push triggers production deploy
 
 ### Todo Tracking Workflow
+
 1. **Feature Requests:** Create GitHub Issue with labels
 2. **Active Development:** Update `.github/copilot-instructions.md` with task list
 3. **Completed:** Mark issue closed, update UNIVERSAL_TODO.md
 4. **Long-Term:** Document in this file (Future Improvements section)
 
 ### Bug Tracking Workflow
+
 1. **Discovery:** Note in code comments or GitHub Issue
 2. **High Priority:** Fix immediately in same session
 3. **Low Priority:** Create GitHub Issue with "bug" label
 4. **Documentation:** Update this file (Known Issues section)
 
 ### Better Tracking Solutions (Future Consideration)
+
 1. **GitHub Projects (Kanban Board):**
-   - Already set up: https://github.com/users/Rafia-Bee/projects/1
+   - Already set up: <https://github.com/users/Rafia-Bee/projects/1>
    - Columns: Backlog, In Progress, Done
    - **Pro:** Integrated with issues, free, good for solo dev
    - **Con:** Requires manual updates
@@ -1235,6 +1338,7 @@ These are major features that will form the core of your application. I'd recomm
 **Recommendation:** Stick with GitHub Issues + Projects for now. Migrate to Linear if project becomes multi-developer.
 
 ### Deployment Tools (Current Stack)
+
 - **Frontend Hosting:** Cloudflare Pages (free tier, unlimited bandwidth/builds)
 - **Backend Hosting:** Render (free tier, 750 hours/month)
 - **Database:** Render PostgreSQL (free tier, 1GB storage)
@@ -1242,12 +1346,14 @@ These are major features that will form the core of your application. I'd recomm
 - **DNS/CDN:** CloudFlare (free tier, email routing)
 
 **Potential Vulnerabilities in Deployment:**
+
 - **Render Free Tier:** Sleeps after 15 minutes (cold starts)
 - **No Database Backups Locally:** Only Render's 7-day retention
 - **No Rollback Strategy:** Can't easily revert to previous deploy
 - **No Staging Environment:** Deploy directly to production
 
 **Improvements:**
+
 1. **Add staging environment:** Separate Cloudflare Pages + Render instances for testing
 2. **Automate database backups:** Daily backup to AWS S3 or GitHub
 3. **Implement blue-green deployments:** Zero-downtime deploys
@@ -1258,6 +1364,7 @@ These are major features that will form the core of your application. I'd recomm
 ## Way of Working (Development Patterns)
 
 ### Communication with AI Assistant (Me)
+
 - **Tone:** Concise, actionable, confident
 - **Format:** Short sentences, numbered lists, wrap filenames in backticks
 - **Uncertainty Handling:** Infer 1-2 defaults and proceed, ask only if blocked
@@ -1268,8 +1375,10 @@ These are major features that will form the core of your application. I'd recomm
   - After success, remind to commit with suggested message
 
 ### Git Workflow with AI
+
 - **NEVER use terminal tools for git operations**
 - **ALWAYS provide copy-paste ready commands:**
+
   ```powershell
   git add .
   git commit -m "feat: add weekly carryover logic"
@@ -1277,11 +1386,13 @@ These are major features that will form the core of your application. I'd recomm
   ```
 
 ### Terminal Command Patterns
+
 - **Use .venv:** `.venv\Scripts\Activate.ps1 ; python script.py`
 - **PowerShell syntax:** Semicolons for chaining (never `&&`)
 - **Explicit paths:** Always use absolute paths when possible
 
 ### Debugging Workflow
+
 1. **Check browser DevTools:** Console, Network, Application tabs
 2. **Check backend logs:** Render dashboard or PowerShell terminal
 3. **Check database:** `sqlite3 instance\bloom.db` → `SELECT * FROM ...`
@@ -1289,6 +1400,7 @@ These are major features that will form the core of your application. I'd recomm
 5. **Test in isolation:** Create minimal reproducible example
 
 ### Testing Workflow (Manual)
+
 1. **Fresh database:** `breset` (wipes all data)
 2. **Test critical flows:**
    - Register → Login
@@ -1322,14 +1434,64 @@ These are major features that will form the core of your application. I'd recomm
 
 ---
 
+## Task & Issue Tracking
+
+### GitHub Issues - Primary Todo System
+
+**ALL work is tracked via GitHub Issues. Do NOT use other todo systems.**
+
+**Workflow:**
+
+1. **Before Starting Work:**
+   - Search existing issues: <https://github.com/Rafia-Bee/bloom-budget-tracker/issues>
+   - Check if similar issue exists (search by keywords)
+   - If exists: Comment on it, reference it in your work
+   - If not: Create new issue with proper labels
+
+2. **Issue Creation Best Practices:**
+   - **Title**: Clear, actionable (e.g., "Add CSV export functionality")
+   - **Labels**: Use `feature`, `bug`, `enhancement`, `ui-ux`, `backend`, `frontend`, `documentation`
+   - **Description**: Include context, acceptance criteria, affected files
+   - **References**: Link related issues with `#issue-number`
+   - **Project Board**: Assign to "Bloom Development" board if applicable
+
+3. **During Development:**
+   - **Commit Messages**: Include issue number - `feat: add CSV export (#5)`
+   - **Progress Updates**: Comment on issue with status updates
+   - **Branch Names**: Use `feature/#5-csv-export` or `fix/#12-pagination-bug`
+
+4. **Closing Issues:**
+   - **In Commit**: Use keywords - `fixes #5`, `closes #5`, `resolves #5`
+   - **In PR Description**: List all closed issues
+   - **Update Decision Log**: Add entry for significant architectural changes
+
+5. **Labels Reference:**
+   - `feature` - New functionality
+   - `bug` - Something broken
+   - `enhancement` - Improvement to existing feature
+   - `ui-ux` - User interface/experience changes
+   - `backend` - Backend/API work
+   - `frontend` - Frontend/React work
+   - `documentation` - Docs updates
+   - `priority: high` - Urgent work
+   - `good first issue` - Easy for new contributors
+
+**Current Active Issues:** <https://github.com/Rafia-Bee/bloom-budget-tracker/issues>
+
+**Project Board:** <https://github.com/users/Rafia-Bee/projects/1>
+
+---
+
 ## Document Maintenance
 
 ### Update Frequency
+
 - **After Major Features:** Update relevant sections (e.g., Database Schema, Backend Architecture)
 - **Monthly Review:** Check for outdated info, update stats
 - **Before New Developer Onboarding:** Ensure all sections accurate
 
 ### Sections to Update Regularly
+
 - **Known Issues & Bugs:** As issues discovered/fixed
 - **Unanswered Questions:** As answers found
 - **Future Improvements:** As priorities change
@@ -1337,6 +1499,7 @@ These are major features that will form the core of your application. I'd recomm
 - **Deployment & Infrastructure:** When hosting changes
 
 ### How to Use This Document
+
 1. **For AI Assistant (me):** Read before starting work on Bloom to refresh context
 2. **For New Developers:** Comprehensive onboarding guide
 3. **For Product Decisions:** Reference for architecture constraints
@@ -1347,17 +1510,20 @@ These are major features that will form the core of your application. I'd recomm
 ## Quick Reference
 
 ### Important URLs
-- **Production Frontend:** https://bloom-tracker.app (custom domain via Cloudflare Pages)
-- **Production Backend:** https://bloom-backend-b44r.onrender.com
-- **GitHub Repo:** https://github.com/Rafia-Bee/bloom-budget-tracker
-- **GitHub Project:** https://github.com/users/Rafia-Bee/projects/1
+
+- **Production Frontend:** <https://bloom-tracker.app> (custom domain via Cloudflare Pages)
+- **Production Backend:** <https://bloom-backend-b44r.onrender.com>
+- **GitHub Repo:** <https://github.com/Rafia-Bee/bloom-budget-tracker>
+- **GitHub Project:** <https://github.com/users/Rafia-Bee/projects/1>
 
 ### Test Credentials
-- **Email:** test@bloom.com
+
+- **Email:** `test@bloom.com`
 - **Password:** password123
-- **Alternative User:** tester@test.com / tester123 (with real expenses)
+- **Alternative User:** `tester@test.com` / tester123 (with real expenses)
 
 ### Critical Files to Review Before Changes
+
 - `backend/models/database.py` - All database models
 - `backend/routes/salary_periods.py` - Carryover logic
 - `backend/utils/recurring_generator.py` - Recurring generation
@@ -1365,6 +1531,7 @@ These are major features that will form the core of your application. I'd recomm
 - `frontend/src/api.js` - All API endpoints
 
 ### Common Commands
+
 ```powershell
 # Start development
 bstart
@@ -1390,6 +1557,6 @@ Copy-Item instance\bloom.db instance\bloom_backup_$(Get-Date -Format 'yyyyMMdd_H
 
 ---
 
-**End of Internal Reference Document**
+## End of Document
 
 *This document is for AI assistant reference and should be updated as the project evolves.*
