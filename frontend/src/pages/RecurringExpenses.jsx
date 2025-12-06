@@ -9,38 +9,40 @@ import { useState, useEffect } from 'react'
 import { recurringExpenseAPI } from '../api'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
+import BankImportModal from '../components/BankImportModal'
 import CatLoading from '../components/CatLoading'
-import { useNavigate } from 'react-router-dom'
-import ThemeToggle from '../components/ThemeToggle'
+import Header from '../components/Header'
 
-function RecurringExpenses() {
-  const navigate = useNavigate()
+function RecurringExpenses({ setIsAuthenticated }) {
   const [recurringExpenses, setRecurringExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generationResult, setGenerationResult] = useState(null)
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
+  const [showBankImportModal, setShowBankImportModal] = useState(false)
+
+  const handleExport = () => {
+    setExportMode('export');
+    setShowExportModal(true);
+  };
+
+  const handleImport = () => {
+    setExportMode('import');
+    setShowExportModal(true);
+  };
+
+  const handleBankImport = () => {
+    setShowBankImportModal(true);
+  };
 
   useEffect(() => {
     loadRecurringExpenses()
   }, [])
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showUserMenu && !event.target.closest('.user-menu')) {
-        setShowUserMenu(false)
-      }
-    }
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [showUserMenu])
 
   const loadRecurringExpenses = async () => {
     try {
@@ -124,12 +126,6 @@ function RecurringExpenses() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('user_email')
-    navigate('/login')
-  }
-
   const getFrequencyText = (expense) => {
     if (expense.frequency === 'weekly') return 'Weekly'
     if (expense.frequency === 'biweekly') return 'Biweekly'
@@ -162,184 +158,12 @@ function RecurringExpenses() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-green-50 dark:from-dark-base dark:via-dark-surface dark:to-dark-base">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm border-b border-gray-200 dark:border-dark-border sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Mobile Header */}
-          <div className="flex justify-between items-center md:hidden">
-            <div>
-              <h1 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">Bloom</h1>
-              <p className="text-xs text-gray-600 dark:text-dark-text-secondary">Recurring Expense Management</p>
-            </div>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 dark:bg-dark-elevated dark:hover:bg-dark-border transition flex items-center justify-center text-bloom-pink dark:text-dark-pink"
-              aria-label="Menu"
-            >
-              {showMobileMenu ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Desktop Header */}
-          <div className="hidden md:flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-bloom-pink to-pink-400 bg-clip-text text-transparent">
-                Bloom
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Recurring Expense Management</p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <a href="/dashboard" className="text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition">
-                ← Back to Dashboard
-              </a>
-              <a
-                href="/debts"
-                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition font-semibold"
-              >
-                Debts
-              </a>
-
-              {/* User Menu */}
-              <div className="relative user-menu">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu(!showUserMenu)
-                  }}
-                  className="w-10 h-10 rounded-full bg-bloom-pink dark:bg-dark-pink text-white font-semibold hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors flex items-center justify-center"
-                >
-                  {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
-                </button>
-
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-dark-border py-2">
-                    <div className="px-4 py-2 border-b border-gray-100 dark:border-dark-border">
-                      <p className="text-sm text-gray-600 dark:text-dark-text-secondary truncate">
-                        {localStorage.getItem('user_email')}
-                      </p>
-                    </div>
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
-                      <ThemeToggle />
-                    </div>
-                    <button
-                      onClick={() => {
-                        setShowExportModal(true)
-                        setExportMode('export')
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Export Data
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowExportModal(true)
-                        setExportMode('import')
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      Import Data
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {showMobileMenu && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    navigate('/dashboard')
-                    setShowMobileMenu(false)
-                  }}
-                  className="block w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
-                >
-                  🏠 Dashboard
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/debts')
-                    setShowMobileMenu(false)
-                  }}
-                  className="block w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-bloom-pink/10 dark:hover:bg-dark-elevated hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
-                >
-                  💳 Debts
-                </button>
-
-                {/* User Info & Logout */}
-                <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
-                  <div className="px-4 py-2 mb-2">
-                    <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowExportModal(true)
-                      setExportMode('export')
-                      setShowMobileMenu(false)
-                    }}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Export Data
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowExportModal(true)
-                      setExportMode('import')
-                      setShowMobileMenu(false)
-                    }}
-                    className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition rounded-lg flex items-center gap-2 font-semibold"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Import Data
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleLogout()
-                      setShowMobileMenu(false)
-                    }}
-                    className="w-full text-left px-4 py-3 text-red-600 dark:text-dark-danger hover:bg-red-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
+      <Header
+        setIsAuthenticated={setIsAuthenticated}
+        onExport={handleExport}
+        onImport={handleImport}
+        onBankImport={handleBankImport}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -635,6 +459,17 @@ function RecurringExpenses() {
         <ExportImportModal
           mode={exportMode}
           onClose={() => setShowExportModal(false)}
+        />
+      )}
+
+      {/* Bank Import Modal */}
+      {showBankImportModal && (
+        <BankImportModal
+          onClose={() => setShowBankImportModal(false)}
+          onImported={() => {
+            setShowBankImportModal(false);
+            loadRecurringExpenses();
+          }}
         />
       )}
     </div>
