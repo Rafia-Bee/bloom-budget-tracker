@@ -101,13 +101,15 @@ function Debts({ setIsAuthenticated }) {
 
       let cumulativeCredit = 0
 
-      // Get ALL expenses (including those without budget_period_id)
-      // Use high limit to avoid pagination cutting off expenses like pre-existing debt
+      // Get ALL expenses with high limit to avoid pagination cutting off expenses
       const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
       // Calculate credit balance from all expenses (matches Dashboard logic)
       const today = new Date()
+      const earliestPeriodStart = periodsToInclude.length > 0
+        ? new Date(periodsToInclude[0].start_date)
+        : new Date(currentPeriod.start_date)
 
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
@@ -116,23 +118,13 @@ function Debts({ setIsAuthenticated }) {
         // Skip future expenses (expenses dated after today)
         if (expenseDate > today) return
 
-        // Check if expense is from a period we're including in cumulative totals
-        const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
-
         // Special case: Pre-existing Credit Card Debt should always be included
         const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
           expense.category === 'Debt' &&
           expense.subcategory === 'Credit Card'
 
-        // For expenses with budget_period_id: check if period is in range
-        // For expenses without budget_period_id: check if date is >= earliest period start
-        // Exception: Pre-existing debt is always included (represents starting balance)
-        const earliestPeriodStart = periodsToInclude.length > 0
-          ? new Date(periodsToInclude[0].start_date)
-          : new Date(currentPeriod.start_date)
-        const isInIncludedPeriod = periodToCheck ||
-          isPreExistingDebt ||
-          (!expense.budget_period_id && expenseDate >= earliestPeriodStart)
+        // Check if expense date is in the cumulative range or is pre-existing debt
+        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= earliestPeriodStart
 
         if (!isInIncludedPeriod) return
 
@@ -218,16 +210,15 @@ function Debts({ setIsAuthenticated }) {
   const loadDebtTransactions = async (debtId, debtName) => {
     try {
       // Get all expenses that are payments for this debt
-      const allPeriodsRes = await budgetPeriodAPI.getAll()
-      let allPayments = []
-
-      for (const period of allPeriodsRes.data) {
-        const expensesRes = await expenseAPI.getAll({ budget_period_id: period.id })
-        const payments = expensesRes.data.filter(e =>
-          e.category === 'Debt Payments' && e.subcategory === debtName
-        )
-        allPayments = [...allPayments, ...payments]
-      }
+      const expensesRes = await expenseAPI.getAll({ 
+        category: 'Debt Payments',
+        subcategory: debtName,
+        limit: 1000
+      })
+      
+      const allPayments = Array.isArray(expensesRes.data) 
+        ? expensesRes.data 
+        : (expensesRes.data?.expenses || [])
 
       // Sort by date (newest first)
       allPayments.sort((a, b) => new Date(b.date) - new Date(a.date))

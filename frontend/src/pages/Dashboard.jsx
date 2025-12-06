@@ -158,7 +158,9 @@ function Dashboard({ setIsAuthenticated }) {
         activeFilters.maxAmount || activeFilters.search
 
       if (!hasActiveFilters) {
-        params.budget_period_id = currentPeriod.id
+        // Use date range filtering instead of budget_period_id
+        params.start_date = currentPeriod.start_date
+        params.end_date = currentPeriod.end_date
       }
 
       // Apply active filters
@@ -214,7 +216,9 @@ function Dashboard({ setIsAuthenticated }) {
         activeFilters.minAmount || activeFilters.maxAmount || activeFilters.search
 
       if (!hasActiveFilters) {
-        params.budget_period_id = currentPeriod.id
+        // Use date range filtering instead of budget_period_id
+        params.start_date = currentPeriod.start_date
+        params.end_date = currentPeriod.end_date
       }
 
       // Apply active filters
@@ -378,6 +382,9 @@ function Dashboard({ setIsAuthenticated }) {
       const today = new Date()
 
       // Add only realized income to totals (income that has already occurred)
+      const periodStart = new Date(currentPeriod.start_date)
+      const periodEnd = new Date(currentPeriod.end_date)
+      
       allIncome.forEach(income => {
         const amount = income.amount / 100
         const incomeDate = new Date(income.date || income.actual_date)
@@ -386,17 +393,9 @@ function Dashboard({ setIsAuthenticated }) {
         if (incomeDate <= today) {
           cumulativeIncome += amount
 
-          // If this income belongs to current period, add to current period income
-          if (income.budget_period_id === currentPeriod.id) {
+          // Check if income date falls within current period
+          if (incomeDate >= periodStart && incomeDate <= periodEnd) {
             currentIncome += amount
-          }
-          // If it's Initial Balance (no budget_period_id), add to current if it's within period dates
-          else if (!income.budget_period_id) {
-            const periodStart = new Date(currentPeriod.start_date)
-            const periodEnd = new Date(currentPeriod.end_date)
-            if (incomeDate >= periodStart && incomeDate <= periodEnd) {
-              currentIncome += amount
-            }
           }
         }
       })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
@@ -405,41 +404,29 @@ function Dashboard({ setIsAuthenticated }) {
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
       // Process all expenses
+      const earliestPeriodStart = periodsToInclude.length > 0
+        ? new Date(periodsToInclude[0].start_date)
+        : periodStart
+      
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
         const expenseDate = new Date(expense.date)
-        const currentPeriodStart = new Date(currentPeriod.start_date)
-        const currentPeriodEnd = new Date(currentPeriod.end_date)
 
         // Skip future expenses (expenses dated after today)
         if (expenseDate > today) return
-
-        // Determine if expense belongs to current period:
-        // - Has matching budget_period_id, OR
-        // - Has no budget_period_id but date is within current period
-        const belongsToCurrentPeriod =
-          expense.budget_period_id === currentPeriod.id ||
-          (!expense.budget_period_id && expenseDate >= currentPeriodStart && expenseDate <= currentPeriodEnd)
-
-        // Check if expense is from a period we're including in cumulative totals
-        const periodToCheck = periodsToInclude.find(p => p.id === expense.budget_period_id)
 
         // Special case: Pre-existing Credit Card Debt should always be included
         const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
           expense.category === 'Debt' &&
           expense.subcategory === 'Credit Card'
 
-        // For expenses with budget_period_id: check if period is in range
-        // For expenses without budget_period_id: check if date is >= earliest period start
-        // Exception: Pre-existing debt is always included (represents starting balance)
-        const earliestPeriodStart = periodsToInclude.length > 0
-          ? new Date(periodsToInclude[0].start_date)
-          : currentPeriodStart
-        const isInIncludedPeriod = periodToCheck ||
-          isPreExistingDebt ||
-          (!expense.budget_period_id && expenseDate >= earliestPeriodStart)
+        // Check if expense date is in the cumulative range or is pre-existing debt
+        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= earliestPeriodStart
 
         if (!isInIncludedPeriod) return // Skip expenses from other periods not in cumulative range
+
+        // Determine if expense belongs to current period based on date
+        const belongsToCurrentPeriod = expenseDate >= periodStart && expenseDate <= periodEnd
 
         if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
           cumulativeCredit -= amount // Payment reduces credit card debt
