@@ -130,17 +130,17 @@ function Header({
   );
 
   return (
-    <header className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <header className="bg-white dark:bg-dark-surface shadow-sm sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         {/* Mobile Header */}
         <div className="flex justify-between items-center md:hidden mobile-menu-container">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Bloom Logo" className="w-7 h-7" />
-            <span className="text-lg font-bold text-gray-800 dark:text-white">Bloom</span>
+          <div className="max-w-[70%]">
+            <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
+            <p className="text-[10px] leading-tight text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
           </div>
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 dark:bg-dark-elevated dark:hover:bg-dark-border transition flex items-center justify-center text-bloom-pink dark:text-dark-pink"
+            className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
             aria-label="Menu"
           >
             {showMobileMenu ? (
@@ -153,17 +153,13 @@ function Header({
 
         {/* Desktop Header */}
         <div className="hidden md:flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Bloom Logo" className="w-8 h-8" />
-              <span className="text-xl font-bold text-gray-800 dark:text-white">Bloom</span>
-            </div>
-            <nav className="flex items-center gap-4">
-              {navigationLinks}
-            </nav>
+          <div>
+            <h1 className="text-3xl font-bold text-bloom-pink">Bloom</h1>
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
           </div>
           <div className="flex items-center gap-4">
             {children}
+            {navigationLinks}
             {userMenu}
           </div>
         </div>
