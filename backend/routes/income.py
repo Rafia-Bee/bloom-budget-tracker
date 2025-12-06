@@ -86,7 +86,6 @@ def get_income():
                         "scheduled_date": entry.scheduled_date.strftime("%d %b, %Y")
                         if entry.scheduled_date
                         else None,
-                        "budget_period_id": entry.budget_period_id,
                     }
                     for entry in income_entries
                 ],
@@ -114,9 +113,6 @@ def create_income():
     if not data.get("type") or not data.get("amount"):
         return jsonify({"error": "Type and amount are required"}), 400
 
-    if not data.get("budget_period_id"):
-        return jsonify({"error": "Budget period is required"}), 400
-
     try:
         amount = int(data["amount"])
         if amount <= 0:
@@ -137,7 +133,6 @@ def create_income():
     # Create income entry
     income = Income(
         user_id=user_id,
-        budget_period_id=data["budget_period_id"],
         type=data["type"],
         amount=amount,
         actual_date=date,
@@ -156,7 +151,6 @@ def create_income():
                     "type": income.type,
                     "amount": income.amount,
                     "date": income.actual_date.strftime("%d %b, %Y"),
-                    "budget_period_id": income.budget_period_id,
                 },
             }
         ),
@@ -191,7 +185,8 @@ def update_income(income_id):
 
     if "date" in data:
         try:
-            income.actual_date = datetime.strptime(data["date"], "%Y-%m-%d").date()
+            income.actual_date = datetime.strptime(
+                data["date"], "%Y-%m-%d").date()
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 

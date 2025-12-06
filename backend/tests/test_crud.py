@@ -225,17 +225,19 @@ class TestSalaryPeriodCRUD:
         assert "current_week" in response.json
 
     def test_delete_salary_period(self, client, auth_headers, salary_period):
-        """Should delete salary period and its weeks"""
+        """Should prevent deletion when salary period has transactions"""
         period_id = salary_period["id"]
 
+        # Salary period has Initial Balance income, so deletion should be prevented
         response = client.delete(
             f"/api/v1/salary-periods/{period_id}", headers=auth_headers
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
+        assert "Cannot delete" in response.json["error"]
 
-        # Verify deleted
+        # Verify period still exists
         get_response = client.get(
             "/api/v1/salary-periods/current", headers=auth_headers
         )
-        assert get_response.status_code == 404
+        assert get_response.status_code == 200

@@ -120,7 +120,8 @@ class BudgetPeriod(db.Model):
 
     # Composite index for active period queries
     __table_args__ = (
-        db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
+        db.Index("idx_budget_period_active",
+                 "user_id", "start_date", "end_date"),
     )
 
 
