@@ -142,24 +142,8 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
 
             # Create the expense
             if not dry_run:
-                # Find the budget period for this date
-                budget_period = find_budget_period_for_date(
-                    recurring_expense.user_id, recurring_expense.next_due_date
-                )
-
-                if not budget_period:
-                    # Skip this one - budget period doesn't exist yet
-                    # Don't update next_due_date, will retry next time
-                    updated_templates.append(
-                        {
-                            "id": recurring_expense.id,
-                            "name": recurring_expense.name,
-                            "action": "skipped (no budget period yet)",
-                            "date": recurring_expense.next_due_date.isoformat(),
-                        }
-                    )
-                    continue
-
+                # Create expense regardless of budget period
+                # (budget periods are optional, date-based queries handle it)
                 expense = Expense(
                     user_id=recurring_expense.user_id,
                     name=recurring_expense.name,
