@@ -162,7 +162,6 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
 
                 expense = Expense(
                     user_id=recurring_expense.user_id,
-                    budget_period_id=budget_period.id,
                     name=recurring_expense.name,
                     amount=recurring_expense.amount,
                     date=recurring_expense.next_due_date,

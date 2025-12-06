@@ -43,8 +43,7 @@ def get_expenses():
     query = Expense.query.filter_by(user_id=current_user_id)
 
     # Apply filters
-    if period_id:
-        query = query.filter_by(budget_period_id=period_id)
+    # Note: period_id parameter is deprecated - use start_date/end_date instead
     if category:
         query = query.filter_by(category=category)
     if subcategory:

@@ -35,8 +35,7 @@ def get_income():
     query = Income.query.filter_by(user_id=user_id)
 
     # Apply filters
-    if budget_period_id:
-        query = query.filter_by(budget_period_id=budget_period_id)
+    # Note: budget_period_id parameter is deprecated - use start_date/end_date instead
     if income_type:
         query = query.filter_by(type=income_type)
     if start_date:

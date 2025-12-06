@@ -166,7 +166,6 @@ def seed_data():
         for inc in incomes_data:
             income = Income(
                 user_id=user.id,
-                budget_period_id=periods[inc["period_idx"]].id,
                 type=inc["type"],
                 amount=inc["amount"],
                 scheduled_date=inc["date"],
@@ -725,7 +724,6 @@ def seed_data():
         for exp in expenses_data:
             expense = Expense(
                 user_id=user.id,
-                budget_period_id=periods[exp["period_idx"]].id,
                 name=exp["name"],
                 amount=exp["amount"],
                 category=exp["category"],
@@ -833,7 +831,6 @@ def seed_data():
                 period = periods[payment["period_idx"]]
                 expense = Expense(
                     user_id=user.id,
-                    budget_period_id=period.id,
                     name=f"Payment: {archived_data['name']}",
                     amount=payment["amount"],
                     category="Debt Payments",

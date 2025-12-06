@@ -446,7 +446,6 @@ def create_salary_period():
         if debit_balance > 0:
             initial_income = Income(
                 user_id=current_user_id,
-                budget_period_id=None,  # Not tied to a specific week
                 type="Initial Balance",
                 amount=debit_balance,
                 scheduled_date=start_date,
@@ -459,7 +458,6 @@ def create_salary_period():
         if pre_existing_debt > 0:
             debt_expense = Expense(
                 user_id=current_user_id,
-                budget_period_id=None,  # Not tied to a specific week
                 name="Pre-existing Credit Card Debt",
                 amount=pre_existing_debt,
                 category="Debt",
@@ -746,7 +744,6 @@ def update_salary_period_full(id):
             Income.query.filter_by(
                 user_id=current_user_id,
                 type="Initial Balance",
-                budget_period_id=None,  # Initial Balance has no budget period
             )
             .order_by(Income.id.desc())
             .first()
@@ -760,7 +757,6 @@ def update_salary_period_full(id):
             # Create if doesn't exist
             initial_income = Income(
                 user_id=current_user_id,
-                budget_period_id=None,
                 type="Initial Balance",
                 amount=debit_balance,
                 scheduled_date=start_date,
@@ -789,7 +785,6 @@ def update_salary_period_full(id):
                 # Create if doesn't exist
                 debt_expense = Expense(
                     user_id=current_user_id,
-                    budget_period_id=None,
                     name="Pre-existing Credit Card Debt",
                     amount=pre_existing_debt,
                     category="Debt",
@@ -862,13 +857,18 @@ def delete_salary_period(id):
             return jsonify({"error": "Salary period not found"}), 404
 
         # Check if any of the weekly budget periods have transactions
+        # Use date ranges instead of budget_period_id
         has_transactions = False
         for budget_period in salary_period.budget_periods:
-            expense_count = Expense.query.filter_by(
-                budget_period_id=budget_period.id
+            expense_count = Expense.query.filter(
+                Expense.user_id == current_user_id,
+                Expense.date >= budget_period.start_date,
+                Expense.date <= budget_period.end_date,
             ).count()
-            income_count = Income.query.filter_by(
-                budget_period_id=budget_period.id
+            income_count = Income.query.filter(
+                Income.user_id == current_user_id,
+                Income.actual_date >= budget_period.start_date,
+                Income.actual_date <= budget_period.end_date,
             ).count()
             if expense_count > 0 or income_count > 0:
                 has_transactions = True

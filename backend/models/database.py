@@ -118,9 +118,6 @@ class BudgetPeriod(db.Model):
     period_type = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    expenses = db.relationship("Expense", backref="budget_period", lazy=True)
-    income = db.relationship("Income", backref="budget_period", lazy=True)
-
     # Composite index for active period queries
     __table_args__ = (
         db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
@@ -132,9 +129,6 @@ class Expense(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    budget_period_id = db.Column(
-        db.Integer, db.ForeignKey("budget_periods.id"), nullable=True
-    )
     recurring_template_id = db.Column(
         db.Integer, db.ForeignKey("recurring_expenses.id"), nullable=True
     )
@@ -157,9 +151,6 @@ class Income(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    budget_period_id = db.Column(
-        db.Integer, db.ForeignKey("budget_periods.id"), nullable=True
-    )
     type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     scheduled_date = db.Column(db.Date, nullable=True)
@@ -265,9 +256,6 @@ class PeriodSuggestion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    budget_period_id = db.Column(
-        db.Integer, db.ForeignKey("budget_periods.id"), nullable=False
-    )
     suggestion_type = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
