@@ -2,6 +2,20 @@
 
 Utility scripts for database maintenance, scheduled tasks, and development tools.
 
+## ⚠️ CRITICAL WARNING
+
+**All scripts modify your DEVELOPMENT database (instance/bloom.db)**
+
+- ✅ **Safe:** `pytest` tests use in-memory SQLite (no real DB modification)
+- ❌ **Modifies real DB:** `python -m scripts.script_name` or `python scripts/script_name.py`
+
+**Before running ANY script:**
+1. Understand what it does
+2. Back up your database: `cp instance/bloom.db instance/bloom.db.backup`
+3. Or use test/throwaway data only
+
+**The tests are NOT clearing your database** - utility scripts are!
+
 ## Maintenance Script
 
 Consolidated database maintenance operations.
