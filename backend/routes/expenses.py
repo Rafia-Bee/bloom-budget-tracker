@@ -96,6 +96,7 @@ def get_expenses():
                         "category": e.category,
                         "subcategory": e.subcategory,
                         "date": e.date.strftime("%d %b, %Y"),
+                        "date_iso": e.date.strftime("%Y-%m-%d"),
                         "due_date": e.due_date,
                         "payment_method": e.payment_method,
                         "notes": e.notes,

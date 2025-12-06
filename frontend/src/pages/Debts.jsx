@@ -113,7 +113,8 @@ function Debts({ setIsAuthenticated }) {
 
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
-        const expenseDate = new Date(expense.date)
+        // Use ISO date format for reliable parsing
+        const expenseDate = new Date(expense.date_iso || expense.date)
 
         // Skip future expenses (expenses dated after today)
         if (expenseDate > today) return
@@ -210,14 +211,14 @@ function Debts({ setIsAuthenticated }) {
   const loadDebtTransactions = async (debtId, debtName) => {
     try {
       // Get all expenses that are payments for this debt
-      const expensesRes = await expenseAPI.getAll({ 
+      const expensesRes = await expenseAPI.getAll({
         category: 'Debt Payments',
         subcategory: debtName,
         limit: 1000
       })
-      
-      const allPayments = Array.isArray(expensesRes.data) 
-        ? expensesRes.data 
+
+      const allPayments = Array.isArray(expensesRes.data)
+        ? expensesRes.data
         : (expensesRes.data?.expenses || [])
 
       // Sort by date (newest first)

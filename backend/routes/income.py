@@ -81,6 +81,9 @@ def get_income():
                         "date": entry.actual_date.strftime("%d %b, %Y")
                         if entry.actual_date
                         else None,
+                        "date_iso": entry.actual_date.strftime("%Y-%m-%d")
+                        if entry.actual_date
+                        else None,
                         "scheduled_date": entry.scheduled_date.strftime("%d %b, %Y")
                         if entry.scheduled_date
                         else None,

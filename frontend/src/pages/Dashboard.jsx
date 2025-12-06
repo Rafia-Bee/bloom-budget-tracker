@@ -384,10 +384,11 @@ function Dashboard({ setIsAuthenticated }) {
       // Add only realized income to totals (income that has already occurred)
       const periodStart = new Date(currentPeriod.start_date)
       const periodEnd = new Date(currentPeriod.end_date)
-      
+
       allIncome.forEach(income => {
         const amount = income.amount / 100
-        const incomeDate = new Date(income.date || income.actual_date)
+        // Use ISO date format for reliable parsing
+        const incomeDate = new Date(income.date_iso || income.date || income.actual_date)
 
         // Only include income that has already occurred
         if (incomeDate <= today) {
@@ -407,10 +408,11 @@ function Dashboard({ setIsAuthenticated }) {
       const earliestPeriodStart = periodsToInclude.length > 0
         ? new Date(periodsToInclude[0].start_date)
         : periodStart
-      
+
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
-        const expenseDate = new Date(expense.date)
+        // Use ISO date format for reliable parsing
+        const expenseDate = new Date(expense.date_iso || expense.date)
 
         // Skip future expenses (expenses dated after today)
         if (expenseDate > today) return
