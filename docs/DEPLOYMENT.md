@@ -120,6 +120,19 @@ git push origin main
 
 ---
 
+## Safe Deployment Workflow
+
+1. **Develop locally**: Test all changes on localhost
+2. **Run tests**: `python -m pytest backend/tests/ -v`
+3. **Build frontend**: `cd frontend && npm run build` (verify no errors)
+4. **Commit & push**: `git push origin main`
+5. **Manual deploy**:
+   - Frontend: Cloudflare Pages dashboard → Retry deployment
+   - Backend: Render dashboard → Manual Deploy → Deploy latest commit
+6. **Verify production**: Visit https://bloom-tracker.app and test key flows
+
+---
+
 ## Database Management
 
 ### Migrations

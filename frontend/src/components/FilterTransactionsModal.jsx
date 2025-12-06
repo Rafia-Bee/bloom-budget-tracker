@@ -6,13 +6,16 @@
  * - Categories and subcategories
  * - Payment methods (Debit/Credit)
  * - Amount range (min/max)
- * - Search text (name/notes)
+ * - Search text (name/notes) with 500ms debounce
  * - Transaction type (Expense/Income/Both)
  */
 
 import { useState, useEffect } from 'react'
+import useDebounce from '../hooks/useDebounce'
 
 export default function FilterTransactionsModal({ isOpen, onClose, onApply, initialFilters }) {
+  const [searchInput, setSearchInput] = useState('') // Immediate search input
+  const debouncedSearch = useDebounce(searchInput, 500) // Debounced value
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -28,8 +31,14 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
   useEffect(() => {
     if (initialFilters) {
       setFilters(initialFilters)
+      setSearchInput(initialFilters.search || '') // Sync search input with initial filters
     }
   }, [initialFilters])
+
+  // Update filters when debounced search changes
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, search: debouncedSearch }))
+  }, [debouncedSearch])
 
   const handleApply = () => {
     onApply(filters)
@@ -49,6 +58,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
       transactionType: 'both'
     }
     setFilters(clearedFilters)
+    setSearchInput('') // Clear search input
     onApply(clearedFilters)
     onClose()
   }
@@ -112,15 +122,15 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
             </div>
           </div>
 
-          {/* Search */}
+          {/* Search (Debounced) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
               Search (Name/Notes)
             </label>
             <input
               type="text"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search transactions..."
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text placeholder-gray-400 dark:placeholder-dark-text-secondary focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
             />

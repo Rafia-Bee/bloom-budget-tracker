@@ -120,7 +120,8 @@ class BudgetPeriod(db.Model):
 
     # Composite index for active period queries
     __table_args__ = (
-        db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
+        db.Index("idx_budget_period_active",
+                 "user_id", "start_date", "end_date"),
     )
 
 
@@ -128,34 +129,50 @@ class Expense(db.Model):
     __tablename__ = "expenses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        "users.id"), nullable=False, index=True)
     recurring_template_id = db.Column(
         db.Integer, db.ForeignKey("recurring_expenses.id"), nullable=True
     )
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(100), nullable=False, index=True)
     subcategory = db.Column(db.String(100), nullable=True)
-    date = db.Column(db.Date, nullable=False)
+    date = db.Column(db.Date, nullable=False, index=True)
     due_date = db.Column(db.String(50), nullable=True, default="N/A")
-    payment_method = db.Column(db.String(20), nullable=False, default="credit")
+    payment_method = db.Column(
+        db.String(20), nullable=False, default="credit", index=True)
     notes = db.Column(db.Text, nullable=True)
     receipt_url = db.Column(db.String(500), nullable=True)
     # True for fixed bills that don't count against weekly budget
     is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Composite index for common query pattern: user + date range + ordering
+    __table_args__ = (
+        db.Index("idx_expense_user_date", "user_id", "date"),
+        db.Index("idx_expense_user_category", "user_id", "category"),
+        db.Index("idx_expense_user_payment", "user_id", "payment_method"),
+    )
+
 
 class Income(db.Model):
     __tablename__ = "income"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        "users.id"), nullable=False, index=True)
     type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-    scheduled_date = db.Column(db.Date, nullable=True)
-    actual_date = db.Column(db.Date, nullable=True)
+    scheduled_date = db.Column(db.Date, nullable=True, index=True)
+    actual_date = db.Column(db.Date, nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Composite index for common query pattern: user + date filtering
+    __table_args__ = (
+        db.Index("idx_income_user_scheduled", "user_id", "scheduled_date"),
+        db.Index("idx_income_user_actual", "user_id", "actual_date"),
+    )
 
 
 class Debt(db.Model):
