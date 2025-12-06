@@ -362,13 +362,6 @@ function Dashboard({ setIsAuthenticated }) {
     if (!currentPeriod) return
 
     try {
-      // Get all periods up to and including current period
-      const periodsToInclude = allPeriods.filter(period => {
-        const periodStart = new Date(period.start_date)
-        const currentStart = new Date(currentPeriod.start_date)
-        return periodStart <= currentStart
-      })
-
       let cumulativeDebit = 0
       let cumulativeCredit = 0
       let cumulativeIncome = 0
@@ -404,10 +397,17 @@ function Dashboard({ setIsAuthenticated }) {
       const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
-      // Process all expenses
-      const earliestPeriodStart = periodsToInclude.length > 0
-        ? new Date(periodsToInclude[0].start_date)
-        : periodStart
+      // Get the parent salary period to determine cumulative start date
+      let cumulativeStartDate = periodStart
+      try {
+        const salaryPeriodRes = await salaryPeriodAPI.getCurrent()
+        if (salaryPeriodRes?.data?.salary_period) {
+          cumulativeStartDate = new Date(salaryPeriodRes.data.salary_period.start_date)
+        }
+      } catch (error) {
+        // If no salary period, fall back to current period start
+        console.warn('No salary period found, using current period start date')
+      }
 
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
@@ -422,10 +422,10 @@ function Dashboard({ setIsAuthenticated }) {
           expense.category === 'Debt' &&
           expense.subcategory === 'Credit Card'
 
-        // Check if expense date is in the cumulative range or is pre-existing debt
-        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= earliestPeriodStart
+        // Check if expense is within salary period or is pre-existing debt
+        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= cumulativeStartDate
 
-        if (!isInIncludedPeriod) return // Skip expenses from other periods not in cumulative range
+        if (!isInIncludedPeriod) return // Skip expenses from before the salary period
 
         // Determine if expense belongs to current period based on date
         const belongsToCurrentPeriod = expenseDate >= periodStart && expenseDate <= periodEnd
