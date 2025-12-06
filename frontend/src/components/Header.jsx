@@ -45,7 +45,7 @@ function Header({
     }
   };
 
-  const navLinkClasses = "text-sm font-medium text-gray-700 dark:text-dark-text-secondary hover:text-bloom-pink dark:hover:text-dark-pink transition-colors";
+  const navLinkClasses = "px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold";
   const activeLinkClasses = "text-bloom-pink dark:text-dark-pink";
 
   const navigationLinks = (
