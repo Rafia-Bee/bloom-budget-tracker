@@ -27,7 +27,7 @@ Quick reference for decisions made during development. Newest entries at top.
 
 **Already Implemented (from #30):**
 - Pagination: 50 items per page ✅
-- Load More button: Progressive loading ✅  
+- Load More button: Progressive loading ✅
 - Backend query filters: category, date range, amount, search ✅
 
 **Rationale:**
@@ -654,4 +654,3 @@ Each entry should include:
 - **Decision:** What was decided
 - **Rationale:** Why this approach
 - **Impact:** What changed, files affected
-

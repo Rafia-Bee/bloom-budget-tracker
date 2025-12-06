@@ -1,6 +1,6 @@
 /**
  * TransactionCard - Memoized transaction display component
- * 
+ *
  * Displays a single transaction (expense or income) with:
  * - Type indicator (income/debit/credit)
  * - Name and category/subcategory
@@ -10,7 +10,7 @@
  * - Optional selection checkbox
  * - Future transaction indicator
  * - Recurring expense indicator
- * 
+ *
  * Memoized to prevent unnecessary re-renders when parent state changes.
  */
 

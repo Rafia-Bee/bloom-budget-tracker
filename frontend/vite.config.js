@@ -18,6 +18,7 @@ export default defineConfig({
                 theme_color: "#ec4899",
                 background_color: "#ffffff",
                 display: "standalone",
+                version: "1.2.0", // Increment on every deployment to force cache refresh
                 icons: [
                     {
                         src: "/icon-192.png",
@@ -33,6 +34,11 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
+                // Clean up old caches on activation
+                cleanupOutdatedCaches: true,
+                // Skip waiting and claim clients immediately
+                skipWaiting: true,
+                clientsClaim: true,
                 runtimeCaching: [
                     {
                         urlPattern:
