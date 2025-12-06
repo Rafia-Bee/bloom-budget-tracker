@@ -3,6 +3,12 @@ Bloom - Test Configuration
 
 Pytest fixtures and configuration for backend tests.
 Sets up test database, test client, and common fixtures.
+
+🛡️ SERVICE QUOTA PROTECTION:
+- Uses in-memory SQLite (no Neon DB usage)
+- Mocks EmailService globally (no SendGrid emails)
+- Disables rate limiting (RATELIMIT_ENABLED = False)
+- Safe to run unlimited times - zero service consumption
 """
 
 import pytest

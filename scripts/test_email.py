@@ -1,6 +1,16 @@
 """
+⚠️ WARNING: SENDS REAL EMAIL VIA SENDGRID ⚠️
+
 Test email sending via SendGrid.
-Run this script to verify email configuration is working.
+Run this script SPARINGLY to verify email configuration.
+
+QUOTA: SendGrid free tier = 100 emails/day
+RECOMMENDATION: Use max 1-2 times per day for troubleshooting only
+
+This script will:
+1. Prompt you for a recipient email address
+2. Send 1 real email using your SendGrid quota
+3. Count against your daily 100-email limit
 """
 
 from services.email_service import EmailService
@@ -46,6 +56,16 @@ def test_email():
 
     if not email_service.enabled:
         print("\n❌ Email service is not enabled")
+        return False
+
+    # Confirm before sending
+    print("\n" + "="*60)
+    print("⚠️  WARNING: This will send 1 REAL email using SendGrid quota")
+    print("   Daily limit: 100 emails (free tier)")
+    confirm = input("Continue? (type 'yes' to confirm): ").strip().lower()
+
+    if confirm != 'yes':
+        print("❌ Cancelled - no email sent")
         return False
 
     # Prompt for test email

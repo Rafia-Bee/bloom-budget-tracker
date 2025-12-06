@@ -1,6 +1,14 @@
 """
+⚠️ WARNING: MAKES REAL HTTP REQUESTS TO BACKEND ⚠️
+
 Simple script to test Bloom API endpoints.
 Tests authentication and expense CRUD operations.
+
+IMPORTANT:
+- Backend server must be running on localhost:5000
+- Makes real database operations (use test DB)
+- Only for manual integration testing in development
+- DO NOT run against production server
 
 Run from project root: python scripts/test_api.py
 """
@@ -15,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 BASE_URL = "http://127.0.0.1:5000"
 
+
 def test_root():
     """Test root endpoint."""
     print("\n=== Testing Root Endpoint ===")
@@ -22,6 +31,7 @@ def test_root():
     print(f"Status: {response.status_code}")
     print(f"Response: {response.text}")
     return response.status_code == 200
+
 
 def test_register():
     """Test user registration."""
@@ -35,6 +45,7 @@ def test_register():
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 201
+
 
 def test_login():
     """Test user login and get access token."""
@@ -52,6 +63,7 @@ def test_login():
         return result.get("access_token")
     return None
 
+
 def test_me(token):
     """Test getting current user info."""
     print("\n=== Testing Get Current User ===")
@@ -60,6 +72,7 @@ def test_me(token):
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
+
 
 def test_create_expense(token):
     """Test creating an expense."""
@@ -72,7 +85,8 @@ def test_create_expense(token):
         "payment_method": "Credit card"
     }
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(f"{BASE_URL}/expenses", json=data, headers=headers)
+    response = requests.post(f"{BASE_URL}/expenses",
+                             json=data, headers=headers)
     print(f"Status: {response.status_code}")
 
     if response.status_code != 201:
@@ -86,6 +100,7 @@ def test_create_expense(token):
         return result.get("expense", {}).get("id")
     return None
 
+
 def test_get_expenses(token):
     """Test getting all expenses."""
     print("\n=== Testing Get All Expenses ===")
@@ -95,6 +110,7 @@ def test_get_expenses(token):
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
 
+
 def test_update_expense(token, expense_id):
     """Test updating an expense."""
     print("\n=== Testing Update Expense ===")
@@ -103,24 +119,31 @@ def test_update_expense(token, expense_id):
         "notes": "Updated amount"
     }
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.put(f"{BASE_URL}/expenses/{expense_id}", json=data, headers=headers)
+    response = requests.put(
+        f"{BASE_URL}/expenses/{expense_id}", json=data, headers=headers)
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
+
 
 def test_delete_expense(token, expense_id):
     """Test deleting an expense."""
     print("\n=== Testing Delete Expense ===")
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.delete(f"{BASE_URL}/expenses/{expense_id}", headers=headers)
+    response = requests.delete(
+        f"{BASE_URL}/expenses/{expense_id}", headers=headers)
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
+
 
 def main():
     """Run all tests."""
     print("=" * 50)
     print("BLOOM API TESTS")
+    print("=" * 50)
+    print("⚠️  Makes real HTTP requests to", BASE_URL)
+    print("⚠️  Ensure backend server is running locally")
     print("=" * 50)
 
     results = []
@@ -143,8 +166,10 @@ def main():
         if expense_id:
             results.append(("Create expense", True))
             results.append(("Get expenses", test_get_expenses(token)))
-            results.append(("Update expense", test_update_expense(token, expense_id)))
-            results.append(("Delete expense", test_delete_expense(token, expense_id)))
+            results.append(
+                ("Update expense", test_update_expense(token, expense_id)))
+            results.append(
+                ("Delete expense", test_delete_expense(token, expense_id)))
         else:
             results.append(("Create expense", False))
     else:
@@ -161,6 +186,7 @@ def main():
     passed = sum(1 for _, p in results if p)
     total = len(results)
     print(f"\nPassed: {passed}/{total}")
+
 
 if __name__ == "__main__":
     main()

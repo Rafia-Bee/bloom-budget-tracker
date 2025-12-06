@@ -1,19 +1,35 @@
 # Test Suite
 
-Quick reference for running tests.
+Quick reference for running tests safely without consuming service quotas.
 
-## Backend Tests (pytest)
+## ✅ Safe Tests (Run Unlimited Times)
+
+All pytest tests use **in-memory SQLite** and **mocked external services**.
+No real emails, no Neon DB usage, no API calls.
 
 ```powershell
 # Activate venv
 .\.venv\Scripts\Activate.ps1
 
-# Run all tests
+# Run all tests - 100% safe, fully mocked
 pytest
 
 # With coverage
 pytest --cov=backend --cov-report=html
 ```
+
+## Service Limit Protection
+
+### Email (SendGrid - 100/day)
+✅ **All pytest tests mock EmailService** - conftest.py patches globally
+⚠️ **scripts/test_email.py sends 1 REAL email** - use max 1-2 times/day!
+
+### Database (Neon - 100 compute hours/month)
+✅ **All pytest tests use in-memory SQLite** - zero Neon usage
+⚠️ **Manual scripts may connect to real DB** - check before running
+
+### Rate Limiting
+✅ **Disabled in tests** via RATELIMIT_ENABLED = False
 
 ## Frontend Tests (Vitest)
 

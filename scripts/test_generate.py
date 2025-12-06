@@ -1,5 +1,8 @@
 """
 Test the generate_due_expenses function to see what's happening
+
+⚠️ WARNING: Uses actual database configured in app
+Ensure you're using development/test database, not production!
 """
 from datetime import datetime, timedelta
 from backend.utils.recurring_generator import generate_due_expenses
