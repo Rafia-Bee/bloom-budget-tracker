@@ -6,6 +6,60 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-06
 
+### Issue #43 - Staging Environment (CLOSED - Won't Implement)
+
+**Context:** Proposal to add separate staging environment for testing before production
+
+**Decision:** Will not implement staging environment
+
+**Rationale:**
+- ✅ Current workflow already provides safety: localhost testing + manual deployment
+- ✅ Manual deploy on Cloudflare Pages and Render (auto-deploy disabled) acts as checkpoint
+- ✅ Pre-push hooks catch errors before commits reach repository
+- ✅ Solo developer project - no team collaboration needs
+- ❌ Staging would require maintaining extra infrastructure (backend, database, env vars)
+- ❌ Free tier quotas better spent on production reliability
+
+**Alternative:** Documented existing safe deployment workflow in DEPLOYMENT.md
+
+**Files Changed:** None (issue closed, workflow already documented)
+
+---
+
+### Issue #28 - Remove Legacy Budget Period System (COMPLETED)
+
+**Context:** After completing #50 (budget_period_id removal), legacy CreatePeriodModal and EditPeriodModal were obsolete
+
+**Decision:** Removed legacy budget period creation/editing UI, keeping only SalaryPeriodWizard
+
+**Changes Made:**
+- Deleted `CreatePeriodModal.jsx` and `EditPeriodModal.jsx` (344 lines removed)
+- Removed imports, state variables, and handlers from Dashboard.jsx
+- Updated onEdit handlers to only support SalaryPeriod editing (has `weekly_budget` field)
+- Legacy standalone budget periods (without `salary_period_id`) remain visible for historical data but cannot be created or edited
+
+**Rationale:**
+- ✅ Simplifies codebase - one way to manage periods (SalaryPeriodWizard)
+- ✅ All period management through 4-week salary periods with auto-generated weeks
+- ✅ Consistent with #50 decision to use date-based queries
+- ✅ Reduces user confusion - single clear path for period creation
+
+**Impact:**
+- Users can no longer create standalone budget periods
+- All new periods must be 4-week salary periods
+- Historical standalone periods still accessible (read-only)
+
+**Files Changed:**
+- `frontend/src/pages/Dashboard.jsx` - Removed modal imports, state, handlers
+- `frontend/src/components/CreatePeriodModal.jsx` - Deleted (147 lines)
+- `frontend/src/components/EditPeriodModal.jsx` - Deleted (142 lines)
+
+**Commit:** `4c00bdd` - "feat: Remove legacy budget period system (#28)"
+
+---
+
+## 2025-12-06
+
 ### Phase 3 Complete: budget_period_id Fully Removed from Codebase
 
 **Issue:** [#50 - Overhaul budget_period_id system](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50)
