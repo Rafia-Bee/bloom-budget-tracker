@@ -4,6 +4,63 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-06
+
+### User Menu Consolidation - Shared Header Component
+
+**Context:** Three different user menu implementations across Dashboard, Debts, and Recurring pages causing inconsistency and maintenance issues
+
+**Decision:** Create shared `Header.jsx` component with unified user menu across all pages
+
+**Rationale:**
+- ✅ Single source of truth for header structure
+- ✅ Consistent user experience across all pages
+- ✅ Easier maintenance - update header once, apply everywhere
+- ✅ Theme toggle, export/import, logout all work identically
+- ⚠️ Dashboard keeps PeriodSelector as it's page-specific
+
+**Implementation:**
+
+**1. Created `Header.jsx` Component:**
+- Props: `setIsAuthenticated`, `onExport`, `onImport`, `onBankImport`, `onShowExperimental` (optional), `children`
+- Features: Navigation links, user menu dropdown, theme toggle, mobile menu
+- Layout: "Bloom" heading + tagline on left, navigation + user menu on right
+- Styling: Matches Dashboard exactly (`px-4 py-2`, `font-semibold`, consistent text sizes)
+
+**2. Updated Debts.jsx:**
+- Added `BankImportModal` import and state
+- Added `handleBankImport` function
+- Replaced custom header with `<Header />` component
+- Passed all required props to Header
+
+**3. Updated RecurringExpenses.jsx:**
+- Added `setIsAuthenticated` prop to function signature
+- Added `BankImportModal` import and state
+- Added `handleBankImport` function
+- Replaced custom header with `<Header />` component
+- Passed all required props to Header
+
+**4. Bug Fixes:**
+- Fixed route mismatch: `/recurring` → `/recurring-expenses` in Header navigation
+- Removed missing `logo.png` image, used text-based "Bloom" heading instead
+- Added tagline "Financial Habits That Grow With You" to match Dashboard
+- Fixed navigation link styling to match Dashboard (`text-gray-600`, regular size vs `text-sm`)
+- Fixed import/export button text colors in dark mode
+
+**Files Changed:**
+- `frontend/src/components/Header.jsx` - New shared component
+- `frontend/src/pages/Debts.jsx` - Now uses Header component
+- `frontend/src/pages/RecurringExpenses.jsx` - Now uses Header component
+- `frontend/src/App.jsx` - Already passing `setIsAuthenticated` to both pages
+
+**Result:**
+- Consistent user menu across Dashboard, Debts, and Recurring pages
+- All pages have same navigation, theme toggle, export/import, and logout functionality
+- Reduced code duplication significantly
+- Easier to maintain and update header features
+
+---
+
 ## 2025-12-04
 
 ### Final Database Migration: Neon PostgreSQL
