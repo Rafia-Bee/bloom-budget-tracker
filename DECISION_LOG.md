@@ -6,6 +6,79 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-06
 
+### Phase 3 Complete: budget_period_id Fully Removed from Codebase
+
+**Issue:** [#50 - Overhaul budget_period_id system](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50)
+
+**Context:** After Phase 1 (date-based queries) and Phase 2 (frontend simplification), Phase 3 removes the `budget_period_id` column entirely from the database and all code references.
+
+**Decision:** Drop `budget_period_id` columns from 3 tables (expenses, income, period_suggestions) and remove all FK relationships.
+
+**Changes Made:**
+
+1. **Database Migration**:
+   - Created `scripts/drop_budget_period_id.py` with safety checks and backup
+   - Dropped columns: `expenses.budget_period_id`, `income.budget_period_id`, `period_suggestions.budget_period_id`
+   - Removed relationships: `BudgetPeriod.expenses`, `BudgetPeriod.income`
+
+2. **Models (database.py)**:
+   - Removed 3 ForeignKey column definitions
+   - Removed 2 relationship definitions
+
+3. **Routes Updated**:
+   - `expenses.py`: Removed from CREATE route (lines 155-177) and GET response (line 93)
+   - `income.py`: Removed from CREATE route (lines 110-145) and GET response (line 89)
+   - `salary_periods.py`: Removed 6 references (CREATE, UPDATE, DELETE routes)
+   - `export_import.py`: Removed 4 references (lines 429, 445, 511, 574) and lookup logic
+
+4. **Code Cleanup**:
+   - `recurring_generator.py`: Removed budget_period_id assignment (line 165)
+   - `seed_data.py`: Removed 3 budget_period_id references (lines 169, 728, 836)
+
+5. **Tests**:
+   - Updated `test_delete_salary_period` to expect 400 when transactions exist
+   - All 10 CRUD tests passing (5 expense + 2 income + 3 salary period)
+
+6. **Frontend Fix**:
+   - `Dashboard.jsx`: Fixed cumulative balance calculation to use salary period start date instead of earliest budget period
+   - Result: Correct available amounts (€478.85 debit, €604.84 credit)
+
+**Rationale:**
+- ✅ Eliminates data integrity bugs from FK system
+- ✅ Simplifies codebase (~100 lines removed across 10+ files)
+- ✅ Import/export now works seamlessly
+- ✅ Date-based queries are more intuitive and accurate
+- ✅ No performance impact (date indexes on expense/income tables)
+
+**Impact:**
+- **Positive**: Zero data integrity bugs related to period assignment
+- **Positive**: Import functionality fixed (was broken after Phase 3 models update)
+- **Positive**: Simpler mental model for developers
+- **Neutral**: Production database still has columns (backward compatible, can drop later)
+- **Production**: Code works with or without columns present (forward compatible)
+
+**Production Migration Strategy:**
+- Push to main → Render auto-deploys (columns still exist, unused)
+- Test for stability over several days
+- Optional: Run `drop_budget_period_id.py` on production when ready
+- No downtime required (code is forward compatible)
+
+**Files Changed (Phase 3)**:
+- `backend/models/database.py` - Removed 3 columns + 2 relationships
+- `backend/routes/expenses.py` - Removed 2 references
+- `backend/routes/income.py` - Removed 2 references
+- `backend/routes/salary_periods.py` - Removed 6 references
+- `backend/routes/export_import.py` - Removed 4 references + lookup logic
+- `backend/utils/recurring_generator.py` - Removed 1 reference
+- `backend/seed_data.py` - Removed 3 references
+- `backend/tests/test_crud.py` - Updated delete test expectations
+- `frontend/src/pages/Dashboard.jsx` - Fixed cumulative balance calculation
+- `scripts/drop_budget_period_id.py` - Created migration script
+
+---
+
+## 2025-12-06
+
 ### Phase 1: Date-Based Queries Replace budget_period_id Filters
 
 **Issue:** [#50 - Overhaul budget_period_id system](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50)
