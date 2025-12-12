@@ -2,19 +2,34 @@
 
 Utility scripts for database maintenance, scheduled tasks, and development tools.
 
-## ⚠️ CRITICAL WARNING
+## ⚠️ CRITICAL WARNING - AUTOMATIC BACKUPS NOW ENABLED
 
-**All scripts modify your DEVELOPMENT database (instance/bloom.db)**
+**All destructive scripts NOW create automatic backups before modification!**
 
-- ✅ **Safe:** `pytest` tests use in-memory SQLite (no real DB modification)
-- ❌ **Modifies real DB:** `python -m scripts.script_name` or `python scripts/script_name.py`
+### Backup System
+- **Automatic backups** created before any destructive operation
+- **Location:** `instance/bloom.backup_YYYYMMDD_HHMMSS.db`
+- **Restore command:** `cp instance/bloom.backup_XXXXXX_XXXXXX.db instance/bloom.db`
 
-**Before running ANY script:**
-1. Understand what it does
-2. Back up your database: `cp instance/bloom.db instance/bloom.db.backup`
-3. Or use test/throwaway data only
+### Script Safety Levels
 
-**The tests are NOT clearing your database** - utility scripts are!
+✅ **SAFE** (read-only or in-memory):
+- `pytest` tests use in-memory SQLite (no real DB modification)
+- All `check_*.py` scripts (read-only analysis)
+
+⚠️ **AUTO-PROTECTED** (automatic backup + confirmation):
+- `clear_user_data.py` - Deletes ALL user data (backups first)
+- `clean_duplicate_income.py` - Deletes duplicates (backups first)
+- `drop_budget_period_id.py` - Drops/recreates tables (backups first)
+
+❌ **MANUAL BACKUP REQUIRED** (no auto-backup yet):
+- `remove_duplicates.py`
+- `fix_*.py` scripts
+
+**Before running manual backup scripts:**
+```powershell
+cp instance/bloom.db instance/bloom.db.backup
+```
 
 ## Maintenance Script
 

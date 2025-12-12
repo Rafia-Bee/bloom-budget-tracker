@@ -1,9 +1,28 @@
 """
 Clean up duplicate income entries
+
+⚠️  AUTOMATIC BACKUP: Database backup created before deletion
 """
+from scripts.backup_helper import create_backup, confirm_operation
 import sqlite3
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 db_path = 'instance/bloom.db'
+
+# Confirm operation and create backup
+if not confirm_operation("Delete duplicate income entries"):
+    print("\n✗ Operation cancelled")
+    sys.exit(0)
+
+backup_file = create_backup(db_path)
+if not backup_file:
+    print("\n✗ Backup failed - operation cancelled for safety")
+    sys.exit(1)
+
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 

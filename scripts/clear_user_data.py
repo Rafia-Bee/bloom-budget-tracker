@@ -2,7 +2,10 @@
 Clear all data for a specific user (LOCALHOST ONLY)
 
 Usage: python scripts/clear_user_data.py <user_email>
+
+⚠️  AUTOMATIC BACKUP: Database backup created before deletion
 """
+from scripts.backup_helper import create_backup, confirm_operation  # Import backend modules after path is set (do not reorder these imports)
 import sys
 import os
 
@@ -10,7 +13,7 @@ import os
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..")))
 
-# Import backend modules after path is set (do not reorder these imports)
+# Import backup helper
 from backend.app import create_app  # noqa: E402
 from backend.models.database import (  # noqa: E402
     db,
@@ -44,7 +47,19 @@ def clear_user_data(email):
 
         user_id = user.id
         print(f"Found user: {user.email} (ID: {user_id})")
-        print("Clearing all data...")
+
+        # Confirm operation
+        if not confirm_operation(f"Clear ALL data for user '{email}'"):
+            print("\n✗ Operation cancelled")
+            return False
+
+        # Create automatic backup
+        backup_file = create_backup()
+        if not backup_file:
+            print("\n✗ Backup failed - operation cancelled for safety")
+            return False
+
+        print("\nClearing all data...")
 
         # Delete in order of dependencies
         deleted_expenses = Expense.query.filter_by(user_id=user_id).delete()

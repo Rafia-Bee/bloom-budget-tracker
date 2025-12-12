@@ -9,9 +9,12 @@ SAFETY CHECKS:
 - Creates backup before modification
 - Tests database integrity after changes
 
+⚠️  AUTOMATIC BACKUP: Database backup created before modification
+
 Run this script with: python scripts/drop_budget_period_id.py
 """
 
+from scripts.backup_helper import create_backup, confirm_operation
 import os
 from datetime import datetime
 from sqlalchemy import text, inspect
@@ -67,30 +70,16 @@ def verify_no_budget_period_id_queries():
 
 
 def backup_database():
-    """Create a backup of the current database"""
+    """Create a backup of the current database using backup_helper"""
     print("\n📦 Creating database backup...")
 
-    # Check if we're using SQLite or PostgreSQL
-    db_path = Path(__file__).parent.parent / "instance" / "bloom.db"
-
-    if db_path.exists():
-        # SQLite backup
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = db_path.parent / f"bloom_backup_{timestamp}.db"
-
-        import shutil
-        shutil.copy2(db_path, backup_path)
-        print(f"✅ SQLite backup created: {backup_path}")
+    backup_file = create_backup()
+    if backup_file:
+        print(f"✅ Backup created: {backup_file}")
         return True
     else:
-        # PostgreSQL - suggest manual backup
-        print("⚠️  Using PostgreSQL - please ensure you have a recent backup")
-        print("   You can create one with: python scripts/backup_database.py")
-        response = input("\nContinue without backup? (yes/no): ")
-        if response.lower() != 'yes':
-            print("❌ Migration cancelled")
-            return False
-        return True
+        print("❌ Backup failed - migration cancelled for safety")
+        return False
 
 
 def check_column_exists(table_name, column_name):
@@ -227,6 +216,11 @@ def main():
     print("=" * 60)
     print("Migration: Drop budget_period_id Columns (Issue #50 Phase 3)")
     print("=" * 60)
+
+    # Confirm operation
+    if not confirm_operation("Drop budget_period_id columns from tables"):
+        print("\n✗ Migration cancelled")
+        return
 
     # Step 1: Verify backend code is ready
     if not verify_no_budget_period_id_queries():

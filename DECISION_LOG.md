@@ -4,6 +4,53 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-12
+
+### Database Safety - Automatic Backup System (COMPLETED)
+
+**Context:** User discovered empty database after running utility scripts, needed protection against accidental data loss
+
+**Decision:** Implemented automatic backup system for all destructive operations
+
+**Implementation:**
+- **Created:** `scripts/backup_helper.py` - Reusable backup and confirmation functions
+- **Protected Scripts:**
+  - `clear_user_data.py` - Auto-backup before deleting user data
+  - `clean_duplicate_income.py` - Auto-backup before deleting duplicates
+  - `drop_budget_period_id.py` - Auto-backup before table modifications
+
+**Backup System Features:**
+- **Automatic Creation:** Timestamped backups (`bloom.backup_YYYYMMDD_HHMMSS.db`)
+- **Storage Location:** `instance/` directory (same as main database)
+- **Confirmation Prompts:** Clear warning + user confirmation before any destructive operation
+- **Failure Protection:** Scripts abort if backup fails (safety-first)
+- **Restore Instructions:** Displayed with every backup
+
+**Rationale:**
+- ✅ Prevents accidental data loss from utility scripts
+- ✅ Zero-effort safety (automatic, no manual steps)
+- ✅ Timestamped backups allow multiple snapshots
+- ✅ Confirmation prompts ensure intentional operations
+- ❌ Skipped auto-cleanup of old backups (manual cleanup preferred for safety)
+
+**Impact:**
+- **Safety:** Complete protection against utility script data loss
+- **Storage:** ~150KB per backup (minimal, manual cleanup as needed)
+- **UX:** Clear warnings and restore instructions for all destructive operations
+- **Coverage:** All 3 dangerous scripts now protected
+
+**Audit Results:**
+- **7 dangerous operations** identified across codebase
+- **3 high-risk scripts** now protected with auto-backup
+- **Tests** confirmed safe (use in-memory DB)
+- **Archive scripts** low risk (one-time migrations)
+
+**Documentation:**
+- Updated `scripts/README.md` with safety levels and backup info
+- Added ⚠️ warnings to all protected script docstrings
+
+---
+
 ## 2025-12-06
 
 ### Issue #11 - Performance Optimization for Large Transaction Lists (COMPLETED)
