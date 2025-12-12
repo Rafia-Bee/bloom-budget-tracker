@@ -75,7 +75,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
         const expenseDateOnly = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate())
         const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
         const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-        
+
         if (expenseDateOnly >= startDateOnly && expenseDateOnly <= endDateOnly) {
           if (expense.category === 'Debt Payments' &&
               expense.subcategory === 'Credit Card' &&
