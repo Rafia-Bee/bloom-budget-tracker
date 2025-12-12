@@ -38,8 +38,8 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
       // Calculate current balances starting from INITIAL balances
       // Only count transactions WITHIN current salary period
       const [expensesRes, incomeRes] = await Promise.all([
-        expenseAPI.getAll({}),
-        incomeAPI.getAll({})
+        expenseAPI.getAll({ limit: 10000 }),
+        incomeAPI.getAll({ limit: 10000 })
       ])
 
       const expenses = Array.isArray(expensesRes.data)
@@ -65,7 +65,18 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
       // Process only expenses within current period
       expenses.forEach(expense => {
         const expenseDate = new Date(expense.date)
-        if (expenseDate >= startDate && expenseDate <= endDate) {
+
+        // Skip system-generated expenses (dated before period)
+        if (expense.name === 'Pre-existing Credit Card Debt') {
+          return // This is auto-created BEFORE period, skip it
+        }
+
+        // Use date-only comparison to avoid timezone issues
+        const expenseDateOnly = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate())
+        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+        
+        if (expenseDateOnly >= startDateOnly && expenseDateOnly <= endDateOnly) {
           if (expense.category === 'Debt Payments' &&
               expense.subcategory === 'Credit Card' &&
               expense.payment_method === 'Debit card') {
@@ -77,9 +88,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
             periodCreditSpent += expense.amount
           }
         }
-      })
-
-      // Current balance = initial balance + period income - period expenses
+      })      // Current balance = initial balance + period income - period expenses
       const currentDebitBalance = salary_period.initial_debit_balance + periodIncome - periodDebitSpent
 
       // For credit: start from initial available, subtract period spending
