@@ -31,11 +31,12 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
       }
 
       const endDate = new Date(salary_period.end_date)
+      const startDate = new Date(salary_period.start_date)
       const today = new Date()
       const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
 
-      // Calculate current balances using same logic as Dashboard
-      // Get ALL income and expenses (not just current period)
+      // Calculate current balances starting from INITIAL balances
+      // Only count transactions WITHIN current salary period
       const [expensesRes, incomeRes] = await Promise.all([
         expenseAPI.getAll({}),
         incomeAPI.getAll({})
@@ -47,39 +48,43 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 
       const incomeList = incomeRes.data?.income || []
 
-      // Calculate cumulative totals from ALL transactions
-      let cumulativeDebit = 0
-      let cumulativeCredit = 0
-      let cumulativeIncome = 0
+      // Start from the INITIAL balances of current period
+      let periodDebitSpent = 0
+      let periodCreditSpent = 0
+      let periodIncome = 0
 
-      // Add only realized income (income that has already occurred)
+      // Filter transactions to ONLY those within current salary period
       incomeList.forEach(income => {
         const incomeDate = new Date(income.date || income.actual_date)
-        if (incomeDate <= today) {
-          cumulativeIncome += income.amount
+        // Only count income within current period (excluding Initial Balance)
+        if (incomeDate >= startDate && incomeDate <= endDate && income.type !== 'Initial Balance') {
+          periodIncome += income.amount
         }
       })
 
-      // Process all expenses
+      // Process only expenses within current period
       expenses.forEach(expense => {
-        if (expense.category === 'Debt Payments' &&
-            expense.subcategory === 'Credit Card' &&
-            expense.payment_method === 'Debit card') {
-          cumulativeCredit -= expense.amount  // Payment reduces credit debt
-          cumulativeDebit += expense.amount   // Payment comes from debit
-        } else if (expense.payment_method === 'Debit card') {
-          cumulativeDebit += expense.amount
-        } else if (expense.payment_method === 'Credit card') {
-          cumulativeCredit += expense.amount
+        const expenseDate = new Date(expense.date)
+        if (expenseDate >= startDate && expenseDate <= endDate) {
+          if (expense.category === 'Debt Payments' &&
+              expense.subcategory === 'Credit Card' &&
+              expense.payment_method === 'Debit card') {
+            periodCreditSpent -= expense.amount  // Payment reduces credit debt
+            periodDebitSpent += expense.amount   // Payment comes from debit
+          } else if (expense.payment_method === 'Debit card') {
+            periodDebitSpent += expense.amount
+          } else if (expense.payment_method === 'Credit card') {
+            periodCreditSpent += expense.amount
+          }
         }
       })
 
-      // Current balance = income - expenses (amounts in cents)
-      const currentDebitBalance = cumulativeIncome - cumulativeDebit
+      // Current balance = initial balance + period income - period expenses
+      const currentDebitBalance = salary_period.initial_debit_balance + periodIncome - periodDebitSpent
 
-      // For credit: positive means debt owed, calculate available credit
+      // For credit: start from initial available, subtract period spending
       const creditLimit = salary_period.credit_limit
-      const currentCreditAvailable = creditLimit - cumulativeCredit
+      const currentCreditAvailable = salary_period.initial_credit_balance - periodCreditSpent
 
       setRolloverData({
         daysRemaining,

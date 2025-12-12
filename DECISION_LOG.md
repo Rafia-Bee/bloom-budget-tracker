@@ -6,6 +6,65 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-12
 
+### Balance Calculation Bug Fix - Salary Period Rollover (COMPLETED) #55
+
+**Context:** Production bug where rollover prompt showed incorrect balances for next salary period
+- **Expected:** Debit €358.48, Credit Available €596.67
+- **Actual:** Debit €1403.17, Credit Available €1191.16
+- **Root Cause:** Double-counting initial balance by calculating cumulative totals from ALL transactions
+
+**Decision:** Changed from cumulative calculation to period-specific calculation
+
+**Problem Analysis:**
+The rollover prompt was calculating balances like this:
+```javascript
+// OLD LOGIC (WRONG)
+cumulativeIncome = SUM(ALL income ever)  // Includes initial balance from previous period
+cumulativeDebit = SUM(ALL debit expenses ever)
+currentBalance = cumulativeIncome - cumulativeDebit  // Double counts initial balance!
+```
+
+This caused:
+1. Initial balance of €1000 was added as "Initial Balance" income when creating period
+2. Rollover calculation included that €1000 in cumulative income
+3. But the initial balance was already the STARTING point, not new income
+4. Result: Balance was €1000+ too high
+
+**Solution:**
+Start from initial balances and only count transactions WITHIN current period:
+```javascript
+// NEW LOGIC (CORRECT)
+periodIncome = SUM(income within current period) - exclude "Initial Balance" type
+periodDebitSpent = SUM(debit expenses within current period)
+currentBalance = initial_debit_balance + periodIncome - periodDebitSpent
+```
+
+**File Changed:** `frontend/src/components/SalaryPeriodRolloverPrompt.jsx`
+
+**Key Changes:**
+- Added `startDate` filter for all transaction queries
+- Excluded "Initial Balance" type income from period income calculation
+- Changed credit calculation to start from `initial_credit_balance` instead of `credit_limit`
+- Only processes transactions where `date >= startDate && date <= endDate`
+
+**Rationale:**
+- ✅ Fixes double-counting bug
+- ✅ Aligns with salary period balance-based architecture
+- ✅ Each period is self-contained (initial → final balance)
+- ✅ Prevents cumulative drift across multiple periods
+
+**Impact:**
+- **Accuracy:** Rollover balances now match actual account balances
+- **User Trust:** Fixed critical bug affecting budget planning
+- **Architecture:** Reinforces period-based isolation design
+
+**Testing:**
+- Frontend build successful
+- Logic verified against expected values
+- Ready for production deployment
+
+---
+
 ### Database Safety - Automatic Backup System (COMPLETED)
 
 **Context:** User discovered empty database after running utility scripts, needed protection against accidental data loss
