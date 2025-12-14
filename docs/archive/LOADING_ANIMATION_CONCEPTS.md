@@ -1,236 +1,239 @@
-# Bloom Budget Tracker - Loading Animation Concepts
+# Bloom Budget Tracker - Loading Animation Prompts for Grok
 
-Custom loading animation concepts for the Bloom Budget Tracker app, designed with the app's pastel color palette.
+Video generation prompts for creating loading animations with transparent backgrounds. Use BloomKittyReference.png as the character reference model.
+
+---
+
+## Important Technical Requirements
+
+**CRITICAL FOR ALL VIDEOS:**
+
+-   **Background:** MUST be completely transparent (alpha channel/PNG transparency) - NO solid colors, NO white, NO backgrounds
+-   **Duration:** 3-4 seconds, seamless loop
+-   **Style:** Cute, soft, rounded kawaii art style with pastel colors
+-   **Character:** Use the uploaded BloomKittyReference.png as the exact model for the cat's appearance
+-   **Format:** Export as video with alpha channel transparency or transparent PNG sequence
 
 ---
 
 ## Color Palette Reference
 
-- **Bloom Pink** `#FFB3C6` — brand accent
-- **Bloom Light** `#FFE5EC` — soft backgrounds
-- **Bloom Mint** `#C6F6D5` — success/positive vibes
-- **Bloom Peach** `#FED7D7` — highlight warmth
-- **Bloom Lavender** `#E9D8FD` — secondary accent
-- **Gray-600** `#718096` — text
-
-All animations are designed to look soft, rounded, kind, and warm.
+-   Bloom Pink: #FFB3C6 (soft pink for accents)
+-   Bloom Mint: #C6F6D5 (mint green for success/money)
+-   Bloom Peach: #FED7D7 (warm peach for highlights)
+-   Bloom Lavender: #E9D8FD (light purple for secondary elements)
+-   Bloom Light: #FFE5EC (very light pink for soft objects)
 
 ---
 
-## 🐱💰 Animation Concept A: "Bloom Kitty Banker"
-**Cat Teller in Pastel Bank Booth**
+## 🐱💰 Animation 1: "Kitty Banker Stamping Papers"
 
-### Color Style
-- Booth frame: Bloom Light `#FFE5EC`
-- Sign text: Bloom Pink `#FFB3C6`
-- Counter: Bloom Peach `#FED7D7`
-- Cat fur: soft cream `#FFF8FA`
-- Bowtie: Bloom Lavender `#E9D8FD`
-- Stamps & papers: Bloom Mint `#C6F6D5`
+**Copy this prompt to Grok:**
 
-### Frame-by-Frame Instructions (3 sec loop, 6 frames)
+```
+Create a 3-second looping animation with TRANSPARENT BACKGROUND (alpha channel, no solid background color). Use the uploaded cat reference image (BloomKittyReference.png) as the character model.
 
-**Frame 1:** Cat sitting behind counter, paw raised mid-air holding a stamp, looking down at paper. Stamp is above an unstamped white paper on the Bloom Peach counter.
+Scene: A cute cat working as a banker, sitting at a simple desk/counter. The cat is stamping checkbooks with an approval stamp. Several pink coins and small bundles of money are arranged on the counter beside the checkbook.
 
-**Frame 2:** Cat pressing stamp down onto paper. Stamp makes contact with paper. Cat's eyes focused downward.
+Art style: Soft kawaii/cute style, rounded shapes, pastel colors, smooth movements.
 
-**Frame 3:** Cat lifting stamp off paper, revealing a Bloom Mint stamp mark. Cat beginning to lift head slightly.
+Color scheme:
+- Cat: Use exact appearance from BloomKittyReference.png
+- Desk/counter: Soft peach color (#FED7D7)
+- Checkbook pages: White with mint green (#C6F6D5) stamp marks
+- Stamp tool: Light lavender (#E9D8FD) handle with pink (#FFB3C6) stamp pad
+- Coins on counter: Pink (#FFB3C6) with mint (#C6F6D5) shine, 3-4 coins stacked
+- Money bundles: Light pink (#FFE5EC) bills tied with lavender (#E9D8FD) bands, 2 small bundles
 
-**Frame 4:** Cat looking up from paper with eyes half-closed in a gentle blink. Stamp held in paw at chest level.
+Animation sequence (3 seconds, smooth loop):
+1. Cat sits behind counter with open checkbook in front, coins and money bundles visible on left and right sides of checkbook, cat holds stamp above a checkbook page looking down at it intently
+2. Cat presses stamp firmly onto the checkbook page with a gentle pressing motion
+3. Cat lifts stamp up, revealing a mint green checkmark/approval mark on the page
+4. Cat flips to the next page of the checkbook with one paw (page turns smoothly)
+5. Cat positions stamp above the new blank page, looking down again (returns to step 2 for seamless loop)
 
-**Frame 5:** Cat reaching down with other paw toward a small drawer, eyes now open. A Bloom Pink coin with Mint sparkle is being pulled from the drawer.
+Camera: Slightly angled front view, stationary camera showing counter with all props visible
+Movement: Gentle, deliberate movements - cat working methodically but cheerfully, repetitive stamping motion
+Mood: Professional but adorable, focused but friendly, rhythmic and calming
 
-**Frame 6:** Cat holding coin up slightly, looking at it. About to return to stamping position. Transition back to Frame 1.
+CRITICAL: Background MUST be completely transparent (PNG/alpha channel), no solid colors behind the cat and objects.
+```
 
-### On-screen Text
-Color: Gray-600
-
-**Frame 1:** Waking up the server
-
-**Frame 2:** Waking up the server.
-
-**Frame 3:** Waking up the server..
-
-**Frame 4:** Waking up the server...
-
-**Frame 5:** Waking up the server
-
-**Frame 6:** Waking up the server.
+**Loading text:** "Waking up the server..." (animated dots)
 
 ---
 
-## 🐱✨ Animation Concept B: "Bloom Coin Sorter Cat"
-**Cat Organizing Money Stacks**
+## 🐱✨ Animation 2: "Kitty Organizing Coin Stacks"
 
-### Color Style
-- Floor mat: Bloom Light
-- Coins:
-  - Stack 1: Bloom Pink `#FFB3C6`
-  - Stack 2: Bloom Mint `#C6F6D5`
-  - Stack 3: Bloom Lavender `#E9D8FD`
-- Sparkles: Bloom Peach
+**Copy this prompt to Grok:**
 
-### Frame-by-Frame Instructions (3 sec loop, 8 frames)
+```
+Create a 4-second looping animation with TRANSPARENT BACKGROUND (alpha channel, no solid background color). Use the uploaded cat reference image (BloomKittyReference.png) as the character model.
 
-**Frame 1:** Cat sitting on Bloom Light floor mat, reaching toward a single coin with both paws. Three stacks of coins visible: Stack 1 (Bloom Pink), Stack 2 (Bloom Mint), Stack 3 (Bloom Lavender).
+Scene: A cute cat sitting cross-legged, organizing coins from a messy pile into three neat stacks. IMPORTANT: Show a scattered pile of mixed-color loose coins in front of the cat (about 5-6 loose coins visible), and three organized stacks behind the pile (pink stack on left, mint stack in middle, lavender stack on right).
 
-**Frame 2:** Cat holding coin between both paws, paws slightly squished together. Coin is Bloom Mint. Cat's cheeks puffed slightly.
+Art style: Soft kawaii/cute style, rounded shapes, pastel colors, smooth and gentle movements.
 
-**Frame 3:** Cat lifting coin above Stack 2 (Bloom Mint stack). Arms extended upward.
+Color scheme:
+- Cat: Use exact appearance from BloomKittyReference.png
+- Loose coin pile: Mix of pink (#FFB3C6), mint (#C6F6D5), and lavender (#E9D8FD) coins scattered messily
+- Stack 1 (left): Pink coins (#FFB3C6) - 3 coins tall
+- Stack 2 (middle): Mint green coins (#C6F6D5) - 4 coins tall
+- Stack 3 (right): Lavender purple coins (#E9D8FD) - 3 coins tall
+- Small sparkles: Soft peach (#FED7D7)
 
-**Frame 4:** Cat placing coin on top of Stack 2. Small Bloom Peach sparkles appearing around the stack.
+Animation sequence (3 seconds, smooth loop):
+1. Cat sits with loose coin pile directly in front of them, three neat stacks arranged behind the pile. Cat looks down at the loose pile.
+2. Cat reaches both paws forward and picks up ONE mint green coin from the loose pile (the pile should have one less coin after picking it up).
+3. Cat lifts the mint coin up to eye level, examining it closely with curious expression.
+4. Cat leans forward slightly and carefully places the mint coin on top of the middle mint stack (stack grows by one coin).
+5. Small peach sparkles appear briefly around the mint stack.
+6. Cat sits back, looking satisfied, hands returning to lap position (loop returns to step 1).
 
-**Frame 5:** Stack 3 (Bloom Lavender) beginning to wobble. Cat looking at Stack 3 with wide eyes, mouth in small 'o' shape.
+CRITICAL DETAILS FOR GROK:
+- The loose pile must VISIBLY have coins throughout - do not make coins appear from nowhere
+- When cat picks up a coin, that coin should disappear from the loose pile
+- When cat places coin on stack, the stack should grow by exactly one coin
+- All coins must be accounted for at all times
 
-**Frame 6:** Stack 3 collapsed, coins scattered around. Cat has surprised expression.
+Camera: Front view at slight downward angle to see the stacks clearly, stationary
+Movement: Slow, careful, deliberate movements - cat is being very precise and gentle
+Mood: Focused and satisfied, organizing with care and pride
 
-**Frame 7:** Cat rapidly restacking coins with both paws moving (motion blur suggested). Tail curved upward in wiggle position.
+CRITICAL: Background MUST be completely transparent (PNG/alpha channel), no solid colors, no floor visible behind objects.
+```
 
-**Frame 8:** Cat finishing restack, tail mid-wiggle. All three stacks neat again. Transition back to Frame 1.
-
-### On-screen Text
-
-**Frame 1:** Organizing your data
-
-**Frame 2:** Organizing your data.
-
-**Frame 3:** Organizing your data..
-
-**Frame 4:** Organizing your data...
-
-**Frame 5:** Organizing your data
-
-**Frame 6:** Organizing your data.
-
-**Frame 7:** Organizing your data..
-
-**Frame 8:** Organizing your data...
+**Loading text:** "Organizing your data..." (animated dots)
 
 ---
 
-## 🐱💤 Animation Concept C: "Sleepy Bloom Banker"
-**Cat Awakening to Fetch Data**
+## 🐱💤 Animation 3: "Sleepy Kitty Waking Up"
 
-### Color Style
-- Alarm clock: Bloom Peach
-- Papers/receipts: Bloom Light + Mint
-- Calculator: Bloom Lavender
-- Cat blanket (optional): Bloom Pink
+**Copy this prompt to Grok:**
 
-### Frame-by-Frame Instructions (3.5 sec loop, 7 frames)
+```
+Create a 4-second looping animation with TRANSPARENT BACKGROUND (alpha channel, no solid background color). Use the uploaded cat reference image (BloomKittyReference.png) as the character model.
 
-**Frame 1:** Cat sleeping at desk, head resting on Bloom Pink blanket. Eyes closed peacefully. Bloom Peach alarm clock on desk showing early morning. Calculator (Bloom Lavender) and papers (Bloom Light/Mint) visible on desk.
+Scene: A cute cat sleeping at a desk, wakes up when an alarm clock rings, then groggily starts working on a calculator before starting to doze off again.
 
-**Frame 2:** Alarm clock tilted slightly to left, ringing lines visible around it. Cat still sleeping but ears perked up.
+Art style: Soft kawaii/cute style, rounded shapes, pastel colors, expressive sleepy animations.
 
-**Frame 3:** Cat suddenly awake, eyes wide open (large pastel eyes), head lifted off blanket. Slightly startled expression. Alarm clock still ringing.
+Color scheme:
+- Cat: Use exact appearance from BloomKittyReference.png
+- Alarm clock: Soft peach (#FED7D7) body with pink (#FFB3C6) bells
+- Calculator: Lavender (#E9D8FD) body with mint (#C6F6D5) display screen
+- Papers: Light pink (#FFE5EC) and mint (#C6F6D5)
+- Small pillow/blanket: Soft pink (#FFB3C6)
 
-**Frame 4:** Cat sitting up, both Bloom Lavender paw pads raised to face, rubbing eyes. Mouth in small yawn.
+Animation sequence (4 seconds, smooth loop):
+1. Cat is sleeping peacefully at desk, head resting on soft pink pillow, eyes closed with content expression
+2. Alarm clock suddenly rings (show ringing motion lines), bells wobble
+3. Cat's ears perk up while still asleep
+4. Cat's eyes pop open wide with startled expression, head lifts up quickly
+5. Cat sits up and rubs eyes with both paws, yawning (mouth opens in small 'o')
+6. Cat looks at calculator, reaches one paw out and presses a button
+7. Calculator screen glows mint green briefly
+8. Cat's eyes start drooping, head tilts down sleepily, beginning to lean back toward pillow (returns to step 1 for loop)
 
-**Frame 5:** Cat with paws lowered, looking at Bloom Lavender calculator. One paw reaching toward calculator.
+Camera: Side-front angle view of desk, stationary camera
+Movement: Exaggerated sleepy movements - slow head drops, cute yawns, drowsy eye blinks
+Mood: Adorably sleepy, reluctantly working, cozy and tired
 
-**Frame 6:** Cat pressing calculator button with paw. Calculator screen glowing Bloom Mint. Cat looking focused.
+CRITICAL: Background MUST be completely transparent (PNG/alpha channel), no solid colors, no desk surface visible as solid background.
+```
 
-**Frame 7:** Cat's eyes drooping, head starting to tilt down. Beginning to nod off again. Transition back to Frame 1.
-
-### On-screen Text
-
-**Frame 1:** Waking up the server
-
-**Frame 2:** Waking up the server.
-
-**Frame 3:** Waking up the server..
-
-**Frame 4:** Waking up the server...
-
-**Frame 5:** Waking up the server
-
-**Frame 6:** Waking up the server.
-
-**Frame 7:** Waking up the server..
+**Loading text:** "Waking up the server..." (animated dots)
 
 ---
 
-## 🐱🏃‍♂️💗 Animation Concept D: "Bloom Runner Kitty"
-**Cat Carrying a Pastel Money Bag**
+## 🐱🏃‍♂️ Animation 4: "Kitty Running With Money Bag"
 
-### Color Style
-- Money bag: Bloom Pink body with Mint coin symbol
-- Background shapes: floating circles in Bloom Light
-- Cat bandana: Bloom Lavender
+**Copy this prompt to Grok:**
 
-### Frame-by-Frame Instructions (1.3 sec loop, 5 frames - quick tempo)
+```
+Create a 3-second looping animation with TRANSPARENT BACKGROUND (alpha channel, no solid background color). Use the uploaded cat reference image (BloomKittyReference.png) as the character model.
 
-**Frame 1:** Cat in running pose, left leg forward, right leg back. Holding Bloom Pink money bag (with Mint coin symbol) over shoulder. Bloom Lavender bandana on head. Floating Bloom Light circles in background.
+Scene: A cute cat running in place while carrying a money bag over shoulder. A coin bounces out of the bag, and the cat catches it and puts it back.
 
-**Frame 2:** Cat in running pose, right leg forward, left leg back. Money bag bouncing higher on shoulder.
+Art style: Soft kawaii/cute style, rounded shapes, pastel colors, bouncy energetic movements.
 
-**Frame 3:** A Bloom Lavender coin popping out of the bag mid-air, above cat's head. Cat's eyes looking up at coin with surprised expression.
+Color scheme:
+- Cat: Use exact appearance from BloomKittyReference.png with a lavender (#E9D8FD) bandana tied around neck
+- Money bag: Soft pink (#FFB3C6) fabric with large mint green (#C6F6D5) dollar sign
+- Coins: Lavender (#E9D8FD) with pink (#FFB3C6) shine highlights
+- Motion effects: Very subtle peach (#FED7D7) speed lines (optional, minimal)
 
-**Frame 4:** Cat's free paw reaching up to grab the coin. Still in running motion. Coin now between paw and bag opening.
+Animation sequence (3 seconds, smooth loop):
+1. Cat runs in place (alternating legs in running motion), holding pink money bag over right shoulder with right paw
+2. Cat continues running, bag bounces slightly on shoulder
+3. A single lavender coin pops out of the bag opening and flies upward above cat's head
+4. Cat's eyes look up at the coin, surprised expression with wide eyes
+5. Cat reaches up with free left paw while still running, catches the coin mid-air
+6. Cat brings coin down and stuffs it back into the bag opening with determined/focused expression
+7. Cat continues running normally with secure bag (returns to step 1 for loop)
 
-**Frame 5:** Cat stuffing coin back into bag with determined expression. Both the coin and paw pressing into bag opening. Transition back to Frame 1.
+Camera: Side profile view, camera follows cat at same pace (cat stays centered)
+Movement: Bouncy running animation, energetic but smooth, bag has slight physics bounce
+Mood: Determined, focused, hustling adorably
 
-### On-screen Text
+CRITICAL: Background MUST be completely transparent (PNG/alpha channel), no ground, no environment, just the running cat and objects.
+```
 
-**Frame 1:** Fetching your data
-
-**Frame 2:** Fetching your data.
-
-**Frame 3:** Fetching your data..
-
-**Frame 4:** Fetching your data...
-
-**Frame 5:** Fetching your data
-
----
-
-## 🐱🖨️ Animation Concept E: "Bloom Printer Kitty"
-**Cat Printing Stylized Data Sheets**
-
-### Color Style
-- Printer: Bloom Light with Peach buttons
-- Printed sheet: Bloom Mint w/ Pink accents
-- Cat scarf: Bloom Lavender
-- Background: subtle Bloom Pink blobs
-
-### Frame-by-Frame Instructions (2 sec loop, 6 frames)
-
-**Frame 1:** Bloom Light printer with Bloom Peach buttons sitting on desk. Subtle Bloom Pink blob shapes in background. Cat sitting next to printer wearing Bloom Lavender scarf, looking at printer expectantly.
-
-**Frame 2:** Sheet of paper (Bloom Mint with Pink accents) emerging from printer slot, about 1/3 visible. Cat leaning forward slightly.
-
-**Frame 3:** Sheet now 2/3 out of printer. Cat reaching both paws (with Bloom Pink paw pads) toward the paper.
-
-**Frame 4:** Cat grasping the sheet with both paws. Paper fully out of printer. Cat lifting sheet toward chest.
-
-**Frame 5:** Cat holding sheet, turning toward a neat stack of papers (pastel colors) on the desk beside the printer.
-
-**Frame 6:** Cat placing sheet on top of the stack. Stack now one sheet taller. Cat's paws releasing the paper. Transition back to Frame 1.
-
-### On-screen Text
-
-**Frame 1:** Processing your data
-
-**Frame 2:** Processing your data.
-
-**Frame 3:** Processing your data..
-
-**Frame 4:** Processing your data...
-
-**Frame 5:** Processing your data
-
-**Frame 6:** Processing your data.
+**Loading text:** "Fetching your data..." (animated dots)
 
 ---
 
-## Implementation Notes
+## 🐱📄 Animation 5: "Kitty Filing Papers"
 
-These concepts can be implemented as:
-- Lottie animations (JSON format)
-- CSS animations
-- SVG animations
-- GIF animations
-- Canvas-based animations
+**Copy this prompt to Grok:**
 
-The current implementation uses GIFs from Giphy. To replace with custom animations, update the `catGifs` array in `frontend/src/components/CatLoading.jsx`.
+```
+Create a 3-second looping animation with TRANSPARENT BACKGROUND (alpha channel, no solid background color). Use the uploaded cat reference image (BloomKittyReference.png) as the character model.
+
+Scene: A cute cat standing beside a filing cabinet, pulling out papers one by one and organizing them into neat stacks.
+
+Art style: Soft kawaii/cute style, rounded shapes, pastel colors, organized methodical movements.
+
+Color scheme:
+- Cat: Use exact appearance from BloomKittyReference.png with a light lavender (#E9D8FD) scarf
+- Filing cabinet: Light pink (#FFE5EC) body with peach (#FED7D7) drawer handles
+- Papers: Alternating mint green (#C6F6D5) and pink (#FFB3C6) sheets
+- Label tabs: Soft lavender (#E9D8FD)
+
+Animation sequence (3 seconds, smooth loop):
+1. Cat stands beside filing cabinet, reaching one paw toward an open drawer
+2. Cat pulls out a mint green paper from the drawer
+3. Cat holds paper up briefly, examining it with focused eyes
+4. Cat turns to the side toward a small stack of papers on surface
+5. Cat carefully places the mint green paper on top of the stack with both paws
+6. Stack of papers has slight settling animation (paper aligns with stack)
+7. Cat turns back toward filing cabinet with satisfied expression, reaching for next paper (returns to step 1 for loop)
+
+Camera: Slight angle front view, shows both the cabinet and the stack area, stationary
+Movement: Smooth, professional, organized movements - cat is efficient and tidy
+Mood: Productive, organized, focused but cheerful
+
+CRITICAL: Background MUST be completely transparent (PNG/alpha channel), no floor or walls, just the cat and filing objects.
+```
+
+**Loading text:** "Processing your data..." (animated dots)
+
+---
+
+## Technical Export Settings for Grok
+
+When generating, request or ensure:
+
+-   **Alpha channel transparency** (not solid color background)
+-   **MP4 with alpha** or **PNG sequence** export
+-   **Seamless loop** (last frame transitions smoothly to first frame)
+-   **3-4 second duration**
+-   **Smooth 24-30 fps animation**
+
+If Grok doesn't support transparent video export, request a PNG sequence and composite later.
+
+---
+
+## Implementation Note
+
+Once videos are generated with transparent backgrounds, place them in `frontend/public/animations/` and update `frontend/src/components/CatLoading.jsx` to cycle through them.

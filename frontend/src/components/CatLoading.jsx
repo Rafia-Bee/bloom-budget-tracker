@@ -12,6 +12,9 @@ const catAnimations = [
   '/bloom-coin-sorter.mp4',      // Concept B: Cat sorting coin stacks
   '/bloom-runner-kitty.mp4',     // Concept D: Cat running with money bag
   '/bloom-printer-kitty.mp4',    // Concept E: Cat printing data sheets
+  '/bloom-filing-kitty.mp4',     // Concept F: Cat filing documents
+  '/bloom-runner-kitty-2.mp4',   // Concept G: Cat running with money pouch (revised)
+  '/bloom-sleepy-kitty.mp4',     // Concept H: Sleepy cat waking up and snoozing alarm
 ]
 
 export default function CatLoading({ message = "Waking up the server..." }) {
