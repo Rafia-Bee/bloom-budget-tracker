@@ -75,8 +75,12 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
         const expenseDateOnly = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate())
         const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
         const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+        const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
-        if (expenseDateOnly >= startDateOnly && expenseDateOnly <= endDateOnly) {
+        // Only include expenses that are:
+        // 1. Within the period date range AND
+        // 2. Not in the future (date <= today)
+        if (expenseDateOnly >= startDateOnly && expenseDateOnly <= endDateOnly && expenseDateOnly <= todayDateOnly) {
           if (expense.category === 'Debt Payments' &&
               expense.subcategory === 'Credit Card' &&
               expense.payment_method === 'Debit card') {
