@@ -33,7 +33,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 black pytest
+          pip install flake8 black pytest pytest-flask pytest-cov
 
       - name: Run flake8 linting
         run: |
@@ -46,15 +46,15 @@ jobs:
           echo "🎨 Checking code formatting..."
           black --check backend/
 
-      - name: Run pytest (if tests exist)
+      - name: Run backend tests
         run: |
-          echo "🧪 Running tests..."
-          if [ -d "tests" ] || [ -d "backend/tests" ]; then
-            pytest -v
-          else
-            echo "⚠️  No tests directory found - skipping tests"
-          fi
-        continue-on-error: true
+          echo "🧪 Running backend tests..."
+          cd backend
+          python -m pytest tests/ -v --tb=short --color=yes
+        env:
+          # Ensure no real services are used during tests
+          SENDGRID_API_KEY: ""
+          DATABASE_URL: ""
 
   frontend-checks:
     name: Frontend - Build & Lint

@@ -6,7 +6,7 @@ For production, consider using Redis-based solution.
 """
 
 from functools import wraps
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -17,7 +17,8 @@ _request_history = defaultdict(list)
 RATE_LIMITS = {
     "auth.login": (50, 300),  # 50 attempts per 5 minutes (increased for dev)
     "auth.register": (10, 3600),  # 10 registrations per hour
-    "password_reset.forgot_password": (3, 3600),  # 3 password reset emails per hour
+    # 3 password reset emails per hour
+    "password_reset.forgot_password": (3, 3600),
     "default": (1000, 60),  # 1000 requests per minute for other endpoints
 }
 
@@ -33,6 +34,10 @@ def rate_limit(endpoint_name=None):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            # Check if rate limiting is disabled (e.g., in tests)
+            if not current_app.config.get("RATELIMIT_ENABLED", True):
+                return f(*args, **kwargs)
+
             # Get client IP
             client_ip = request.remote_addr or "unknown"
 

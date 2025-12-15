@@ -12,6 +12,7 @@ Sets up test database, test client, and common fixtures.
 """
 
 import pytest
+import os
 from unittest.mock import patch, MagicMock
 from backend.app import create_app
 from backend.models.database import db
@@ -30,29 +31,54 @@ class TestConfig(Config):
     SENDGRID_API_KEY = None
 
 
+@pytest.fixture(scope="function", autouse=True)
+def disable_sendgrid():
+    """Ensure SendGrid is disabled for ALL tests by removing API key from environment"""
+    original_key = os.environ.get("SENDGRID_API_KEY")
+    if "SENDGRID_API_KEY" in os.environ:
+        del os.environ["SENDGRID_API_KEY"]
+    yield
+    if original_key:
+        os.environ["SENDGRID_API_KEY"] = original_key
+
+
 @pytest.fixture(scope="function")
-def app():
-    """Create Flask app for testing with mocked email service"""
-    # Mock email service to prevent real emails from being sent
-    with patch("backend.services.email_service.EmailService") as mock_email_class:
-        mock_email_instance = MagicMock()
-        mock_email_instance.enabled = False
-        mock_email_instance.send_email.return_value = {
-            "success": True,
-            "status_code": 200,
-            "message": "Mocked email (not actually sent)",
-        }
-        mock_email_instance.send_password_reset_email.return_value = {
-            "success": True,
-            "status_code": 200,
-            "message": "Mocked email (not actually sent)",
-        }
-        mock_email_class.return_value = mock_email_instance
+def app(disable_sendgrid):
+    """Create Flask app for testing with email service properly mocked"""
+    # Patch the email service at the routes level to prevent ANY emails
+    with patch("backend.routes.auth.email_service") as mock_auth_email, patch(
+        "backend.routes.password_reset.email_service"
+    ) as mock_pwd_email, patch(
+        "backend.services.email_service.email_service"
+    ) as mock_service:
+        # Configure all mocks to return success without sending emails
+        for mock in [mock_auth_email, mock_pwd_email, mock_service]:
+            mock.enabled = False
+            mock.send_email.return_value = {
+                "success": True,
+                "status_code": 200,
+                "message": "Mocked email (not actually sent)",
+            }
+            mock.send_welcome_email.return_value = {
+                "success": True,
+                "status_code": 200,
+                "message": "Mocked email (not actually sent)",
+            }
+            mock.send_password_reset_email.return_value = {
+                "success": True,
+                "status_code": 200,
+                "message": "Mocked email (not actually sent)",
+            }
 
         app = create_app()
         app.config.from_object(TestConfig)
 
         with app.app_context():
+            # Clear rate limiter state before each test
+            from backend.utils.rate_limiter import _request_history
+
+            _request_history.clear()
+
             db.create_all()
             yield app
             db.session.remove()
