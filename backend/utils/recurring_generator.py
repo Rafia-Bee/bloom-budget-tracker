@@ -106,8 +106,7 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
 
     # Also filter by end_date if set
     query = query.filter(
-        db.or_(RecurringExpense.end_date == None,
-               RecurringExpense.end_date >= today)
+        db.or_(RecurringExpense.end_date == None, RecurringExpense.end_date >= today)
     )
 
     due_recurring_expenses = query.all()
@@ -182,7 +181,9 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                     "id": recurring_expense.id,
                     "name": recurring_expense.name,
                     "amount": recurring_expense.amount / 100,
-                    "date": generation_date.isoformat() if not dry_run else recurring_expense.next_due_date.isoformat(),
+                    "date": generation_date.isoformat()
+                    if not dry_run
+                    else recurring_expense.next_due_date.isoformat(),
                     "action": "generated" if not dry_run else "would generate",
                 }
             )
@@ -267,8 +268,7 @@ def get_upcoming_recurring_expenses(user_id, days=30):
                     # Handle invalid day (e.g., Feb 30)
                     next_due = datetime(next_year, next_month, 28).date()
             elif recurring_expense.frequency == "custom":
-                next_due = next_due + \
-                    timedelta(days=recurring_expense.frequency_value)
+                next_due = next_due + timedelta(days=recurring_expense.frequency_value)
 
     # Sort by date
     upcoming.sort(key=lambda x: x["date"])
