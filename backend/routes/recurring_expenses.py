@@ -22,14 +22,16 @@ def get_recurring_expenses():
     """Get all recurring expense templates for the current user"""
     try:
         current_user_id = int(get_jwt_identity())
-        active_only = request.args.get("active_only", "false").lower() == "true"
+        active_only = request.args.get(
+            "active_only", "false").lower() == "true"
 
         query = RecurringExpense.query.filter_by(user_id=current_user_id)
 
         if active_only:
             query = query.filter_by(is_active=True)
 
-        recurring_expenses = query.order_by(RecurringExpense.next_due_date).all()
+        recurring_expenses = query.order_by(
+            RecurringExpense.next_due_date).all()
 
         return (
             jsonify(
@@ -69,7 +71,8 @@ def get_recurring_expense(id):
     """Get a specific recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.query.filter_by(
+            id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -123,7 +126,8 @@ def create_recurring_expense():
                 day = data["day_of_month"]
                 if today.day < day:
                     # Day hasn't occurred this month yet
-                    next_due_date = datetime(today.year, today.month, day).date()
+                    next_due_date = datetime(
+                        today.year, today.month, day).date()
                 else:
                     # Day already passed, use next month
                     next_month = today.month + 1
@@ -191,7 +195,8 @@ def update_recurring_expense(id):
     """Update a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.query.filter_by(
+            id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -209,7 +214,8 @@ def update_recurring_expense(id):
         re.day_of_week = data.get("day_of_week", re.day_of_week)
 
         if "start_date" in data:
-            re.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            re.start_date = datetime.strptime(
+                data["start_date"], "%Y-%m-%d").date()
         if "end_date" in data:
             re.end_date = (
                 datetime.strptime(data["end_date"], "%Y-%m-%d").date()
@@ -222,6 +228,37 @@ def update_recurring_expense(id):
             re.is_fixed_bill = data["is_fixed_bill"]
         if "notes" in data:
             re.notes = data["notes"]
+
+        # Recalculate next_due_date if frequency-related fields changed
+        if any(key in data for key in ["day_of_month", "day_of_week", "frequency", "start_date"]):
+            today = datetime.now().date()
+            start_date = re.start_date
+
+            if start_date < today:
+                if re.frequency == "monthly" and re.day_of_month:
+                    day = re.day_of_month
+                    if today.day < day:
+                        re.next_due_date = datetime(
+                            today.year, today.month, day).date()
+                    else:
+                        next_month = today.month + 1
+                        next_year = today.year
+                        if next_month > 12:
+                            next_month = 1
+                            next_year += 1
+                        re.next_due_date = datetime(
+                            next_year, next_month, day).date()
+                elif re.frequency == "weekly" or re.frequency == "biweekly":
+                    from datetime import timedelta
+                    days_increment = 7 if re.frequency == "weekly" else 14
+                    next_due_date = start_date
+                    while next_due_date < today:
+                        next_due_date += timedelta(days=days_increment)
+                    re.next_due_date = next_due_date
+                else:
+                    re.next_due_date = start_date
+            else:
+                re.next_due_date = start_date
 
         db.session.commit()
 
@@ -237,7 +274,8 @@ def delete_recurring_expense(id):
     """Delete a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.query.filter_by(
+            id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -257,7 +295,8 @@ def toggle_recurring_expense(id):
     """Toggle active status of a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.query.filter_by(
+            id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -285,7 +324,8 @@ def toggle_fixed_bill(id):
     """Toggle whether a recurring expense is a fixed bill"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.query.filter_by(
+            id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -313,7 +353,8 @@ def toggle_fixed_bill(id):
 def export_recurring_expenses():
     """Export all recurring expenses as JSON for backup/testing"""
     current_user_id = int(get_jwt_identity())
-    recurring_expenses = RecurringExpense.query.filter_by(user_id=current_user_id).all()
+    recurring_expenses = RecurringExpense.query.filter_by(
+        user_id=current_user_id).all()
 
     export_data = [
         {
@@ -363,11 +404,13 @@ def import_recurring_expenses():
                 frequency_value=re_data.get("frequency_value", 1),
                 day_of_month=re_data.get("day_of_month"),
                 day_of_week=re_data.get("day_of_week"),
-                start_date=datetime.fromisoformat(re_data["start_date"]).date(),
+                start_date=datetime.fromisoformat(
+                    re_data["start_date"]).date(),
                 end_date=datetime.fromisoformat(re_data["end_date"]).date()
                 if re_data.get("end_date")
                 else None,
-                next_due_date=datetime.fromisoformat(re_data["next_due_date"]).date(),
+                next_due_date=datetime.fromisoformat(
+                    re_data["next_due_date"]).date(),
                 is_active=re_data.get("is_active", True),
                 is_fixed_bill=re_data.get("is_fixed_bill", False),
                 notes=re_data.get("notes"),

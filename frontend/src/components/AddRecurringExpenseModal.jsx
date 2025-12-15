@@ -303,7 +303,14 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setStartDate(e.target.value)
+                    // For monthly frequency, also update day_of_month
+                    if (frequency === 'monthly') {
+                      const selectedDate = new Date(e.target.value)
+                      setDayOfMonth(selectedDate.getDate())
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                   required
                 />
