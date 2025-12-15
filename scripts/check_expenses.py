@@ -10,8 +10,7 @@ import sys
 import os
 
 # Add parent directory to path FIRST
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Now import backend modules
 
@@ -36,8 +35,7 @@ def check_expenses(email):
 
         # Check for pre-existing debt
         pre_existing = Expense.query.filter_by(
-            user_id=user_id,
-            name="Pre-existing Credit Card Debt"
+            user_id=user_id, name="Pre-existing Credit Card Debt"
         ).first()
 
         if pre_existing:
@@ -55,14 +53,14 @@ def check_expenses(email):
         # Show expenses without budget_period_id
         print("\n\nExpenses without budget_period_id:")
         no_period = Expense.query.filter_by(
-            user_id=user_id,
-            budget_period_id=None
+            user_id=user_id, budget_period_id=None
         ).all()
 
         if no_period:
             for exp in no_period:
                 print(
-                    f"  - {exp.name}: €{exp.amount/100:.2f} ({exp.date}) - {exp.category}")
+                    f"  - {exp.name}: €{exp.amount/100:.2f} ({exp.date}) - {exp.category}"
+                )
         else:
             print("  None found")
 

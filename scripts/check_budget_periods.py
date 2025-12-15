@@ -6,6 +6,7 @@ from backend.app import create_app
 from datetime import datetime
 import sys
 import os
+
 # Add parent directory to path FIRST
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -21,13 +22,17 @@ with app.app_context():
         print(f"  Date Range: {sp.start_date} to {sp.end_date}")
         print(f"  User ID: {sp.user_id}")
 
-        weeks = BudgetPeriod.query.filter_by(
-            salary_period_id=sp.id).order_by(BudgetPeriod.week_number).all()
+        weeks = (
+            BudgetPeriod.query.filter_by(salary_period_id=sp.id)
+            .order_by(BudgetPeriod.week_number)
+            .all()
+        )
 
         print(f"  Weeks:")
         for week in weeks:
             print(
-                f"    Week {week.week_number}: ID={week.id}, {week.start_date} to {week.end_date}")
+                f"    Week {week.week_number}: ID={week.id}, {week.start_date} to {week.end_date}"
+            )
 
             # Check for expenses in this week
             expenses = Expense.query.filter_by(budget_period_id=week.id).all()
@@ -37,7 +42,8 @@ with app.app_context():
                     date_in_range = week.start_date <= exp.date <= week.end_date
                     marker = "✓" if date_in_range else "✗ MISMATCH"
                     print(
-                        f"        {marker} {exp.name}: {exp.date} (€{exp.amount/100:.2f})")
+                        f"        {marker} {exp.name}: {exp.date} (€{exp.amount/100:.2f})"
+                    )
 
     print("\n=== STANDALONE BUDGET PERIODS (no salary_period_id) ===")
     standalone = BudgetPeriod.query.filter_by(salary_period_id=None).all()

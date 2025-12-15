@@ -20,13 +20,13 @@ import sys
 from pathlib import Path
 
 # Add backend to path FIRST
-backend_path = Path(__file__).parent.parent / 'backend'
+backend_path = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_path))
 
 # Now import from backend
 
 # Load environment variables
-env_path = Path(__file__).parent.parent / '.env'
+env_path = Path(__file__).parent.parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
     print(f"✅ Loaded .env from {env_path}")
@@ -38,8 +38,8 @@ def test_email():
     """Test sending an email."""
 
     # Get config from environment
-    api_key = os.getenv('SENDGRID_API_KEY')
-    from_email = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@bloom-budget.com')
+    api_key = os.getenv("SENDGRID_API_KEY")
+    from_email = os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
 
     print("\n📧 Email Configuration:")
     print(f"   From: {from_email}")
@@ -59,20 +59,20 @@ def test_email():
         return False
 
     # Confirm before sending
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("⚠️  WARNING: This will send 1 REAL email using SendGrid quota")
     print("   Daily limit: 100 emails (free tier)")
     confirm = input("Continue? (type 'yes' to confirm): ").strip().lower()
 
-    if confirm != 'yes':
+    if confirm != "yes":
         print("❌ Cancelled - no email sent")
         return False
 
     # Prompt for test email
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     to_email = input("Enter email address to send test email to: ").strip()
 
-    if not to_email or '@' not in to_email:
+    if not to_email or "@" not in to_email:
         print("❌ Invalid email address")
         return False
 
@@ -93,7 +93,9 @@ def test_email():
             </p>
         </body>
     </html>
-    """.format(from_email=from_email)
+    """.format(
+        from_email=from_email
+    )
 
     plain_content = f"""
     Bloom Budget Tracker - Test Email
@@ -111,11 +113,11 @@ def test_email():
         to_email=to_email,
         subject="🌸 Bloom Budget - Test Email",
         html_content=html_content,
-        plain_text_content=plain_content
+        plain_text_content=plain_content,
     )
 
-    print("\n" + "="*60)
-    if result.get('success'):
+    print("\n" + "=" * 60)
+    if result.get("success"):
         print("✅ SUCCESS! Email sent successfully")
         print(f"   Status Code: {result.get('status_code')}")
         print(f"\n📬 Check your inbox at {to_email}")
@@ -127,18 +129,18 @@ def test_email():
         return False
 
 
-if __name__ == '__main__':
-    print("="*60)
+if __name__ == "__main__":
+    print("=" * 60)
     print("🌸 Bloom Budget Tracker - Email Test")
-    print("="*60)
+    print("=" * 60)
 
     success = test_email()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     if success:
         print("✅ Email test completed successfully!")
     else:
         print("❌ Email test failed")
-    print("="*60)
+    print("=" * 60)
 
     sys.exit(0 if success else 1)

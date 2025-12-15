@@ -38,10 +38,13 @@ def migrate_add_archived():
             result = conn.execute(text("PRAGMA table_info(debts)"))
             columns = [row[1] for row in result]
 
-            if 'archived' not in columns:
+            if "archived" not in columns:
                 print("Adding 'archived' column to debts table...")
                 conn.execute(
-                    text("ALTER TABLE debts ADD COLUMN archived BOOLEAN DEFAULT 0 NOT NULL"))
+                    text(
+                        "ALTER TABLE debts ADD COLUMN archived BOOLEAN DEFAULT 0 NOT NULL"
+                    )
+                )
                 conn.commit()
                 print("✓ 'archived' column added successfully")
             else:
@@ -58,14 +61,18 @@ def migrate_add_recurring_expenses():
 
     try:
         # Check if recurring_expenses table exists
-        result = db.session.execute(text(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='recurring_expenses'"
-        ))
+        result = db.session.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='recurring_expenses'"
+            )
+        )
         table_exists = result.fetchone() is not None
 
         if not table_exists:
             print("Creating recurring_expenses table...")
-            db.session.execute(text("""
+            db.session.execute(
+                text(
+                    """
                 CREATE TABLE recurring_expenses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
@@ -87,7 +94,9 @@ def migrate_add_recurring_expenses():
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (id)
                 )
-            """))
+            """
+                )
+            )
             print("✓ recurring_expenses table created")
         else:
             print("✓ recurring_expenses table already exists")
@@ -96,13 +105,17 @@ def migrate_add_recurring_expenses():
         result = db.session.execute(text("PRAGMA table_info(expenses)"))
         columns = [row[1] for row in result.fetchall()]
 
-        if 'recurring_template_id' not in columns:
+        if "recurring_template_id" not in columns:
             print("Adding recurring_template_id column to expenses table...")
-            db.session.execute(text("""
+            db.session.execute(
+                text(
+                    """
                 ALTER TABLE expenses
                 ADD COLUMN recurring_template_id INTEGER
                 REFERENCES recurring_expenses(id)
-            """))
+            """
+                )
+            )
             print("✓ recurring_template_id column added")
         else:
             print("✓ recurring_template_id column already exists")
@@ -123,13 +136,18 @@ def migrate_add_password_reset_tokens():
     with db.engine.connect() as conn:
         try:
             # Check if table exists
-            result = conn.execute(text(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='password_reset_tokens'"))
+            result = conn.execute(
+                text(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='password_reset_tokens'"
+                )
+            )
             table_exists = result.fetchone() is not None
 
             if not table_exists:
                 print("Creating password_reset_tokens table...")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE password_reset_tokens (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
@@ -139,7 +157,9 @@ def migrate_add_password_reset_tokens():
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (user_id) REFERENCES users (id)
                     )
-                """))
+                """
+                    )
+                )
                 conn.commit()
                 print("✓ password_reset_tokens table created successfully")
             else:
@@ -167,8 +187,7 @@ def cleanup_recurring_expenses():
     print_header("Cleanup: Orphaned Recurring Expenses")
 
     orphaned = Expense.query.filter(
-        Expense.recurring_template_id.isnot(None),
-        Expense.budget_period_id.is_(None)
+        Expense.recurring_template_id.isnot(None), Expense.budget_period_id.is_(None)
     ).all()
 
     if not orphaned:
@@ -179,10 +198,9 @@ def cleanup_recurring_expenses():
     for expense in orphaned:
         print(f"  • {expense.name} - €{expense.amount/100:.2f} on {expense.date}")
 
-    confirm = input(
-        f"\nDelete these {len(orphaned)} expenses? (yes/no): ").lower()
+    confirm = input(f"\nDelete these {len(orphaned)} expenses? (yes/no): ").lower()
 
-    if confirm == 'yes':
+    if confirm == "yes":
         for expense in orphaned:
             db.session.delete(expense)
         db.session.commit()
@@ -217,7 +235,7 @@ def remove_duplicate_recurring():
     print(f"\nFound {len(duplicates)} duplicate(s)")
     confirm = input(f"Delete {len(duplicates)} duplicates? (yes/no): ").lower()
 
-    if confirm == 'yes':
+    if confirm == "yes":
         for dup in duplicates:
             db.session.delete(dup)
         db.session.commit()
@@ -232,18 +250,18 @@ def verify_database():
 
     try:
         # Count records
-        user_count = db.session.execute(
-            text("SELECT COUNT(*) FROM users")).scalar()
+        user_count = db.session.execute(text("SELECT COUNT(*) FROM users")).scalar()
         expense_count = db.session.execute(
-            text("SELECT COUNT(*) FROM expenses")).scalar()
-        income_count = db.session.execute(
-            text("SELECT COUNT(*) FROM income")).scalar()
-        debt_count = db.session.execute(
-            text("SELECT COUNT(*) FROM debts")).scalar()
+            text("SELECT COUNT(*) FROM expenses")
+        ).scalar()
+        income_count = db.session.execute(text("SELECT COUNT(*) FROM income")).scalar()
+        debt_count = db.session.execute(text("SELECT COUNT(*) FROM debts")).scalar()
         recurring_count = db.session.execute(
-            text("SELECT COUNT(*) FROM recurring_expenses")).scalar()
+            text("SELECT COUNT(*) FROM recurring_expenses")
+        ).scalar()
         period_count = db.session.execute(
-            text("SELECT COUNT(*) FROM budget_periods")).scalar()
+            text("SELECT COUNT(*) FROM budget_periods")
+        ).scalar()
 
         print("Record Counts:")
         print(f"  Users:              {user_count}")
@@ -258,7 +276,7 @@ def verify_database():
 
         orphaned_expenses = Expense.query.filter(
             Expense.recurring_template_id.isnot(None),
-            Expense.budget_period_id.is_(None)
+            Expense.budget_period_id.is_(None),
         ).count()
 
         if orphaned_expenses > 0:
@@ -306,11 +324,11 @@ def main():
         command = sys.argv[1].lower()
 
         commands = {
-            'migrate': run_all_migrations,
-            'cleanup-recurring': cleanup_recurring_expenses,
-            'remove-duplicates': remove_duplicate_recurring,
-            'verify-db': verify_database,
-            'help': show_help,
+            "migrate": run_all_migrations,
+            "cleanup-recurring": cleanup_recurring_expenses,
+            "remove-duplicates": remove_duplicate_recurring,
+            "verify-db": verify_database,
+            "help": show_help,
         }
 
         if command in commands:
@@ -325,5 +343,5 @@ def main():
             sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -24,8 +24,14 @@ try:
     from sqlalchemy import create_engine, inspect
     from sqlalchemy.orm import sessionmaker
     from backend.models.database import (
-        db, User, Expense, Income, Debt,
-        SalaryPeriod, BudgetPeriod, RecurringExpense
+        db,
+        User,
+        Expense,
+        Income,
+        Debt,
+        SalaryPeriod,
+        BudgetPeriod,
+        RecurringExpense,
     )
 except ImportError as e:
     print(f"ERROR: Missing required packages: {e}")
@@ -38,30 +44,30 @@ def migrate_data():
     """Migrate all data from Postgres to SQLite"""
 
     # Get Postgres URL
-    postgres_url = os.getenv('DATABASE_URL')
+    postgres_url = os.getenv("DATABASE_URL")
     if not postgres_url:
         print("ERROR: DATABASE_URL environment variable not set")
         print("Get it from: Render Dashboard → Database → Internal Connection String")
         sys.exit(1)
 
     # Fix postgres:// → postgresql:// (Render uses old format)
-    if postgres_url.startswith('postgres://'):
-        postgres_url = postgres_url.replace('postgres://', 'postgresql://', 1)
+    if postgres_url.startswith("postgres://"):
+        postgres_url = postgres_url.replace("postgres://", "postgresql://", 1)
 
     # SQLite path
-    sqlite_path = Path(__file__).parent.parent / 'instance' / 'bloom.db'
+    sqlite_path = Path(__file__).parent.parent / "instance" / "bloom.db"
     sqlite_path.parent.mkdir(exist_ok=True)
 
     # Backup existing SQLite if it exists
     if sqlite_path.exists():
-        backup_path = sqlite_path.parent / \
-            f'bloom_backup_{int(time.time())}.db'
+        backup_path = sqlite_path.parent / f"bloom_backup_{int(time.time())}.db"
         import shutil
+
         shutil.copy2(sqlite_path, backup_path)
         print(f"✓ Backed up existing SQLite to {backup_path}")
         sqlite_path.unlink()
 
-    sqlite_url = f'sqlite:///{sqlite_path}'
+    sqlite_url = f"sqlite:///{sqlite_path}"
 
     print("=" * 60)
     print("Postgres → SQLite Migration")
@@ -95,7 +101,7 @@ def migrate_data():
             (Expense, "Expenses"),
             (Income, "Income"),
             (Debt, "Debts"),
-            (RecurringExpense, "Recurring Expenses")
+            (RecurringExpense, "Recurring Expenses"),
         ]
 
         total_records = 0
@@ -115,8 +121,7 @@ def migrate_data():
             for record in records:
                 # Get record as dict
                 record_dict = {
-                    c.name: getattr(record, c.name)
-                    for c in model.__table__.columns
+                    c.name: getattr(record, c.name) for c in model.__table__.columns
                 }
 
                 # Create new record in SQLite
@@ -143,9 +148,10 @@ def migrate_data():
         print(f"✗ Migration failed: {e}")
         print("=" * 60)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     migrate_data()

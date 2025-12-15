@@ -16,6 +16,7 @@ from backend.models.database import (
     Expense,
     Income,
     BudgetPeriod,
+    SalaryPeriod,
     Debt,
     RecurringExpense,
 )
@@ -42,36 +43,73 @@ def seed_data():
         Expense.query.filter_by(user_id=user.id).delete()
         Income.query.filter_by(user_id=user.id).delete()
         BudgetPeriod.query.filter_by(user_id=user.id).delete()
+        SalaryPeriod.query.filter_by(user_id=user.id).delete()
         Debt.query.filter_by(user_id=user.id).delete()
+        RecurringExpense.query.filter_by(user_id=user.id).delete()
         db.session.commit()
         print("✓ Test user data wiped clean")
 
         today = datetime.now().date()
 
-        # Create 4 weekly budget periods for November 2025
+        # Create a salary period for November 2025 (4-week period)
+        # This will auto-create 4 weekly budget periods
+        salary_period_start = datetime(2025, 11, 1).date()
+        salary_period_end = datetime(2025, 11, 28).date()
+
+        salary_period = SalaryPeriod(
+            user_id=user.id,
+            initial_debit_balance=500000,  # €5000
+            initial_credit_balance=100000,  # €1000
+            credit_limit=200000,  # €2000
+            credit_budget_allowance=50000,  # €500
+            salary_amount=300000,  # €3000
+            total_budget_amount=350000,  # €3500 (salary + credit allowance)
+            # €800 (will be calculated from recurring)
+            fixed_bills_total=80000,
+            remaining_amount=270000,  # €2700 (after fixed bills)
+            weekly_budget=67500,  # €675 per week (2700 / 4)
+            weekly_debit_budget=62500,  # €625
+            weekly_credit_budget=5000,  # €50
+            start_date=salary_period_start,
+            end_date=salary_period_end,
+            is_active=True,
+        )
+        db.session.add(salary_period)
+        db.session.commit()
+
+        print(f"✓ Created salary period: {salary_period_start} to {salary_period_end}")
+
+        # Create 4 weekly budget periods manually (normally auto-created by frontend)
         november_periods = [
             {
                 "start": datetime(2025, 11, 1).date(),
                 "end": datetime(2025, 11, 7).date(),
-            },  # Week 1: Nov 1-7
+                "week": 1,
+            },
             {
                 "start": datetime(2025, 11, 8).date(),
                 "end": datetime(2025, 11, 14).date(),
-            },  # Week 2: Nov 8-14
+                "week": 2,
+            },
             {
                 "start": datetime(2025, 11, 15).date(),
                 "end": datetime(2025, 11, 21).date(),
-            },  # Week 3: Nov 15-21
+                "week": 3,
+            },
             {
                 "start": datetime(2025, 11, 22).date(),
                 "end": datetime(2025, 11, 28).date(),
-            },  # Week 4: Nov 22-28
+                "week": 4,
+            },
         ]
 
         periods = []
         for period_data in november_periods:
             budget_period = BudgetPeriod(
                 user_id=user.id,
+                salary_period_id=salary_period.id,
+                week_number=period_data["week"],
+                budget_amount=67500,  # €675 per week
                 period_type="weekly",
                 start_date=period_data["start"],
                 end_date=period_data["end"],
@@ -80,7 +118,7 @@ def seed_data():
             db.session.commit()
             periods.append(budget_period)
             print(
-                f"✓ Created budget period: {budget_period.start_date} to {budget_period.end_date}"
+                f"✓ Created budget period: Week {budget_period.week_number} ({budget_period.start_date} to {budget_period.end_date})"
             )
 
         # Sample Income for each period (weekly salary + extras)

@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('instance/bloom.db')
+conn = sqlite3.connect("instance/bloom.db")
 cursor = conn.cursor()
 
 print("\n=== TABLES ===")

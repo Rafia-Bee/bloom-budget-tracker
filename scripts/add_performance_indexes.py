@@ -15,8 +15,7 @@ import sys
 import os
 
 # Add parent directory to path to import backend modules
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def index_exists(inspector, table_name, index_name):
@@ -67,12 +66,10 @@ def add_indexes():
             else:
                 try:
                     # PostgreSQL and SQLite both support this syntax
-                    sql = text(
-                        f"CREATE INDEX {index_name} ON {table_name} ({columns})")
+                    sql = text(f"CREATE INDEX {index_name} ON {table_name} ({columns})")
                     connection.execute(sql)
                     connection.commit()
-                    print(
-                        f"✅ CREATED: {index_name} on {table_name}({columns})")
+                    print(f"✅ CREATED: {index_name} on {table_name}({columns})")
                     created_count += 1
                 except Exception as e:
                     print(f"❌ ERROR creating {index_name}: {str(e)}")

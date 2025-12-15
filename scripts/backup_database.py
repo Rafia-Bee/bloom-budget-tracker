@@ -48,7 +48,7 @@ def backup_postgres(database_url, backup_dir):
             ["pg_dump", database_url, "-f", str(backup_file)],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
 
         print(f"✓ PostgreSQL backup successful: {backup_file}")
@@ -94,8 +94,7 @@ def compress_backup(backup_file):
         backup_file.unlink()
 
         file_size_mb = compressed_file.stat().st_size / (1024 * 1024)
-        print(
-            f"✓ Compression successful: {compressed_file} ({file_size_mb:.2f} MB)")
+        print(f"✓ Compression successful: {compressed_file} ({file_size_mb:.2f} MB)")
         return compressed_file
 
     except Exception as e:
@@ -121,6 +120,7 @@ def upload_to_github(backup_file, github_token):
 
         # Convert to base64
         import base64
+
         content_base64 = base64.b64encode(content).decode("utf-8")
 
         # GitHub API endpoint
@@ -129,7 +129,7 @@ def upload_to_github(backup_file, github_token):
         # Check if file already exists
         headers = {
             "Authorization": f"token {github_token}",
-            "Accept": "application/vnd.github.v3+json"
+            "Accept": "application/vnd.github.v3+json",
         }
 
         response = requests.get(url, headers=headers)
@@ -140,11 +140,7 @@ def upload_to_github(backup_file, github_token):
         # Upload/update file
         commit_message = f"chore: automated database backup - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
-        data = {
-            "message": commit_message,
-            "content": content_base64,
-            "branch": branch
-        }
+        data = {"message": commit_message, "content": content_base64, "branch": branch}
 
         if sha:
             data["sha"] = sha
@@ -173,8 +169,7 @@ def cleanup_old_backups(backup_dir, retention_days=30):
     for backup_file in backup_dir.glob("bloom_backup_*.gz"):
         # Extract timestamp from filename
         try:
-            timestamp_str = backup_file.stem.split(
-                "_", 2)[2]  # bloom_backup_TIMESTAMP
+            timestamp_str = backup_file.stem.split("_", 2)[2]  # bloom_backup_TIMESTAMP
             timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
 
             if timestamp < cutoff_date:
@@ -216,8 +211,7 @@ def main():
                 database_path = render_db_path
             else:
                 # Fallback to local development path
-                database_path = Path(__file__).parent.parent / \
-                    "instance" / "bloom.db"
+                database_path = Path(__file__).parent.parent / "instance" / "bloom.db"
 
             if not database_path.exists():
                 print(f"✗ SQLite database not found at {database_path}")

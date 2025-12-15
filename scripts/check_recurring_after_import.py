@@ -27,10 +27,11 @@ with app.app_context():
     print("=" * 80)
 
     # Get all recurring expenses for this user
-    recurring_expenses = RecurringExpense.query.filter_by(
-        user_id=user.id,
-        is_active=True
-    ).order_by(RecurringExpense.name).all()
+    recurring_expenses = (
+        RecurringExpense.query.filter_by(user_id=user.id, is_active=True)
+        .order_by(RecurringExpense.name)
+        .all()
+    )
 
     print(f"\nFound {len(recurring_expenses)} active recurring expenses:\n")
 
@@ -46,15 +47,17 @@ with app.app_context():
         print(f"  Days until due: {(rec.next_due_date - today).days}")
 
         # Check if expenses exist for this template
-        expenses = Expense.query.filter_by(
-            user_id=user.id,
-            recurring_template_id=rec.id
-        ).order_by(Expense.date.desc()).all()
+        expenses = (
+            Expense.query.filter_by(user_id=user.id, recurring_template_id=rec.id)
+            .order_by(Expense.date.desc())
+            .all()
+        )
 
         print(f"  Expenses generated: {len(expenses)}")
         if expenses:
             print(
-                f"    Most recent: {expenses[0].date} (€{expenses[0].amount/100:.2f})")
+                f"    Most recent: {expenses[0].date} (€{expenses[0].amount/100:.2f})"
+            )
             if len(expenses) > 1:
                 print(f"    Oldest: {expenses[-1].date}")
 
@@ -68,7 +71,10 @@ with app.app_context():
     print("=" * 80)
     print("\nSUMMARY:")
     due_count = sum(
-        1 for rec in recurring_expenses if rec.next_due_date <= today + timedelta(days=60))
+        1
+        for rec in recurring_expenses
+        if rec.next_due_date <= today + timedelta(days=60)
+    )
     print(f"Total recurring expenses: {len(recurring_expenses)}")
     print(f"Due for generation (next 60 days): {due_count}")
     print(f"Today: {today}")

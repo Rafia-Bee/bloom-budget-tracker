@@ -39,7 +39,7 @@ def test_register():
     data = {
         "username": "testuser",
         "email": "test@example.com",
-        "password": "password123"
+        "password": "password123",
     }
     response = requests.post(f"{BASE_URL}/auth/register", json=data)
     print(f"Status: {response.status_code}")
@@ -50,10 +50,7 @@ def test_register():
 def test_login():
     """Test user login and get access token."""
     print("\n=== Testing User Login ===")
-    data = {
-        "email": "test@example.com",
-        "password": "password123"
-    }
+    data = {"email": "test@example.com", "password": "password123"}
     response = requests.post(f"{BASE_URL}/auth/login", json=data)
     print(f"Status: {response.status_code}")
     result = response.json()
@@ -82,11 +79,10 @@ def test_create_expense(token):
         "amount": 1550,  # €15.50
         "category": "Flexible Expenses",
         "subcategory": "Food",
-        "payment_method": "Credit card"
+        "payment_method": "Credit card",
     }
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(f"{BASE_URL}/expenses",
-                             json=data, headers=headers)
+    response = requests.post(f"{BASE_URL}/expenses", json=data, headers=headers)
     print(f"Status: {response.status_code}")
 
     if response.status_code != 201:
@@ -114,13 +110,11 @@ def test_get_expenses(token):
 def test_update_expense(token, expense_id):
     """Test updating an expense."""
     print("\n=== Testing Update Expense ===")
-    data = {
-        "amount": 2000,  # Update to €20.00
-        "notes": "Updated amount"
-    }
+    data = {"amount": 2000, "notes": "Updated amount"}  # Update to €20.00
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.put(
-        f"{BASE_URL}/expenses/{expense_id}", json=data, headers=headers)
+        f"{BASE_URL}/expenses/{expense_id}", json=data, headers=headers
+    )
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
@@ -130,8 +124,7 @@ def test_delete_expense(token, expense_id):
     """Test deleting an expense."""
     print("\n=== Testing Delete Expense ===")
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.delete(
-        f"{BASE_URL}/expenses/{expense_id}", headers=headers)
+    response = requests.delete(f"{BASE_URL}/expenses/{expense_id}", headers=headers)
     print(f"Status: {response.status_code}")
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     return response.status_code == 200
@@ -166,10 +159,8 @@ def main():
         if expense_id:
             results.append(("Create expense", True))
             results.append(("Get expenses", test_get_expenses(token)))
-            results.append(
-                ("Update expense", test_update_expense(token, expense_id)))
-            results.append(
-                ("Delete expense", test_delete_expense(token, expense_id)))
+            results.append(("Update expense", test_update_expense(token, expense_id)))
+            results.append(("Delete expense", test_delete_expense(token, expense_id)))
         else:
             results.append(("Create expense", False))
     else:

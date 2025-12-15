@@ -3,17 +3,19 @@ Check income entries to diagnose the €1769.20 issue
 """
 import sqlite3
 
-db_path = 'instance/bloom.db'
+db_path = "instance/bloom.db"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 try:
     print("\n=== ALL INCOME ENTRIES ===")
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT id, type, amount, scheduled_date, actual_date, budget_period_id
         FROM income
         ORDER BY scheduled_date
-    """)
+    """
+    )
 
     incomes = cursor.fetchall()
     total = 0

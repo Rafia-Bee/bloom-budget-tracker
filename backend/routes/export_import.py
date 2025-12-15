@@ -2,6 +2,7 @@
 Bloom - Export/Import Routes
 
 Handles exporting and importing user data (debts, recurring expenses).
+Includes weekly budget breakdown generation for enhanced financial transparency.
 """
 
 from flask import Blueprint, request, jsonify
@@ -17,10 +18,125 @@ from backend.models.database import (
     ExpenseNameMapping,
 )
 from datetime import datetime, timedelta
-import json
+from sqlalchemy import and_
 import re
 
 export_import_bp = Blueprint("export_import", __name__, url_prefix="/data")
+
+
+def generate_weekly_budget_breakdown(user_id):
+    """
+    Generate weekly budget breakdown for all salary periods.
+    Shows carryover logic, fixed vs flexible spending, and expense details.
+    Reuses carryover calculation logic from GET /salary-periods/current endpoint.
+    """
+    salary_periods = (
+        SalaryPeriod.query.filter_by(user_id=user_id, is_active=True)
+        .order_by(SalaryPeriod.start_date.desc())
+        .all()
+    )
+
+    breakdown = []
+
+    for salary_period in salary_periods:
+        # Get all weeks for this salary period
+        weeks = (
+            BudgetPeriod.query.filter_by(salary_period_id=salary_period.id)
+            .order_by(BudgetPeriod.week_number)
+            .all()
+        )
+
+        weeks_data = []
+        cumulative_carryover = 0
+
+        # Calculate spending and carryover for each week
+        for week in weeks:
+            # Get all expenses for this week using date range
+            week_expenses = Expense.query.filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.date >= week.start_date,
+                    Expense.date <= week.end_date,
+                )
+            ).all()
+
+            # Separate fixed and flexible expenses
+            flexible_expenses = [e for e in week_expenses if not e.is_fixed_bill]
+            fixed_expenses = [e for e in week_expenses if e.is_fixed_bill]
+
+            flexible_total = sum(e.amount for e in flexible_expenses)
+            fixed_total = sum(e.amount for e in fixed_expenses)
+
+            # Calculate adjusted budget with carryover
+            adjusted_budget = week.budget_amount + cumulative_carryover
+            remaining = adjusted_budget - flexible_total
+
+            # Build expense breakdown
+            expense_breakdown = {
+                "flexible": [
+                    {
+                        "name": e.name,
+                        "amount": e.amount,
+                        "category": e.category,
+                        "subcategory": e.subcategory,
+                        "payment_method": e.payment_method,
+                        "date": e.date.isoformat(),
+                    }
+                    for e in flexible_expenses
+                ],
+                "fixed": [
+                    {
+                        "name": e.name,
+                        "amount": e.amount,
+                        "category": e.category,
+                        "subcategory": e.subcategory,
+                        "payment_method": e.payment_method,
+                        "date": e.date.isoformat(),
+                    }
+                    for e in fixed_expenses
+                ],
+            }
+
+            week_data = {
+                "week_number": week.week_number,
+                "date_range": f"{week.start_date.isoformat()} to {week.end_date.isoformat()}",
+                "base_budget": week.budget_amount,
+                "carryover": cumulative_carryover,
+                "adjusted_budget": adjusted_budget,
+                "spent": {
+                    "flexible_expenses": flexible_total,
+                    "fixed_expenses": fixed_total,
+                    "total": flexible_total + fixed_total,
+                },
+                "remaining": remaining,
+                "expense_breakdown": expense_breakdown,
+            }
+
+            weeks_data.append(week_data)
+
+            # Update cumulative carryover for next week
+            cumulative_carryover = remaining
+
+        # Calculate period summary
+        summary = {
+            "total_budget_allocated": sum(w["base_budget"] for w in weeks_data),
+            "total_flexible_spent": sum(
+                w["spent"]["flexible_expenses"] for w in weeks_data
+            ),
+            "total_fixed_spent": sum(w["spent"]["fixed_expenses"] for w in weeks_data),
+            "final_remaining": weeks_data[-1]["remaining"] if weeks_data else 0,
+        }
+
+        breakdown.append(
+            {
+                "salary_period_id": salary_period.id,
+                "salary_period_dates": f"{salary_period.start_date.isoformat()} to {salary_period.end_date.isoformat()}",
+                "weeks": weeks_data,
+                "summary": summary,
+            }
+        )
+
+    return breakdown
 
 
 @export_import_bp.route("/export", methods=["POST"])
@@ -35,7 +151,7 @@ def export_data():
         if not export_types:
             return jsonify({"error": "No data types selected for export"}), 400
 
-        export_data = {"exported_at": datetime.utcnow().isoformat(), "data": {}}
+        export_data = {"exported_at": datetime.now().isoformat(), "data": {}}
 
         # Export Debts
         if "debts" in export_types:
@@ -80,8 +196,10 @@ def export_data():
             salary_periods = SalaryPeriod.query.filter_by(
                 user_id=current_user_id, is_active=True
             ).all()
-            export_data["data"]["salary_periods"] = [
-                {
+            export_data["data"]["salary_periods"] = []
+
+            for sp in salary_periods:
+                period_data = {
                     "initial_debit_balance": sp.initial_debit_balance,
                     "initial_credit_balance": sp.initial_credit_balance,
                     "credit_limit": sp.credit_limit,
@@ -96,8 +214,62 @@ def export_data():
                     "start_date": sp.start_date.isoformat(),
                     "end_date": sp.end_date.isoformat(),
                 }
-                for sp in salary_periods
-            ]
+
+                # Add weekly breakdown
+                budget_periods = (
+                    BudgetPeriod.query.filter_by(salary_period_id=sp.id)
+                    .order_by(BudgetPeriod.week_number)
+                    .all()
+                )
+
+                if budget_periods:
+                    period_data["weekly_breakdown"] = []
+
+                    for bp in budget_periods:
+                        # Calculate actual spending for this week
+                        week_expenses = Expense.query.filter(
+                            Expense.user_id == current_user_id,
+                            Expense.date >= bp.start_date,
+                            Expense.date <= bp.end_date,
+                        ).all()
+
+                        debit_spent = sum(
+                            e.amount
+                            for e in week_expenses
+                            if e.payment_method == "Debit card"
+                        )
+                        credit_spent = sum(
+                            e.amount
+                            for e in week_expenses
+                            if e.payment_method == "Credit card"
+                        )
+
+                        # Credit card payments to debit
+                        credit_payments = sum(
+                            e.amount
+                            for e in week_expenses
+                            if e.category == "Debt Payments"
+                            and e.subcategory == "Credit Card"
+                            and e.payment_method == "Debit card"
+                        )
+
+                        week_data = {
+                            "week_number": bp.week_number,
+                            "start_date": bp.start_date.isoformat(),
+                            "end_date": bp.end_date.isoformat(),
+                            "budget_amount": bp.budget_amount,
+                            "debit_spent": debit_spent,
+                            "credit_spent": credit_spent,
+                            "credit_payments": credit_payments,
+                            "total_spent": debit_spent + credit_spent,
+                            "remaining_budget": bp.budget_amount - debit_spent
+                            if bp.budget_amount
+                            else 0,
+                        }
+
+                        period_data["weekly_breakdown"].append(week_data)
+
+                export_data["data"]["salary_periods"].append(period_data)
 
         # Export Expenses
         if "expenses" in export_types:
@@ -129,6 +301,12 @@ def export_data():
                 }
                 for i in incomes
             ]
+
+        # Add Weekly Budget Breakdown if salary_periods are exported
+        if "salary_periods" in export_types:
+            export_data["data"][
+                "weekly_budget_breakdown"
+            ] = generate_weekly_budget_breakdown(current_user_id)
 
         return jsonify(export_data), 200
 

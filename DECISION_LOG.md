@@ -6,6 +6,123 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ## 2025-12-15
 
+### Issue #65 - Enhanced Export: Weekly Budget Breakdown (COMPLETED)
+
+**Context:** Users exporting data couldn't see weekly budget breakdowns showing how carryover logic works and where money was spent.
+
+**Problem:** Export only included raw transactions without weekly context or carryover calculations.
+
+**Solution:**
+
+Added `weekly_budget_breakdown` section to export when `salary_periods` are selected:
+
+-   Created `generate_weekly_budget_breakdown()` helper function in [backend/routes/export_import.py](backend/routes/export_import.py)
+-   Reuses carryover calculation logic from `GET /salary-periods/current` endpoint
+-   Separates fixed vs flexible expenses by `is_fixed_bill` flag
+-   Groups expenses by week using date ranges
+-   Shows per-week: base budget, carryover, adjusted budget, flexible/fixed spending, remaining amount
+-   Includes detailed expense breakdown with name, amount, category, payment method, date
+-   Provides period summary: total budget allocated, total flexible/fixed spent, final remaining
+
+**Structure:**
+
+```json
+{
+    "weekly_budget_breakdown": [
+        {
+            "salary_period_id": 1,
+            "salary_period_dates": "2025-11-20 to 2025-12-19",
+            "weeks": [
+                {
+                    "week_number": 1,
+                    "date_range": "2025-11-20 to 2025-11-26",
+                    "base_budget": 18365,
+                    "carryover": 0,
+                    "adjusted_budget": 18365,
+                    "spent": {
+                        "flexible_expenses": 15420,
+                        "fixed_expenses": 99104,
+                        "total": 114524
+                    },
+                    "remaining": 2945,
+                    "expense_breakdown": {
+                        "flexible": [...],
+                        "fixed": [...]
+                    }
+                }
+            ],
+            "summary": {
+                "total_budget_allocated": 73462,
+                "total_flexible_spent": 65890,
+                "total_fixed_spent": 233738,
+                "final_remaining": 7572
+            }
+        }
+    ]
+}
+```
+
+**Testing:** Created [scripts/test_export_breakdown.py](scripts/test_export_breakdown.py) to validate carryover calculations, expense categorization, and JSON serializability. All validation checks passed.
+
+**Impact:** Users can now see exactly where money went each week, understand carryover logic, and verify app calculations match expectations.
+
+---
+
+### Issue #72 - Rollover Debit Balance Calculation Incorrect (COMPLETED)
+
+**Context:** Rollover prompt showing incorrect debit balance (€-1163.63 negative) instead of correct positive balance (€232.03).
+
+**Problem:** Future scheduled expenses were being included in current salary period calculations.
+
+**Root Cause:**
+
+-   `SalaryPeriodRolloverPrompt.jsx` fetches ALL expenses including future scheduled/generated ones
+-   Date filtering only checked if expense was within period dates (`startDate` to `endDate`)
+-   Didn't filter out expenses dated in the future (after today)
+-   Generated recurring expenses for Dec 19, Dec 20, Jan 20, Feb 20, etc. were all included
+-   This caused `periodDebitSpent` to be inflated by thousands of euros of future expenses
+
+**Solution:**
+
+Added additional filter condition in expense processing loop:
+
+```javascript
+const todayDateOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+);
+
+if (
+    expenseDateOnly >= startDateOnly &&
+    expenseDateOnly <= endDateOnly &&
+    expenseDateOnly <= todayDateOnly
+) {
+    // Process expense
+}
+```
+
+Now only expenses that are:
+
+1. Within salary period date range AND
+2. On or before today's date
+
+are included in the balance calculation.
+
+**Files Changed:**
+
+-   `frontend/src/components/SalaryPeriodRolloverPrompt.jsx`
+
+**Testing:**
+
+-   ✅ Debit balance now shows correct positive amount
+-   ✅ Credit balance calculation remains correct
+-   ✅ Future scheduled expenses excluded from current period totals
+
+**Impact:** Users can now trust rollover balance calculations for creating next salary period.
+
+---
+
 ### Issue #70 - Recurring Expense Day of Month Bugs (COMPLETED)
 
 **Context:** User reported recurring expenses not respecting the selected day of month for monthly recurrence, both during creation and editing.
@@ -461,6 +578,7 @@ Track all GitHub issues with their current status. Update this section when crea
 
 | Issue                                                              | Title                                                | Status                      | Completed  | Summary                                                                |
 | ------------------------------------------------------------------ | ---------------------------------------------------- | --------------------------- | ---------- | ---------------------------------------------------------------------- |
+| [#72](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/72) | Rollover Debit Balance Calculation Incorrect         | ✅ Completed                | 2025-12-15 | Fixed future scheduled expenses being included in current period total |
 | [#70](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/70) | Recurring Expense Day of Month Bugs                  | ✅ Completed                | 2025-12-15 | Fixed day_of_month not updating from start_date and generation display |
 | [#67](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/67) | Add tests to CI/CD                                   | ✅ Completed                | 2025-12-15 | Integrated 28 backend tests with 3-layer email mock protection         |
 | [#66](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/66) | Mobile UI Issues                                     | ✅ Completed                | 2025-12-15 | Fixed viewport zoom, button positioning, and click detection on mobile |

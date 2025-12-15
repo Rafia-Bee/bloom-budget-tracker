@@ -43,24 +43,23 @@ def verify_no_budget_period_id_queries():
         if not filepath.exists():
             continue
 
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-            lines = content.split('\n')
+            lines = content.split("\n")
 
             for i, line in enumerate(lines, 1):
                 # Check for budget_period_id usage in queries (excluding comments)
-                if 'budget_period_id' in line.lower():
+                if "budget_period_id" in line.lower():
                     # Skip if it's just removing it from response or a comment
-                    if 'budget_period_id' in line and 'filter' in line.lower():
-                        problematic_lines.append(
-                            f"{filepath.name}:{i}: {line.strip()}")
+                    if "budget_period_id" in line and "filter" in line.lower():
+                        problematic_lines.append(f"{filepath.name}:{i}: {line.strip()}")
 
     if problematic_lines:
         print("⚠️  WARNING: Found budget_period_id usage in backend queries:")
         for line in problematic_lines:
             print(f"  {line}")
         response = input("\nContinue anyway? (yes/no): ")
-        if response.lower() != 'yes':
+        if response.lower() != "yes":
             print("❌ Migration cancelled")
             return False
     else:
@@ -85,7 +84,7 @@ def backup_database():
 def check_column_exists(table_name, column_name):
     """Check if a column exists in a table"""
     inspector = inspect(db.engine)
-    columns = [col['name'] for col in inspector.get_columns(table_name)]
+    columns = [col["name"] for col in inspector.get_columns(table_name)]
     return column_name in columns
 
 
@@ -95,41 +94,48 @@ def drop_column_sqlite(table_name, column_name):
     columns = inspector.get_columns(table_name)
 
     # Get all columns except the one to drop
-    remaining_columns = [col for col in columns if col['name'] != column_name]
-    column_names = [col['name'] for col in remaining_columns]
+    remaining_columns = [col for col in columns if col["name"] != column_name]
+    column_names = [col["name"] for col in remaining_columns]
 
     # Build column definitions for new table
     column_defs = []
     for col in remaining_columns:
         col_def = f"{col['name']} {col['type']}"
-        if not col.get('nullable', True):
+        if not col.get("nullable", True):
             col_def += " NOT NULL"
-        if col.get('default') is not None:
+        if col.get("default") is not None:
             col_def += f" DEFAULT {col['default']}"
         column_defs.append(col_def)
 
     # Create new table without the column
     print(f"  Creating temporary table without {column_name}...")
-    db.session.execute(text(f"""
+    db.session.execute(
+        text(
+            f"""
         CREATE TABLE {table_name}_new (
             {', '.join(column_defs)}
         )
-    """))
+    """
+        )
+    )
 
     # Copy data
     print(f"  Copying data...")
-    column_list = ', '.join(column_names)
-    db.session.execute(text(f"""
+    column_list = ", ".join(column_names)
+    db.session.execute(
+        text(
+            f"""
         INSERT INTO {table_name}_new ({column_list})
         SELECT {column_list}
         FROM {table_name}
-    """))
+    """
+        )
+    )
 
     # Drop old table and rename new one
     print(f"  Replacing original table...")
     db.session.execute(text(f"DROP TABLE {table_name}"))
-    db.session.execute(
-        text(f"ALTER TABLE {table_name}_new RENAME TO {table_name}"))
+    db.session.execute(text(f"ALTER TABLE {table_name}_new RENAME TO {table_name}"))
 
     db.session.commit()
 
@@ -138,7 +144,8 @@ def drop_column_postgres(table_name, column_name):
     """Drop a column from PostgreSQL table"""
     print(f"  Dropping column {column_name} from {table_name}...")
     db.session.execute(
-        text(f"ALTER TABLE {table_name} DROP COLUMN IF EXISTS {column_name}"))
+        text(f"ALTER TABLE {table_name} DROP COLUMN IF EXISTS {column_name}")
+    )
     db.session.commit()
 
 
@@ -148,18 +155,17 @@ def drop_budget_period_id_columns():
 
     # Detect database type
     db_url = str(db.engine.url)
-    is_postgres = 'postgresql' in db_url
+    is_postgres = "postgresql" in db_url
 
     tables_to_modify = [
-        ('expenses', 'budget_period_id'),
-        ('income', 'budget_period_id'),
-        ('period_suggestions', 'budget_period_id'),
+        ("expenses", "budget_period_id"),
+        ("income", "budget_period_id"),
+        ("period_suggestions", "budget_period_id"),
     ]
 
     for table_name, column_name in tables_to_modify:
         if not check_column_exists(table_name, column_name):
-            print(
-                f"  ⏭️  Column {column_name} already removed from {table_name}")
+            print(f"  ⏭️  Column {column_name} already removed from {table_name}")
             continue
 
         print(f"  📝 Removing {column_name} from {table_name}...")
@@ -182,7 +188,12 @@ def verify_database_integrity():
 
     try:
         # Check that tables still exist and are queryable
-        from backend.models.database import Expense, Income, PeriodSuggestion, BudgetPeriod
+        from backend.models.database import (
+            Expense,
+            Income,
+            PeriodSuggestion,
+            BudgetPeriod,
+        )
 
         # Try to query each table
         Expense.query.first()
@@ -195,12 +206,10 @@ def verify_database_integrity():
         # Check that budget_period_id columns are gone
         inspector = inspect(db.engine)
 
-        for table_name in ['expenses', 'income', 'period_suggestions']:
-            columns = [col['name']
-                       for col in inspector.get_columns(table_name)]
-            if 'budget_period_id' in columns:
-                print(
-                    f"❌ Column budget_period_id still exists in {table_name}")
+        for table_name in ["expenses", "income", "period_suggestions"]:
+            columns = [col["name"] for col in inspector.get_columns(table_name)]
+            if "budget_period_id" in columns:
+                print(f"❌ Column budget_period_id still exists in {table_name}")
                 return False
 
         print("✅ budget_period_id columns successfully removed")

@@ -27,44 +27,40 @@ with app.app_context():
 
     # Run in dry-run mode first
     print("\n1. DRY RUN (preview):")
-    result = generate_due_expenses(
-        user_id=user.id, dry_run=True, days_ahead=60)
+    result = generate_due_expenses(user_id=user.id, dry_run=True, days_ahead=60)
 
     print(f"\nTemplates processed: {result['templates_processed']}")
     print(f"Would generate: {result['generated_count']}")
     print(f"Dry run: {result['dry_run']}")
 
-    if result['templates']:
+    if result["templates"]:
         print("\nTemplates:")
-        for template in result['templates']:
+        for template in result["templates"]:
             print(f"  - {template['name']}: {template['action']}")
-            if 'date' in template:
-                print(
-                    f"    Date: {template['date']}, Amount: €{template['amount']}")
+            if "date" in template:
+                print(f"    Date: {template['date']}, Amount: €{template['amount']}")
 
-    if result['errors']:
+    if result["errors"]:
         print("\nErrors:")
-        for error in result['errors']:
+        for error in result["errors"]:
             print(f"  - {error['name']}: {error['error']}")
 
     # Now run for real
     print("\n" + "=" * 80)
     print("\n2. ACTUAL GENERATION:")
-    result = generate_due_expenses(
-        user_id=user.id, dry_run=False, days_ahead=60)
+    result = generate_due_expenses(user_id=user.id, dry_run=False, days_ahead=60)
 
     print(f"\nTemplates processed: {result['templates_processed']}")
     print(f"Generated: {result['generated_count']}")
 
-    if result['templates']:
+    if result["templates"]:
         print("\nTemplates:")
-        for template in result['templates']:
+        for template in result["templates"]:
             print(f"  - {template['name']}: {template['action']}")
-            if 'date' in template:
-                print(
-                    f"    Date: {template['date']}, Amount: €{template['amount']}")
+            if "date" in template:
+                print(f"    Date: {template['date']}, Amount: €{template['amount']}")
 
-    if result['errors']:
+    if result["errors"]:
         print("\nErrors:")
-        for error in result['errors']:
+        for error in result["errors"]:
             print(f"  - {error['name']}: {error['error']}")

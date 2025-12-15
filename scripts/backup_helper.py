@@ -34,8 +34,7 @@ def create_backup(db_path=None):
     # Create backup with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_dir = db_path.parent
-    backup_file = backup_dir / \
-        f"{db_path.stem}.backup_{timestamp}{db_path.suffix}"
+    backup_file = backup_dir / f"{db_path.stem}.backup_{timestamp}{db_path.suffix}"
 
     try:
         shutil.copy2(db_path, backup_file)
@@ -61,10 +60,12 @@ def confirm_operation(operation_name):
     print(f"⚠️  DESTRUCTIVE OPERATION: {operation_name}")
     print(f"{'='*60}")
     print("A backup will be created automatically before proceeding.")
-    print("You can restore with: cp instance/bloom.backup_XXXXXX_XXXXXX.db instance/bloom.db")
+    print(
+        "You can restore with: cp instance/bloom.backup_XXXXXX_XXXXXX.db instance/bloom.db"
+    )
 
     response = input("\nContinue? (yes/no): ").lower().strip()
-    return response in ['yes', 'y']
+    return response in ["yes", "y"]
 
 
 if __name__ == "__main__":
