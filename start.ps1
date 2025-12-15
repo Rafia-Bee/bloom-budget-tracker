@@ -44,25 +44,28 @@ $BloomDir = $PSScriptRoot
 $VenvPath = Join-Path $BloomDir ".venv"
 
 # Start Flask Backend
-Write-Host "`n🔧 Starting Flask Backend (Port 5000)..." -ForegroundColor Cyan
+Write-Host "`n🔧 Starting Flask Backend (Port 5000, Network Accessible)..." -ForegroundColor Cyan
 $backendJob = Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; python run.py"
+    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; python run.py --host=0.0.0.0"
 ) -PassThru -WindowStyle Normal
 
 Start-Sleep -Seconds 2
 
 # Start React Frontend
-Write-Host "⚛️  Starting React Frontend (Port 3000)..." -ForegroundColor Green
+Write-Host "⚛️  Starting React Frontend (Port 3000, Network Accessible)..." -ForegroundColor Green
 $frontendJob = Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "cd '$BloomDir/frontend'; npm run dev"
+    "cd '$BloomDir/frontend'; npm run dev -- --host"
 ) -PassThru -WindowStyle Normal
 
-Write-Host "`n Both servers are starting!" -ForegroundColor Green
-Write-Host "   Backend:  http://localhost:5000" -ForegroundColor Cyan
-Write-Host "   Frontend: http://localhost:3000" -ForegroundColor Green
+Write-Host "`n✓ Both servers are starting!" -ForegroundColor Green
+Write-Host "   Backend:  http://localhost:5000 (also on network)" -ForegroundColor Cyan
+Write-Host "   Frontend: http://localhost:3000 (check terminal for network URL)" -ForegroundColor Green
+Write-Host ""
+Write-Host "📱 For mobile access: Check frontend terminal for Network URL (e.g., http://192.168.x.x:3000)" -ForegroundColor Magenta
+Write-Host "   Don't forget to set VITE_API_URL in frontend/.env.local to your computer's IP" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Close the terminal windows to stop the servers." -ForegroundColor Yellow
