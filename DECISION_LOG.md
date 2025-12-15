@@ -4,6 +4,184 @@ Quick reference for decisions made during development. Newest entries at top.
 
 ---
 
+## 2025-12-15
+
+### Issue #66 - Mobile UI Issues: Viewport Zoom, Button Positioning & Click Detection (COMPLETED)
+
+**Context:** Multiple mobile UX issues reported on OnePlus 13 Chrome browser
+
+**Problems Identified:**
+1. App required manual zoom out to view full content
+2. Floating + button randomly repositioned during scroll
+3. Menu didn't show on tap (inconsistent, required scrolling then tapping)
+4. Desktop clicks required drag gesture instead of simple click
+
+**Root Cause Analysis:**
+
+**Issue 1 - Viewport Zoom:**
+- Default viewport meta tag allowed user scaling and zoom
+- Mobile browsers require explicit zoom prevention
+
+**Issue 2 - Random Repositioning:**
+- Touch events triggered drag mode with any tiny movement (< 5px)
+- Scrolling page caused micro-movements that activated drag
+- No threshold to distinguish intentional drag from accidental touch
+
+**Issue 3 - Inconsistent Menu Opening:**
+- `e.preventDefault()` on `touchstart` blocked click events
+- Touch duration not validated (long press vs quick tap)
+- Missing fallback click handler
+
+**Issue 4 - Desktop Click Issues:**
+- `handleClick` checked `!isDragging`, but `mouseDown` set `isDragging=true` immediately
+- Click event fired after drag state was set, blocking menu toggle
+
+**Solution Implemented:**
+
+1. **Viewport Zoom Prevention:**
+   ```html
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+   ```
+
+2. **Drag Threshold Implementation:**
+   - Increased threshold from 5px to **10px** minimum movement
+   - Added `hasMoved` state tracking
+   - Only call `e.preventDefault()` **after** threshold is met
+   - Removed `e.preventDefault()` from `touchstart` to allow normal clicks
+
+3. **Touch Duration Validation:**
+   - Added timestamp tracking in `handleTouchStart`
+   - Only trigger menu if touch duration < 300ms (quick tap)
+   - Long press (>300ms) ignored as potential drag start
+
+4. **Improved Click Detection:**
+   - Added `handleClick` fallback handler
+   - Removed `!isDragging` check that was blocking clicks
+   - Added `setTimeout(() => onToggleMenu(), 0)` to ensure state updates complete
+   - Used `e.stopPropagation()` to prevent event bubbling
+
+5. **Safe Zone Adjustment:**
+   - Increased from 80px to 100px from screen edges
+   - Prevents button from being cut off on devices with notches/curves
+   - Changed default position from 32px to 100px bottom
+
+6. **Z-Index Boost:**
+   - Container: 100 → 9999
+   - Menu popup: 101 → 10000
+   - Ensures button always visible above other content
+
+7. **Development Network Access:**
+   - Updated `backend/app.py` to allow all CORS origins in development mode
+   - Enables testing on actual mobile devices via local network
+   - Created comprehensive mobile testing documentation
+
+**Testing Workflow Created:**
+
+**Local Network Mobile Testing:**
+1. Find computer's IP address: `ipconfig | Select-String "IPv4"`
+2. Create `.env.local` with backend IP: `VITE_API_URL=http://192.168.x.x:5000`
+3. Start backend with network access: `python run.py --host=0.0.0.0`
+4. Start frontend with network access: `npm run dev -- --host`
+5. Access from phone on same WiFi: `http://192.168.x.x:3000`
+
+**Files Changed:**
+- `frontend/index.html` - Viewport meta tag
+- `frontend/src/components/DraggableFloatingButton.jsx` - Complete touch/click rewrite
+- `backend/app.py` - CORS configuration for development
+- `docs/MOBILE_DEV.md` - New mobile testing guide
+- `docs/README.md` - Added mobile dev reference
+
+**Impact:**
+- ✅ No accidental zoom on mobile
+- ✅ Button stays fixed during scroll
+- ✅ Menu opens reliably on first tap (mobile)
+- ✅ Menu opens on click (desktop)
+- ✅ Drag still works for repositioning (>10px movement)
+- ✅ Documented workflow for mobile testing
+
+**Testing Confirmed:**
+- OnePlus 13 Chrome: All issues resolved ✅
+- Desktop browsers: Click detection works ✅
+- Touch gestures: Tap and drag both work correctly ✅
+
+**Commits:**
+- `fix: mobile UI improvements - viewport zoom, button positioning, and click detection (#66)`
+
+---
+
+## 2025-12-15
+
+### Issue #67 - Add Tests to CI/CD Pipeline (COMPLETED)
+
+**Context:** Backend had 28 tests but they weren't running in CI/CD, risking regressions
+
+**Problem Discovered:** Tests were sending real emails to SendGrid despite mock attempts
+
+**Root Cause Analysis:**
+
+-   `email_service` singleton created at module import with real API key
+-   Mock patches applied after import, so real SendGrid client already initialized
+-   Tests sent 20+ emails to SendGrid during development
+
+**Solution Implemented:**
+
+1. **Email Service Protection (3-layer approach):**
+
+    ```python
+    # Layer 1: Remove API key from environment before app creation
+    @pytest.fixture(autouse=True)
+    def disable_sendgrid():
+        if "SENDGRID_API_KEY" in os.environ:
+            del os.environ["SENDGRID_API_KEY"]
+
+    # Layer 2: Patch email_service at all usage points
+    with patch("backend.routes.auth.email_service") as mock_auth_email, \
+         patch("backend.routes.password_reset.email_service") as mock_pwd_email, \
+         patch("backend.services.email_service.email_service") as mock_service:
+
+    # Layer 3: TestConfig explicitly sets SENDGRID_API_KEY = None
+    ```
+
+2. **Rate Limiter Fix:**
+
+    - Added `RATELIMIT_ENABLED` config check in decorator
+    - Clear rate limiter state between tests
+    - Prevents 429 errors during test runs
+
+3. **CI/CD Integration:**
+    - Added backend tests to `.github/workflows/ci.yml`
+    - Install from `backend/requirements.txt` (not root)
+    - Set empty env vars: `SENDGRID_API_KEY=""`, `DATABASE_URL=""`
+    - Removed `continue-on-error: true` - tests now block failing builds
+
+**Test Coverage:**
+
+-   28 tests (11 auth, 7 business logic, 10 CRUD)
+-   All tests use in-memory SQLite (no Neon DB)
+-   All emails mocked (zero SendGrid usage)
+-   ~60% feature coverage (sufficient for core functionality)
+
+**Files Changed:**
+
+-   `backend/tests/conftest.py` - 3-layer email protection
+-   `backend/utils/rate_limiter.py` - Added config check
+-   `.github/workflows/ci.yml` - Added test job
+
+**Impact:**
+
+-   ✅ Zero service quota consumption during tests
+-   ✅ Tests run on every push to main
+-   ✅ GitHub Actions: ~5 min/run, ~150 min/month (7.5% of free quota)
+-   ✅ Catches regressions before production
+-   ✅ Safe to run unlimited times locally
+
+**Commits:**
+
+-   `feat: add comprehensive test suite to CI/CD pipeline (#67)`
+-   `fix: use backend/requirements.txt for CI/CD dependencies`
+
+---
+
 ## 2025-12-12
 
 ### Balance Calculation Bug Fix - Salary Period Rollover (COMPLETED) #55
@@ -850,8 +1028,6 @@ Track all GitHub issues with their current status. Update this section when crea
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------- | ---------- | ---------------------------------------------- |
 | [#69](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/69) | Check why transparent bg isn't actually transparent on loading cats            | 🟡 Open | 2025-12-15 | bug, frontend, ui-ux                           |
 | [#68](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/68) | Fix transaction edit/delete buttons overflowing on mobile                      | 🟡 Open | 2025-12-15 | bug, frontend, ui-ux                           |
-| [#67](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/67) | Add tests to cicd                                                              | 🟡 Open | 2025-12-15 | enhancement, testing, ci-cd                    |
-| [#66](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/66) | Mobile UI Issues: Viewport Zoom, Floating Button Positioning & Click Detection | 🟡 Open | 2025-12-14 | bug, frontend, ui-ux, priority: high           |
 | [#65](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/65) | Enhanced Export: Add Weekly Budget Breakdown for Better Financial Transparency | 🟡 Open | 2025-12-14 | enhancement, feature, backend                  |
 | [#64](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/64) | Implement cleanup job for expired password reset tokens                        | 🟡 Open | 2025-12-12 | enhancement, backend                           |
 | [#63](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/63) | Add audit trail columns to track data modifications                            | 🟡 Open | 2025-12-12 | enhancement, backend                           |
@@ -881,20 +1057,21 @@ Track all GitHub issues with their current status. Update this section when crea
 
 ### Recently Completed Issues (Last 30 Days)
 
-| Issue                                                              | Title                                                | Status                      | Completed  | Summary                                                           |
+| Issue | Title | Status | Completed | Summary |
 | ------------------------------------------------------------------ | ---------------------------------------------------- | --------------------------- | ---------- | ----------------------------------------------------------------- |
-| [#55](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/55) | Balance Calculation Bug - Salary Period Rollover     | ✅ Completed                | 2025-12-12 | Fixed double-counting of initial balance in rollover calculations |
-| [#50](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50) | Overhaul budget_period_id system                     | ✅ Completed                | 2025-12-06 | Removed budget_period_id columns, switched to date-based queries  |
-| [#28](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/28) | Remove Legacy Budget Period System                   | ✅ Completed                | 2025-12-06 | Removed CreatePeriodModal and EditPeriodModal                     |
-| [#46](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/46) | Credit Card Debt Display Bug                         | ✅ Completed                | 2025-12-06 | Fixed debt display by fetching all expenses                       |
-| [#47](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/47) | CI/CD Pipeline Implementation                        | ✅ Completed                | 2025-12-06 | Implemented GitHub Actions CI/CD                                  |
-| [#43](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/43) | Staging Environment                                  | ❌ Closed (Won't Implement) | 2025-12-06 | Not needed for solo developer workflow                            |
-| [#11](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/11) | Performance Optimization for Large Transaction Lists | ✅ Completed                | 2025-12-06 | Added database indexes, debounced search, component memoization   |
-| [#41](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/41) | Database Backup Automation                           | ✅ Completed                | 2025-11-30 | GitHub Actions daily backups                                      |
-| [#42](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/42) | API Versioning                                       | ✅ Completed                | 2025-11-30 | Added /api/v1 endpoints                                           |
-| [#40](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/40) | Input Length Validation                              | ✅ Completed                | 2025-11-30 | Added maxLength to all text inputs                                |
-| [#39](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/39) | CSP Headers                                          | ✅ Completed                | 2025-11-30 | Implemented Content Security Policy                               |
-| [#24](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/24) | Dark Mode Implementation                             | ✅ Completed                | 2025-12-02 | Full dark mode across all pages and components                    |
+| [#67](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/67) | Add tests to CI/CD | ✅ Completed | 2025-12-15 | Integrated 28 backend tests with 3-layer email mock protection |
+| [#66](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/66) | Mobile UI Issues | ✅ Completed | 2025-12-15 | Fixed viewport zoom, button positioning, and click detection on mobile || [#55](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/55) | Balance Calculation Bug - Salary Period Rollover | ✅ Completed | 2025-12-12 | Fixed double-counting of initial balance in rollover calculations |
+| [#50](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50) | Overhaul budget_period_id system | ✅ Completed | 2025-12-06 | Removed budget_period_id columns, switched to date-based queries |
+| [#28](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/28) | Remove Legacy Budget Period System | ✅ Completed | 2025-12-06 | Removed CreatePeriodModal and EditPeriodModal |
+| [#46](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/46) | Credit Card Debt Display Bug | ✅ Completed | 2025-12-06 | Fixed debt display by fetching all expenses |
+| [#47](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/47) | CI/CD Pipeline Implementation | ✅ Completed | 2025-12-06 | Implemented GitHub Actions CI/CD |
+| [#43](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/43) | Staging Environment | ❌ Closed (Won't Implement) | 2025-12-06 | Not needed for solo developer workflow |
+| [#11](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/11) | Performance Optimization for Large Transaction Lists | ✅ Completed | 2025-12-06 | Added database indexes, debounced search, component memoization |
+| [#41](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/41) | Database Backup Automation | ✅ Completed | 2025-11-30 | GitHub Actions daily backups |
+| [#42](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/42) | API Versioning | ✅ Completed | 2025-11-30 | Added /api/v1 endpoints |
+| [#40](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/40) | Input Length Validation | ✅ Completed | 2025-11-30 | Added maxLength to all text inputs |
+| [#39](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/39) | CSP Headers | ✅ Completed | 2025-11-30 | Implemented Content Security Policy |
+| [#24](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/24) | Dark Mode Implementation | ✅ Completed | 2025-12-02 | Full dark mode across all pages and components |
 
 ### Format for Updates
 

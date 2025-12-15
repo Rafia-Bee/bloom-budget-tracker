@@ -41,11 +41,18 @@ def create_app(config_name="development"):
         if not jwt_secret or jwt_secret == "jwt-secret-key-change-in-production":
             print("WARNING: JWT_SECRET_KEY not properly set in production!")
 
-    # CORS configuration - restrict to frontend domain only
+    # CORS configuration - allow local network access for mobile testing
+    # Add your computer's IP address (e.g., http://192.168.1.100:3000)
     cors_origins = os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:3000,http://localhost:3000,http://localhost:3001",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000",
     ).split(",")
+
+    # For development, allow all local network IPs (192.168.x.x, 10.x.x.x)
+    if config_name == "development":
+        # Allow all origins in development for mobile testing
+        cors_origins.append("*")
+
     CORS(app, origins=cors_origins, supports_credentials=True)
 
     db.init_app(app)
