@@ -1,6 +1,6 @@
 # Decision Log
 
-Quick reference for decisions made during development. Newest entries at top.
+Architectural decisions only. Max 2 days of entries. Remove entries older than 1 week unless it's the last entry.
 
 ---
 
@@ -526,92 +526,4 @@ currentBalance = initial_debit_balance + periodIncome - periodDebitSpent
 
 ## Format
 
-Each entry should include:
-
--   **Date:** When decision made
--   **Issue/Context:** What prompted it
--   **Decision:** What was decided
--   **Rationale:** Why this approach
--   **Impact:** What changed, files affected
-
----
-
-## GitHub Issues Tracker
-
-Track all GitHub issues with their current status. Update this section when creating new issues or completing existing ones.
-
-### Active Issues
-
-| Issue                                                              | Title                                                                          | Status  | Opened     | Labels                                         |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------- | ---------- | ---------------------------------------------- |
-| [#71](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/71) | Transaction cards overflow on mobile - redesign needed                         | 🟡 Open | 2025-12-15 | bug, frontend, ui-ux, mobile                   |
-| [#69](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/69) | Check why transparent bg isn't actually transparent on loading cats            | 🟡 Open | 2025-12-15 | bug, frontend, ui-ux                           |
-| [#68](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/68) | Fix transaction edit/delete buttons overflowing on mobile                      | 🟡 Open | 2025-12-15 | bug, frontend, ui-ux                           |
-| [#65](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/65) | Enhanced Export: Add Weekly Budget Breakdown for Better Financial Transparency | 🟡 Open | 2025-12-14 | enhancement, feature, backend                  |
-| [#64](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/64) | Implement cleanup job for expired password reset tokens                        | 🟡 Open | 2025-12-12 | enhancement, backend                           |
-| [#63](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/63) | Add audit trail columns to track data modifications                            | 🟡 Open | 2025-12-12 | enhancement, backend                           |
-| [#62](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/62) | Add composite index for expenses query optimization                            | 🟡 Open | 2025-12-12 | backend                                        |
-| [#61](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/61) | Implement soft delete pattern for expenses and recurring expenses              | 🟡 Open | 2025-12-12 | enhancement, backend                           |
-| [#60](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/60) | Add ON DELETE behavior to foreign key relationships                            | 🟡 Open | 2025-12-12 | backend                                        |
-| [#59](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/59) | Replace generic exception handling with specific SQLAlchemy exceptions         | 🟡 Open | 2025-12-12 | backend                                        |
-| [#58](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/58) | Add database CHECK constraints for data integrity                              | 🟡 Open | 2025-12-12 | backend                                        |
-| [#57](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/57) | Fix transaction handling in multi-step database operations                     | 🟡 Open | 2025-12-12 | backend                                        |
-| [#56](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/56) | Implement database migration system (Flask-Migrate)                            | 🟡 Open | 2025-12-12 | backend                                        |
-| [#54](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/54) | Habit-aware Conservative Budgets & End-of-Period Savings Nudges                | 🟡 Open | 2025-12-04 | -                                              |
-| [#38](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/38) | Add Error Tracking (Sentry Integration)                                        | 🟡 Open | 2025-11-30 | enhancement, backend, frontend                 |
-| [#37](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/37) | Separate Debit/Credit Spending Visualization                                   | 🟡 Open | 2025-11-30 | enhancement, ui-ux, analytics, frontend        |
-| [#34](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/34) | Implement Account Lockout After Failed Logins                                  | 🟡 Open | 2025-11-30 | enhancement, backend, security                 |
-| [#33](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/33) | Add Email Verification Flow                                                    | 🟡 Open | 2025-11-30 | enhancement, backend, security                 |
-| [#32](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/32) | Migrate Rate Limiting to Redis                                                 | 🟡 Open | 2025-11-30 | enhancement, backend, security                 |
-| [#25](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/25) | Feature: Google Calendar Integration                                           | 🟡 Open | 2025-11-28 | enhancement, feature, backend, frontend        |
-| [#10](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/10) | Cross-browser Testing & Compatibility                                          | 🟡 Open | 2025-11-17 | enhancement, ui-ux, frontend                   |
-| [#9](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/9)   | Flexible Sub-Period Division - User Chooses Budget Split                       | 🟡 Open | 2025-11-17 | enhancement, feature, ui-ux, backend, frontend |
-| [#8](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/8)   | Receipt Upload & OCR Integration                                               | 🟡 Open | 2025-11-17 | feature, ui-ux, backend, frontend              |
-| [#7](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/7)   | Multi-currency Support                                                         | 🟡 Open | 2025-11-17 | feature, backend, frontend                     |
-| [#6](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/6)   | Notifications & Reminders System                                               | 🟡 Open | 2025-11-17 | feature, ui-ux, backend, frontend              |
-| [#4](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/4)   | Goals & Savings Tracking                                                       | 🟡 Open | 2025-11-17 | feature, ui-ux, backend, frontend              |
-| [#3](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/3)   | Reports & Analytics Dashboard                                                  | 🟡 Open | 2025-11-17 | feature, ui-ux, analytics, backend, frontend   |
-| [#2](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/2)   | Budget Categories & Spending Limits                                            | 🟡 Open | 2025-11-17 | feature, ui-ux, backend, frontend              |
-| [#1](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/1)   | End-of-Period Suggestions - Smart Budget Assistant                             | 🟡 Open | 2025-11-17 | feature, ui-ux, backend, frontend              |
-
-### Recently Completed Issues (Last 30 Days)
-
-| Issue                                                              | Title                                                | Status                      | Completed  | Summary                                                                |
-| ------------------------------------------------------------------ | ---------------------------------------------------- | --------------------------- | ---------- | ---------------------------------------------------------------------- |
-| [#72](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/72) | Rollover Debit Balance Calculation Incorrect         | ✅ Completed                | 2025-12-15 | Fixed future scheduled expenses being included in current period total |
-| [#70](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/70) | Recurring Expense Day of Month Bugs                  | ✅ Completed                | 2025-12-15 | Fixed day_of_month not updating from start_date and generation display |
-| [#67](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/67) | Add tests to CI/CD                                   | ✅ Completed                | 2025-12-15 | Integrated 28 backend tests with 3-layer email mock protection         |
-| [#66](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/66) | Mobile UI Issues                                     | ✅ Completed                | 2025-12-15 | Fixed viewport zoom, button positioning, and click detection on mobile |
-| [#55](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/55) | Balance Calculation Bug - Salary Period Rollover     | ✅ Completed                | 2025-12-12 | Fixed double-counting of initial balance in rollover calculations      |
-| [#50](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/50) | Overhaul budget_period_id system                     | ✅ Completed                | 2025-12-06 | Removed budget_period_id columns, switched to date-based queries       |
-| [#28](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/28) | Remove Legacy Budget Period System                   | ✅ Completed                | 2025-12-06 | Removed CreatePeriodModal and EditPeriodModal                          |
-| [#46](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/46) | Credit Card Debt Display Bug                         | ✅ Completed                | 2025-12-06 | Fixed debt display by fetching all expenses                            |
-| [#47](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/47) | CI/CD Pipeline Implementation                        | ✅ Completed                | 2025-12-06 | Implemented GitHub Actions CI/CD                                       |
-| [#43](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/43) | Staging Environment                                  | ❌ Closed (Won't Implement) | 2025-12-06 | Not needed for solo developer workflow                                 |
-| [#11](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/11) | Performance Optimization for Large Transaction Lists | ✅ Completed                | 2025-12-06 | Added database indexes, debounced search, component memoization        |
-| [#41](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/41) | Database Backup Automation                           | ✅ Completed                | 2025-11-30 | GitHub Actions daily backups                                           |
-| [#42](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/42) | API Versioning                                       | ✅ Completed                | 2025-11-30 | Added /api/v1 endpoints                                                |
-| [#40](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/40) | Input Length Validation                              | ✅ Completed                | 2025-11-30 | Added maxLength to all text inputs                                     |
-| [#39](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/39) | CSP Headers                                          | ✅ Completed                | 2025-11-30 | Implemented Content Security Policy                                    |
-| [#24](https://github.com/Rafia-Bee/bloom-budget-tracker/issues/24) | Dark Mode Implementation                             | ✅ Completed                | 2025-12-02 | Full dark mode across all pages and components                         |
-
-### Format for Updates
-
-When adding a new issue:
-
-```markdown
-| [#XX](link) | Issue Title | 🟡 In Progress | YYYY-MM-DD | Brief description |
-```
-
-When completing an issue:
-
--   Move from Active to Recently Completed
--   Change status to ✅ Completed or ❌ Closed
--   Add completion date and summary
-
-Status Icons:
-
--   🟡 In Progress
--   ✅ Completed
--   ❌ Closed (Won't Implement)
--   🔴 Blocked
+**Date** | **Context** | **Decision** | **Rationale** | **Impact**

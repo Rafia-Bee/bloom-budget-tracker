@@ -70,6 +70,10 @@ def app(disable_sendgrid):
                 "message": "Mocked email (not actually sent)",
             }
 
+        # CRITICAL FIX: Set DATABASE_URL before creating app to force in-memory DB
+        original_db_url = os.environ.get("DATABASE_URL")
+        os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+
         app = create_app()
         app.config.from_object(TestConfig)
 
@@ -83,6 +87,12 @@ def app(disable_sendgrid):
             yield app
             db.session.remove()
             db.drop_all()
+
+        # Restore original DATABASE_URL
+        if original_db_url:
+            os.environ["DATABASE_URL"] = original_db_url
+        elif "DATABASE_URL" in os.environ:
+            del os.environ["DATABASE_URL"]
 
 
 @pytest.fixture(scope="function")
