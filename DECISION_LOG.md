@@ -6,6 +6,55 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-16
 
+### Issue #74 - Fix Mobile Menu Navigation and Missing Buttons (COMPLETED)
+
+**Context:** Mobile navigation menu had critical usability issues across Dashboard and other pages. Dashboard mobile menu was missing action buttons, and Header mobile menu navigation was completely non-functional.
+
+**Problems:**
+
+1. **Dashboard Mobile Menu** - Missing Export/Import/Bank/Experimental buttons
+2. **Debts/Recurring Pages** - Navigation buttons didn't work, action buttons didn't trigger
+3. **Root Cause** - Click-outside handler closing menu before button handlers could execute
+
+**Solution:**
+
+**Dashboard Mobile Menu ([Dashboard.jsx](frontend/src/pages/Dashboard.jsx)):**
+
+-   Added missing ThemeToggle, Export Data, Import Data, Bank Import, Experimental Features buttons
+-   Matched modal trigger pattern: `setShowExportModal(true); setExportMode('export')`
+
+**Header Mobile Menu ([Header.jsx](frontend/src/components/Header.jsx)):**
+
+-   **Key Fix**: Wrapped mobile menu dropdown inside `.mobile-menu-container` div
+-   Previously: Click-outside handler saw menu button clicks as outside clicks and closed menu
+-   Now: Entire mobile section (header bar + dropdown) wrapped in container
+-   Changed navigation from NavLink to explicit `navigate('/path')` button calls
+-   Added `e.preventDefault()` and `e.stopPropagation()` to all button handlers
+-   Close menu BEFORE executing action (prevents race condition)
+-   Added defensive checks: `if (onExport) onExport()`
+
+**Pattern:**
+
+```jsx
+// Mobile menu container wraps both header and dropdown
+<div className="md:hidden mobile-menu-container">
+  <div className="flex justify-between">...</div>
+  {showMobileMenu && <div>...dropdown...</div>}
+</div>
+
+// Button handlers
+onClick={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setShowMobileMenu(false);
+  navigate('/path'); // or if (handler) handler();
+}}
+```
+
+**Impact:** Mobile navigation now fully functional. Users can navigate between pages and access all features on mobile devices.
+
+---
+
 ### Issue #68 - Fix Transaction Edit/Delete Buttons Overflowing on Mobile (COMPLETED)
 
 **Context:** Edit and delete buttons on transaction cards were overflowing on mobile screens, making them difficult or impossible to tap. Long transaction names with multiple badges caused horizontal overflow.
