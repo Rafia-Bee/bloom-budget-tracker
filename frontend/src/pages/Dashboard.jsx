@@ -329,11 +329,32 @@ function Dashboard({ setIsAuthenticated }) {
 
       // Check if rollover prompt should be shown
       if (salaryPeriodRes?.data?.current_week?.week_number === 4) {
-        const dismissedRollover = localStorage.getItem('dismissedRollover')
         const periodEndDate = salaryPeriodRes.data.salary_period.end_date
+        const dismissedRollover = localStorage.getItem('dismissedRollover')
 
-        // Only show if not dismissed or if it's a different period
-        if (dismissedRollover !== periodEndDate) {
+        let shouldShowPrompt = true
+
+        if (dismissedRollover) {
+          try {
+            const dismissedData = JSON.parse(dismissedRollover)
+
+            // Check if it's the same period
+            if (dismissedData.periodEndDate === periodEndDate) {
+              // Calculate hours since dismissal
+              const hoursSinceDismissal = (Date.now() - new Date(dismissedData.dismissedAt)) / (1000 * 60 * 60)
+
+              // Only keep dismissed if less than 24 hours have passed
+              if (hoursSinceDismissal < 24) {
+                shouldShowPrompt = false
+              }
+            }
+          } catch (e) {
+            // If parsing fails (old format), clear it and show prompt
+            localStorage.removeItem('dismissedRollover')
+          }
+        }
+
+        if (shouldShowPrompt) {
           setShowRolloverPrompt(true)
         }
       }
@@ -1050,10 +1071,13 @@ function Dashboard({ setIsAuthenticated }) {
               setShowRolloverPrompt(false)
             }}
             onDismiss={() => {
-              // Remember dismissal for this period
+              // Remember dismissal for this period with timestamp (24-hour snooze)
               const currentSalaryPeriod = salaryPeriods.find(p => p.is_active)
               if (currentSalaryPeriod) {
-                localStorage.setItem('dismissedRollover', currentSalaryPeriod.end_date)
+                localStorage.setItem('dismissedRollover', JSON.stringify({
+                  periodEndDate: currentSalaryPeriod.end_date,
+                  dismissedAt: new Date().toISOString()
+                }))
               }
               setShowRolloverPrompt(false)
             }}

@@ -4,6 +4,48 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-17
+
+### Issue #73 - Fix "Remind Me Later" on Rollover Prompt (COMPLETED)
+
+**Context:** "Remind Me Later" button on Week 4 salary period rollover prompt was permanently dismissing the prompt instead of snoozing it temporarily.
+
+**Problem:**
+
+-   Old implementation stored only the period end date in localStorage
+-   Never checked if enough time had passed to re-show the prompt
+-   Clicking "Remind Me Later" effectively meant "Never remind me again" for that period
+-   User had to manually clear localStorage to see prompt again
+
+**Solution:**
+
+Changed from simple string storage to JSON object with timestamp:
+
+**Dashboard.jsx Changes:**
+
+1. **Dismissal Handler (onDismiss):**
+
+    - Store JSON object with `periodEndDate` and `dismissedAt` timestamp
+    - Format: `{ periodEndDate: "2025-12-28", dismissedAt: "2025-12-17T10:30:00.000Z" }`
+
+2. **Prompt Visibility Check:**
+    - Parse JSON from localStorage
+    - Calculate hours since dismissal: `(Date.now() - dismissedAt) / (1000 * 60 * 60)`
+    - Only keep dismissed if less than 24 hours have passed
+    - Show prompt again after 24-hour snooze period
+    - Gracefully handle old format (try/catch with fallback to clear and show)
+
+**Benefits:**
+
+-   User-friendly "snooze" behavior matches user expectations
+-   24-hour reminder interval balances urgency with not being annoying
+-   Still respects different periods (won't show old period prompts)
+-   Backward compatible with old localStorage format
+
+**Impact:** Users can now genuinely defer the rollover prompt temporarily, and it will remind them again after 24 hours as expected from a "Remind Me Later" button.
+
+---
+
 ## 2025-12-16
 
 ### Issue #76 - Mobile-Friendly Redesign for Debts and Recurring Expenses Cards (COMPLETED)
