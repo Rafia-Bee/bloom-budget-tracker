@@ -25,6 +25,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   )
   const [endDate, setEndDate] = useState(existingExpense?.end_date || '')
   const [notes, setNotes] = useState(existingExpense?.notes || '')
+  const [isFixedBill, setIsFixedBill] = useState(existingExpense?.is_fixed_bill || false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
@@ -103,7 +104,8 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
         start_date: startDate,
         end_date: endDate || null,
         notes: notes || null,
-        is_active: true
+        is_active: true,
+        is_fixed_bill: isFixedBill
       }
 
       await onAdd(data)
@@ -346,6 +348,20 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
               placeholder="Add any additional details..."
             />
             <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">{notes.length}/1000 characters</p>
+          </div>
+
+          {/* Fixed Bill Checkbox */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="fixedBill"
+              checked={isFixedBill}
+              onChange={(e) => setIsFixedBill(e.target.checked)}
+              className="w-4 h-4 text-bloom-pink bg-white dark:bg-dark-elevated border-gray-300 dark:border-dark-border rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
+            />
+            <label htmlFor="fixedBill" className="text-sm font-medium text-gray-700 dark:text-dark-text cursor-pointer">
+              Fixed Bill (exclude from weekly budget)
+            </label>
           </div>
 
           {/* Buttons */}

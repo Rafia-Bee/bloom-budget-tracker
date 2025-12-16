@@ -75,6 +75,27 @@ def get_current_salary_period():
         current_user_id = int(get_jwt_identity())
         today = datetime.now().date()
 
+        # Auto-activate future periods that have started
+        # Find inactive periods that should be active (start_date <= today <= end_date)
+        periods_to_activate = SalaryPeriod.query.filter(
+            and_(
+                SalaryPeriod.user_id == current_user_id,
+                SalaryPeriod.is_active == False,
+                SalaryPeriod.start_date <= today,
+                SalaryPeriod.end_date >= today,
+            )
+        ).all()
+
+        if periods_to_activate:
+            # Deactivate old active periods
+            SalaryPeriod.query.filter_by(
+                user_id=current_user_id, is_active=True
+            ).update({"is_active": False})
+            # Activate the period that contains today (should only be one due to overlap check)
+            for period in periods_to_activate:
+                period.is_active = True
+            db.session.commit()
+
         # Find active salary period that contains today
         salary_period = SalaryPeriod.query.filter(
             and_(
@@ -174,6 +195,9 @@ def get_current_salary_period():
                         "remaining_amount": salary_period.remaining_amount,
                         "weekly_budget": salary_period.weekly_budget,
                         "credit_limit": salary_period.credit_limit,
+                        "initial_debit_balance": salary_period.initial_debit_balance,
+                        "initial_credit_balance": salary_period.initial_credit_balance,
+                        "credit_budget_allowance": salary_period.credit_budget_allowance,
                         "start_date": salary_period.start_date.isoformat(),
                         "end_date": salary_period.end_date.isoformat(),
                         "weeks": weeks_data,
@@ -394,10 +418,21 @@ def create_salary_period():
                 400,
             )
 
-        # Deactivate any existing active salary periods
-        SalaryPeriod.query.filter_by(user_id=current_user_id, is_active=True).update(
-            {"is_active": False}
-        )
+        # Smart activation logic:
+        # - If creating a future period (starts after today), keep it inactive
+        # - If creating a current/past period, deactivate old periods and activate this one
+        today = datetime.now().date()
+        is_future_period = start_date > today
+
+        if is_future_period:
+            # Creating a future period - keep it inactive until its start date
+            is_active = False
+        else:
+            # Creating a current/past period - deactivate old active periods
+            SalaryPeriod.query.filter_by(
+                user_id=current_user_id, is_active=True
+            ).update({"is_active": False})
+            is_active = True
 
         # Create salary period
         salary_period = SalaryPeriod(
@@ -414,7 +449,7 @@ def create_salary_period():
             weekly_credit_budget=weekly_credit_budget,
             start_date=start_date,
             end_date=end_date,
-            is_active=True,
+            is_active=is_active,
         )
 
         db.session.add(salary_period)
@@ -453,22 +488,9 @@ def create_salary_period():
             )
             db.session.add(initial_income)
 
-        # Create pre-existing credit debt expense (if any)
-        pre_existing_debt = credit_limit - credit_balance
-        if pre_existing_debt > 0:
-            debt_expense = Expense(
-                user_id=current_user_id,
-                name="Pre-existing Credit Card Debt",
-                amount=pre_existing_debt,
-                category="Debt",
-                subcategory="Credit Card",
-                payment_method="Credit card",
-                # Date it before the period starts
-                date=start_date - timedelta(days=1),
-                is_fixed_bill=False,
-                notes="Existing credit card balance at budget period start",
-            )
-            db.session.add(debt_expense)
+        # Note: Pre-existing credit card debt is tracked via the credit_balance
+        # in the salary period settings. Users manage payments via recurring expenses.
+        # No automatic expense creation needed.
 
         db.session.commit()
 

@@ -6,6 +6,60 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Credit Card Debt Calculation & Period Management Fixes
+
+**Context:** Multiple issues with credit card debt tracking and salary period creation affecting accuracy and user experience.
+
+**Problems:**
+
+1. Auto-generated "Pre-existing Credit Card Debt" expense created one day before new period start, appearing in previous period's final week and inflating spending
+2. Debts page calculated credit card debt from all historical expenses instead of using salary period's initial_credit_balance, showing incorrect amounts
+3. Recurring expenses missing "Fixed Bill" checkbox, causing fixed expenses to count toward weekly budget
+4. Backend /salary-periods/current endpoint missing initial_credit_balance field needed by frontend
+
+**Solutions:**
+
+1. **Removed Auto-Expense Creation** (backend/routes/salary_periods.py):
+
+    - Deleted automatic "Pre-existing Credit Card Debt" expense generation
+    - Rationale: Redundant with initial_credit_balance field; caused confusion as fake expense in transaction list
+    - Users already track credit via initial balance setting + recurring payment expenses
+
+2. **Fixed Credit Card Calculation** (frontend/src/pages/Debts.jsx):
+
+    - Changed from: Sum all credit expenses - all payments (from beginning of time)
+    - Changed to: initial_credit_balance + period_credit_expenses - period_credit_payments
+    - Now matches Dashboard's calculation and shows correct debt amount
+    - Added salaryPeriodAPI import for accessing initial balances
+
+3. **Added Missing API Fields** (backend/routes/salary_periods.py):
+
+    - Added initial_debit_balance, initial_credit_balance, credit_budget_allowance to /salary-periods/current response
+    - Frontend depends on these fields for accurate calculations
+
+4. **Added Fixed Bill Checkbox** (frontend/src/components/AddRecurringExpenseModal.jsx):
+    - Added isFixedBill state and checkbox UI
+    - Included is_fixed_bill in form submission
+    - Generated expenses now correctly inherit fixed bill status from template
+
+**Additional Improvements:**
+
+-   Added "Delete All Data" experimental feature with text confirmation ("Delete everything")
+-   ExportImportModal now auto-refreshes dashboard after successful import
+-   Changed "Balance" to "Debt" label on debts page for clarity
+-   Changed "Calculated" badge to "Auto-calculated" on credit card debt
+
+**Impact:**
+
+-   Eliminates phantom expenses that confused users
+-   Credit card debt now displays accurate amounts matching actual usage
+-   Fixed bills properly excluded from weekly budget calculations
+-   Better data integrity between salary period settings and transaction tracking
+
+---
+
+## 2025-12-17
+
 ### Issue #73 - Fix "Remind Me Later" on Rollover Prompt (COMPLETED)
 
 **Context:** "Remind Me Later" button on Week 4 salary period rollover prompt was permanently dismissing the prompt instead of snoozing it temporarily.

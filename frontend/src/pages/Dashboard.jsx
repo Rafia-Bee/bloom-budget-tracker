@@ -334,7 +334,17 @@ function Dashboard({ setIsAuthenticated }) {
 
         let shouldShowPrompt = true
 
-        if (dismissedRollover) {
+        // Check if there's already a future salary period created (starts after current period ends)
+        const currentEndDate = new Date(periodEndDate)
+        const futurePeriodExists = salaryPeriodsListRes.data?.some(p => {
+          const pStartDate = new Date(p.start_date)
+          return pStartDate > currentEndDate
+        })
+
+        if (futurePeriodExists) {
+          // Already created next period, don't show prompt
+          shouldShowPrompt = false
+        } else if (dismissedRollover) {
           try {
             const dismissedData = JSON.parse(dismissedRollover)
 
@@ -1795,6 +1805,10 @@ function Dashboard({ setIsAuthenticated }) {
         <ExportImportModal
           mode={exportMode}
           onClose={() => setShowExportModal(false)}
+          onImportComplete={() => {
+            loadPeriodsAndCurrentWeek()
+            loadTransactionsAndBalances()
+          }}
         />
       )}
 

@@ -136,4 +136,9 @@ export const salaryPeriodAPI = {
     delete: (id) => api.delete(`/salary-periods/${id}`),
 };
 
+export const userAPI = {
+    deleteAllData: (confirmation) =>
+        api.post("/user/delete-all", { confirmation }),
+};
+
 export default api;

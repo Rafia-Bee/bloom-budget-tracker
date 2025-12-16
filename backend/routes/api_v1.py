@@ -16,6 +16,7 @@ from backend.routes.recurring_generation import recurring_generation_bp
 from backend.routes.salary_periods import salary_periods_bp
 from backend.routes.password_reset import password_reset_bp
 from backend.routes.export_import import export_import_bp
+from backend.routes.user_data import user_data_bp
 
 
 def create_v1_blueprint():
@@ -37,5 +38,6 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     v1_bp.register_blueprint(password_reset_bp, url_prefix="/auth")
     v1_bp.register_blueprint(export_import_bp)
+    v1_bp.register_blueprint(user_data_bp, url_prefix="/user")
 
     return v1_bp

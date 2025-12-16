@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI, expenseAPI, budgetPeriodAPI } from '../api'
+import { debtAPI, expenseAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api'
 import AddDebtModal from '../components/AddDebtModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditDebtModal from '../components/EditDebtModal'
@@ -91,66 +91,59 @@ function Debts({ setIsAuthenticated }) {
     try {
       if (!currentPeriod) return
 
-      // Get all periods up to and including current period (same as Dashboard)
-      const allPeriodsRes = await budgetPeriodAPI.getAll()
-      const periodsToInclude = allPeriodsRes.data.filter(period => {
-        const periodStart = new Date(period.start_date)
-        const currentStart = new Date(currentPeriod.start_date)
-        return periodStart <= currentStart
-      })
+      // Get current salary period for initial credit balance
+      const salaryPeriodRes = await salaryPeriodAPI.getCurrent()
 
-      let cumulativeCredit = 0
+      if (!salaryPeriodRes?.data?.salary_period) {
+        setCreditCardDebt(null)
+        return
+      }
+
+      const salaryPeriod = salaryPeriodRes.data.salary_period
+      const salaryPeriodStart = new Date(salaryPeriod.start_date)
+
+      // Start from initial debt (limit - initial available balance)
+      const initialDebt = (salaryPeriod.credit_limit - salaryPeriod.initial_credit_balance) / 100
+      let cumulativeCredit = initialDebt
 
       // Get ALL expenses with high limit to avoid pagination cutting off expenses
       const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
       const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
 
-      // Calculate credit balance from all expenses (matches Dashboard logic)
+      // Calculate credit balance changes within salary period
       const today = new Date()
-      const earliestPeriodStart = periodsToInclude.length > 0
-        ? new Date(periodsToInclude[0].start_date)
-        : new Date(currentPeriod.start_date)
 
       allExpenses.forEach(expense => {
         const amount = expense.amount / 100
-        // Use ISO date format for reliable parsing
         const expenseDate = new Date(expense.date_iso || expense.date)
 
-        // Skip future expenses (expenses dated after today)
+        // Skip future expenses
         if (expenseDate > today) return
 
-        // Special case: Pre-existing Credit Card Debt should always be included
-        const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
-          expense.category === 'Debt' &&
-          expense.subcategory === 'Credit Card'
-
-        // Check if expense date is in the cumulative range or is pre-existing debt
-        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= earliestPeriodStart
-
-        if (!isInIncludedPeriod) return
+        // Only include expenses within the salary period
+        if (expenseDate < salaryPeriodStart) return
 
         if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
           cumulativeCredit -= amount // Payment reduces credit card debt
         } else if (expense.payment_method === 'Credit card') {
-          cumulativeCredit += amount // Credit card purchase or pre-existing debt increases balance
+          cumulativeCredit += amount // Credit card purchase increases balance
         }
-      });
+      })
 
       const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
-      const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance if positive
+      const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance
 
-      // Show credit card debt if there's any balance remaining (even if monthly payment is 0)
       if (currentBalance > 0) {
         setCreditCardDebt({
           id: 'credit-card',
           name: 'Credit Card',
-          original_amount: creditLimit * 100, // Convert to cents
+          original_amount: salaryPeriod.credit_limit, // Already in cents
           current_balance: currentBalance,
           monthly_payment: monthlyPayment,
-          isVirtual: true // Flag to prevent editing/deleting
+          isVirtual: true
         })
       } else {
-        setCreditCardDebt(null) // No debt to show if balance is zero or negative (fully paid off)
+        setCreditCardDebt(null)
       }
     } catch (error) {
       console.error('Failed to load credit card debt:', error)
@@ -353,14 +346,14 @@ function Debts({ setIsAuthenticated }) {
                         <div className="flex items-start gap-2 mb-2 sm:mb-3">
                           <h3 className="text-base sm:text-xl font-bold text-gray-800 dark:text-dark-text break-words flex-1">{debt.name}</h3>
                           {debt.isVirtual && (
-                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap flex-shrink-0">Calculated</span>
+                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap flex-shrink-0">Auto-calculated</span>
                           )}
                         </div>
 
                         {/* Info Grid - More compact on mobile */}
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Balance</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Debt</p>
                             <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{balance.toFixed(2)}</p>
                           </div>
                           <div>

@@ -7,7 +7,7 @@
 import React, { useState } from 'react'
 import api from '../api'
 
-function ExportImportModal({ onClose, mode = 'export' }) {
+function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
   const [exportTypes, setExportTypes] = useState({
     debts: true,
     recurring_expenses: true,
@@ -161,7 +161,12 @@ function ExportImportModal({ onClose, mode = 'export' }) {
         }
       }
 
-      setMessage(message + '\n\nPlease close this dialog and refresh the page to see imported data.')
+      setMessage(message + '\n\nData imported successfully!')
+
+      // Trigger dashboard refresh if callback provided
+      if (onImportComplete) {
+        onImportComplete()
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Import failed. Please check file format.')
     } finally {
