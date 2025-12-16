@@ -114,9 +114,9 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl mx-4 my-8 p-6">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl my-8 p-6 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-6 flex-shrink-0">
           <h2 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">
             {isEditing ? 'Edit Recurring Expense' : 'Add Recurring Expense'}
           </h2>
@@ -131,12 +131,12 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-dark-danger text-sm">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-dark-danger text-sm flex-shrink-0">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-2">
           <div className="grid grid-cols-2 gap-4">
             {/* Name */}
             <div className="col-span-2">
@@ -349,7 +349,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 flex-shrink-0 border-t border-gray-200 dark:border-dark-border mt-4">
             <button
               type="button"
               onClick={onClose}

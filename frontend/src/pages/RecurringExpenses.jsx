@@ -241,7 +241,97 @@ function RecurringExpenses({ setIsAuthenticated }) {
                       key={expense.id}
                       className="border border-gray-200 dark:border-dark-border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated"
                     >
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                      {/* Mobile: Vertical layout with full-width buttons */}
+                      <div className="flex flex-col gap-3 sm:hidden">
+                        {/* Header with title and badges */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-2 truncate">{expense.name}</h4>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded whitespace-nowrap">
+                                {getFrequencyText(expense)}
+                              </span>
+                              {expense.is_fixed_bill && (
+                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium whitespace-nowrap">
+                                  📌 Fixed
+                                </span>
+                              )}
+                              <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-dark-text rounded whitespace-nowrap">
+                                {expense.category}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Amount - prominent on mobile */}
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-lg font-bold text-gray-800 dark:text-dark-text">${(expense.amount / 100).toFixed(2)}</p>
+                            <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{expense.payment_method}</p>
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex flex-col xs:flex-row xs:justify-between gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500 dark:text-dark-text-tertiary text-xs">Next due: </span>
+                            <span className="font-medium dark:text-dark-text">{formatDate(expense.next_due_date)}</span>
+                          </div>
+                        </div>
+
+                        {expense.notes && (
+                          <p className="text-sm text-gray-600 dark:text-dark-text-secondary italic border-t border-gray-100 dark:border-dark-border pt-2">{expense.notes}</p>
+                        )}
+
+                        {/* Mobile Action Buttons - Full width row */}
+                        <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-dark-border">
+                          <button
+                            onClick={() => handleToggleFixedBill(expense.id, expense.is_fixed_bill)}
+                            className={`flex-1 p-2.5 rounded transition-colors min-h-[44px] flex items-center justify-center gap-2 ${
+                              expense.is_fixed_bill
+                                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/40 font-semibold'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                            }`}
+                            title={expense.is_fixed_bill ? 'Remove from fixed bills' : 'Mark as fixed bill'}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="text-sm font-medium hidden xs:inline">Pin</span>
+                          </button>
+                          <button
+                            onClick={() => setEditingExpense(expense)}
+                            className="flex-1 p-2.5 text-gray-600 dark:text-gray-400 hover:text-bloom-pink dark:hover:text-dark-pink hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded transition-colors min-h-[44px] flex items-center justify-center gap-2"
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="text-sm font-medium hidden xs:inline">Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleToggle(expense.id)}
+                            className="flex-1 p-2.5 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded transition-colors min-h-[44px] flex items-center justify-center gap-2"
+                            title="Pause"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm font-medium hidden xs:inline">Pause</span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="flex-1 p-2.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-h-[44px] flex items-center justify-center gap-2"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span className="text-sm font-medium hidden xs:inline">Delete</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Desktop: Original horizontal layout with buttons on right */}
+                      <div className="hidden sm:flex sm:justify-between sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h4 className="font-semibold text-gray-800 dark:text-dark-text">{expense.name}</h4>
@@ -279,13 +369,14 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           )}
                         </div>
 
-                        <div className="flex gap-3 sm:ml-4 pr-2 sm:pr-0 self-end sm:self-start flex-shrink-0">
+                        {/* Desktop Action Buttons - Horizontal on right */}
+                        <div className="flex gap-3 ml-4 flex-shrink-0">
                           <button
                             onClick={() => handleToggleFixedBill(expense.id, expense.is_fixed_bill)}
-                            className={`p-2.5 sm:p-2 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${
+                            className={`p-2 rounded transition-colors ${
                               expense.is_fixed_bill
-                                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                                : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/40'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                             }`}
                             title={expense.is_fixed_bill ? 'Remove from fixed bills' : 'Mark as fixed bill'}
                           >
@@ -295,7 +386,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           </button>
                           <button
                             onClick={() => setEditingExpense(expense)}
-                            className="p-2.5 sm:p-2 text-gray-600 hover:text-bloom-pink hover:bg-pink-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-bloom-pink dark:hover:text-dark-pink hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded transition-colors"
                             title="Edit"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +395,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           </button>
                           <button
                             onClick={() => handleToggle(expense.id)}
-                            className="p-2.5 sm:p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded transition-colors"
                             title="Pause"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +404,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           </button>
                           <button
                             onClick={() => handleDelete(expense.id)}
-                            className="p-2.5 sm:p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Delete"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

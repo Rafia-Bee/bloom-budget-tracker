@@ -345,53 +345,101 @@ function Debts({ setIsAuthenticated }) {
                 const monthsLeft = calculatePayoffMonths(balance, monthly)
 
                 return (
-                  <div key={debt.id} className={`border rounded-lg p-6 hover:shadow-md transition ${debt.isVirtual ? 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-950/30' : 'border-gray-200 dark:border-dark-border dark:bg-dark-elevated'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text">{debt.name}</h3>
+                  <div key={debt.id} className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition ${debt.isVirtual ? 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-950/30' : 'border-gray-200 dark:border-dark-border dark:bg-dark-elevated'}`}>
+                    {/* Mobile: Compact vertical layout, Desktop: Horizontal */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        {/* Header */}
+                        <div className="flex items-start gap-2 mb-2 sm:mb-3">
+                          <h3 className="text-base sm:text-xl font-bold text-gray-800 dark:text-dark-text break-words flex-1">{debt.name}</h3>
                           {debt.isVirtual && (
-                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Auto-calculated</span>
+                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap flex-shrink-0">Calculated</span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+                        {/* Info Grid - More compact on mobile */}
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500 dark:text-dark-text-tertiary">Current Balance</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text">€{balance.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Balance</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{balance.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500 dark:text-dark-text-tertiary">{debt.isVirtual ? 'Credit Limit' : 'Original Amount'}</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text">€{original.toFixed(2)}</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">{debt.isVirtual ? 'Limit' : 'Original'}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{original.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500 dark:text-dark-text-tertiary">Monthly Payment</p>
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Monthly</p>
                             {monthly > 0 ? (
                               <>
-                                <p className="font-semibold text-gray-800 dark:text-dark-text">€{monthly.toFixed(2)}</p>
-                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">50% of balance</p>}
+                                <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{monthly.toFixed(2)}</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">50% of balance</p>}
                               </>
                             ) : (
                               <>
-                                <p className="font-semibold text-green-600 dark:text-dark-success">€0 this period</p>
-                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">Already paid 50%</p>}
+                                <p className="font-semibold text-green-600 dark:text-dark-success text-sm sm:text-base">€0 paid</p>
+                                {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Already paid 50%</p>}
                               </>
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-500 dark:text-dark-text-tertiary">Payoff Time</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text">
-                              {monthsLeft ? `${monthsLeft} ${monthsLeft === 1 ? 'month' : 'months'}` : 'Set payment'}
+                            <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Payoff</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">
+                              {monthsLeft ? `${monthsLeft} ${monthsLeft === 1 ? 'mo' : 'mos'}` : 'Set payment'}
                             </p>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4 flex-shrink-0">
+
+                      {/* Mobile Action Buttons - Vertical layout with Edit, Delete, Pay */}
+                      <div className="flex sm:hidden gap-2 flex-shrink-0 justify-end">
+                        {!debt.isVirtual && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedDebt(debt)
+                                setShowEditModal(true)
+                              }}
+                              className="p-2.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              title="Edit"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDebt(debt.id)}
+                              className="p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              title="Delete"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedDebt(debt)
                             setShowPaymentModal(true)
                           }}
-                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium min-h-[44px]"
+                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-3 py-2.5 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5"
+                          title="Make Payment"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm">Pay</span>
+                        </button>
+                      </div>
+
+                      {/* Desktop Action Buttons - Original layout: Pay first, then Edit/Delete */}
+                      <div className="hidden sm:flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setSelectedDebt(debt)
+                            setShowPaymentModal(true)
+                          }}
+                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium"
                           title="Make Payment"
                         >
                           Pay
@@ -403,7 +451,7 @@ function Debts({ setIsAuthenticated }) {
                                 setSelectedDebt(debt)
                                 setShowEditModal(true)
                               }}
-                              className="p-2.5 sm:p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                              className="text-blue-500 hover:text-blue-700 transition"
                               title="Edit"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,7 +460,7 @@ function Debts({ setIsAuthenticated }) {
                             </button>
                             <button
                               onClick={() => handleDeleteDebt(debt.id)}
-                              className="p-2.5 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                              className="text-red-500 hover:text-red-700 transition"
                               title="Delete"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
