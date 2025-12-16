@@ -385,13 +385,13 @@ function Debts({ setIsAuthenticated }) {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2 ml-4 flex-shrink-0">
                         <button
                           onClick={() => {
                             setSelectedDebt(debt)
                             setShowPaymentModal(true)
                           }}
-                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium"
+                          className="bg-bloom-mint dark:bg-dark-mint/20 text-green-800 dark:text-dark-success px-4 py-2 rounded-lg hover:bg-green-200 dark:hover:bg-dark-mint/30 transition font-medium min-h-[44px]"
                           title="Make Payment"
                         >
                           Pay
@@ -403,7 +403,7 @@ function Debts({ setIsAuthenticated }) {
                                 setSelectedDebt(debt)
                                 setShowEditModal(true)
                               }}
-                              className="text-blue-500 hover:text-blue-700 transition"
+                              className="p-2.5 sm:p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                               title="Edit"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,7 +412,7 @@ function Debts({ setIsAuthenticated }) {
                             </button>
                             <button
                               onClick={() => handleDeleteDebt(debt.id)}
-                              className="text-red-500 hover:text-red-700 transition"
+                              className="p-2.5 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                               title="Delete"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -98,7 +98,7 @@ const TransactionCard = memo(function TransactionCard({
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-shrink-0">
         <div className="text-right">
           <p
             className={`font-bold ${
@@ -115,10 +115,10 @@ const TransactionCard = memo(function TransactionCard({
         </div>
 
         {!selectionMode && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <button
               onClick={() => onEdit(transaction)}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+              className="p-2.5 sm:p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
               title="Edit"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +132,7 @@ const TransactionCard = memo(function TransactionCard({
             </button>
             <button
               onClick={() => onDelete(transaction)}
-              className="text-red-600 dark:text-dark-danger hover:text-red-800 dark:hover:text-red-400"
+              className="p-2.5 sm:p-2 text-red-600 dark:text-dark-danger hover:text-red-800 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
               title="Delete"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
