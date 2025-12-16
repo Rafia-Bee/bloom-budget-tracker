@@ -8,31 +8,42 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ### Issue #68 - Fix Transaction Edit/Delete Buttons Overflowing on Mobile (COMPLETED)
 
-**Context:** Edit and delete buttons on transaction cards were overflowing on mobile screens, making them difficult or impossible to tap.
+**Context:** Edit and delete buttons on transaction cards were overflowing on mobile screens, making them difficult or impossible to tap. Long transaction names with multiple badges caused horizontal overflow.
 
-**Problem:** Button touch targets were too small for mobile (less than 44x44px minimum), and buttons would shrink or overflow when screen space was limited.
+**Problem:** 
+- Horizontal layout couldn't fit all content on narrow mobile screens (375px-390px)
+- Long transaction names + badges + amount + buttons exceeded available width
+- Buttons had insufficient touch targets (< 44x44px)
+- Circular dot indicator caused text misalignment
 
 **Solution:**
 
-Applied mobile-first responsive button sizing across all transaction pages:
+Completely redesigned transaction card layout with mobile-first vertical stacking:
 
--   **Dashboard ([TransactionCard.jsx](frontend/src/components/TransactionCard.jsx)):**
+**Layout Changes ([Dashboard.jsx](frontend/src/pages/Dashboard.jsx)):**
+- Changed from `flex items-center` to `flex flex-col sm:flex-row`
+- Mobile: Two rows (title/category/date top, amount/buttons bottom)
+- Desktop: Single row (horizontal layout with more space)
+- Removed circular dot indicator that caused misalignment
+- All text now cleanly left-aligned
 
-    -   Added `min-w-[44px] min-h-[44px]` for proper mobile touch targets (44x44px is iOS/Android standard)
-    -   Added `sm:min-w-0 sm:min-h-0` to return to compact size on desktop
-    -   Added hover backgrounds for better visual feedback
-    -   Added `flex-shrink-0` to button container and amount column to prevent shrinking
+**Payment Method Indicator:**
+- Changed from subtle circular dot to color-coded badge
+- Pink badge = Credit card, Green badge = Debit card
+- More visible and accessible on mobile
 
--   **Debts page ([Debts.jsx](frontend/src/pages/Debts.jsx)):**
+**Button Touch Targets:**
+- Added `min-w-[44px] min-h-[44px]` for mobile (iOS/Android standard)
+- Added `sm:min-w-0 sm:min-h-0` for compact desktop size
+- Hover backgrounds for better visual feedback
 
-    -   Applied same mobile-friendly sizing to edit/delete buttons
-    -   Added hover backgrounds for consistency
+**Also Applied To:**
+- Debts page buttons (same touch target sizing)
+- Recurring Expenses already had proper sizing
 
--   **Recurring Expenses page:** Already had proper sizing - no changes needed
+**Pattern:** `flex flex-col sm:flex-row` with mobile buttons: `p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0`
 
-**Pattern:** Mobile-first button sizing: `p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center`
-
-**Impact:** All transaction buttons now meet accessibility standards for mobile touch targets. Buttons are easily tappable on small screens and remain compact on desktop.
+**Impact:** Transaction cards now adapt properly to mobile screens without overflow. All content visible and accessible with proper touch targets.
 
 ---
 
