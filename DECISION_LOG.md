@@ -6,6 +6,62 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-16
 
+### Issue #76 - Mobile-Friendly Redesign for Debts and Recurring Expenses Cards (COMPLETED)
+
+**Context:** Debts and Recurring Expenses pages needed mobile optimization while preserving desktop layouts that user preferred.
+
+**Problems:**
+
+1. **AddRecurringExpenseModal** - Form too tall for mobile screens, content cut off, no scroll capability
+2. **Desktop Button Layouts** - User preferred original desktop layouts over mobile-optimized versions
+
+**Solution:**
+
+**Modal Scroll ([AddRecurringExpenseModal.jsx](frontend/src/components/AddRecurringExpenseModal.jsx)):**
+
+-   Changed modal to flexbox column layout with `max-h-[90vh]`
+-   Header and error messages: `flex-shrink-0` (stays visible)
+-   Form content: `overflow-y-auto flex-1 pr-2` (scrollable area)
+-   Button container: `flex-shrink-0 border-t` (stays visible at bottom with separator)
+-   Outer container: `p-4 overflow-y-auto` for page-level scrolling
+
+**Dual Layout Pattern:**
+
+Implemented separate mobile and desktop layouts using Tailwind responsive classes:
+
+-   Mobile: `flex flex-col sm:hidden` - Shows on mobile only
+-   Desktop: `hidden sm:flex` - Shows on desktop only
+
+**Debts Page ([Debts.jsx](frontend/src/pages/Debts.jsx)):**
+
+-   **Mobile**: Vertical layout with Edit → Delete → Pay button order (safer)
+-   **Desktop**: Original horizontal layout with Pay → Edit → Delete (Pay button first with text)
+-   Mobile Pay button shows icon + "Pay" text, desktop shows just "Pay"
+
+**Recurring Expenses Page ([RecurringExpenses.jsx](frontend/src/pages/RecurringExpenses.jsx)):**
+
+-   **Mobile**: Full-width button row with labels (Pin/Edit/Pause/Delete), prominent amount display
+-   **Desktop**: Original horizontal layout with 2x2 info grid, buttons on right side
+-   Inactive expenses already had proper responsive sizing
+
+**Pattern:**
+
+```jsx
+// Mobile layout
+<div className="flex flex-col gap-3 sm:hidden">
+  {/* Mobile-optimized layout */}
+</div>
+
+// Desktop layout
+<div className="hidden sm:flex sm:justify-between gap-3">
+  {/* Original desktop layout */}
+</div>
+```
+
+**Impact:** Mobile users get optimized vertical layouts with clear touch targets and scrollable modals. Desktop users keep familiar horizontal layouts. Best of both worlds without compromise.
+
+---
+
 ### Issue #74 - Fix Mobile Menu Navigation and Missing Buttons (COMPLETED)
 
 **Context:** Mobile navigation menu had critical usability issues across Dashboard and other pages. Dashboard mobile menu was missing action buttons, and Header mobile menu navigation was completely non-functional.
