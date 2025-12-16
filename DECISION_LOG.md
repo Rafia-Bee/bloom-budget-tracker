@@ -4,6 +4,38 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-16
+
+### Issue #68 - Fix Transaction Edit/Delete Buttons Overflowing on Mobile (COMPLETED)
+
+**Context:** Edit and delete buttons on transaction cards were overflowing on mobile screens, making them difficult or impossible to tap.
+
+**Problem:** Button touch targets were too small for mobile (less than 44x44px minimum), and buttons would shrink or overflow when screen space was limited.
+
+**Solution:**
+
+Applied mobile-first responsive button sizing across all transaction pages:
+
+-   **Dashboard ([TransactionCard.jsx](frontend/src/components/TransactionCard.jsx)):**
+
+    -   Added `min-w-[44px] min-h-[44px]` for proper mobile touch targets (44x44px is iOS/Android standard)
+    -   Added `sm:min-w-0 sm:min-h-0` to return to compact size on desktop
+    -   Added hover backgrounds for better visual feedback
+    -   Added `flex-shrink-0` to button container and amount column to prevent shrinking
+
+-   **Debts page ([Debts.jsx](frontend/src/pages/Debts.jsx)):**
+
+    -   Applied same mobile-friendly sizing to edit/delete buttons
+    -   Added hover backgrounds for consistency
+
+-   **Recurring Expenses page:** Already had proper sizing - no changes needed
+
+**Pattern:** Mobile-first button sizing: `p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center`
+
+**Impact:** All transaction buttons now meet accessibility standards for mobile touch targets. Buttons are easily tappable on small screens and remain compact on desktop.
+
+---
+
 ## 2025-12-15
 
 ### Issue #65 - Enhanced Export: Weekly Budget Breakdown (COMPLETED)
