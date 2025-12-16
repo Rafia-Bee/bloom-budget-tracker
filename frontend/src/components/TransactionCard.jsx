@@ -29,7 +29,7 @@ const TransactionCard = memo(function TransactionCard({
 
   return (
     <div
-      className={`flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition ${
+      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg hover:opacity-80 transition ${
         transaction.transactionType === 'income'
           ? 'bg-bloom-mint/20 dark:bg-bloom-mint/10'
           : 'bg-gray-50 dark:bg-dark-elevated'
@@ -37,7 +37,8 @@ const TransactionCard = memo(function TransactionCard({
         isSelected ? 'ring-2 ring-bloom-pink' : ''
       }`}
     >
-      <div className="flex items-center gap-3">
+      {/* Top row on mobile: checkbox, dot, title/badges */}
+      <div className="flex items-start gap-3 flex-1 min-w-0">
         {/* Checkbox */}
         {selectionMode && (
           <input
@@ -45,12 +46,12 @@ const TransactionCard = memo(function TransactionCard({
             checked={isSelected}
             onChange={() => onToggleSelection(transaction.transactionType, transaction.id)}
             onClick={(e) => e.stopPropagation()}
-            className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
+            className="w-4 h-4 mt-1 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer flex-shrink-0"
           />
         )}
 
         <div
-          className={`w-2 h-2 rounded-full ${
+          className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
             transaction.transactionType === 'income'
               ? 'bg-bloom-mint'
               : transaction.payment_method === 'Credit card'
@@ -58,48 +59,49 @@ const TransactionCard = memo(function TransactionCard({
               : 'bg-bloom-mint'
           }`}
         ></div>
-      </div>
 
-      <div className="flex-1 ml-3">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-800 dark:text-dark-text">
-            {transaction.transactionType === 'income' ? transaction.type : transaction.name}
-          </h3>
-          {isFuture && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-              Scheduled
-            </span>
-          )}
-          {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Recurring
-            </span>
-          )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-semibold text-gray-800 dark:text-dark-text">
+              {transaction.transactionType === 'income' ? transaction.type : transaction.name}
+            </h3>
+            {isFuture && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                Scheduled
+              </span>
+            )}
+            {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Recurring
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {transaction.transactionType === 'expense'
+              ? `${transaction.category} • ${transaction.subcategory}`
+              : 'Income'}
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {new Date(transaction.date + 'T00:00:00').toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            })}
+          </p>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {transaction.transactionType === 'expense'
-            ? `${transaction.category} • ${transaction.subcategory}`
-            : 'Income'}
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          {new Date(transaction.date + 'T00:00:00').toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          })}
-        </p>
       </div>
 
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <div className="text-right">
+      {/* Bottom row on mobile: amount + buttons. Right side on desktop */}
+      <div className="flex items-center justify-between sm:justify-end gap-3 mt-3 sm:mt-0 sm:ml-4 flex-shrink-0">
+        <div className="text-left sm:text-right">
           <p
             className={`font-bold ${
               transaction.transactionType === 'income'
@@ -152,3 +154,4 @@ const TransactionCard = memo(function TransactionCard({
 })
 
 export default TransactionCard
+
