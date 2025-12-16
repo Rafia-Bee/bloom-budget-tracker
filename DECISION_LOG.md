@@ -10,36 +10,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 **Context:** Edit and delete buttons on transaction cards were overflowing on mobile screens, making them difficult or impossible to tap. Long transaction names with multiple badges caused horizontal overflow.
 
-**Problem:** 
-- Horizontal layout couldn't fit all content on narrow mobile screens (375px-390px)
-- Long transaction names + badges + amount + buttons exceeded available width
-- Buttons had insufficient touch targets (< 44x44px)
-- Circular dot indicator caused text misalignment
+**Problem:**
+
+-   Horizontal layout couldn't fit all content on narrow mobile screens (375px-390px)
+-   Long transaction names + badges + amount + buttons exceeded available width
+-   Buttons had insufficient touch targets (< 44x44px)
+-   Circular dot indicator caused text misalignment
 
 **Solution:**
 
 Completely redesigned transaction card layout with mobile-first vertical stacking:
 
 **Layout Changes ([Dashboard.jsx](frontend/src/pages/Dashboard.jsx)):**
-- Changed from `flex items-center` to `flex flex-col sm:flex-row`
-- Mobile: Two rows (title/category/date top, amount/buttons bottom)
-- Desktop: Single row (horizontal layout with more space)
-- Removed circular dot indicator that caused misalignment
-- All text now cleanly left-aligned
+
+-   Changed from `flex items-center` to `flex flex-col sm:flex-row`
+-   Mobile: Two rows (title/category/date top, amount/buttons bottom)
+-   Desktop: Single row (horizontal layout with more space)
+-   Removed circular dot indicator that caused misalignment
+-   All text now cleanly left-aligned
 
 **Payment Method Indicator:**
-- Changed from subtle circular dot to color-coded badge
-- Pink badge = Credit card, Green badge = Debit card
-- More visible and accessible on mobile
+
+-   Changed from subtle circular dot to color-coded badge
+-   Pink badge = Credit card, Green badge = Debit card
+-   More visible and accessible on mobile
 
 **Button Touch Targets:**
-- Added `min-w-[44px] min-h-[44px]` for mobile (iOS/Android standard)
-- Added `sm:min-w-0 sm:min-h-0` for compact desktop size
-- Hover backgrounds for better visual feedback
+
+-   Added `min-w-[44px] min-h-[44px]` for mobile (iOS/Android standard)
+-   Added `sm:min-w-0 sm:min-h-0` for compact desktop size
+-   Hover backgrounds for better visual feedback
 
 **Also Applied To:**
-- Debts page buttons (same touch target sizing)
-- Recurring Expenses already had proper sizing
+
+-   Debts page buttons (same touch target sizing)
+-   Recurring Expenses already had proper sizing
 
 **Pattern:** `flex flex-col sm:flex-row` with mobile buttons: `p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0`
 

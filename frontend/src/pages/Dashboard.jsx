@@ -946,12 +946,43 @@ function Dashboard({ setIsAuthenticated }) {
                   🔄 Recurring Expenses
                 </a>
 
-                {/* User Info & Logout */}
+                {/* User Info & Action Buttons */}
                 <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
                   <div className="px-4 py-2 mb-2">
                     <p className="text-xs text-gray-500 dark:text-dark-text-secondary">Signed in as</p>
                     <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
                   </div>
+                  <div className="px-4 py-2 border-b border-t border-gray-200 dark:border-dark-border">
+                    <ThemeToggle />
+                  </div>
+                  <button
+                    onClick={() => { setShowExportModal(true); setExportMode('export'); setShowMobileMenu(false); }}
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export Data
+                  </button>
+                  <button
+                    onClick={() => { setShowExportModal(true); setExportMode('import'); setShowMobileMenu(false); }}
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Import Data
+                  </button>
+                  <button
+                    onClick={() => { setShowBankImportModal(true); setShowMobileMenu(false); }}
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    Import Bank Transactions
+                  </button>
+                  <button
+                    onClick={() => { setShowExperimentalModal(true); setShowMobileMenu(false); }}
+                    className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                    ⚗️ Experimental Features
+                  </button>
                   <button
                     onClick={() => {
                       handleLogout()
