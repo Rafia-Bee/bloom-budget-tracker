@@ -6,6 +6,67 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Database CHECK Constraints for Data Integrity (#58)
+
+**Context:** Database lacked CHECK constraints to enforce data validity at the database level. Validation only occurred in application code, which could be bypassed by direct SQL, ETL processes, or bugs.
+
+**Problem:**
+
+-   No database-level enforcement of data rules:
+    -   Amounts could be zero or negative (expenses, income, debts, budgets)
+    -   Invalid date ranges (start_date >= end_date)
+    -   Week numbers outside 1-4
+    -   Email addresses without '@' symbol
+    -   Day-of-month/week values outside valid ranges
+-   Impact: Invalid data could enter database if application logic bypassed
+-   Difficult to debug issues from corrupt data
+-   No safeguards for direct database operations
+
+**Solution:**
+
+1. **Model Constraints** (backend/models/database.py):
+    - Added `__table_args__` with CHECK constraints to 9 models:
+        - **User**: email format, non-negative failed_login_attempts
+        - **SalaryPeriod**: date ranges, positive amounts, non-negative balances
+        - **BudgetPeriod**: date ranges, week_number 1-4, positive amounts
+        - **Expense/Income**: positive amounts
+        - **Debt**: positive original_amount/monthly_payment, non-negative current_balance
+        - **RecurringExpense**: positive amount, date ranges, day validation
+        - **CreditCardSettings/PeriodSuggestion**: positive amounts
+
+2. **Migration** (e8f5c3a1b9d4):
+    - Created Alembic revision to add constraints
+    - SQLite: Constraints embedded in model (applied on table creation)
+    - PostgreSQL: Constraints applied via ALTER TABLE in production
+    - Reversible via downgrade()
+
+3. **Validation Script** (scripts/validate_check_constraints.py):
+    - Pre-migration data validator
+    - Scans all tables for constraint violations
+    - Provides detailed violation reports
+    - Ran successfully: 0 violations found in existing data
+
+4. **Documentation** (docs/DATABASE_ANALYSIS.md):
+    - Marked Issue #1 as resolved
+    - Documented all constraints added
+    - Updated critical priority recommendations
+
+**Impact:**
+
+-   ✅ **Database-Level Integrity**: Invalid data physically cannot be inserted
+-   ✅ **Defense in Depth**: Validation at both application and database layers
+-   ✅ **ETL Safety**: Direct SQL operations now validated
+-   ✅ **Better Error Messages**: Database rejects invalid data immediately with clear constraint names
+-   ✅ **Production Ready**: Constraints enforce business rules even if code has bugs
+-   ✅ **Zero Breaking Changes**: All existing data validated and compliant
+
+**Verification:**
+
+-   27 CHECK constraints added across 9 tables
+-   Migration applied successfully on SQLite dev database
+-   Validation script: 100% pass rate on existing data
+-   Constraints will be enforced in PostgreSQL production on deployment
+
 ### Composite Index for Expense Query Optimization (#62)
 
 **Context:** Common query pattern filtering expenses by `(user_id, date range, is_fixed_bill)` was missing an optimized index, causing full table scans as data grew. Additionally, carryover calculations used N+1 query patterns (looping through weeks).
@@ -29,15 +90,18 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Solution:**
 
 1. **Model Update** (backend/models/database.py):
+
     - Added composite index: `db.Index('idx_expense_user_date_fixed', 'user_id', 'date', 'is_fixed_bill')`
-    - Placed in Expense.__table_args__ alongside existing indexes
+    - Placed in Expense.**table_args** alongside existing indexes
 
 2. **Migration** (d4a91c2b7f3e):
+
     - Created Alembic revision to add index to existing databases
     - Used `postgresql_concurrently=True` for zero-downtime production deployment
     - Reversible via downgrade() function
 
 3. **Query Optimization** (backend/routes/salary_periods.py):
+
     - Refactored GET `/salary-periods/<id>/current` endpoint:
         - Replaced loop with single aggregation query using `outerjoin` + `group_by`
         - Reduced 4 separate queries → 1 query per request

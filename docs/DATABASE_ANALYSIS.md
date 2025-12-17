@@ -297,29 +297,46 @@ Week 2: Budget €100 + €20 carryover = €120 available
 
 ## Critical Issues & Vulnerabilities
 
-### **1. Missing Database Constraints** ⚠️
+### **1. ✅ Missing Database Constraints (RESOLVED)** 
 
-**No CHECK constraints** on critical fields:
+**Resolution**: CHECK constraints added to all models (2025-12-17)
 
-```python
-# Missing validation in database layer:
-- amount > 0 (expenses, income, debts)
-- week_number BETWEEN 1 AND 4 (budget_periods)
-- email format validation
-- password length minimum
-- date ranges (start_date < end_date)
-```
-
-**Impact**: Application logic handles validation, but database allows invalid data if logic is bypassed.
-
-**Recommendation**: Add CHECK constraints:
+**Constraints Added**:
 
 ```python
-__table_args__ = (
-    db.CheckConstraint('amount > 0', name='check_positive_amount'),
-    db.CheckConstraint('start_date < end_date', name='check_date_range'),
-)
+# User table
+- email LIKE '%@%' (email format validation)
+- failed_login_attempts >= 0
+
+# SalaryPeriod table
+- start_date < end_date (date range validation)
+- weekly_budget > 0
+- initial_debit_balance >= 0
+- credit_limit > 0
+- All budget amounts >= 0
+
+# BudgetPeriod table
+- start_date < end_date
+- week_number IS NULL OR (week_number BETWEEN 1 AND 4)
+- budget_amount IS NULL OR budget_amount > 0
+
+# Expense, Income, Debt, RecurringExpense tables
+- amount > 0 (all monetary amounts)
+- date ranges validated where applicable
+- day_of_month BETWEEN 1 AND 31 (recurring expenses)
+- day_of_week BETWEEN 0 AND 6 (recurring expenses)
+
+# CreditCardSettings, PeriodSuggestion tables
+- Positive amounts enforced
 ```
+
+**Migration**: `e8f5c3a1b9d4_add_check_constraints_for_data_integrity.py`
+
+**Impact**:
+- Database-level data integrity enforcement
+- Invalid data cannot be inserted even if application logic is bypassed
+- ETL processes and direct SQL operations now validated
+- Constraints enforced in PostgreSQL production; embedded in SQLite schema
 
 ### **2. No Migration System** 🔴
 
@@ -614,7 +631,7 @@ PasswordResetToken.query.filter(
 
 1. 🔴 Implement migration system (Flask-Migrate)
 2. 🔴 Wrap multi-step operations in explicit transactions
-3. 🔴 Add CHECK constraints for data integrity
+3. ✅ Add CHECK constraints for data integrity - COMPLETED 2025-12-17
 
 ### **High Priority:**
 

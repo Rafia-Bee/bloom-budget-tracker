@@ -50,6 +50,13 @@ class User(db.Model):
         "Debt", backref="user", lazy=True, cascade="all, delete-orphan"
     )
 
+    __table_args__ = (
+        db.CheckConstraint("email LIKE '%@%'", name="check_user_email_format"),
+        db.CheckConstraint(
+            "failed_login_attempts >= 0", name="check_user_failed_attempts"
+        ),
+    )
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -111,6 +118,39 @@ class SalaryPeriod(db.Model):
         "BudgetPeriod", backref="salary_period", lazy=True, cascade="all, delete-orphan"
     )
 
+    __table_args__ = (
+        db.CheckConstraint(
+            "start_date < end_date", name="check_salary_period_date_range"
+        ),
+        db.CheckConstraint(
+            "weekly_budget > 0", name="check_salary_period_positive_weekly_budget"
+        ),
+        db.CheckConstraint(
+            "initial_debit_balance >= 0", name="check_salary_period_debit_balance"
+        ),
+        db.CheckConstraint(
+            "credit_limit > 0", name="check_salary_period_positive_credit_limit"
+        ),
+        db.CheckConstraint(
+            "credit_budget_allowance >= 0", name="check_salary_period_credit_allowance"
+        ),
+        db.CheckConstraint(
+            "total_budget_amount >= 0", name="check_salary_period_total_budget"
+        ),
+        db.CheckConstraint(
+            "fixed_bills_total >= 0", name="check_salary_period_fixed_bills"
+        ),
+        db.CheckConstraint(
+            "remaining_amount >= 0", name="check_salary_period_remaining"
+        ),
+        db.CheckConstraint(
+            "weekly_debit_budget >= 0", name="check_salary_period_weekly_debit"
+        ),
+        db.CheckConstraint(
+            "weekly_credit_budget >= 0", name="check_salary_period_weekly_credit"
+        ),
+    )
+
 
 class BudgetPeriod(db.Model):
     __tablename__ = "budget_periods"
@@ -134,6 +174,17 @@ class BudgetPeriod(db.Model):
     # Composite index for active period queries
     __table_args__ = (
         db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
+        db.CheckConstraint(
+            "start_date < end_date", name="check_budget_period_date_range"
+        ),
+        db.CheckConstraint(
+            "week_number IS NULL OR (week_number BETWEEN 1 AND 4)",
+            name="check_budget_period_week_number",
+        ),
+        db.CheckConstraint(
+            "budget_amount IS NULL OR budget_amount > 0",
+            name="check_budget_period_positive_amount",
+        ),
     )
 
 
@@ -168,6 +219,7 @@ class Expense(db.Model):
         db.Index("idx_expense_user_date_fixed", "user_id", "date", "is_fixed_bill"),
         db.Index("idx_expense_user_category", "user_id", "category"),
         db.Index("idx_expense_user_payment", "user_id", "payment_method"),
+        db.CheckConstraint("amount > 0", name="check_expense_positive_amount"),
     )
 
 
@@ -188,6 +240,7 @@ class Income(db.Model):
     __table_args__ = (
         db.Index("idx_income_user_scheduled", "user_id", "scheduled_date"),
         db.Index("idx_income_user_actual", "user_id", "actual_date"),
+        db.CheckConstraint("amount > 0", name="check_income_positive_amount"),
     )
 
 
@@ -244,6 +297,28 @@ class RecurringExpense(db.Model):
         foreign_keys="Expense.recurring_template_id",
     )
 
+    __table_args__ = (
+        db.CheckConstraint(
+            "amount > 0", name="check_recurring_expense_positive_amount"
+        ),
+        db.CheckConstraint(
+            "end_date IS NULL OR start_date < end_date",
+            name="check_recurring_expense_date_range",
+        ),
+        db.CheckConstraint(
+            "day_of_month IS NULL OR (day_of_month BETWEEN 1 AND 31)",
+            name="check_recurring_expense_day_of_month",
+        ),
+        db.CheckConstraint(
+            "day_of_week IS NULL OR (day_of_week BETWEEN 0 AND 6)",
+            name="check_recurring_expense_day_of_week",
+        ),
+        db.CheckConstraint(
+            "frequency_value IS NULL OR frequency_value > 0",
+            name="check_recurring_expense_frequency_value",
+        ),
+    )
+
 
 class ExpenseNameMapping(db.Model):
     __tablename__ = "expense_name_mappings"
@@ -283,6 +358,10 @@ class CreditCardSettings(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
+    __table_args__ = (
+        db.CheckConstraint("credit_limit > 0", name="check_credit_card_positive_limit"),
+    )
+
 
 class PeriodSuggestion(db.Model):
     __tablename__ = "period_suggestions"
@@ -293,6 +372,12 @@ class PeriodSuggestion(db.Model):
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "amount > 0", name="check_period_suggestion_positive_amount"
+        ),
+    )
 
 
 class PasswordResetToken(db.Model):
