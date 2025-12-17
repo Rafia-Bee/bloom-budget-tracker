@@ -297,7 +297,7 @@ Week 2: Budget €100 + €20 carryover = €120 available
 
 ## Critical Issues & Vulnerabilities
 
-### **1. ✅ Missing Database Constraints (RESOLVED)** 
+### **1. ✅ Missing Database Constraints (RESOLVED)**
 
 **Resolution**: CHECK constraints added to all models (2025-12-17)
 
@@ -333,10 +333,11 @@ Week 2: Budget €100 + €20 carryover = €120 available
 **Migration**: `e8f5c3a1b9d4_add_check_constraints_for_data_integrity.py`
 
 **Impact**:
-- Database-level data integrity enforcement
-- Invalid data cannot be inserted even if application logic is bypassed
-- ETL processes and direct SQL operations now validated
-- Constraints enforced in PostgreSQL production; embedded in SQLite schema
+
+-   Database-level data integrity enforcement
+-   Invalid data cannot be inserted even if application logic is bypassed
+-   ETL processes and direct SQL operations now validated
+-   Constraints enforced in PostgreSQL production; embedded in SQLite schema
 
 ### **2. No Migration System** 🔴
 
@@ -453,29 +454,43 @@ except ValueError as e:
     return jsonify({"error": str(e)}), 400
 ```
 
-### **6. Missing Database-Level Referential Integrity** ⚠️
+### **6. ✅ Missing Database-Level Referential Integrity (RESOLVED)**
 
-**`Expense.recurring_template_id`** is nullable FK, but no ON DELETE behavior specified:
+**Resolution**: Added explicit ON DELETE behavior to all 12 foreign key relationships (2025-12-17)
 
-```python
-recurring_template_id = db.Column(
-    db.Integer, db.ForeignKey("recurring_expenses.id"), nullable=True
-)
-```
-
-**Issue**: If a `RecurringExpense` is deleted, generated `Expense` records still reference it.
-
-**Current behavior**: Relationship defined with backref but no cascade specified.
-
-**Recommendation**:
+**Foreign Key ON DELETE Behavior:**
 
 ```python
-recurring_template_id = db.Column(
-    db.Integer,
-    db.ForeignKey("recurring_expenses.id", ondelete='SET NULL'),
-    nullable=True
-)
+# User → All user data (CASCADE)
+user_id = db.ForeignKey("users.id", ondelete='CASCADE')
+# Applied to: SalaryPeriod, BudgetPeriod, Expense, Income, Debt,
+#            RecurringExpense, UserDefaults, CreditCardSettings,
+#            PeriodSuggestion, PasswordResetToken
+
+# SalaryPeriod → BudgetPeriods (CASCADE)
+salary_period_id = db.ForeignKey("salary_periods.id", ondelete='CASCADE')
+# BudgetPeriods belong to parent SalaryPeriod
+
+# RecurringExpense → Expenses (SET NULL)
+recurring_template_id = db.ForeignKey("recurring_expenses.id", ondelete='SET NULL')
+# Expense survives if template is deleted (becomes one-off expense)
 ```
+
+**Migration**: `f7b2d9e4c8a1_add_on_delete_to_foreign_keys.py`
+
+**Impact**:
+
+-   Database-level referential integrity enforcement
+-   User deletion cascades to all owned data (11 tables)
+-   Deleting RecurringExpense sets `recurring_template_id` to NULL (preserves expense records)
+-   Deleting SalaryPeriod cascades to child BudgetPeriods (weeks)
+-   No orphaned records
+-   Prevents foreign key constraint violations
+
+**Behavior:**
+
+-   SQLite: Constraints embedded in model (enforced on new databases)
+-   PostgreSQL: FK constraints enforced at database level
 
 ### **7. No Soft Delete Pattern** ⚠️
 
@@ -636,7 +651,7 @@ PasswordResetToken.query.filter(
 ### **High Priority:**
 
 4. ⚠️ Fix generic exception handling (use specific exceptions)
-5. ⚠️ Add ON DELETE behavior to FKs
+5. ✅ Add ON DELETE behavior to FKs - COMPLETED 2025-12-17
 6. ⚠️ Implement soft delete for expenses/recurring expenses
 7. ✅ Add composite index for `(user_id, date, is_fixed_bill)` - COMPLETED 2025-12-17
 

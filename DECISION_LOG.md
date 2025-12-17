@@ -6,6 +6,65 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### ON DELETE Behavior for Foreign Key Relationships (#60)
+
+**Context:** Foreign keys lacked explicit ON DELETE behavior, leading to potential orphaned records and unclear referential integrity rules. Database didn't know how to handle child records when parents were deleted.
+
+**Problem:**
+
+-   No explicit ON DELETE specified on 12 FK relationships
+-   Key issue: `Expense.recurring_template_id` → RecurringExpense
+    -   Deleting RecurringExpense left Expense records with dangling FK
+    -   Caused foreign key constraint violations or orphaned data
+-   User deletion behavior undefined at database level (only in ORM)
+-   Unclear intent: Should children be deleted, nulled, or preserved?
+
+**Solution:**
+
+1. **Model Updates** (backend/models/database.py):
+
+    - Added `ondelete` parameter to all 12 ForeignKey definitions
+    - **CASCADE (11 FKs)**: User-owned data deleted with user
+        - SalaryPeriod, BudgetPeriod, Expense, Income, Debt
+        - RecurringExpense, UserDefaults, CreditCardSettings
+        - PeriodSuggestion, PasswordResetToken
+        - SalaryPeriod → BudgetPeriod (weeks belong to parent period)
+    - **SET NULL (1 FK)**: `Expense.recurring_template_id`
+        - Expense survives if RecurringExpense template deleted
+        - Becomes standalone/one-off expense
+
+2. **Migration** (f7b2d9e4c8a1):
+
+    - Created Alembic revision documenting FK behavior
+    - SQLite: Constraints embedded in model (new databases only)
+    - PostgreSQL: FK constraints enforced at database level
+
+3. **Documentation** (docs/DATABASE_ANALYSIS.md):
+    - Marked Issue #6 as resolved
+    - Documented all FK relationships and their ON DELETE behavior
+    - Clarified cascade vs. set-null decisions
+
+**Impact:**
+
+-   ✅ **No Orphaned Records**: Database prevents dangling FKs
+-   ✅ **Clear Intent**: Documented expected deletion behavior
+-   ✅ **Database Enforcement**: Rules enforced beyond application code
+-   ✅ **User Deletion Safety**: All user data cleaned up automatically (GDPR-compliant)
+-   ✅ **Expense Preservation**: Deleting recurring template doesn't delete historical expenses
+-   ✅ **Defense in Depth**: ORM cascade + database-level CASCADE
+
+**Rationale:**
+
+-   **CASCADE for user_id**: User deletion should remove all user-specific data
+-   **CASCADE for salary_period_id**: Budget weeks are meaningless without parent period
+-   **SET NULL for recurring_template_id**: Expenses are historical records, survive template deletion
+
+**Verification:**
+
+-   12 FK relationships updated with explicit ON DELETE behavior
+-   Migration applied successfully
+-   No breaking changes (matches existing ORM cascade behavior)
+
 ### Database CHECK Constraints for Data Integrity (#58)
 
 **Context:** Database lacked CHECK constraints to enforce data validity at the database level. Validation only occurred in application code, which could be bypassed by direct SQL, ETL processes, or bugs.
@@ -25,6 +84,7 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Solution:**
 
 1. **Model Constraints** (backend/models/database.py):
+
     - Added `__table_args__` with CHECK constraints to 9 models:
         - **User**: email format, non-negative failed_login_attempts
         - **SalaryPeriod**: date ranges, positive amounts, non-negative balances
@@ -35,12 +95,14 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
         - **CreditCardSettings/PeriodSuggestion**: positive amounts
 
 2. **Migration** (e8f5c3a1b9d4):
+
     - Created Alembic revision to add constraints
     - SQLite: Constraints embedded in model (applied on table creation)
     - PostgreSQL: Constraints applied via ALTER TABLE in production
     - Reversible via downgrade()
 
 3. **Validation Script** (scripts/validate_check_constraints.py):
+
     - Pre-migration data validator
     - Scans all tables for constraint violations
     - Provides detailed violation reports

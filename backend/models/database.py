@@ -79,7 +79,9 @@ class SalaryPeriod(db.Model):
     __tablename__ = "salary_periods"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Balance-based budgeting fields
     # Starting debit balance in cents
@@ -157,10 +159,15 @@ class BudgetPeriod(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     salary_period_id = db.Column(
-        db.Integer, db.ForeignKey("salary_periods.id"), nullable=True
+        db.Integer,
+        db.ForeignKey("salary_periods.id", ondelete="CASCADE"),
+        nullable=True,
     )
     # 1-4 for weekly budgets
     week_number = db.Column(db.Integer, nullable=True)
@@ -193,10 +200,15 @@ class Expense(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     recurring_template_id = db.Column(
-        db.Integer, db.ForeignKey("recurring_expenses.id"), nullable=True
+        db.Integer,
+        db.ForeignKey("recurring_expenses.id", ondelete="SET NULL"),
+        nullable=True,
     )
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
@@ -228,7 +240,10 @@ class Income(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
@@ -248,7 +263,9 @@ class Debt(db.Model):
     __tablename__ = "debts"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     name = db.Column(db.String(200), nullable=False)
     original_amount = db.Column(db.Integer, nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
@@ -264,7 +281,9 @@ class RecurringExpense(db.Model):
     __tablename__ = "recurring_expenses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), nullable=False)
@@ -337,7 +356,10 @@ class UserDefaults(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     default_expense_name = db.Column(db.String(200), default="Wolt")
     default_category = db.Column(db.String(100), default="Flexible Expenses")
@@ -350,7 +372,10 @@ class CreditCardSettings(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     credit_limit = db.Column(db.Integer, default=150000)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -367,7 +392,9 @@ class PeriodSuggestion(db.Model):
     __tablename__ = "period_suggestions"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     suggestion_type = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
@@ -384,7 +411,9 @@ class PasswordResetToken(db.Model):
     __tablename__ = "password_reset_tokens"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     token = db.Column(db.String(255), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False, nullable=False)
