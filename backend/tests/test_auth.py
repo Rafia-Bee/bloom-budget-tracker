@@ -91,8 +91,7 @@ class TestAuthRegistration:
 
     def test_register_missing_fields(self, client):
         """Missing required fields should fail"""
-        response = client.post("/api/v1/auth/register",
-                               json={"username": "testuser"})
+        response = client.post("/api/v1/auth/register", json={"username": "testuser"})
 
         assert response.status_code == 400
 
@@ -126,8 +125,7 @@ class TestAuthLogin:
         """Login with non-existent email should fail"""
         response = client.post(
             "/api/v1/auth/login",
-            json={"email": "nonexistent@example.com",
-                  "password": "TestPass123!"},
+            json={"email": "nonexistent@example.com", "password": "TestPass123!"},
         )
 
         assert response.status_code in [400, 401]  # Either is acceptable
@@ -196,8 +194,7 @@ class TestAccountLockout:
         for i in range(5):
             response = client.post(
                 "/api/v1/auth/login",
-                json={"email": "lockout@example.com",
-                      "password": "WrongPass123!"},
+                json={"email": "lockout@example.com", "password": "WrongPass123!"},
             )
 
             if i < 4:
@@ -225,15 +222,13 @@ class TestAccountLockout:
         for _ in range(5):
             client.post(
                 "/api/v1/auth/login",
-                json={"email": "locked@example.com",
-                      "password": "WrongPass123!"},
+                json={"email": "locked@example.com", "password": "WrongPass123!"},
             )
 
         # Try with correct password - should still be locked
         response = client.post(
             "/api/v1/auth/login",
-            json={"email": "locked@example.com",
-                  "password": "CorrectPass123!"},
+            json={"email": "locked@example.com", "password": "CorrectPass123!"},
         )
 
         assert response.status_code == 403
@@ -255,8 +250,7 @@ class TestAccountLockout:
         for _ in range(2):
             client.post(
                 "/api/v1/auth/login",
-                json={"email": "reset@example.com",
-                      "password": "WrongPass123!"},
+                json={"email": "reset@example.com", "password": "WrongPass123!"},
             )
 
         # Successful login
@@ -272,8 +266,7 @@ class TestAccountLockout:
         for i in range(4):
             response = client.post(
                 "/api/v1/auth/login",
-                json={"email": "reset@example.com",
-                      "password": "WrongPass123!"},
+                json={"email": "reset@example.com", "password": "WrongPass123!"},
             )
 
             # Should still be 401, not 403 (not locked yet)
@@ -283,8 +276,7 @@ class TestAccountLockout:
         """Failed login for nonexistent user should not reveal lockout mechanism"""
         response = client.post(
             "/api/v1/auth/login",
-            json={"email": "nonexistent@example.com",
-                  "password": "AnyPass123!"},
+            json={"email": "nonexistent@example.com", "password": "AnyPass123!"},
         )
 
         # Should return generic invalid credentials message
