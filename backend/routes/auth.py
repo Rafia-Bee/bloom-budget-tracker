@@ -10,6 +10,7 @@ Endpoints:
 - GET /auth/me: Get current user info
 """
 
+from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import (
     create_access_token,
@@ -99,8 +100,70 @@ def login():
     email = data["email"].strip().lower()
     user = User.query.filter_by(email=email).first()
 
-    if not user or not user.check_password(data["password"]):
+    # Check if account exists
+    if not user:
         return jsonify({"error": "Invalid email or password"}), 401
+
+    # Check if account is locked
+    if user.is_locked():
+        lockout_time = (
+            user.locked_until.strftime("%H:%M") if user.locked_until else "unknown"
+        )
+        return (
+            jsonify(
+                {
+                    "error": f"Account locked due to too many failed login attempts. Please try again after {lockout_time}."
+                }
+            ),
+            403,
+        )
+
+    # Verify password
+    if not user.check_password(data["password"]):
+        # Increment failed attempts
+        user.failed_login_attempts += 1
+
+        # Lock account if threshold reached (5 attempts)
+        MAX_FAILED_ATTEMPTS = 5
+        LOCKOUT_MINUTES = 15
+
+        if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
+            db.session.commit()
+
+            # Send email notification
+            try:
+                email_service.send_account_lockout_email(
+                    to_email=user.email, lockout_minutes=LOCKOUT_MINUTES
+                )
+            except Exception as e:
+                current_app.logger.error(
+                    f"Failed to send lockout email to {user.email}: {str(e)}"
+                )
+
+            return (
+                jsonify(
+                    {
+                        "error": f"Account locked due to too many failed login attempts. Please try again in {LOCKOUT_MINUTES} minutes."
+                    }
+                ),
+                403,
+            )
+
+        db.session.commit()
+        remaining_attempts = MAX_FAILED_ATTEMPTS - user.failed_login_attempts
+        return (
+            jsonify(
+                {
+                    "error": f"Invalid email or password. {remaining_attempts} attempt(s) remaining before account lockout."
+                }
+            ),
+            401,
+        )
+
+    # Successful login - reset failed attempts
+    user.reset_failed_attempts()
+    db.session.commit()
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))

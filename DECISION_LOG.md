@@ -6,6 +6,69 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Account Lockout After Failed Logins (#34)
+
+**Context:** Login endpoint allowed unlimited failed login attempts per account, vulnerable to brute force and credential stuffing attacks. Rate limiting only protected per-IP, not per-account.
+
+**Problem:**
+
+-   No limit on failed login attempts per account
+-   Attackers could try unlimited passwords for a specific account
+-   Users not notified of unauthorized access attempts
+-   Vulnerable to credential stuffing (leaked passwords from other sites)
+
+**Solution:**
+
+1. **Updated User Model** (backend/models/database.py):
+
+    - Added `failed_login_attempts` column (default 0)
+    - Added `locked_until` column (nullable datetime)
+    - Added `is_locked()` method to check if account currently locked
+    - Added `reset_failed_attempts()` method to clear counter on successful login
+
+2. **Updated Login Endpoint** (backend/routes/auth.py):
+
+    - Check if account locked before password verification
+    - Increment failed_login_attempts counter on wrong password
+    - Lock account for 15 minutes after 5 failed attempts
+    - Show remaining attempts to user (e.g., "3 attempt(s) remaining")
+    - Reset counter to 0 on successful login
+    - Return 403 status when account locked (distinct from 401 invalid credentials)
+
+3. **Email Notifications** (backend/services/email_service.py):
+
+    - Added `send_account_lockout_email()` method
+    - Sends email to user when account is locked
+    - Includes lockout duration, security tips, and support contact
+    - Alerts users to potential unauthorized access attempts
+
+4. **Database Migration**:
+
+    - Created migration `faad44d4429e_add_account_lockout_fields_to_user_model`
+    - Adds nullable columns with defaults (safe for production)
+    - Applied automatically via Flask-Migrate workflow
+
+5. **Testing** (backend/tests/test_auth.py):
+    - Test lockout after 5 failed attempts
+    - Test locked account rejects correct password
+    - Test successful login resets counter
+    - Test nonexistent user doesn't reveal lockout mechanism (security)
+
+**Impact:**
+
+-   ✅ **Brute Force Protection**: 5-attempt limit makes password guessing impractical
+-   ✅ **User Awareness**: Email notification alerts users to unauthorized access attempts
+-   ✅ **Automatic Recovery**: 15-minute cooldown is user-friendly (not permanent lockout)
+-   ✅ **Layered Security**: Works alongside existing IP-based rate limiting
+-   ✅ **Standards Compliance**: Aligns with OWASP authentication best practices
+-   ⚠️ **Trade-off**: Legitimate users who forget passwords may face temporary lockout
+
+**Configuration:**
+
+-   MAX_FAILED_ATTEMPTS: 5 (hardcoded in auth.py)
+-   LOCKOUT_MINUTES: 15 (hardcoded in auth.py)
+-   Email sending is optional (fails gracefully if SendGrid not configured)
+
 ### Database Migration System Implementation (#56)
 
 **Context:** Database schema changes were managed by `db.create_all()`, which only creates missing tables and cannot handle schema modifications, rollbacks, or track changes over time.
