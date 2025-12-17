@@ -491,6 +491,171 @@ class EmailService:
             plain_text_content=plain_text_content,
         )
 
+    def send_account_lockout_email(
+        self, to_email: str, lockout_minutes: int
+    ) -> Dict[str, Any]:
+        """
+        Send an email notification when account is locked due to failed login attempts.
+
+        Args:
+            to_email: Recipient email address
+            lockout_minutes: Number of minutes until account is unlocked
+
+        Returns:
+            Dict with success status and message/error
+        """
+        # HTML email content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Account Temporarily Locked - Bloom Budget</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f5f5f5;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background-color: #ffffff;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    overflow: hidden;
+                }}
+                .header {{
+                    background-color: #fca5a5;
+                    padding: 40px 20px;
+                    text-align: center;
+                }}
+                .logo {{
+                    font-size: 48px;
+                }}
+                .header-text {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    margin: 10px 0 0 0;
+                }}
+                .content {{
+                    padding: 40px 30px;
+                }}
+                h1 {{
+                    color: #dc2626;
+                    font-size: 24px;
+                    margin: 0 0 20px 0;
+                }}
+                p {{
+                    margin: 0 0 20px 0;
+                    color: #4b5563;
+                }}
+                .warning-box {{
+                    background-color: #fef2f2;
+                    border-left: 4px solid #dc2626;
+                    padding: 16px;
+                    margin: 20px 0;
+                    border-radius: 4px;
+                }}
+                .security-notice {{
+                    font-size: 14px;
+                    color: #6b7280;
+                    margin-top: 30px;
+                    padding-top: 30px;
+                    border-top: 1px solid #e5e7eb;
+                }}
+                .footer {{
+                    background-color: #f9fafb;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 14px;
+                    color: #6b7280;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="logo">🔒</div>
+                    <div class="header-text">Account Temporarily Locked</div>
+                </div>
+                <div class="content">
+                    <h1>Security Alert</h1>
+                    <p>Your Bloom Budget account has been temporarily locked due to multiple failed login attempts.</p>
+
+                    <div class="warning-box">
+                        <strong>⏰ Your account will be automatically unlocked in {lockout_minutes} minutes.</strong>
+                    </div>
+
+                    <p><strong>What happened?</strong></p>
+                    <p>We detected consecutive failed login attempts on your account. As a security measure, we've temporarily locked your account to protect it from unauthorized access.</p>
+
+                    <div class="security-notice">
+                        <strong>🔐 If this was you:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Wait {lockout_minutes} minutes and try logging in again</li>
+                            <li>Make sure you're using the correct password</li>
+                            <li>If you've forgotten your password, use the "Forgot Password" link on the login page</li>
+                        </ul>
+
+                        <strong>⚠️ If this wasn't you:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Someone may be attempting to access your account</li>
+                            <li>Change your password immediately after the lockout period</li>
+                            <li>Enable two-factor authentication if available</li>
+                            <li>Contact support if you're concerned about account security</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>This email was sent from Bloom Budget</p>
+                    <p>Security concerns? Email us at <a href="mailto:support@bloom-tracker.app" style="color: #ff9dcd;">support@bloom-tracker.app</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Plain text fallback
+        plain_text_content = f"""
+        Account Temporarily Locked - Bloom Budget
+
+        🔒 Security Alert
+
+        Your Bloom Budget account has been temporarily locked due to multiple failed login attempts.
+
+        ⏰ Your account will be automatically unlocked in {lockout_minutes} minutes.
+
+        What happened?
+        We detected consecutive failed login attempts on your account. As a security measure, we've temporarily locked your account to protect it from unauthorized access.
+
+        If this was you:
+        - Wait {lockout_minutes} minutes and try logging in again
+        - Make sure you're using the correct password
+        - If you've forgotten your password, use the "Forgot Password" link on the login page
+
+        If this wasn't you:
+        - Someone may be attempting to access your account
+        - Change your password immediately after the lockout period
+        - Contact support if you're concerned about account security
+
+        ---
+        Bloom Budget
+        Security concerns? Email us at support@bloom-tracker.app
+        """
+
+        return self.send_email(
+            to_email=to_email,
+            subject="🔒 Account Temporarily Locked - Bloom Budget",
+            html_content=html_content,
+            plain_text_content=plain_text_content,
+        )
+
 
 # Create a singleton instance
 email_service = EmailService()
