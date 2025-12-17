@@ -124,26 +124,26 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
   const { daysRemaining, isOverdue, suggestedDebitBalance, suggestedCreditBalance, creditLimit } = rolloverData
 
   return (
-    <div className={`rounded-xl p-6 mb-6 ${isOverdue ? 'bg-red-50 border-2 border-red-300' : 'bg-yellow-50 border-2 border-yellow-300'}`}>
+    <div className={`rounded-xl p-6 mb-6 ${isOverdue ? 'bg-red-50 border-2 border-red-300 dark:bg-red-900/20 dark:border-red-700' : 'bg-yellow-50 border-2 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700'}`}>
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <svg className={`w-6 h-6 ${isOverdue ? 'text-red-600' : 'text-yellow-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-6 h-6 ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className={`text-lg font-bold ${isOverdue ? 'text-red-800' : 'text-yellow-800'}`}>
+            <h3 className={`text-lg font-bold ${isOverdue ? 'text-red-800 dark:text-red-300' : 'text-yellow-800 dark:text-yellow-300'}`}>
               {isOverdue ? 'Salary Period Ended' : 'Week 4 Ending Soon'}
             </h3>
           </div>
 
-          <p className={`text-sm mb-3 ${isOverdue ? 'text-red-700' : 'text-yellow-700'}`}>
+          <p className={`text-sm mb-3 ${isOverdue ? 'text-red-700 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-300'}`}>
             {isOverdue
               ? `Your salary period ended ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) === 1 ? '' : 's'} ago. Create your next period to continue budgeting.`
               : `Your salary period ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Set up your next period now for seamless transition.`
             }
           </p>
 
-          <div className={`text-sm mb-4 ${isOverdue ? 'text-red-600' : 'text-yellow-600'}`}>
+          <div className={`text-sm mb-4 ${isOverdue ? 'text-red-600 dark:text-red-300' : 'text-yellow-600 dark:text-yellow-300'}`}>
             <p className="font-semibold mb-1">Calculated balances for next period:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Debit: €{(suggestedDebitBalance / 100).toFixed(2)}</li>
@@ -164,7 +164,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
             </button>
             <button
               onClick={onDismiss}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-hover transition"
             >
               Remind Me Later
             </button>
@@ -173,7 +173,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 
         <button
           onClick={onDismiss}
-          className="text-gray-400 hover:text-gray-600 text-xl"
+          className="text-gray-400 dark:text-dark-text-secondary hover:text-gray-600 dark:hover:text-dark-text text-xl"
           aria-label="Close"
         >
           ×
