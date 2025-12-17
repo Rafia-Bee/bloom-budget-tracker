@@ -6,6 +6,53 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Comprehensive Security & Technical Debt Audit (#87, #88)
+
+**Context:** Performed systematic security vulnerability assessment and technical debt analysis to identify risks and architectural improvements before taking on major new features.
+
+**Audit Scope:**
+
+-   Security vulnerabilities across authentication, input validation, data exposure
+-   Technical debt in code quality, architecture, performance
+-   Missing features and operational gaps
+-   Infrastructure and scalability concerns
+
+**Critical Security Findings:**
+
+1. **Secret Keys in Version Control** (CRITICAL) - `backend/.env` contains dev secrets
+2. **JWT localStorage XSS** (HIGH) - Tokens vulnerable to XSS-based hijacking
+3. **Development CORS Wildcard** (HIGH) - Could allow any origin if deployed wrong
+4. **Console Logging Exposure** (MEDIUM) - Debug info leaked in production
+
+**Technical Debt Findings:**
+
+1. **Database Connection Pooling** - Single connection model limits scalability
+2. **Monolithic Architecture** - All routes in single app, hard to scale
+3. **No Automated Backups** - Data loss risk if database corrupted
+4. **Bundle Optimization** - No code splitting, slow initial load
+5. **Missing Audit Logging** - Can't track data changes or user actions
+
+**Decisions:**
+
+-   **Prioritized Security Issues #79-87** - Already created with comprehensive remediation plan
+-   **Created Technical Debt Issue #88** - 14 architectural improvements across 5 categories
+-   **Deferred Implementation** - Focus on fixing critical security issues first before new features
+
+**Impact:**
+
+-   ✅ **Complete Risk Assessment** - Identified 8 security vulnerabilities + 14 technical debt items
+-   ✅ **Clear Remediation Roadmap** - 4-week security sprint + phased technical debt resolution
+-   ✅ **Informed Development** - Can make architectural decisions based on known limitations
+-   ✅ **Issue #32 Context** - Rate limiting Redis migration fits into broader security improvements
+
+**Rationale:**
+
+-   Security vulnerabilities pose immediate risk and must be addressed before major features
+-   Technical debt items provide roadmap for improving scalability and maintainability
+-   Comprehensive audit prevents future architectural decisions from compounding existing issues
+
+## 2025-12-17
+
 ### ON DELETE Behavior for Foreign Key Relationships (#60)
 
 **Context:** Foreign keys lacked explicit ON DELETE behavior, leading to potential orphaned records and unclear referential integrity rules. Database didn't know how to handle child records when parents were deleted.
