@@ -606,7 +606,7 @@ function Dashboard({ setIsAuthenticated }) {
         ...expenseData,
         budget_period_id: targetPeriodId
       })
-      loadExpenses()
+      await loadExpenses()
       setShowAddModal(false)
       setModalType(null)
     } catch (error) {
@@ -673,7 +673,7 @@ function Dashboard({ setIsAuthenticated }) {
       })
       setShowAddModal(false)
       setModalType(null)
-      loadIncome() // Reload income list
+      await loadIncome() // Reload income list
     } catch (error) {
       console.error('Failed to add income:', error)
       throw error
@@ -683,7 +683,7 @@ function Dashboard({ setIsAuthenticated }) {
   const handleDeleteIncome = async (id) => {
     try {
       await incomeAPI.delete(id)
-      loadIncome()
+      await loadIncome()
     } catch (error) {
       console.error('Failed to delete income:', error)
     }
@@ -692,7 +692,7 @@ function Dashboard({ setIsAuthenticated }) {
   const handleDeleteExpense = async (id) => {
     try {
       await expenseAPI.delete(id)
-      loadExpenses()
+      await loadExpenses()
     } catch (error) {
       console.error('Failed to delete expense:', error)
     }
@@ -701,7 +701,7 @@ function Dashboard({ setIsAuthenticated }) {
   const handleEditExpense = async (id, expenseData) => {
     try {
       await expenseAPI.update(id, expenseData)
-      loadExpenses()
+      await loadExpenses()
       setShowEditModal(false)
       setEditType(null)
       setSelectedTransaction(null)
@@ -714,7 +714,7 @@ function Dashboard({ setIsAuthenticated }) {
   const handleEditIncome = async (id, incomeData) => {
     try {
       await incomeAPI.update(id, incomeData)
-      loadIncome()
+      await loadIncome()
       setShowEditModal(false)
       setEditType(null)
       setSelectedTransaction(null)
@@ -773,8 +773,8 @@ function Dashboard({ setIsAuthenticated }) {
       )
 
       // Reload data
-      loadExpenses()
-      loadIncome()
+      await loadExpenses()
+      await loadIncome()
 
       // Clear selections and exit selection mode
       setSelectedTransactions([])
@@ -1642,7 +1642,7 @@ function Dashboard({ setIsAuthenticated }) {
                       ...data,
                       budget_period_id: currentPeriod.id
                     })
-                    loadExpenses()
+                    await loadExpenses()
                     setShowAddModal(false)
                     setModalType(null)
                     resolve()

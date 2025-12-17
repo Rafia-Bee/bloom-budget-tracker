@@ -6,6 +6,45 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Dashboard Balance Update Race Condition Fix (#78)
+
+**Context:** Critical bug where adding new expenses did not immediately update the dashboard's debit card "Total spent" balance, though period spending and weekly budget calculations updated correctly.
+
+**Problem:**
+
+-   User adds expense with debit card → expense created successfully
+-   Dashboard showed updated "Budget remaining" and "Spent this period"
+-   BUT "Total spent" (cumulative debit balance) remained stale
+-   Root cause: Race condition in Dashboard.jsx transaction handlers
+
+**Technical Analysis:**
+
+-   Multiple handlers (`handleAddExpense`, `handleAddIncome`, `handleDeleteExpense`, etc.) called `loadExpenses()` or `loadIncome()` **without await**
+-   These functions trigger async `calculateCumulativeBalances()` which fetches ALL transactions and recalculates totals
+-   Modal closed before balance calculation completed → UI showed old balance
+-   Example: Line 608 in Dashboard.jsx had `loadExpenses()` instead of `await loadExpenses()`
+
+**Solution:**
+Added `await` to all `loadExpenses()` and `loadIncome()` calls in:
+
+-   `handleAddExpense()` - Line 608
+-   `handleAddIncome()` - Line 676
+-   `handleDeleteExpense()` - Line 695
+-   `handleDeleteIncome()` - Line 686
+-   `handleEditExpense()` - Line 704
+-   `handleEditIncome()` - Line 717
+-   `handleBulkDelete()` - Lines 776-777
+-   Warning modal confirm handler - Line 1645
+
+**Impact:**
+
+-   Guarantees balance calculations complete before UI updates
+-   Eliminates race condition across all transaction operations
+-   Fixes reported bug plus similar issues in edit/delete operations
+-   No breaking changes - async await pattern already used elsewhere
+
+---
+
 ### Credit Card Debt Calculation & Period Management Fixes
 
 **Context:** Multiple issues with credit card debt tracking and salary period creation affecting accuracy and user experience.
