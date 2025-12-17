@@ -13,6 +13,7 @@ import time
 from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 from backend.config import config
 from backend.models.database import db
 from backend.routes.api_v1 import create_v1_blueprint
@@ -57,6 +58,9 @@ def create_app(config_name="development"):
 
     db.init_app(app)
 
+    # Flask-Migrate: migrations folder is in backend/migrations
+    migrate = Migrate(app, db, directory="backend/migrations")
+
     jwt = JWTManager(app)
 
     # Register versioned API (v1)
@@ -75,8 +79,9 @@ def create_app(config_name="development"):
     app.register_blueprint(password_reset_bp, url_prefix="/auth")
     app.register_blueprint(export_import_bp)
 
-    with app.app_context():
-        db.create_all()
+    # Database tables are now managed by Flask-Migrate
+    # with app.app_context():
+    #     db.create_all()
 
     # DEVELOPMENT ONLY: Simulate cold start delay (only on first request)
     first_request_done = {"value": False}

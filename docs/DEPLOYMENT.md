@@ -9,26 +9,29 @@ This guide covers the production deployment setup for Bloom Budget Tracker.
 ### Hosting Services
 
 **Frontend (Cloudflare Pages)**
-- URL: https://bloom-tracker.app (custom domain)
-- Default URL: https://bloom-budget-tracker.pages.dev
-- Framework: React + Vite
-- Auto-deploys from: `main` branch
-- Build command: `cd frontend && npm install && npm run build`
-- Build output: `frontend/dist`
+
+-   URL: https://bloom-tracker.app (custom domain)
+-   Default URL: https://bloom-budget-tracker.pages.dev
+-   Framework: React + Vite
+-   Auto-deploys from: `main` branch
+-   Build command: `cd frontend && npm install && npm run build`
+-   Build output: `frontend/dist`
 
 **Backend (Render)**
-- URL: https://bloom-backend-b44r.onrender.com
-- Framework: Flask (Python)
-- Plan: Free tier
-- Auto-deploys from: `main` branch
-- Start command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
+
+-   URL: https://bloom-backend-b44r.onrender.com
+-   Framework: Flask (Python)
+-   Plan: Free tier
+-   Auto-deploys from: `main` branch
+-   Start command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
 
 **Database**
-- Type: SQLite (perfect for personal use, no expiration)
-- Storage: Render persistent disk (1GB free)
-- Location: `/opt/render/project/data/bloom.db`
-- Backup: Automatic daily backups via GitHub Actions
-- Future scaling: See [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
+
+-   Type: SQLite (perfect for personal use, no expiration)
+-   Storage: Render persistent disk (1GB free)
+-   Location: `/opt/render/project/data/bloom.db`
+-   Backup: Automatic daily backups via GitHub Actions
+-   Future scaling: See [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
 
 ---
 
@@ -40,6 +43,7 @@ Required variables to set in Render dashboard:
 
 ```bash
 # Flask Configuration
+FLASK_APP=backend/app.py
 FLASK_ENV=production
 SECRET_KEY=<generate-strong-secret-key>
 JWT_SECRET_KEY=<generate-strong-jwt-secret>
@@ -65,7 +69,8 @@ No environment variables needed - API URL is hardcoded in frontend for simplicit
 
 ```javascript
 // Frontend uses runtime API URL from axios baseURL
-const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onrender.com';
+const API_URL =
+    import.meta.env.VITE_API_URL || "https://bloom-backend-b44r.onrender.com";
 ```
 
 ---
@@ -87,9 +92,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onre
 1. Connect GitHub repository to Render
 2. Create new Web Service
 3. Configure build settings:
-   - Build Command: `pip install -r backend/requirements.txt`
-   - Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
-   - Python Version: 3.11.9
+    - Build Command: `pip install -r backend/requirements.txt`
+    - Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
+    - Python Version: 3.11.9
 4. Set environment variables (including DATABASE_URL from Neon)
 5. Deploy
 
@@ -97,9 +102,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://bloom-backend-b44r.onre
 
 1. Connect GitHub repository to Cloudflare Pages
 2. Configure build settings:
-   - Build command: `cd frontend && npm install && npm run build`
-   - Build output directory: `frontend/dist`
-   - Root directory: `/` (leave empty)
+    - Build command: `cd frontend && npm install && npm run build`
+    - Build output directory: `frontend/dist`
+    - Root directory: `/` (leave empty)
 3. Add custom domain: `bloom-tracker.app`
 4. Deploy
 
@@ -113,8 +118,8 @@ git commit -m "your commit message"
 git push origin main
 ```
 
-- **Cloudflare Pages**: Builds and deploys frontend automatically (~2-3 minutes)
-- **Render**: Builds and deploys backend automatically (~3-5 minutes)
+-   **Cloudflare Pages**: Builds and deploys frontend automatically (~2-3 minutes)
+-   **Render**: Builds and deploys backend automatically (~3-5 minutes)
 
 **Note:** Free tier services sleep after 15 minutes of inactivity. First request after sleep takes 30-60 seconds (cold start).
 
@@ -127,35 +132,77 @@ git push origin main
 3. **Build frontend**: `cd frontend && npm run build` (verify no errors)
 4. **Commit & push**: `git push origin main`
 5. **Manual deploy**:
-   - Frontend: Cloudflare Pages dashboard → Retry deployment
-   - Backend: Render dashboard → Manual Deploy → Deploy latest commit
+    - Frontend: Cloudflare Pages dashboard → Retry deployment
+    - Backend: Render dashboard → Manual Deploy → Deploy latest commit
 6. **Verify production**: Visit https://bloom-tracker.app and test key flows
 
 ---
 
 ## Database Management
 
-### Migrations
+### Schema Migrations
 
-Database schema changes are handled automatically through Flask-SQLAlchemy:
+Bloom uses **Flask-Migrate** (Alembic) for database schema versioning and migrations.
 
-```python
-# In backend/models/database.py
-with app.app_context():
-    db.create_all()  # Creates tables if they don't exist
-```
+#### Creating a New Migration
 
-For manual migrations, connect to the database:
+When you modify database models in [backend/models/database.py](../backend/models/database.py):
 
 ```bash
-# Get database connection string from Render dashboard
-psql <DATABASE_URL>
+# 1. Activate virtual environment
+.venv\Scripts\Activate.ps1
+
+# 2. Generate migration from model changes
+flask db migrate -m "Description of changes"
+
+# 3. Review the generated migration file in backend/migrations/versions/
+
+# 4. Apply the migration
+flask db upgrade
+
+# 5. Commit both the code changes and migration file
+git add backend/models/database.py backend/migrations/versions/*.py
+git commit -m "feat: add new column to expenses table (#XX)"
 ```
+
+#### Common Migration Commands
+
+```bash
+# Show current migration revision
+flask db current
+
+# Show migration history
+flask db history
+
+# Upgrade to latest schema
+flask db upgrade
+
+# Rollback one migration
+flask db downgrade
+
+# Show SQL that would be executed
+flask db upgrade --sql
+```
+
+#### Production Deployment
+
+Migrations run automatically during deployment:
+
+-   **Render**: `buildCommand` includes `flask db upgrade`
+-   Manual deployment: SSH to server and run `flask db upgrade`
+
+#### Migration Best Practices
+
+1. **Always review generated migrations** before committing
+2. **Test migrations** in development before deploying
+3. **Migrations are irreversible** in production - test rollback paths
+4. **Include migrations in commits** with corresponding model changes
+5. **Never edit applied migrations** - create new ones instead
 
 ### Backups
 
-- **Automatic**: Render performs daily backups (free tier: 7-day retention)
-- **Manual**: Export from Render dashboard or use `pg_dump`
+-   **Automatic**: Render performs daily backups (free tier: 7-day retention)
+-   **Manual**: Export from Render dashboard or use `pg_dump`
 
 ---
 
@@ -163,10 +210,10 @@ psql <DATABASE_URL>
 
 ### Secrets Management
 
-- ✅ All secrets stored as environment variables
-- ✅ `.env` files in `.gitignore`
-- ✅ Separate dev/production configurations
-- ⚠️ Rotate secrets regularly
+-   ✅ All secrets stored as environment variables
+-   ✅ `.env` files in `.gitignore`
+-   ✅ Separate dev/production configurations
+-   ⚠️ Rotate secrets regularly
 
 ### CORS Configuration
 
@@ -180,9 +227,9 @@ Update in Render dashboard when domain changes.
 
 ### Database Security
 
-- ✅ SSL/TLS required for connections
-- ✅ Connection pooling with `pool_pre_ping`
-- ✅ No public database access
+-   ✅ SSL/TLS required for connections
+-   ✅ Connection pooling with `pool_pre_ping`
+-   ✅ No public database access
 
 ---
 
@@ -191,23 +238,26 @@ Update in Render dashboard when domain changes.
 ### Backend (Render Free Tier)
 
 **Limitations:**
-- Sleeps after 15 minutes of inactivity
-- 512 MB RAM
-- Shared CPU
+
+-   Sleeps after 15 minutes of inactivity
+-   512 MB RAM
+-   Shared CPU
 
 **Optimizations:**
-- Gunicorn with 4 workers
-- Connection pooling enabled
-- JWT tokens with 24-hour expiry (offline support)
+
+-   Gunicorn with 4 workers
+-   Connection pooling enabled
+-   JWT tokens with 24-hour expiry (offline support)
 
 ### Frontend (Cloudflare Pages)
 
 **Optimizations:**
-- Vite production build (minified, tree-shaken)
-- Progressive Web App (PWA) for offline support
-- Service worker caching
-- Cloudflare CDN edge caching
-- Unlimited bandwidth and builds
+
+-   Vite production build (minified, tree-shaken)
+-   Progressive Web App (PWA) for offline support
+-   Service worker caching
+-   Cloudflare CDN edge caching
+-   Unlimited bandwidth and builds
 
 ---
 
@@ -216,16 +266,17 @@ Update in Render dashboard when domain changes.
 ### Current Setup
 
 **Custom Loading Animations**
-- Displays cute cat animations during cold starts
-- Minimum 3-second display to ensure animation completion
-- Improves perceived performance
+
+-   Displays cute cat animations during cold starts
+-   Minimum 3-second display to ensure animation completion
+-   Improves perceived performance
 
 ### Recommended (To Implement)
 
-- [ ] Error tracking: Sentry integration
-- [ ] Uptime monitoring: UptimeRobot or similar
-- [ ] Performance monitoring: Web vitals tracking
-- [ ] Log aggregation: Render logs dashboard
+-   [ ] Error tracking: Sentry integration
+-   [ ] Uptime monitoring: UptimeRobot or similar
+-   [ ] Performance monitoring: Web vitals tracking
+-   [ ] Log aggregation: Render logs dashboard
 
 ---
 
@@ -234,12 +285,14 @@ Update in Render dashboard when domain changes.
 ### Backend Won't Start
 
 **Check:**
+
 1. Environment variables are set correctly
 2. Database connection string is valid
 3. Build logs in Render dashboard
 4. Python dependencies installed correctly
 
 **Common fixes:**
+
 ```bash
 # Verify requirements.txt includes all dependencies
 pip freeze > backend/requirements.txt
@@ -251,12 +304,14 @@ pip freeze > backend/requirements.txt
 ### Frontend Build Fails
 
 **Check:**
+
 1. Node version compatibility (use Node 18+)
 2. All dependencies in `package.json`
 3. Build logs in Cloudflare Pages dashboard
 4. Build command includes `npm install`
 
 **Common fixes:**
+
 ```bash
 # Clear cache and rebuild
 rm -rf node_modules package-lock.json
@@ -267,12 +322,14 @@ npm run build
 ### CORS Errors
 
 **Check:**
+
 1. `CORS_ORIGINS` includes frontend URL
 2. No trailing slashes in URLs
 3. HTTPS (not HTTP) in production
 
 **Fix:**
 Update Render environment variable:
+
 ```bash
 CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 ```
@@ -280,6 +337,7 @@ CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 ### Database Connection Issues
 
 **Check:**
+
 1. `DATABASE_URL` environment variable exists
 2. Database is not paused (free tier limitation)
 3. SSL mode is set to `require`
@@ -291,17 +349,20 @@ CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 ### Free Tier Limitations
 
 **Render Backend:**
-- Sleeps after inactivity → Upgrade to Starter ($7/month) for always-on
-- 750 hours/month limit
+
+-   Sleeps after inactivity → Upgrade to Starter ($7/month) for always-on
+-   750 hours/month limit
 
 **Render PostgreSQL:**
-- 1 GB storage → Upgrade for more space
-- 7-day backup retention → Upgrade for 30-day retention
+
+-   1 GB storage → Upgrade for more space
+-   7-day backup retention → Upgrade for 30-day retention
 
 **Cloudflare Pages Frontend:**
-- Unlimited bandwidth
-- Unlimited builds
-- 500 builds/month for preview deployments
+
+-   Unlimited bandwidth
+-   Unlimited builds
+-   500 builds/month for preview deployments
 
 ### Recommended Upgrades (When Needed)
 
@@ -319,6 +380,7 @@ CORS_ORIGINS=https://bloom-tracker.app,https://bloom-budget-tracker.pages.dev
 All API endpoints use the `/api/v1/` prefix for version management and backward compatibility.
 
 **Endpoints:**
+
 ```
 /api/v1/auth/login
 /api/v1/auth/register
@@ -331,20 +393,23 @@ All API endpoints use the `/api/v1/` prefix for version management and backward 
 ```
 
 **Frontend Configuration:**
-- API URL automatically includes version prefix
-- No manual configuration needed
-- Hardcoded: `https://bloom-backend-b44r.onrender.com/api/v1`
+
+-   API URL automatically includes version prefix
+-   No manual configuration needed
+-   Hardcoded: `https://bloom-backend-b44r.onrender.com/api/v1`
 
 ## Database Backup & Recovery
 
 ### Automated Backups
 
 **GitHub Actions:** Daily at 2:00 AM UTC
-- Dumps PostgreSQL database
-- Compresses and uploads to GitHub artifacts
-- 30-day retention period
+
+-   Dumps PostgreSQL database
+-   Compresses and uploads to GitHub artifacts
+-   30-day retention period
 
 **Manual Trigger:**
+
 ```bash
 gh workflow run backup.yml
 ```
@@ -352,28 +417,32 @@ gh workflow run backup.yml
 ### Restore Process
 
 1. **Download backup:**
-   ```bash
-   gh run download <run-id> -n database-backup-<number>
-   ```
+
+    ```bash
+    gh run download <run-id> -n database-backup-<number>
+    ```
 
 2. **Decompress:**
-   ```powershell
-   gzip -d bloom_backup_20251202_020000.sql.gz
-   ```
+
+    ```powershell
+    gzip -d bloom_backup_20251202_020000.sql.gz
+    ```
 
 3. **Restore:**
-   ```bash
-   psql $DATABASE_URL < bloom_backup_20251202_020000.sql
-   ```
+    ```bash
+    psql $DATABASE_URL < bloom_backup_20251202_020000.sql
+    ```
 
 **Render Built-in Backups:**
-- Free tier: 7-day retention
-- Automatic daily backups
-- Point-in-time recovery
+
+-   Free tier: 7-day retention
+-   Automatic daily backups
+-   Point-in-time recovery
 
 ### Disaster Recovery
 
 If production database is lost:
+
 1. Download latest backup from GitHub Actions or Render
 2. Create new PostgreSQL instance on Render
 3. Restore backup to new instance
@@ -416,37 +485,40 @@ No environment variables needed - API URL configured in frontend code.
 ### GitHub Actions (Planned)
 
 **Automated checks on PR:**
-- Run tests
-- Lint code
-- Check for security vulnerabilities
+
+-   Run tests
+-   Lint code
+-   Check for security vulnerabilities
 
 **Automated deployment:**
-- Already handled by Cloudflare Pages/Render
-- Could add pre-deployment checks
+
+-   Already handled by Cloudflare Pages/Render
+-   Could add pre-deployment checks
 
 **Example workflow** (to implement):
+
 ```yaml
 name: CI/CD Pipeline
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+    pull_request:
+        branches: [main]
+    push:
+        branches: [main]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run backend tests
-        run: |
-          pip install -r backend/requirements.txt
-          pytest
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm install
-          npm test
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Run backend tests
+              run: |
+                  pip install -r backend/requirements.txt
+                  pytest
+            - name: Run frontend tests
+              run: |
+                  cd frontend
+                  npm install
+                  npm test
 ```
 
 ---
@@ -454,29 +526,31 @@ jobs:
 ## Support & Resources
 
 **Documentation:**
-- [Render Docs](https://render.com/docs)
-- [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
-- [Flask Deployment](https://flask.palletsprojects.com/en/2.3.x/deploying/)
+
+-   [Render Docs](https://render.com/docs)
+-   [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
+-   [Flask Deployment](https://flask.palletsprojects.com/en/2.3.x/deploying/)
 
 **Monitoring:**
-- Render Dashboard: Monitor backend health
-- Cloudflare Pages Dashboard: Monitor frontend builds and analytics
-- PostgreSQL: Check database metrics
+
+-   Render Dashboard: Monitor backend health
+-   Cloudflare Pages Dashboard: Monitor frontend builds and analytics
+-   PostgreSQL: Check database metrics
 
 ---
 
 ## Checklist for New Deployments
 
-- [ ] Environment variables configured
-- [ ] Database connected and initialized
-- [ ] CORS origins updated
-- [ ] Frontend API URL points to backend
-- [ ] Test login/register flow
-- [ ] Test CRUD operations
-- [ ] Verify cold start behavior
-- [ ] Check error handling
-- [ ] Confirm PWA functionality
-- [ ] Review security settings
+-   [ ] Environment variables configured
+-   [ ] Database connected and initialized
+-   [ ] CORS origins updated
+-   [ ] Frontend API URL points to backend
+-   [ ] Test login/register flow
+-   [ ] Test CRUD operations
+-   [ ] Verify cold start behavior
+-   [ ] Check error handling
+-   [ ] Confirm PWA functionality
+-   [ ] Review security settings
 
 ---
 

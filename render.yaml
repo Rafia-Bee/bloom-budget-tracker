@@ -3,13 +3,15 @@ services:
     name: bloom-backend
     runtime: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install -r backend/requirements.txt && python -m flask db upgrade
     startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app
     disk:
       name: bloom-data
       mountPath: /opt/render/project/data
       sizeGB: 1
     envVars:
+      - key: FLASK_APP
+        value: backend/app.py
       - key: FLASK_ENV
         value: production
       - key: PYTHON_VERSION

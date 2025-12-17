@@ -6,6 +6,65 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Database Migration System Implementation (#56)
+
+**Context:** Database schema changes were managed by `db.create_all()`, which only creates missing tables and cannot handle schema modifications, rollbacks, or track changes over time.
+
+**Problem:**
+
+-   No version control for database schema changes
+-   Cannot modify existing table structures safely
+-   No rollback capability for problematic schema changes
+-   Risk of production schema drift between environments
+-   Difficult to coordinate code deployments with schema changes
+
+**Solution:**
+
+1. **Implemented Flask-Migrate (Alembic wrapper)**:
+
+    - Added `Flask-Migrate==4.0.5` to backend/requirements.txt
+    - Initialized migration repository in `backend/migrations/`
+    - Created initial migration capturing all current tables and indexes
+    - Replaced `db.create_all()` with migration-based schema management
+
+2. **Updated Application Setup** (backend/app.py):
+
+    - Added `from flask_migrate import Migrate` import
+    - Initialized Migrate with `migrate = Migrate(app, db, directory='backend/migrations')`
+    - Commented out `db.create_all()` - schema now managed by migrations
+    - Migrations directory explicitly set to handle running from project root
+
+3. **Updated Deployment Process** (render.yaml):
+
+    - Added `FLASK_APP=backend/app.py` environment variable
+    - Modified buildCommand: `pip install -r backend/requirements.txt && python -m flask db upgrade`
+    - Migrations now run automatically on every deployment before app starts
+
+4. **Updated Documentation** (docs/DEPLOYMENT.md):
+    - Added comprehensive "Schema Migrations" section with common commands
+    - Documented migration workflow: modify models → generate migration → review → apply → commit
+    - Added best practices: review migrations, test in dev, include in commits, never edit applied migrations
+    - Documented production deployment process with automatic migration execution
+
+**Impact:**
+
+-   ✅ **Safe Schema Evolution**: Can now modify tables, add/remove columns, change constraints
+-   ✅ **Version Control**: All schema changes tracked in migration files with descriptions
+-   ✅ **Rollback Capability**: Can downgrade to previous schema versions if needed
+-   ✅ **Production Safety**: Automatic migrations on deployment prevent schema drift
+-   ✅ **Audit Trail**: Migration history provides clear record of database evolution
+-   ⚠️ **Breaking Change**: Existing deployments need initial migration applied once
+
+**Migration Commands:**
+
+```bash
+flask db migrate -m "description"  # Generate migration from model changes
+flask db upgrade                   # Apply migrations
+flask db downgrade                 # Rollback one migration
+flask db current                   # Show current revision
+flask db history                   # Show migration history
+```
+
 ### Transaction Handling in Multi-Step Database Operations (#57)
 
 **Context:** Multi-step database operations (salary period creation, debt payments, bulk imports) lacked proper transaction wrapping, risking data inconsistency if operations failed partway through.
