@@ -137,9 +137,33 @@ def get_current_salary_period():
                 or 0
             )
 
-        # Get all weeks with their spending and carryover
-        all_weeks = (
-            BudgetPeriod.query.filter_by(salary_period_id=salary_period.id)
+        # Get all weeks with their spending using single aggregation query
+        week_sums = (
+            db.session.query(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.start_date,
+                BudgetPeriod.end_date,
+                func.coalesce(func.sum(Expense.amount), 0).label("total_spent"),
+            )
+            .outerjoin(
+                Expense,
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= BudgetPeriod.start_date,
+                    Expense.date <= BudgetPeriod.end_date,
+                    Expense.is_fixed_bill == False,
+                ),
+            )
+            .filter(BudgetPeriod.salary_period_id == salary_period.id)
+            .group_by(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.start_date,
+                BudgetPeriod.end_date,
+            )
             .order_by(BudgetPeriod.week_number)
             .all()
         )
@@ -147,43 +171,29 @@ def get_current_salary_period():
         weeks_data = []
         cumulative_carryover = 0  # Track carryover from previous weeks
 
-        for week in all_weeks:
-            # Use date range instead of budget_period_id
-            week_expenses = (
-                db.session.query(func.sum(Expense.amount))
-                .filter(
-                    and_(
-                        Expense.user_id == current_user_id,
-                        Expense.date >= week.start_date,
-                        Expense.date <= week.end_date,
-                        Expense.is_fixed_bill == False,
-                    )
-                )
-                .scalar()
-                or 0
-            )
+        for week_data in week_sums:
+            week_id, week_num, budget, start_date, end_date, week_expenses = week_data
 
             # Add carryover from previous weeks to this week's budget
-            adjusted_budget = week.budget_amount + cumulative_carryover
+            adjusted_budget = budget + cumulative_carryover
             remaining = adjusted_budget - week_expenses
 
             weeks_data.append(
                 {
-                    "id": week.id,
-                    "week_number": week.week_number,
-                    "budget_amount": week.budget_amount,  # Original budget
+                    "id": week_id,
+                    "week_number": week_num,
+                    "budget_amount": budget,  # Original budget
                     "adjusted_budget": adjusted_budget,  # Budget + carryover
                     "carryover": cumulative_carryover,  # Carryover from previous weeks
                     "spent": week_expenses,
                     "remaining": remaining,
-                    "start_date": week.start_date.isoformat(),
-                    "end_date": week.end_date.isoformat(),
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
                 }
             )
 
             # Update cumulative carryover for next week (if week is in the past)
-            week_end = week.end_date
-            if week_end < today:
+            if end_date < today:
                 cumulative_carryover = remaining
 
         return (
@@ -550,41 +560,49 @@ def get_week_leftover(id, week_number):
         if not budget_period:
             return jsonify({"error": "Week not found"}), 404
 
-        # Calculate carryover from previous weeks
+        # Calculate carryover from previous weeks using single aggregation query
         cumulative_carryover = 0
-        previous_weeks = (
-            BudgetPeriod.query.filter(
+        previous_weeks_data = (
+            db.session.query(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.end_date,
+                func.coalesce(func.sum(Expense.amount), 0).label("total_spent"),
+            )
+            .outerjoin(
+                Expense,
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= BudgetPeriod.start_date,
+                    Expense.date <= BudgetPeriod.end_date,
+                    Expense.is_fixed_bill == False,
+                ),
+            )
+            .filter(
                 and_(
                     BudgetPeriod.salary_period_id == salary_period.id,
                     BudgetPeriod.week_number < week_number,
                 )
             )
+            .group_by(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.end_date,
+            )
             .order_by(BudgetPeriod.week_number)
             .all()
         )
 
-        for prev_week in previous_weeks:
-            # Use date range instead of budget_period_id
-            prev_spent = (
-                db.session.query(func.sum(Expense.amount))
-                .filter(
-                    and_(
-                        Expense.user_id == current_user_id,
-                        Expense.date >= prev_week.start_date,
-                        Expense.date <= prev_week.end_date,
-                        Expense.is_fixed_bill == False,
-                    )
-                )
-                .scalar()
-                or 0
-            )
-
-            # Add carryover from previous weeks
-            prev_adjusted_budget = prev_week.budget_amount + cumulative_carryover
+        # Calculate cumulative carryover from previous weeks
+        for prev_id, prev_num, prev_budget, prev_end, prev_spent in previous_weeks_data:
+            # Add carryover from even earlier weeks
+            prev_adjusted_budget = prev_budget + cumulative_carryover
             prev_remaining = prev_adjusted_budget - prev_spent
 
             # Only carry over if week is in the past
-            if prev_week.end_date < today:
+            if prev_end < today:
                 cumulative_carryover = prev_remaining
 
         # Calculate spending for this week (excluding fixed bills)
