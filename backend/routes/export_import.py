@@ -5,7 +5,7 @@ Handles exporting and importing user data (debts, recurring expenses).
 Includes weekly budget breakdown generation for enhanced financial transparency.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import (
     db,
@@ -19,6 +19,7 @@ from backend.models.database import (
 )
 from datetime import datetime, timedelta
 from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
 import re
 
 export_import_bp = Blueprint("export_import", __name__, url_prefix="/data")
@@ -344,385 +345,404 @@ def import_data():
             "income": [],
         }
 
-        # Import Debts
-        if "debts" in data["data"]:
-            for debt_data in data["data"]["debts"]:
-                # Check for duplicate: same name and original_amount
-                existing_debt = Debt.query.filter_by(
-                    user_id=current_user_id,
-                    name=debt_data["name"],
-                    original_amount=debt_data["original_amount"],
-                    archived=False,
-                ).first()
+        # Wrap entire import operation in a single transaction
+        # This ensures all-or-nothing behavior for data integrity
+        try:
+            # Import Debts
+            if "debts" in data["data"]:
+                for debt_data in data["data"]["debts"]:
+                    # Check for duplicate: same name and original_amount
+                    existing_debt = Debt.query.filter_by(
+                        user_id=current_user_id,
+                        name=debt_data["name"],
+                        original_amount=debt_data["original_amount"],
+                        archived=False,
+                    ).first()
 
-                if existing_debt:
-                    skipped_counts["debts"] += 1
-                    continue
+                    if existing_debt:
+                        skipped_counts["debts"] += 1
+                        continue
 
-                debt = Debt(
-                    user_id=current_user_id,
-                    name=debt_data["name"],
-                    original_amount=debt_data["original_amount"],
-                    current_balance=debt_data["current_balance"],
-                    monthly_payment=debt_data["monthly_payment"],
-                    archived=False,
-                )
-                db.session.add(debt)
-                imported_counts["debts"] += 1
-
-        # Import Recurring Expenses FIRST (before expenses, so we can link them)
-        # Create a map to link imported expenses to new recurring template IDs
-        # Maps: (name, amount, category) -> new RecurringExpense object
-        recurring_template_map = {}
-
-        if "recurring_expenses" in data["data"]:
-            for idx, recurring_data in enumerate(data["data"]["recurring_expenses"]):
-                start_date = datetime.fromisoformat(
-                    recurring_data["start_date"].replace("Z", "+00:00")
-                )
-                end_date = (
-                    datetime.fromisoformat(
-                        recurring_data["end_date"].replace("Z", "+00:00")
+                    debt = Debt(
+                        user_id=current_user_id,
+                        name=debt_data["name"],
+                        original_amount=debt_data["original_amount"],
+                        current_balance=debt_data["current_balance"],
+                        monthly_payment=debt_data["monthly_payment"],
+                        archived=False,
                     )
-                    if recurring_data.get("end_date")
-                    else None
-                )
+                    db.session.add(debt)
+                    imported_counts["debts"] += 1
 
-                # Check for duplicate: same name, amount, and category
-                existing_recurring = RecurringExpense.query.filter_by(
-                    user_id=current_user_id,
-                    name=recurring_data["name"],
-                    amount=recurring_data["amount"],
-                    category=recurring_data["category"],
-                    is_active=True,
-                ).first()
+            # Import Recurring Expenses FIRST (before expenses, so we can link them)
+            # Create a map to link imported expenses to new recurring template IDs
+            # Maps: (name, amount, category) -> new RecurringExpense object
+            recurring_template_map = {}
 
-                if existing_recurring:
-                    skipped_counts["recurring_expenses"] += 1
-                    continue
-
-                # Calculate next_due_date intelligently
-                # Look through imported expenses to find the most recent one from this template
-                most_recent_expense_date = None
-                if "expenses" in data["data"]:
-                    for exp_data in data["data"]["expenses"]:
-                        # Match by name, amount, and category (since recurring_template_id won't match yet)
-                        if (
-                            exp_data["name"] == recurring_data["name"]
-                            and exp_data["amount"] == recurring_data["amount"]
-                            and exp_data["category"] == recurring_data["category"]
-                            and exp_data.get("recurring_template_id") is not None
-                        ):
-                            exp_date = datetime.fromisoformat(
-                                exp_data["date"].replace("Z", "+00:00")
-                            ).date()
-                            if (
-                                most_recent_expense_date is None
-                                or exp_date > most_recent_expense_date
-                            ):
-                                most_recent_expense_date = exp_date
-
-                # Calculate next due date based on frequency
-                if most_recent_expense_date:
-                    # Start from the most recent expense and calculate next occurrence
-                    next_due = most_recent_expense_date
-                    if recurring_data["frequency"] == "monthly":
-                        # Add one month
-                        next_month = next_due.month + 1
-                        next_year = next_due.year
-                        if next_month > 12:
-                            next_month = 1
-                            next_year += 1
-                        day = recurring_data.get("day_of_month", next_due.day)
-                        try:
-                            next_due = datetime(next_year, next_month, day).date()
-                        except ValueError:
-                            # Handle invalid day (e.g., Feb 30)
-                            next_due = datetime(next_year, next_month, 28).date()
-                    elif recurring_data["frequency"] == "weekly":
-                        next_due = next_due + timedelta(days=7)
-                    elif recurring_data["frequency"] == "biweekly":
-                        next_due = next_due + timedelta(days=14)
-                    elif recurring_data["frequency"] == "custom":
-                        next_due = next_due + timedelta(
-                            days=recurring_data.get("frequency_value", 1)
+            if "recurring_expenses" in data["data"]:
+                for idx, recurring_data in enumerate(
+                    data["data"]["recurring_expenses"]
+                ):
+                    start_date = datetime.fromisoformat(
+                        recurring_data["start_date"].replace("Z", "+00:00")
+                    )
+                    end_date = (
+                        datetime.fromisoformat(
+                            recurring_data["end_date"].replace("Z", "+00:00")
                         )
-                else:
-                    # No expenses found, calculate from start_date
-                    next_due = start_date.date()
-                    today = datetime.now().date()
+                        if recurring_data.get("end_date")
+                        else None
+                    )
 
-                    # If start date is in the past, calculate the next occurrence after today
-                    if next_due < today:
+                    # Check for duplicate: same name, amount, and category
+                    existing_recurring = RecurringExpense.query.filter_by(
+                        user_id=current_user_id,
+                        name=recurring_data["name"],
+                        amount=recurring_data["amount"],
+                        category=recurring_data["category"],
+                        is_active=True,
+                    ).first()
+
+                    if existing_recurring:
+                        skipped_counts["recurring_expenses"] += 1
+                        continue
+
+                    # Calculate next_due_date intelligently
+                    # Look through imported expenses to find the most recent one from this template
+                    most_recent_expense_date = None
+                    if "expenses" in data["data"]:
+                        for exp_data in data["data"]["expenses"]:
+                            # Match by name, amount, and category (since recurring_template_id won't match yet)
+                            if (
+                                exp_data["name"] == recurring_data["name"]
+                                and exp_data["amount"] == recurring_data["amount"]
+                                and exp_data["category"] == recurring_data["category"]
+                                and exp_data.get("recurring_template_id") is not None
+                            ):
+                                exp_date = datetime.fromisoformat(
+                                    exp_data["date"].replace("Z", "+00:00")
+                                ).date()
+                                if (
+                                    most_recent_expense_date is None
+                                    or exp_date > most_recent_expense_date
+                                ):
+                                    most_recent_expense_date = exp_date
+
+                    # Calculate next due date based on frequency
+                    if most_recent_expense_date:
+                        # Start from the most recent expense and calculate next occurrence
+                        next_due = most_recent_expense_date
                         if recurring_data["frequency"] == "monthly":
-                            day_of_month = recurring_data.get(
-                                "day_of_month", start_date.day
-                            )
-                            # Find next occurrence of this day
-                            if today.day < day_of_month:
-                                # This month
-                                try:
-                                    next_due = datetime(
-                                        today.year, today.month, day_of_month
-                                    ).date()
-                                except ValueError:
-                                    next_due = datetime(
-                                        today.year, today.month, 28
-                                    ).date()
-                            else:
-                                # Next month
-                                next_month = today.month + 1
-                                next_year = today.year
-                                if next_month > 12:
-                                    next_month = 1
-                                    next_year += 1
-                                try:
-                                    next_due = datetime(
-                                        next_year, next_month, day_of_month
-                                    ).date()
-                                except ValueError:
-                                    next_due = datetime(
-                                        next_year, next_month, 28
-                                    ).date()
+                            # Add one month
+                            next_month = next_due.month + 1
+                            next_year = next_due.year
+                            if next_month > 12:
+                                next_month = 1
+                                next_year += 1
+                            day = recurring_data.get("day_of_month", next_due.day)
+                            try:
+                                next_due = datetime(next_year, next_month, day).date()
+                            except ValueError:
+                                # Handle invalid day (e.g., Feb 30)
+                                next_due = datetime(next_year, next_month, 28).date()
                         elif recurring_data["frequency"] == "weekly":
-                            # Calculate next weekly occurrence
-                            days_diff = (today - next_due).days
-                            weeks_passed = days_diff // 7
-                            next_due = next_due + timedelta(days=(weeks_passed + 1) * 7)
+                            next_due = next_due + timedelta(days=7)
                         elif recurring_data["frequency"] == "biweekly":
-                            days_diff = (today - next_due).days
-                            periods_passed = days_diff // 14
-                            next_due = next_due + timedelta(
-                                days=(periods_passed + 1) * 14
-                            )
+                            next_due = next_due + timedelta(days=14)
                         elif recurring_data["frequency"] == "custom":
-                            days_diff = (today - next_due).days
-                            freq_value = recurring_data.get("frequency_value", 1)
-                            periods_passed = days_diff // freq_value
                             next_due = next_due + timedelta(
-                                days=(periods_passed + 1) * freq_value
+                                days=recurring_data.get("frequency_value", 1)
                             )
-
-                recurring = RecurringExpense(
-                    user_id=current_user_id,
-                    name=recurring_data["name"],
-                    amount=recurring_data["amount"],
-                    category=recurring_data["category"],
-                    subcategory=recurring_data.get("subcategory", ""),
-                    payment_method=recurring_data["payment_method"],
-                    frequency=recurring_data["frequency"],
-                    frequency_value=recurring_data.get("frequency_value", 1),
-                    day_of_month=recurring_data.get("day_of_month"),
-                    day_of_week=recurring_data.get("day_of_week"),
-                    start_date=start_date,
-                    end_date=end_date,
-                    next_due_date=next_due,
-                    is_active=True,
-                    is_fixed_bill=recurring_data.get("is_fixed_bill", False),
-                    notes=recurring_data.get("notes", ""),
-                )
-                db.session.add(recurring)
-                db.session.flush()  # Flush to get the ID assigned
-
-                # Store mapping for linking expenses later
-                template_key = (
-                    recurring_data["name"],
-                    recurring_data["amount"],
-                    recurring_data["category"],
-                )
-                recurring_template_map[template_key] = recurring
-
-                imported_counts["recurring_expenses"] += 1
-
-        # Import Salary Periods
-        if "salary_periods" in data["data"]:
-            for sp_data in data["data"]["salary_periods"]:
-                start_date = datetime.fromisoformat(
-                    sp_data["start_date"].replace("Z", "+00:00")
-                ).date()
-                end_date = datetime.fromisoformat(
-                    sp_data["end_date"].replace("Z", "+00:00")
-                ).date()
-
-                # Check for duplicate: same start_date and end_date
-                existing_salary_period = SalaryPeriod.query.filter_by(
-                    user_id=current_user_id,
-                    start_date=start_date,
-                    end_date=end_date,
-                    is_active=True,
-                ).first()
-
-                if existing_salary_period:
-                    skipped_counts["salary_periods"] += 1
-                    continue
-
-                salary_period = SalaryPeriod(
-                    user_id=current_user_id,
-                    initial_debit_balance=sp_data["initial_debit_balance"],
-                    initial_credit_balance=sp_data["initial_credit_balance"],
-                    credit_limit=sp_data["credit_limit"],
-                    credit_budget_allowance=sp_data["credit_budget_allowance"],
-                    salary_amount=sp_data.get("salary_amount"),
-                    total_budget_amount=sp_data["total_budget_amount"],
-                    fixed_bills_total=sp_data["fixed_bills_total"],
-                    remaining_amount=sp_data["remaining_amount"],
-                    weekly_budget=sp_data["weekly_budget"],
-                    weekly_debit_budget=sp_data["weekly_debit_budget"],
-                    weekly_credit_budget=sp_data["weekly_credit_budget"],
-                    start_date=start_date,
-                    end_date=end_date,
-                    is_active=True,
-                )
-                db.session.add(salary_period)
-                db.session.flush()  # Get salary_period.id for creating weekly periods
-
-                # Create 4 weekly budget periods for this salary period
-                current_start = start_date
-                for week_num in range(1, 5):
-                    if week_num < 4:
-                        week_end = current_start + timedelta(days=6)
                     else:
-                        week_end = end_date
+                        # No expenses found, calculate from start_date
+                        next_due = start_date.date()
+                        today = datetime.now().date()
 
-                    budget_period = BudgetPeriod(
+                        # If start date is in the past, calculate the next occurrence after today
+                        if next_due < today:
+                            if recurring_data["frequency"] == "monthly":
+                                day_of_month = recurring_data.get(
+                                    "day_of_month", start_date.day
+                                )
+                                # Find next occurrence of this day
+                                if today.day < day_of_month:
+                                    # This month
+                                    try:
+                                        next_due = datetime(
+                                            today.year, today.month, day_of_month
+                                        ).date()
+                                    except ValueError:
+                                        next_due = datetime(
+                                            today.year, today.month, 28
+                                        ).date()
+                                else:
+                                    # Next month
+                                    next_month = today.month + 1
+                                    next_year = today.year
+                                    if next_month > 12:
+                                        next_month = 1
+                                        next_year += 1
+                                    try:
+                                        next_due = datetime(
+                                            next_year, next_month, day_of_month
+                                        ).date()
+                                    except ValueError:
+                                        next_due = datetime(
+                                            next_year, next_month, 28
+                                        ).date()
+                            elif recurring_data["frequency"] == "weekly":
+                                # Calculate next weekly occurrence
+                                days_diff = (today - next_due).days
+                                weeks_passed = days_diff // 7
+                                next_due = next_due + timedelta(
+                                    days=(weeks_passed + 1) * 7
+                                )
+                            elif recurring_data["frequency"] == "biweekly":
+                                days_diff = (today - next_due).days
+                                periods_passed = days_diff // 14
+                                next_due = next_due + timedelta(
+                                    days=(periods_passed + 1) * 14
+                                )
+                            elif recurring_data["frequency"] == "custom":
+                                days_diff = (today - next_due).days
+                                freq_value = recurring_data.get("frequency_value", 1)
+                                periods_passed = days_diff // freq_value
+                                next_due = next_due + timedelta(
+                                    days=(periods_passed + 1) * freq_value
+                                )
+
+                    recurring = RecurringExpense(
                         user_id=current_user_id,
-                        salary_period_id=salary_period.id,
-                        week_number=week_num,
-                        budget_amount=sp_data["weekly_budget"],
-                        start_date=current_start,
-                        end_date=week_end,
-                        period_type="weekly",
+                        name=recurring_data["name"],
+                        amount=recurring_data["amount"],
+                        category=recurring_data["category"],
+                        subcategory=recurring_data.get("subcategory", ""),
+                        payment_method=recurring_data["payment_method"],
+                        frequency=recurring_data["frequency"],
+                        frequency_value=recurring_data.get("frequency_value", 1),
+                        day_of_month=recurring_data.get("day_of_month"),
+                        day_of_week=recurring_data.get("day_of_week"),
+                        start_date=start_date,
+                        end_date=end_date,
+                        next_due_date=next_due,
+                        is_active=True,
+                        is_fixed_bill=recurring_data.get("is_fixed_bill", False),
+                        notes=recurring_data.get("notes", ""),
                     )
-                    db.session.add(budget_period)
-                    current_start = week_end + timedelta(days=1)
+                    db.session.add(recurring)
+                    db.session.flush()  # Flush to get the ID assigned
 
-                # Create initial income entry for the debit balance
-                # This makes the dashboard debit/credit cards show correct available amounts
-                if sp_data["initial_debit_balance"] > 0:
-                    initial_income = Income(
-                        user_id=current_user_id,
-                        type="Initial Balance",
-                        amount=sp_data["initial_debit_balance"],
-                        scheduled_date=start_date,
-                        actual_date=start_date,
-                    )
-                    db.session.add(initial_income)
-
-                # Create pre-existing credit debt expense (if any)
-                pre_existing_debt = (
-                    sp_data["credit_limit"] - sp_data["initial_credit_balance"]
-                )
-                if pre_existing_debt > 0:
-                    debt_date = start_date - timedelta(days=1)
-                    debt_expense = Expense(
-                        user_id=current_user_id,
-                        name="Pre-existing Credit Card Debt",
-                        amount=pre_existing_debt,
-                        category="Debt",
-                        subcategory="Credit Card",
-                        payment_method="Credit card",
-                        # Date it before the period starts
-                        date=debt_date,
-                        is_fixed_bill=False,
-                        notes="Existing credit card balance at budget period start",
-                    )
-                    db.session.add(debt_expense)
-
-                imported_counts["salary_periods"] += 1
-
-        # Import Expenses
-        if "expenses" in data["data"]:
-            for exp_data in data["data"]["expenses"]:
-                expense_date = datetime.fromisoformat(
-                    exp_data["date"].replace("Z", "+00:00")
-                ).date()
-
-                # Check for duplicate: same date, name, and amount
-                existing_expense = Expense.query.filter_by(
-                    user_id=current_user_id,
-                    name=exp_data["name"],
-                    amount=exp_data["amount"],
-                    date=expense_date,
-                ).first()
-
-                if existing_expense:
-                    skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
-                    print(
-                        f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})"
-                    )
-                    skipped_items["expenses"].append(skipped_detail)
-                    skipped_counts["expenses"] += 1
-                    continue
-
-                # Link to new recurring template if this expense was generated from one
-                new_recurring_template_id = None
-                if exp_data.get("recurring_template_id") is not None:
-                    # Try to find the new template by matching name, amount, and category
+                    # Store mapping for linking expenses later
                     template_key = (
-                        exp_data["name"],
-                        exp_data["amount"],
-                        exp_data["category"],
+                        recurring_data["name"],
+                        recurring_data["amount"],
+                        recurring_data["category"],
                     )
-                    if template_key in recurring_template_map:
-                        new_recurring_template_id = recurring_template_map[
-                            template_key
-                        ].id
+                    recurring_template_map[template_key] = recurring
 
-                expense = Expense(
-                    user_id=current_user_id,
-                    name=exp_data["name"],
-                    amount=exp_data["amount"],
-                    category=exp_data["category"],
-                    subcategory=exp_data["subcategory"],
-                    payment_method=exp_data["payment_method"],
-                    date=expense_date,
-                    is_fixed_bill=exp_data.get("is_fixed_bill", False),
-                    notes=exp_data.get("notes", ""),
-                    recurring_template_id=new_recurring_template_id,
-                )
-                db.session.add(expense)
-                imported_counts["expenses"] += 1
+                    imported_counts["recurring_expenses"] += 1
 
-        # Import Income
-        if "income" in data["data"]:
-            for income_data in data["data"]["income"]:
-                scheduled_date = datetime.fromisoformat(
-                    income_data["scheduled_date"].replace("Z", "+00:00")
-                ).date()
-                actual_date = None
-                if income_data.get("actual_date"):
-                    actual_date = datetime.fromisoformat(
-                        income_data["actual_date"].replace("Z", "+00:00")
+            # Import Salary Periods
+            if "salary_periods" in data["data"]:
+                for sp_data in data["data"]["salary_periods"]:
+                    start_date = datetime.fromisoformat(
+                        sp_data["start_date"].replace("Z", "+00:00")
+                    ).date()
+                    end_date = datetime.fromisoformat(
+                        sp_data["end_date"].replace("Z", "+00:00")
                     ).date()
 
-                # Check for duplicate: same scheduled_date, type, and amount
-                existing_income = Income.query.filter_by(
-                    user_id=current_user_id,
-                    type=income_data["type"],
-                    amount=income_data["amount"],
-                    scheduled_date=scheduled_date,
-                ).first()
+                    # Check for duplicate: same start_date and end_date
+                    existing_salary_period = SalaryPeriod.query.filter_by(
+                        user_id=current_user_id,
+                        start_date=start_date,
+                        end_date=end_date,
+                        is_active=True,
+                    ).first()
 
-                if existing_income:
-                    skipped_detail = f"{income_data['type']} (€{income_data['amount']/100:.2f} on {scheduled_date})"
-                    print(
-                        f"[IMPORT] SKIPPED INCOME: '{income_data['type']}' €{income_data['amount']/100:.2f} scheduled {scheduled_date} (already exists with ID {existing_income.id})"
+                    if existing_salary_period:
+                        skipped_counts["salary_periods"] += 1
+                        continue
+
+                    salary_period = SalaryPeriod(
+                        user_id=current_user_id,
+                        initial_debit_balance=sp_data["initial_debit_balance"],
+                        initial_credit_balance=sp_data["initial_credit_balance"],
+                        credit_limit=sp_data["credit_limit"],
+                        credit_budget_allowance=sp_data["credit_budget_allowance"],
+                        salary_amount=sp_data.get("salary_amount"),
+                        total_budget_amount=sp_data["total_budget_amount"],
+                        fixed_bills_total=sp_data["fixed_bills_total"],
+                        remaining_amount=sp_data["remaining_amount"],
+                        weekly_budget=sp_data["weekly_budget"],
+                        weekly_debit_budget=sp_data["weekly_debit_budget"],
+                        weekly_credit_budget=sp_data["weekly_credit_budget"],
+                        start_date=start_date,
+                        end_date=end_date,
+                        is_active=True,
                     )
-                    skipped_items["income"].append(skipped_detail)
-                    skipped_counts["income"] += 1
-                    continue
+                    db.session.add(salary_period)
+                    db.session.flush()  # Get salary_period.id for creating weekly periods
 
-                income = Income(
-                    user_id=current_user_id,
-                    type=income_data["type"],
-                    amount=income_data["amount"],
-                    scheduled_date=scheduled_date,
-                    actual_date=actual_date,
-                )
-                db.session.add(income)
-                imported_counts["income"] += 1
+                    # Create 4 weekly budget periods for this salary period
+                    current_start = start_date
+                    for week_num in range(1, 5):
+                        if week_num < 4:
+                            week_end = current_start + timedelta(days=6)
+                        else:
+                            week_end = end_date
 
-        db.session.commit()
+                        budget_period = BudgetPeriod(
+                            user_id=current_user_id,
+                            salary_period_id=salary_period.id,
+                            week_number=week_num,
+                            budget_amount=sp_data["weekly_budget"],
+                            start_date=current_start,
+                            end_date=week_end,
+                            period_type="weekly",
+                        )
+                        db.session.add(budget_period)
+                        current_start = week_end + timedelta(days=1)
+
+                    # Create initial income entry for the debit balance
+                    # This makes the dashboard debit/credit cards show correct available amounts
+                    if sp_data["initial_debit_balance"] > 0:
+                        initial_income = Income(
+                            user_id=current_user_id,
+                            type="Initial Balance",
+                            amount=sp_data["initial_debit_balance"],
+                            scheduled_date=start_date,
+                            actual_date=start_date,
+                        )
+                        db.session.add(initial_income)
+
+                    # Create pre-existing credit debt expense (if any)
+                    pre_existing_debt = (
+                        sp_data["credit_limit"] - sp_data["initial_credit_balance"]
+                    )
+                    if pre_existing_debt > 0:
+                        debt_date = start_date - timedelta(days=1)
+                        debt_expense = Expense(
+                            user_id=current_user_id,
+                            name="Pre-existing Credit Card Debt",
+                            amount=pre_existing_debt,
+                            category="Debt",
+                            subcategory="Credit Card",
+                            payment_method="Credit card",
+                            # Date it before the period starts
+                            date=debt_date,
+                            is_fixed_bill=False,
+                            notes="Existing credit card balance at budget period start",
+                        )
+                        db.session.add(debt_expense)
+
+                    imported_counts["salary_periods"] += 1
+
+            # Import Expenses
+            if "expenses" in data["data"]:
+                for exp_data in data["data"]["expenses"]:
+                    expense_date = datetime.fromisoformat(
+                        exp_data["date"].replace("Z", "+00:00")
+                    ).date()
+
+                    # Check for duplicate: same date, name, and amount
+                    existing_expense = Expense.query.filter_by(
+                        user_id=current_user_id,
+                        name=exp_data["name"],
+                        amount=exp_data["amount"],
+                        date=expense_date,
+                    ).first()
+
+                    if existing_expense:
+                        skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
+                        print(
+                            f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})"
+                        )
+                        skipped_items["expenses"].append(skipped_detail)
+                        skipped_counts["expenses"] += 1
+                        continue
+
+                    # Link to new recurring template if this expense was generated from one
+                    new_recurring_template_id = None
+                    if exp_data.get("recurring_template_id") is not None:
+                        # Try to find the new template by matching name, amount, and category
+                        template_key = (
+                            exp_data["name"],
+                            exp_data["amount"],
+                            exp_data["category"],
+                        )
+                        if template_key in recurring_template_map:
+                            new_recurring_template_id = recurring_template_map[
+                                template_key
+                            ].id
+
+                    expense = Expense(
+                        user_id=current_user_id,
+                        name=exp_data["name"],
+                        amount=exp_data["amount"],
+                        category=exp_data["category"],
+                        subcategory=exp_data["subcategory"],
+                        payment_method=exp_data["payment_method"],
+                        date=expense_date,
+                        is_fixed_bill=exp_data.get("is_fixed_bill", False),
+                        notes=exp_data.get("notes", ""),
+                        recurring_template_id=new_recurring_template_id,
+                    )
+                    db.session.add(expense)
+                    imported_counts["expenses"] += 1
+
+            # Import Income
+            if "income" in data["data"]:
+                for income_data in data["data"]["income"]:
+                    scheduled_date = datetime.fromisoformat(
+                        income_data["scheduled_date"].replace("Z", "+00:00")
+                    ).date()
+                    actual_date = None
+                    if income_data.get("actual_date"):
+                        actual_date = datetime.fromisoformat(
+                            income_data["actual_date"].replace("Z", "+00:00")
+                        ).date()
+
+                    # Check for duplicate: same scheduled_date, type, and amount
+                    existing_income = Income.query.filter_by(
+                        user_id=current_user_id,
+                        type=income_data["type"],
+                        amount=income_data["amount"],
+                        scheduled_date=scheduled_date,
+                    ).first()
+
+                    if existing_income:
+                        skipped_detail = f"{income_data['type']} (€{income_data['amount']/100:.2f} on {scheduled_date})"
+                        print(
+                            f"[IMPORT] SKIPPED INCOME: '{income_data['type']}' €{income_data['amount']/100:.2f} scheduled {scheduled_date} (already exists with ID {existing_income.id})"
+                        )
+                        skipped_items["income"].append(skipped_detail)
+                        skipped_counts["income"] += 1
+                        continue
+
+                    income = Income(
+                        user_id=current_user_id,
+                        type=income_data["type"],
+                        amount=income_data["amount"],
+                        scheduled_date=scheduled_date,
+                        actual_date=actual_date,
+                    )
+                    db.session.add(income)
+                    imported_counts["income"] += 1
+
+            # Commit all changes together for atomicity
+            db.session.commit()
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(
+                f"Failed to import data for user {current_user_id}: {str(e)}",
+                exc_info=True,
+            )
+            return (
+                jsonify({"error": "Failed to import data. Please try again."}),
+                500,
+            )
 
         # Build response message
         message_parts = []
@@ -776,6 +796,10 @@ def import_data():
 
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(
+            f"Unexpected error importing data for user {current_user_id}: {str(e)}",
+            exc_info=True,
+        )
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
 

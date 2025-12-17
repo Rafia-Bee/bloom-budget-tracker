@@ -13,10 +13,11 @@ Endpoints:
 - POST /debts/import: Import debts from JSON
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, Debt, SalaryPeriod, BudgetPeriod, Expense
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
 import json
 
 debts_bp = Blueprint("debts", __name__, url_prefix="/debts")
@@ -262,39 +263,55 @@ def pay_debt():
             if budget_period:
                 budget_period_id = budget_period.id
 
-        # Create expense for debt payment
-        expense = Expense(
-            user_id=current_user_id,
-            name=f"Payment to {debt.name}",
-            amount=amount,
-            category="Debt Payments",
-            subcategory=debt.name,
-            payment_method="Debit card",
-            date=payment_date_obj,
-            budget_period_id=budget_period_id,
-        )
+        # Wrap debt payment operations in a transaction
+        try:
+            # Create expense for debt payment
+            expense = Expense(
+                user_id=current_user_id,
+                name=f"Payment to {debt.name}",
+                amount=amount,
+                category="Debt Payments",
+                subcategory=debt.name,
+                payment_method="Debit card",
+                date=payment_date_obj,
+                budget_period_id=budget_period_id,
+            )
 
-        # Update debt balance
-        debt.current_balance -= amount
+            # Update debt balance
+            debt.current_balance -= amount
 
-        db.session.add(expense)
-        db.session.commit()
+            db.session.add(expense)
+            db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "message": "Debt payment recorded successfully",
-                    "expense_id": expense.id,
-                    "new_balance": debt.current_balance,
-                }
-            ),
-            200,
-        )
+            return (
+                jsonify(
+                    {
+                        "message": "Debt payment recorded successfully",
+                        "expense_id": expense.id,
+                        "new_balance": debt.current_balance,
+                    }
+                ),
+                200,
+            )
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(
+                f"Failed to record debt payment for user {current_user_id}, debt {debt_id}: {str(e)}",
+                exc_info=True,
+            )
+            return (
+                jsonify({"error": "Failed to record debt payment. Please try again."}),
+                500,
+            )
 
     except ValueError as e:
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(
+            f"Unexpected error recording debt payment for user {current_user_id}: {str(e)}",
+            exc_info=True,
+        )
         return jsonify({"error": str(e)}), 500
 
 
@@ -330,24 +347,36 @@ def import_debts():
         if "debts" not in data:
             return jsonify({"error": "Missing debts array"}), 400
 
-        imported_count = 0
-        for debt_data in data["debts"]:
-            debt = Debt(
-                user_id=current_user_id,
-                name=debt_data["name"],
-                original_amount=debt_data["original_amount"],
-                current_balance=debt_data["current_balance"],
-                monthly_payment=debt_data["monthly_payment"],
-                archived=debt_data.get("archived", False),
-            )
-            db.session.add(debt)
-            imported_count += 1
+        # Wrap import operation in a transaction
+        try:
+            imported_count = 0
+            for debt_data in data["debts"]:
+                debt = Debt(
+                    user_id=current_user_id,
+                    name=debt_data["name"],
+                    original_amount=debt_data["original_amount"],
+                    current_balance=debt_data["current_balance"],
+                    monthly_payment=debt_data["monthly_payment"],
+                    archived=debt_data.get("archived", False),
+                )
+                db.session.add(debt)
+                imported_count += 1
 
-        db.session.commit()
-        return (
-            jsonify({"message": f"Successfully imported {imported_count} debts"}),
-            201,
-        )
+            db.session.commit()
+            return (
+                jsonify({"message": f"Successfully imported {imported_count} debts"}),
+                201,
+            )
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(
+                f"Failed to import debts for user {current_user_id}: {str(e)}",
+                exc_info=True,
+            )
+            return (
+                jsonify({"error": "Failed to import debts. Please try again."}),
+                500,
+            )
 
     except Exception as e:
         db.session.rollback()

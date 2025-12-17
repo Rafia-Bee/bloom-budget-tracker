@@ -5,7 +5,7 @@ Endpoints for managing salary periods and weekly budgeting.
 Handles salary period creation, weekly budget tracking, and leftover allocation.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import (
     db,
@@ -18,6 +18,7 @@ from backend.models.database import (
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import and_, or_, func
+from sqlalchemy.exc import SQLAlchemyError
 
 salary_periods_bp = Blueprint("salary_periods", __name__)
 
@@ -434,77 +435,94 @@ def create_salary_period():
             ).update({"is_active": False})
             is_active = True
 
-        # Create salary period
-        salary_period = SalaryPeriod(
-            user_id=current_user_id,
-            initial_debit_balance=debit_balance,
-            initial_credit_balance=credit_balance,
-            credit_limit=credit_limit,
-            credit_budget_allowance=credit_allowance,
-            total_budget_amount=total_budget,
-            fixed_bills_total=fixed_bills_total,
-            remaining_amount=remaining_amount,
-            weekly_budget=weekly_budget,
-            weekly_debit_budget=weekly_debit_budget,
-            weekly_credit_budget=weekly_credit_budget,
-            start_date=start_date,
-            end_date=end_date,
-            is_active=is_active,
-        )
-
-        db.session.add(salary_period)
-        db.session.flush()  # Get salary_period.id
-
-        # Create 4 weekly budget periods
-        current_start = start_date
-        for week_num in range(1, 5):
-            if week_num < 4:
-                week_end = current_start + timedelta(days=6)
-            else:
-                week_end = end_date
-
-            budget_period = BudgetPeriod(
+        # Wrap all operations in a transaction
+        try:
+            # Create salary period
+            salary_period = SalaryPeriod(
                 user_id=current_user_id,
-                salary_period_id=salary_period.id,
-                week_number=week_num,
-                budget_amount=weekly_budget,
-                start_date=current_start,
-                end_date=week_end,
-                period_type="weekly",
+                initial_debit_balance=debit_balance,
+                initial_credit_balance=credit_balance,
+                credit_limit=credit_limit,
+                credit_budget_allowance=credit_allowance,
+                total_budget_amount=total_budget,
+                fixed_bills_total=fixed_bills_total,
+                remaining_amount=remaining_amount,
+                weekly_budget=weekly_budget,
+                weekly_debit_budget=weekly_debit_budget,
+                weekly_credit_budget=weekly_credit_budget,
+                start_date=start_date,
+                end_date=end_date,
+                is_active=is_active,
             )
 
-            db.session.add(budget_period)
-            current_start = week_end + timedelta(days=1)
+            db.session.add(salary_period)
+            db.session.flush()  # Get salary_period.id
 
-        # Create initial income entry for the debit balance
-        # This makes the dashboard debit/credit cards show correct available amounts
-        if debit_balance > 0:
-            initial_income = Income(
-                user_id=current_user_id,
-                type="Initial Balance",
-                amount=debit_balance,
-                scheduled_date=start_date,
-                actual_date=start_date,
+            # Create 4 weekly budget periods
+            current_start = start_date
+            for week_num in range(1, 5):
+                if week_num < 4:
+                    week_end = current_start + timedelta(days=6)
+                else:
+                    week_end = end_date
+
+                budget_period = BudgetPeriod(
+                    user_id=current_user_id,
+                    salary_period_id=salary_period.id,
+                    week_number=week_num,
+                    budget_amount=weekly_budget,
+                    start_date=current_start,
+                    end_date=week_end,
+                    period_type="weekly",
+                )
+
+                db.session.add(budget_period)
+                current_start = week_end + timedelta(days=1)
+
+            # Create initial income entry for the debit balance
+            # This makes the dashboard debit/credit cards show correct available amounts
+            if debit_balance > 0:
+                initial_income = Income(
+                    user_id=current_user_id,
+                    type="Initial Balance",
+                    amount=debit_balance,
+                    scheduled_date=start_date,
+                    actual_date=start_date,
+                )
+                db.session.add(initial_income)
+
+            # Note: Pre-existing credit card debt is tracked via the credit_balance
+            # in the salary period settings. Users manage payments via recurring expenses.
+            # No automatic expense creation needed.
+
+            # Commit all changes together
+            db.session.commit()
+
+            return (
+                jsonify(
+                    {
+                        "id": salary_period.id,
+                        "message": "Salary period created successfully with 4 weekly budgets",
+                    }
+                ),
+                201,
             )
-            db.session.add(initial_income)
-
-        # Note: Pre-existing credit card debt is tracked via the credit_balance
-        # in the salary period settings. Users manage payments via recurring expenses.
-        # No automatic expense creation needed.
-
-        db.session.commit()
-
-        return (
-            jsonify(
-                {
-                    "id": salary_period.id,
-                    "message": "Salary period created successfully with 4 weekly budgets",
-                }
-            ),
-            201,
-        )
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(
+                f"Failed to create salary period for user {current_user_id}: {str(e)}",
+                exc_info=True,
+            )
+            return (
+                jsonify({"error": "Failed to create salary period. Please try again."}),
+                500,
+            )
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(
+            f"Unexpected error creating salary period for user {current_user_id}: {str(e)}",
+            exc_info=True,
+        )
         return jsonify({"error": str(e)}), 500
 
 

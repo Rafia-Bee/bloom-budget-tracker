@@ -6,6 +6,68 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Transaction Handling in Multi-Step Database Operations (#57)
+
+**Context:** Multi-step database operations (salary period creation, debt payments, bulk imports) lacked proper transaction wrapping, risking data inconsistency if operations failed partway through.
+
+**Problem:**
+
+-   **Salary Period Creation**: Creates SalaryPeriod → 4 BudgetPeriods → Income record. If step 2+ fails, orphaned salary period remains.
+-   **Debt Payments**: Creates Expense → updates Debt balance. Partial failure leaves inconsistent debt state.
+-   **Bulk Imports**: Creates hundreds of records. Any failure mid-import leaves database in unknown state with partial data.
+-   Only generic `except Exception` with rollback existed, but lacked:
+    -   Specific SQLAlchemy error handling
+    -   Proper error logging for debugging
+    -   Clear user feedback on failures
+
+**Solution:**
+
+1. **Added SQLAlchemyError Handling** (all three files):
+
+    - Import `SQLAlchemyError` from `sqlalchemy.exc`
+    - Import `current_app` from Flask for logger access
+    - Wrap multi-step operations in nested try/except blocks
+
+2. **Salary Periods (backend/routes/salary_periods.py)**:
+
+    - Moved all operations (SalaryPeriod, BudgetPeriods, Income) inside single try block
+    - Added specific `except SQLAlchemyError` handler with logging
+    - Rollback occurs before returning error response
+    - User sees: "Failed to create salary period. Please try again."
+
+3. **Debt Payments (backend/routes/debts.py)**:
+
+    - Wrapped Expense creation + Debt update in transaction
+    - Added specific SQLAlchemyError handler
+    - Also fixed debt import endpoint with transaction wrapping
+    - User sees: "Failed to record debt payment. Please try again."
+
+4. **Bulk Imports (backend/routes/export_import.py)**:
+    - Wrapped entire import operation (debts, recurring expenses, salary periods, expenses, income) in single transaction
+    - Fixed indentation issues where code was outside try block
+    - All imports are now atomic - either all succeed or all rollback
+    - User sees: "Failed to import data. Please try again."
+
+**Technical Details:**
+
+-   All changes use `current_app.logger.error()` with `exc_info=True` for full stack traces
+-   Maintains existing validation and error messages
+-   Generic `except Exception` handlers kept as fallback for non-DB errors
+-   No API contract changes - only internal error handling improved
+
+**Impact:**
+
+-   **Data Integrity**: Eliminates orphaned records and inconsistent states
+-   **Debuggability**: Proper error logging helps diagnose production issues
+-   **User Experience**: Clear error messages instead of silent failures
+-   **Maintainability**: Consistent error handling pattern across all routes
+-   All existing tests pass (7/7 in test_business_logic.py)
+
+**Testing:**
+Verified with pytest - all business logic tests pass, confirming no regressions in carryover calculations, recurring expense generation, or expense date assignment.
+
+---
+
 ### Dashboard Balance Update Race Condition Fix (#78)
 
 **Context:** Critical bug where adding new expenses did not immediately update the dashboard's debit card "Total spent" balance, though period spending and weekly budget calculations updated correctly.
