@@ -6,6 +6,55 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Composite Index for Expense Query Optimization (#62)
+
+**Context:** Common query pattern filtering expenses by `(user_id, date range, is_fixed_bill)` was missing an optimized index, causing full table scans as data grew.
+
+**Problem:**
+
+-   Frequently-used query in weekly budget calculations and carryover logic:
+    ```python
+    Expense.query.filter(
+        Expense.user_id == user_id,
+        Expense.date >= start_date,
+        Expense.date <= end_date,
+        Expense.is_fixed_bill == False
+    )
+    ```
+-   Existing composite indexes: `(user_id, date)`, `(user_id, category)`, `(user_id, payment_method)`
+-   Missing: `is_fixed_bill` in any composite index
+-   Impact: Slow queries in `/salary-periods/current` endpoint and carryover calculations
+
+**Solution:**
+
+1. **Model Update** (backend/models/database.py):
+
+    - Added composite index: `db.Index('idx_expense_user_date_fixed', 'user_id', 'date', 'is_fixed_bill')`
+    - Placed in Expense.**table_args** alongside existing indexes
+
+2. **Migration** (d4a91c2b7f3e):
+
+    - Created Alembic revision to add index to existing databases
+    - Used `postgresql_concurrently=True` for zero-downtime production deployment
+    - Reversible via downgrade() function
+
+3. **Documentation** (docs/DATABASE_ANALYSIS.md):
+    - Updated schema section to list new index
+    - Marked Performance Concern #3 as resolved
+
+**Impact:**
+
+-   ✅ **Query Performance**: Optimizes date-range + fixed_bill filtering (most benefit on Neon PostgreSQL production)
+-   ✅ **Production Safe**: Concurrent index creation avoids table locks during deployment
+-   ✅ **SQLite Compatible**: Development environment handles migration gracefully
+-   ✅ **Scalability**: Performance improves as expenses table grows
+
+**Verification:**
+
+-   Index confirmed present: `idx_expense_user_date_fixed: ['user_id', 'date', 'is_fixed_bill']`
+-   Migration applied cleanly on SQLite dev database
+-   No breaking changes to existing queries
+
 ### European Date Format Throughout App (#75)
 
 **Context:** App was inconsistently using American date format (Month Day, Year) instead of European format (Day Month, Year).

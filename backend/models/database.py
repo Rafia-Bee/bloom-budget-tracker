@@ -165,6 +165,7 @@ class Expense(db.Model):
     # Composite index for common query pattern: user + date range + ordering
     __table_args__ = (
         db.Index("idx_expense_user_date", "user_id", "date"),
+        db.Index("idx_expense_user_date_fixed", "user_id", "date", "is_fixed_bill"),
         db.Index("idx_expense_user_category", "user_id", "category"),
         db.Index("idx_expense_user_payment", "user_id", "payment_method"),
     )
