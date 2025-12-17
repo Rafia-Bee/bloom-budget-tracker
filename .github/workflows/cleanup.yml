@@ -1,0 +1,36 @@
+name: Scheduled Cleanup
+
+# Run daily at 2 AM UTC (low-traffic hours)
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run cleanup tasks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FLASK_ENV: production
+        run: |
+          python scripts/cleanup_scheduler.py --all
+
+      - name: Report cleanup results
+        if: always()
+        run: |
+          echo "Cleanup job completed at $(date)"

@@ -6,6 +6,71 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### Password Reset Token Cleanup Job (#64)
+
+**Context:** The `password_reset_tokens` table grew unbounded with no cleanup mechanism. Expired and used tokens accumulated forever, wasting database storage and slowing queries.
+
+**Problem:**
+
+-   Tokens created when user requests password reset
+-   Tokens expire after 1 hour
+-   Expired tokens never removed from database
+-   Used tokens never removed from database
+-   Table grows unbounded over time
+
+**Solution:**
+
+1. **Created Cleanup Service** (backend/services/cleanup_service.py):
+
+    - `cleanup_expired_password_reset_tokens(hours_old=24)`: Deletes tokens expired > 24 hours ago
+    - `cleanup_used_password_reset_tokens(days_old=7)`: Deletes used tokens > 7 days old
+    - `cleanup_all_password_reset_tokens()`: Runs both cleanup operations
+    - Comprehensive error handling and logging
+    - Returns counts of deleted tokens
+
+2. **On-Access Cleanup** (backend/routes/password_reset.py):
+
+    - Password reset endpoint triggers cleanup before processing
+    - Ensures expired tokens are removed during normal app usage
+    - Fails gracefully if cleanup errors (doesn't block reset)
+
+3. **Scheduled Cleanup Script** (scripts/cleanup_scheduler.py):
+
+    - Standalone script that can run via cron or CI/CD
+    - Supports running specific cleanup tasks or all tasks
+    - Provides detailed output and logging
+    - Usage: `python scripts/cleanup_scheduler.py --all`
+
+4. **GitHub Actions Workflow** (.github/workflows/cleanup.yml):
+
+    - Runs daily at 2 AM UTC (low-traffic hours)
+    - Can be triggered manually via workflow_dispatch
+    - Connects to production database via DATABASE_URL secret
+    - Logs cleanup results
+
+5. **Testing** (backend/tests/test_cleanup.py):
+    - Test expired token cleanup
+    - Test used token cleanup
+    - Test combined cleanup
+    - Test empty table handling
+    - Test on-access cleanup during password reset
+
+**Impact:**
+
+-   ✅ **Storage Efficiency**: Prevents unbounded table growth
+-   ✅ **Query Performance**: Smaller table = faster queries
+-   ✅ **Security**: Old tokens removed from database
+-   ✅ **Automatic**: Runs daily without manual intervention
+-   ✅ **Dual Strategy**: On-access cleanup + scheduled cleanup
+-   ✅ **Monitoring**: Logs provide visibility into cleanup operations
+
+**Configuration:**
+
+-   Expired tokens: Deleted after 24 hours of expiration
+-   Used tokens: Deleted after 7 days of use
+-   Schedule: Daily at 2 AM UTC via GitHub Actions
+-   On-access: Runs on every password reset request
+
 ### Account Lockout After Failed Logins (#34)
 
 **Context:** Login endpoint allowed unlimited failed login attempts per account, vulnerable to brute force and credential stuffing attacks. Rate limiting only protected per-IP, not per-account.
