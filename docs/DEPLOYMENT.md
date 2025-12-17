@@ -191,22 +191,6 @@ Migrations run automatically during deployment:
 -   **Render**: `buildCommand` includes `flask db upgrade`
 -   Manual deployment: SSH to server and run `flask db upgrade`
 
-**⚠️ First-Time Migration Setup (One-Time Only)**
-
-If deploying Flask-Migrate for the first time to an existing production database with tables created by `db.create_all()`:
-
-1. **Option A - Safe Approach**: SSH into Render and run:
-
-    ```bash
-    flask db stamp head
-    ```
-
-    This marks the current database state as "already migrated" without trying to recreate existing tables.
-
-2. **Option B - Let Alembic Handle It**: The initial migration is designed to detect existing tables and skip them. Monitor the Render build logs during first deployment to verify no errors occur.
-
-After the first deployment with Flask-Migrate, all future migrations will work automatically.
-
 #### Migration Best Practices
 
 1. **Always review generated migrations** before committing

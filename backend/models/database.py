@@ -31,8 +31,6 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    failed_login_attempts = db.Column(db.Integer, default=0)
-    locked_until = db.Column(db.DateTime, nullable=True)
 
     budget_periods = db.relationship(
         "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
@@ -55,17 +53,6 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-    def is_locked(self):
-        """Check if account is currently locked"""
-        if self.locked_until is None:
-            return False
-        return datetime.utcnow() < self.locked_until
-
-    def reset_failed_attempts(self):
-        """Reset failed login attempts counter"""
-        self.failed_login_attempts = 0
-        self.locked_until = None
 
 
 class SalaryPeriod(db.Model):

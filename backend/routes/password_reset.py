@@ -97,16 +97,6 @@ def forgot_password():
 def reset_password():
     """Reset password using a valid token."""
     try:
-        # Cleanup expired tokens before processing (on-access cleanup)
-        from backend.services.cleanup_service import cleanup_service
-
-        try:
-            cleanup_service.cleanup_expired_password_reset_tokens(hours_old=24)
-        except Exception as cleanup_error:
-            current_app.logger.warning(
-                f"Token cleanup failed but continuing with reset: {cleanup_error}"
-            )
-
         data = request.get_json()
         token = data.get("token", "").strip()
         new_password = data.get("password", "")
