@@ -78,13 +78,13 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Import Bank Transactions</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition"
+              className="text-gray-400 hover:text-gray-600 dark:text-dark-text-secondary dark:hover:text-dark-text transition"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -97,15 +97,17 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
           {result && (
             <div className={`mb-4 p-4 rounded-lg border ${
               result.imported_count > 0
-                ? 'bg-green-100 border-green-400 text-green-800'
-                : 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                ? 'bg-green-100 border-green-400 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
+                : 'bg-yellow-100 border-yellow-400 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300'
             }`}>
               <div className="flex justify-between items-start mb-2">
                 <p className="font-semibold text-gray-800 dark:text-dark-text">{result.message}</p>
                 <button
                   onClick={() => setResult(null)}
                   className={`ml-4 flex-shrink-0 ${
-                    result.imported_count > 0 ? 'text-green-800 hover:text-green-900' : 'text-yellow-800 hover:text-yellow-900'
+                    result.imported_count > 0
+                      ? 'text-green-800 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200'
+                      : 'text-yellow-800 hover:text-yellow-900 dark:text-yellow-300 dark:hover:text-yellow-200'
                   }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,11 +145,11 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
           )}
 
           {error && (
-            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex justify-between items-start">
+            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 px-4 py-3 rounded flex justify-between items-start">
               <span>{error}</span>
               <button
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 ml-4 flex-shrink-0"
+                className="text-red-700 hover:text-red-900 dark:text-red-300 dark:hover:text-red-200 ml-4 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,21 +161,21 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
           {step === 'input' ? (
             <form onSubmit={handlePreview}>
             {/* Instructions */}
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">📋 How to Import</h3>
-              <ol className="text-sm text-blue-800 space-y-1">
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">📋 How to Import</h3>
+              <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                 <li>1. Copy transaction data from your bank (including headers)</li>
                 <li>2. Paste it in the text area below</li>
                 <li>3. Select whether it's debit or credit card</li>
                 <li>4. Click Import Transactions</li>
               </ol>
-              <p className="text-xs text-blue-600 mt-2">
-                Expected format: <code className="bg-blue-100 px-1 rounded">Transaction Date, Amount, Name</code>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                Expected format: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">Transaction Date, Amount, Name</code>
               </p>
               <button
                 type="button"
                 onClick={handlePasteExample}
-                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
               >
                 Click here to paste example data
               </button>
@@ -194,7 +196,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
                   />
-                  <span className="text-gray-700">💳 Debit Card</span>
+                  <span className="text-gray-700 dark:text-dark-text">💳 Debit Card</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -205,13 +207,13 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
                   />
-                  <span className="text-gray-700">💳 Credit Card</span>
+                  <span className="text-gray-700 dark:text-dark-text">💳 Credit Card</span>
                 </label>
               </div>
             </div>
 
             {/* Fixed Bills Option */}
-            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 rounded-lg">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -220,8 +222,8 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                   className="w-5 h-5 text-bloom-pink rounded focus:ring-bloom-pink mt-0.5"
                 />
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">📌 Mark as Fixed Bills</span>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-dark-text">📌 Mark as Fixed Bills</span>
+                  <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">
                     Check this to exclude these transactions from your weekly budget calculations.
                     Useful for importing historical transactions that were already accounted for in your starting balance.
                   </p>
@@ -241,7 +243,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 placeholder="Paste your bank transactions here...&#10;&#10;Example:&#10;Transaction Date	Amount	Name&#10;2025/11/22	-42,33	Wise Europe SA&#10;2025/11/24	-38,88	Wise"
                 rows={12}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border dark:bg-dark-bg dark:text-dark-text rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm"
               />
               <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                 Supports tab-separated or multi-space separated values. Only negative amounts (expenses) will be imported.
@@ -271,7 +273,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-6 text-gray-600 font-semibold py-3 hover:text-gray-800 transition disabled:opacity-50"
+                className="px-6 text-gray-600 dark:text-dark-text-secondary font-semibold py-3 hover:text-gray-800 dark:hover:text-dark-text transition disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -282,18 +284,18 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
             <div>
               {previewData && (
                 <>
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 className="font-semibold text-blue-900 mb-2">📋 Preview</h3>
-                    <p className="text-sm text-blue-800">
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">📋 Preview</h3>
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
                       {previewData.total_count} transaction(s) ready to import
                       {previewData.skipped_count > 0 && `, ${previewData.skipped_count} skipped`}
                     </p>
                   </div>
 
                   {previewData.errors && previewData.errors.length > 0 && (
-                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm font-medium text-yellow-800 mb-2">⚠️ Warnings:</p>
-                      <ul className="text-xs text-yellow-700 space-y-1 max-h-32 overflow-y-auto">
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-700 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">⚠️ Warnings:</p>
+                      <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 max-h-32 overflow-y-auto">
                         {previewData.errors.map((err, idx) => (
                           <li key={idx}>• {err}</li>
                         ))}
@@ -302,28 +304,28 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                   )}
 
                   {/* Transaction Table */}
-                  <div className="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="mb-4 border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden">
                     <div className="max-h-96 overflow-y-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-gray-50 sticky top-0">
+                        <thead className="bg-gray-50 dark:bg-dark-bg sticky top-0">
                           <tr>
-                            <th className="text-left px-3 py-2 font-semibold text-gray-700">Date</th>
-                            <th className="text-left px-3 py-2 font-semibold text-gray-700">Merchant</th>
-                            <th className="text-left px-3 py-2 font-semibold text-gray-700">Category</th>
-                            <th className="text-right px-3 py-2 font-semibold text-gray-700">Amount</th>
+                            <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-dark-text">Date</th>
+                            <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-dark-text">Merchant</th>
+                            <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-dark-text">Category</th>
+                            <th className="text-right px-3 py-2 font-semibold text-gray-700 dark:text-dark-text">Amount</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-dark-border">
                           {previewData.transactions.map((txn, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                              <td className="px-3 py-2 text-gray-600">{txn.date}</td>
-                              <td className="px-3 py-2 text-gray-800 font-medium">{txn.name}</td>
+                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-dark-hover">
+                              <td className="px-3 py-2 text-gray-600 dark:text-dark-text-secondary">{txn.date}</td>
+                              <td className="px-3 py-2 text-gray-800 dark:text-dark-text font-medium">{txn.name}</td>
                               <td className="px-3 py-2">
-                                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                <span className="text-xs bg-gray-100 dark:bg-dark-bg px-2 py-1 rounded">
                                   {txn.subcategory}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 text-right font-semibold text-gray-800">
+                              <td className="px-3 py-2 text-right font-semibold text-gray-800 dark:text-dark-text">
                                 €{txn.amount.toFixed(2)}
                               </td>
                             </tr>
@@ -355,7 +357,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                     <button
                       onClick={handleBackToEdit}
                       disabled={loading}
-                      className="px-6 text-gray-600 font-semibold py-3 hover:text-gray-800 transition disabled:opacity-50"
+                      className="px-6 text-gray-600 dark:text-dark-text-secondary font-semibold py-3 hover:text-gray-800 dark:hover:text-dark-text transition disabled:opacity-50"
                     >
                       Back to Edit
                     </button>
@@ -367,9 +369,9 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
           {/* Format Help - only show on input step */}
           {step === 'input' && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">✨ Smart Features</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-bg rounded-lg">
+              <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-2">✨ Smart Features</h4>
+              <ul className="text-sm text-gray-600 dark:text-dark-text-secondary space-y-1">
                 <li>• Automatically categorizes transactions based on merchant name</li>
                 <li>• Skips duplicate transactions (same date, amount, and merchant)</li>
                 <li>• Skips income transactions (positive amounts)</li>
