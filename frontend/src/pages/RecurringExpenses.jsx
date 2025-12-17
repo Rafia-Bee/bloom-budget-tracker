@@ -145,9 +145,9 @@ function RecurringExpenses({ setIsAuthenticated }) {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+    return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',
+      month: 'short',
       year: 'numeric'
     })
   }

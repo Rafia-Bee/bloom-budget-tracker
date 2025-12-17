@@ -6,6 +6,50 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-17
 
+### European Date Format Throughout App (#75)
+
+**Context:** App was inconsistently using American date format (Month Day, Year) instead of European format (Day Month, Year).
+
+**Problem:**
+
+-   `RecurringExpenses.jsx` used 'en-US' locale showing dates as "Jan 20, 2026"
+-   `Debts.jsx` had two date displays with no locale specified (defaulting to system locale)
+-   `AddExpenseModal.jsx` had date display with no locale specified
+-   Inconsistent user experience for European target audience
+
+**Solution:**
+
+Updated all date formatting to use 'en-GB' locale with consistent format:
+
+1. **RecurringExpenses.jsx** (line 148):
+
+    - Changed `formatDate` function from 'en-US' to 'en-GB'
+    - Format: `{ day: 'numeric', month: 'short', year: 'numeric' }`
+    - Example: "20 Jan, 2026" instead of "Jan 20, 2026"
+
+2. **Debts.jsx** (lines 590, 628):
+
+    - Added 'en-GB' locale to `updated_at` date display (Paid On date)
+    - Added 'en-GB' locale to transaction date in payment history
+    - Format: `{ day: 'numeric', month: 'short', year: 'numeric' }`
+
+3. **AddExpenseModal.jsx** (line 304):
+    - Added 'en-GB' locale to recurring expense start date preview
+    - Format: `{ day: 'numeric', month: 'short', year: 'numeric' }`
+
+**Verification:**
+
+-   All 13 date formatting instances now use 'en-GB' locale
+-   No instances of 'en-US' or missing locale remain
+-   Consistent "Day Month, Year" format across entire app
+
+**Impact:**
+
+-   ✅ **UX Consistency**: All dates now show European format
+-   ✅ **Target Audience**: Better experience for European users
+-   ✅ **No Breaking Changes**: Date format is cosmetic, no data changes
+-   ✅ **Complete Coverage**: All date displays updated
+
 ### Password Reset Token Cleanup Job (#64)
 
 **Context:** The `password_reset_tokens` table grew unbounded with no cleanup mechanism. Expired and used tokens accumulated forever, wasting database storage and slowing queries.

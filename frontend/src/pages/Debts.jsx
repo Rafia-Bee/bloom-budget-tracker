@@ -587,7 +587,7 @@ function Debts({ setIsAuthenticated }) {
                             </div>
                             <div>
                               <p className="text-gray-500 dark:text-dark-text-tertiary">Paid On</p>
-                              <p className="font-semibold text-gray-800 dark:text-dark-text">{new Date(debt.updated_at).toLocaleDateString()}</p>
+                              <p className="font-semibold text-gray-800 dark:text-dark-text">{new Date(debt.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                             </div>
                           </div>
                         </div>
@@ -625,7 +625,7 @@ function Debts({ setIsAuthenticated }) {
                                 <div key={transaction.id} className="flex justify-between items-center text-sm bg-white dark:bg-dark-elevated p-2 rounded border border-green-200 dark:border-green-700">
                                   <div>
                                     <p className="font-medium text-gray-800 dark:text-dark-text">{transaction.name}</p>
-                                    <p className="text-gray-500 dark:text-dark-text-tertiary text-xs">{new Date(transaction.date).toLocaleDateString()}</p>
+                                    <p className="text-gray-500 dark:text-dark-text-tertiary text-xs">{new Date(transaction.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                   </div>
                                   <p className="font-semibold text-green-700 dark:text-dark-success">€{(transaction.amount / 100).toFixed(2)}</p>
                                 </div>

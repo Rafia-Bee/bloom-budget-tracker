@@ -243,7 +243,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 placeholder="Paste your bank transactions here...&#10;&#10;Example:&#10;Transaction Date	Amount	Name&#10;2025/11/22	-42,33	Wise Europe SA&#10;2025/11/24	-38,88	Wise"
                 rows={12}
                 required
-                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border dark:bg-dark-bg dark:text-dark-text rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-dark-text rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
               <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                 Supports tab-separated or multi-space separated values. Only negative amounts (expenses) will be imported.
@@ -369,7 +369,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
           {/* Format Help - only show on input step */}
           {step === 'input' && (
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-bg rounded-lg">
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg">
               <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-2">✨ Smart Features</h4>
               <ul className="text-sm text-gray-600 dark:text-dark-text-secondary space-y-1">
                 <li>• Automatically categorizes transactions based on merchant name</li>
