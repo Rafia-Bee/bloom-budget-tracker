@@ -60,7 +60,8 @@ def forgot_password():
         db.session.commit()
 
         # Send password reset email
-        frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+        frontend_url = current_app.config.get(
+            "FRONTEND_URL", "http://localhost:3000")
         email_result = email_service.send_password_reset_email(
             to_email=user.email, reset_token=token, frontend_url=frontend_url
         )
@@ -76,11 +77,12 @@ def forgot_password():
             "message": "If an account exists with this email, a password reset link has been sent."
         }
 
-        # In development mode, always include token for testing (even if email is configured)
+        # Security fix (#82): Never include token in response
+        # Development testing should use proper email service or check server logs
         if current_app.config.get("DEBUG"):
-            response_data["reset_token"] = token  # Development only!
+            # Log without exposing token value
             current_app.logger.info(
-                f"Development mode: Reset token for {user.email}: {token}"
+                f"Development mode: Password reset email sent to {user.email}"
             )
 
         return jsonify(response_data), 200

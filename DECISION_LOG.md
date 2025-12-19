@@ -4,6 +4,68 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-19
+
+### Critical Security Fixes (#79, #82)
+
+**Context:** Addressed two high-priority security vulnerabilities identified in security audit: weak production secret keys and password reset token exposure in development mode.
+
+**Issue #79 (CRITICAL): Weak Default Secret Keys**
+
+**Problem:**
+
+-   Application used weak default secrets (`"dev-secret-key"`, `"jwt-secret-key"`) in production
+-   Only logged warnings instead of failing to start with weak secrets
+-   High risk of accidental production deployment with weak credentials
+
+**Solution:**
+
+1. **ProductionConfig Validation** ([backend/config.py](backend/config.py)):
+    - Added `_validate_production_secrets()` method called in `__init__`
+    - Validates SECRET_KEY and JWT_SECRET_KEY at startup
+    - Rejects weak/default secrets: `"dev-secret-key"`, `"jwt-secret-key"`, empty strings, etc.
+    - Enforces minimum 32-character length requirement
+    - Provides clear error messages with secret generation instructions
+2. **App Startup** ([backend/app.py](backend/app.py)):
+    - Removed weak warning-only validation
+    - Let ProductionConfig handle fail-fast validation
+    - Development mode still allows defaults for convenience
+
+**Issue #82 (HIGH): Password Reset Token Exposure**
+
+**Problem:**
+
+-   Reset tokens exposed in API responses when `DEBUG=True`
+-   Tokens displayed in frontend UI in development mode
+-   Tokens logged to server logs with actual values
+-   Risk of token leakage through logs, browser cache, accidental production deployment
+
+**Solution:**
+
+1. **Backend** ([backend/routes/password_reset.py](backend/routes/password_reset.py)):
+    - Removed `response_data["reset_token"]` from API response
+    - Changed logging to not include token value
+    - Standard success message for all environments
+2. **Frontend** ([frontend/src/pages/Login.jsx](frontend/src/pages/Login.jsx), [frontend/src/components/ForgotPasswordModal.jsx](frontend/src/components/ForgotPasswordModal.jsx)):
+    - Removed token parameter from `handleForgotPasswordSuccess`
+    - Removed development mode token display logic
+    - Standard success message for all environments
+
+**Impact:**
+
+-   ✅ **Production Safety**: Application refuses to start with weak secrets in production
+-   ✅ **No Token Leakage**: Reset tokens never exposed in API responses or UI
+-   ✅ **Development Workflow**: Development mode still works with defaults
+-   ✅ **Clear Errors**: Operators get actionable error messages for misconfiguration
+-   ✅ **Secure by Default**: Must explicitly configure strong secrets for production
+
+**Testing Approach:**
+
+-   Development mode: Verify app starts with default secrets
+-   Production mode: Verify app fails to start with weak/missing secrets
+-   Password reset: Verify no token exposure in API or UI
+-   Email service: Verify password reset emails still sent correctly
+
 ## 2025-12-17
 
 ### Comprehensive Security & Technical Debt Audit (#87, #88)

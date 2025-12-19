@@ -23,8 +23,8 @@ function ForgotPasswordModal({ onClose, onSuccess }) {
         email: email.trim()
       })
 
-      // Pass message and optional development token
-      onSuccess(response.data.message, response.data.reset_token)
+      // Security fix (#82): Token no longer returned in response
+      onSuccess(response.data.message)
       onClose()
     } catch (error) {
       setError(error.response?.data?.error || 'Unable to connect to server')

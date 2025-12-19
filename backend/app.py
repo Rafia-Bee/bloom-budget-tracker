@@ -14,7 +14,7 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from backend.config import config
+from backend.config import config, _validate_production_secrets
 from backend.models.database import db
 from backend.routes.api_v1 import create_v1_blueprint
 from backend.routes.auth import auth_bp
@@ -30,17 +30,15 @@ from backend.routes.export_import import export_import_bp
 
 
 def create_app(config_name="development"):
+    # Validate production secrets before app creation
+    if config_name == "production":
+        _validate_production_secrets()
+
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
-    # Validate production secrets (warn but don't fail during import for development)
-    if config_name == "production":
-        secret_key = os.getenv("SECRET_KEY")
-        jwt_secret = os.getenv("JWT_SECRET_KEY")
-        if not secret_key or secret_key == "dev-secret-key-change-in-production":
-            print("WARNING: SECRET_KEY not properly set in production!")
-        if not jwt_secret or jwt_secret == "jwt-secret-key-change-in-production":
-            print("WARNING: JWT_SECRET_KEY not properly set in production!")
+    # Production secret validation is now handled before app creation
+    # Development mode allows weak defaults for convenience
 
     # CORS configuration - allow local network access for mobile testing
     # Add your computer's IP address (e.g., http://192.168.1.100:3000)
