@@ -9,10 +9,15 @@ Available commands:
   cleanup-recurring    - Remove orphaned recurring expenses
   remove-duplicates    - Remove duplicate recurring expense templates
   verify-db           - Verify database integrity
+
+Security Note (#81):
+- Table/column names are hardcoded constants (no user input)
+- Uses SQLAlchemy introspection where possible
+- Raw SQL limited to DDL operations (migrations)
 """
 
 from datetime import datetime
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from backend.models.database import db, Expense, RecurringExpense, Debt
 from backend.app import create_app
 import sys
@@ -20,6 +25,114 @@ import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Security (#81): Whitelist of allowed tables for validation
+ALLOWED_TABLES = {
+    "users",
+    "expenses",
+    "income",
+    "debts",
+    "recurring_expenses",
+    "budget_periods",
+    "salary_periods",
+    "user_defaults",
+    "credit_card_settings",
+    "period_suggestions",
+    "password_reset_tokens",
+}
+
+# Security (#81): Whitelist of allowed columns per table
+ALLOWED_COLUMNS = {
+    "debts": {"archived", "amount", "name", "user_id", "id"},
+    "expenses": {"recurring_template_id", "amount", "name", "date", "user_id", "id"},
+}
+
+
+def validate_table_name(table_name: str) -> str:
+    """
+    Security (#81): Validate table name against whitelist.
+    Prevents SQL injection in table introspection queries.
+
+    Args:
+        table_name: Table name to validate
+
+    Returns:
+        Validated table name
+
+    Raises:
+        ValueError: If table name is not in whitelist
+    """
+    if table_name not in ALLOWED_TABLES:
+        raise ValueError(
+            f"Invalid table name: '{table_name}'. Allowed tables: {ALLOWED_TABLES}"
+        )
+    return table_name
+
+
+def validate_column_name(table_name: str, column_name: str) -> str:
+    """
+    Security (#81): Validate column name for specific table.
+
+    Args:
+        table_name: Table name (must be validated first)
+        column_name: Column name to validate
+
+    Returns:
+        Validated column name
+
+    Raises:
+        ValueError: If column name is not allowed for this table
+    """
+    if table_name not in ALLOWED_COLUMNS:
+        raise ValueError(f"No column validation defined for table '{table_name}'")
+
+    if column_name not in ALLOWED_COLUMNS[table_name]:
+        raise ValueError(
+            f"Invalid column name: '{column_name}' for table '{table_name}'. "
+            f"Allowed columns: {ALLOWED_COLUMNS[table_name]}"
+        )
+
+    return column_name
+
+
+def column_exists(table_name: str, column_name: str) -> bool:
+    """
+    Security (#81): Safely check if column exists using SQLAlchemy introspection.
+
+    Args:
+        table_name: Table name to check
+        column_name: Column name to check
+
+    Returns:
+        True if column exists, False otherwise
+    """
+    # Validate inputs first
+    validate_table_name(table_name)
+    validate_column_name(table_name, column_name)
+
+    # Use SQLAlchemy inspector (safer than raw SQL)
+    inspector = inspect(db.engine)
+    columns = [col["name"] for col in inspector.get_columns(table_name)]
+
+    return column_name in columns
+
+
+def table_exists(table_name: str) -> bool:
+    """
+    Security (#81): Safely check if table exists using SQLAlchemy introspection.
+
+    Args:
+        table_name: Table name to check
+
+    Returns:
+        True if table exists, False otherwise
+    """
+    # Validate input first
+    validate_table_name(table_name)
+
+    # Use SQLAlchemy inspector (safer than raw SQL)
+    inspector = inspect(db.engine)
+    return table_name in inspector.get_table_names()
 
 
 def print_header(title):
@@ -30,16 +143,18 @@ def print_header(title):
 
 
 def migrate_add_archived():
-    """Add 'archived' column to debts table."""
+    """
+    Add 'archived' column to debts table.
+    Security (#81): Uses validated table/column names.
+    """
     print("Checking for archived column in debts table...")
 
-    with db.engine.connect() as conn:
-        try:
-            result = conn.execute(text("PRAGMA table_info(debts)"))
-            columns = [row[1] for row in result]
-
-            if "archived" not in columns:
-                print("Adding 'archived' column to debts table...")
+    # Security (#81): Use safe introspection helpers
+    if not column_exists("debts", "archived"):
+        print("Adding 'archived' column to debts table...")
+        with db.engine.connect() as conn:
+            try:
+                # Column name is validated, safe to use in DDL
                 conn.execute(
                     text(
                         "ALTER TABLE debts ADD COLUMN archived BOOLEAN DEFAULT 0 NOT NULL"
@@ -47,28 +162,24 @@ def migrate_add_archived():
                 )
                 conn.commit()
                 print("✓ 'archived' column added successfully")
-            else:
-                print("✓ 'archived' column already exists")
-        except Exception as e:
-            print(f"✗ Error: {e}")
-            conn.rollback()
-            raise
+            except Exception as e:
+                print(f"✗ Error: {e}")
+                conn.rollback()
+                raise
+    else:
+        print("✓ 'archived' column already exists")
 
 
 def migrate_add_recurring_expenses():
-    """Add recurring_expenses table and recurring_template_id to expenses."""
+    """
+    Add recurring_expenses table and recurring_template_id to expenses.
+    Security (#81): Uses validated table names and safe introspection.
+    """
     print("Checking for recurring_expenses table...")
 
     try:
-        # Check if recurring_expenses table exists
-        result = db.session.execute(
-            text(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='recurring_expenses'"
-            )
-        )
-        table_exists = result.fetchone() is not None
-
-        if not table_exists:
+        # Security (#81): Use safe introspection helper
+        if not table_exists("recurring_expenses"):
             print("Creating recurring_expenses table...")
             db.session.execute(
                 text(
@@ -101,11 +212,8 @@ def migrate_add_recurring_expenses():
         else:
             print("✓ recurring_expenses table already exists")
 
-        # Check if recurring_template_id column exists
-        result = db.session.execute(text("PRAGMA table_info(expenses)"))
-        columns = [row[1] for row in result.fetchall()]
-
-        if "recurring_template_id" not in columns:
+        # Security (#81): Use safe column check
+        if not column_exists("expenses", "recurring_template_id"):
             print("Adding recurring_template_id column to expenses table...")
             db.session.execute(
                 text(
@@ -130,21 +238,17 @@ def migrate_add_recurring_expenses():
 
 
 def migrate_add_password_reset_tokens():
-    """Add password_reset_tokens table."""
+    """
+    Add password_reset_tokens table.
+    Security (#81): Uses validated table names and safe introspection.
+    """
     print("Checking for password_reset_tokens table...")
 
-    with db.engine.connect() as conn:
-        try:
-            # Check if table exists
-            result = conn.execute(
-                text(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='password_reset_tokens'"
-                )
-            )
-            table_exists = result.fetchone() is not None
-
-            if not table_exists:
-                print("Creating password_reset_tokens table...")
+    # Security (#81): Use safe table existence check
+    if not table_exists("password_reset_tokens"):
+        print("Creating password_reset_tokens table...")
+        with db.engine.connect() as conn:
+            try:
                 conn.execute(
                     text(
                         """
@@ -161,12 +265,14 @@ def migrate_add_password_reset_tokens():
                     )
                 )
                 conn.commit()
+                conn.commit()
                 print("✓ password_reset_tokens table created successfully")
-            else:
-                print("✓ password_reset_tokens table already exists")
-        except Exception as e:
-            print(f"✗ Error: {e}")
-            conn.rollback()
+            except Exception as e:
+                print(f"✗ Error: {e}")
+                conn.rollback()
+                raise
+    else:
+        print("✓ password_reset_tokens table already exists")
 
 
 def run_all_migrations():
@@ -245,23 +351,29 @@ def remove_duplicate_recurring():
 
 
 def verify_database():
-    """Verify database integrity and show statistics."""
+    """
+    Verify database integrity and show statistics.
+    Security (#81): Uses SQLAlchemy ORM instead of raw SQL for counting.
+    """
     print_header("Database Verification & Statistics")
 
     try:
-        # Count records
-        user_count = db.session.execute(text("SELECT COUNT(*) FROM users")).scalar()
-        expense_count = db.session.execute(
-            text("SELECT COUNT(*) FROM expenses")
-        ).scalar()
-        income_count = db.session.execute(text("SELECT COUNT(*) FROM income")).scalar()
-        debt_count = db.session.execute(text("SELECT COUNT(*) FROM debts")).scalar()
-        recurring_count = db.session.execute(
-            text("SELECT COUNT(*) FROM recurring_expenses")
-        ).scalar()
-        period_count = db.session.execute(
-            text("SELECT COUNT(*) FROM budget_periods")
-        ).scalar()
+        # Security (#81): Use ORM queries instead of raw SQL
+        from backend.models.database import (
+            User,
+            Expense,
+            Income,
+            Debt,
+            RecurringExpense,
+            BudgetPeriod,
+        )
+
+        user_count = db.session.query(User).count()
+        expense_count = db.session.query(Expense).count()
+        income_count = db.session.query(Income).count()
+        debt_count = db.session.query(Debt).count()
+        recurring_count = db.session.query(RecurringExpense).count()
+        period_count = db.session.query(BudgetPeriod).count()
 
         print("Record Counts:")
         print(f"  Users:              {user_count}")

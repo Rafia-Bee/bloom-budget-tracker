@@ -6,6 +6,61 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-19
 
+### SQL Injection Prevention in Maintenance Scripts (#81)
+
+**Context:** Maintenance scripts used raw SQL queries with `text()` wrapper, creating potential SQL injection vulnerabilities. While scripts don't accept direct user input, this violated secure coding practices and created future risk if modified.
+
+**Problem:**
+
+-   Multiple `text("PRAGMA table_info(...)")` calls for introspection
+-   Raw SQL for table existence checks: `SELECT name FROM sqlite_master...`
+-   COUNT queries using `text("SELECT COUNT(*) FROM ...")`
+-   No input validation or whitelisting for table/column names
+-   Future risk if scripts modified to accept parameters
+
+**Solution:**
+
+1. **Added Security Validation** ([scripts/maintenance.py](scripts/maintenance.py)):
+    - Created `ALLOWED_TABLES` whitelist for all legitimate tables
+    - Created `ALLOWED_COLUMNS` dict mapping tables to allowed columns
+    - Added `validate_table_name()` and `validate_column_name()` functions
+    - All table/column references validated against whitelists
+
+2. **Safe Introspection Helpers**:
+    - `column_exists(table, column)`: Uses SQLAlchemy inspector instead of PRAGMA
+    - `table_exists(table)`: Uses SQLAlchemy inspector instead of sqlite_master
+    - Both functions validate inputs before database access
+
+3. **Replaced Raw SQL with ORM** (`verify_database()`):
+    - Changed from `text("SELECT COUNT(*) FROM users")` to `db.session.query(User).count()`
+    - Uses SQLAlchemy ORM for all counting operations
+    - No raw SQL for data queries
+
+4. **Updated Migration Functions**:
+    - `migrate_add_archived()`: Uses `column_exists()` helper
+    - `migrate_add_recurring_expenses()`: Uses `table_exists()` and `column_exists()` helpers
+    - `migrate_add_password_reset_tokens()`: Uses `table_exists()` helper
+    - DDL operations still use raw SQL but with validated table/column names
+
+**Impact:**
+
+-   ✅ **Input Validation**: All table/column names validated against whitelists
+-   ✅ **Safe Introspection**: SQLAlchemy inspector instead of raw queries
+-   ✅ **ORM Queries**: Data operations use ORM, not raw SQL
+-   ✅ **Future-Proof**: Scripts safe even if modified to accept parameters
+-   ✅ **Clear Errors**: ValueError with helpful message if invalid table/column used
+
+**Remaining Raw SQL:**
+
+-   DDL operations (ALTER TABLE, CREATE TABLE) - validated inputs only
+-   Migrations should eventually move to Flask-Migrate/Alembic
+
+**Testing:**
+
+-   `python -m scripts.maintenance verify-db` - ORM counts work correctly
+-   Validation functions reject invalid table/column names
+-   All existing migrations still functional
+
 ### JWT Token Migration to httpOnly Cookies (#80)
 
 **Context:** JWT tokens stored in localStorage were vulnerable to XSS attacks. If any XSS vulnerability exists in the application, attackers could steal tokens and impersonate users. Migrated to httpOnly cookies for enhanced security.
