@@ -22,11 +22,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app import create_app
 from flask_migrate import stamp
 
+
 def stamp_baseline():
     """Stamp production database with baseline migration"""
 
     # Check for production database URL
-    database_url = os.getenv('DATABASE_URL')
+    database_url = os.getenv("DATABASE_URL")
     if not database_url:
         print("❌ ERROR: DATABASE_URL environment variable not set")
         print("\nUsage:")
@@ -34,16 +35,16 @@ def stamp_baseline():
         print("  python scripts/stamp_production_baseline.py")
         return False
 
-    if 'sqlite' in database_url.lower():
+    if "sqlite" in database_url.lower():
         print("⚠️  WARNING: Detected SQLite database")
         print("   This script is for production PostgreSQL databases only")
         response = input("   Continue anyway? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             return False
 
     print(f"\n🔗 Connecting to database:")
     # Hide password in output
-    safe_url = database_url.split('@')[1] if '@' in database_url else database_url
+    safe_url = database_url.split("@")[1] if "@" in database_url else database_url
     print(f"   {safe_url}\n")
 
     print("⚠️  WARNING: This will mark the current database schema as the baseline.")
@@ -53,17 +54,17 @@ def stamp_baseline():
     print("   3. You've backed up the database\n")
 
     response = input("Proceed with stamping baseline? (yes/no): ")
-    if response.lower() != 'yes':
+    if response.lower() != "yes":
         print("❌ Aborted")
         return False
 
     try:
         # Create app with production config
-        app = create_app('production')
+        app = create_app("production")
 
         with app.app_context():
             print("\n🏷️  Stamping database with baseline migration...\n")
-            stamp(revision='head')
+            stamp(revision="head")
             print("\n✅ Database stamped successfully!")
             print("\nNext steps:")
             print("  1. Create new migrations for account lockout features")
@@ -83,6 +84,7 @@ def stamp_baseline():
         print("  - Run 'flask db init' if needed")
         return False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     success = stamp_baseline()
     sys.exit(0 if success else 1)

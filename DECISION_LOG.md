@@ -6,6 +6,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-19
 
+### Fixed GitHub Actions Workflows and Script Import Issues
+
+**Context:** GitHub Actions cleanup workflow failing with `ModuleNotFoundError: No module named 'backend'`. Multiple workflows and scripts had inconsistent dependency installation and import ordering issues.
+
+**Problem:**
+
+-   `.github/workflows/cleanup.yml` installing `backend/requirements.txt` instead of root `requirements.txt`
+-   `.github/workflows/ci.yml` had same issue
+-   `scripts/maintenance.py` had imports before `sys.path.insert()`, causing module not found errors
+
+**Solution:**
+
+1. **Updated workflow files**:
+
+    - [.github/workflows/cleanup.yml](h:/Code/bloom-budget-tracker/.github/workflows/cleanup.yml): Changed to `pip install -r requirements.txt`
+    - [.github/workflows/ci.yml](h:/Code/bloom-budget-tracker/.github/workflows/ci.yml): Changed to `pip install -r requirements.txt`
+
+2. **Fixed maintenance.py import order** ([scripts/maintenance.py](h:/Code/bloom-budget-tracker/scripts/maintenance.py)):
+    - Moved `sys.path.insert()` BEFORE `from backend...` imports
+    - Ensures path is configured before module resolution
+
+**Rationale:**
+
+-   Root `requirements.txt` contains all backend dependencies needed for scripts
+-   `backend/requirements.txt` is redundant/outdated and shouldn't be used
+-   Import statements must execute after Python path is configured
+-   `scripts/cleanup_scheduler.py` already had correct pattern (imports inside function)
+
+**Impact:**
+
+-   ✅ Scheduled cleanup workflow will now run successfully
+-   ✅ CI pipeline uses consistent dependency installation
+-   ✅ `scripts/maintenance.py` can be run directly without module errors
+-   All scripts can properly import from `backend` module
+
 ### Test Suite Fixed for Cookie-Based Authentication
 
 **Context:** Security enhancement #80 moved JWT tokens from response body to httpOnly cookies, but test suite wasn't updated, causing 18 errors and 4 failures.

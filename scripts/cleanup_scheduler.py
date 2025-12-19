@@ -21,11 +21,12 @@ def setup_backend_imports():
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if parent_dir not in sys.path:
         sys.path.insert(0, parent_dir)
-    
+
     # Import after path setup - these imports happen at runtime
     try:
         from backend.services.cleanup_service import cleanup_service
         from backend.app import create_app
+
         return cleanup_service, create_app
     except ImportError as e:
         print(f"Error importing backend modules: {e}")
@@ -36,7 +37,7 @@ def setup_backend_imports():
 def run_token_cleanup():
     """Run password reset token cleanup."""
     cleanup_service, create_app = setup_backend_imports()
-    
+
     print(f"[{datetime.now(timezone.utc)}] Starting password reset token cleanup...")
 
     try:
@@ -45,11 +46,12 @@ def run_token_cleanup():
         with app.app_context():
             results = cleanup_service.cleanup_all_password_reset_tokens()
 
-            print(
-                f"  - Expired tokens deleted: {results['expired_tokens_deleted']}")
+            print(f"  - Expired tokens deleted: {results['expired_tokens_deleted']}")
             print(f"  - Used tokens deleted: {results['used_tokens_deleted']}")
             print(f"  - Total tokens deleted: {results['total_deleted']}")
-            print(f"[{datetime.now(timezone.utc)}] Token cleanup completed successfully!")
+            print(
+                f"[{datetime.now(timezone.utc)}] Token cleanup completed successfully!"
+            )
 
             return results["total_deleted"]
 
@@ -82,15 +84,14 @@ def run_all_cleanups():
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Run periodic cleanup tasks for Bloom database")
+        description="Run periodic cleanup tasks for Bloom database"
+    )
     parser.add_argument(
-        "--task",
-        choices=["TOKEN_CLEANUP"],
-        help="Run a specific cleanup task")
+        "--task", choices=["TOKEN_CLEANUP"], help="Run a specific cleanup task"
+    )
     parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Run all available cleanup tasks")
+        "--all", action="store_true", help="Run all available cleanup tasks"
+    )
 
     args = parser.parse_args()
 

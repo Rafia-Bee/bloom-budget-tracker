@@ -16,15 +16,16 @@ Security Note (#81):
 - Raw SQL limited to DDL operations (migrations)
 """
 
-from datetime import datetime
-from sqlalchemy import text, inspect
-from backend.models.database import db, Expense, RecurringExpense, Debt
-from backend.app import create_app
 import sys
 import os
+from datetime import datetime
+from sqlalchemy import text, inspect
 
-# Add parent directory to path
+# Add parent directory to path BEFORE imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.models.database import db, Expense, RecurringExpense, Debt
+from backend.app import create_app
 
 # Security (#81): Whitelist of allowed tables for validation
 ALLOWED_TABLES = {
