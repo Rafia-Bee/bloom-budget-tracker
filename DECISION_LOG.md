@@ -21,17 +21,20 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Solution:**
 
 1. **Added Security Validation** ([scripts/maintenance.py](scripts/maintenance.py)):
+
     - Created `ALLOWED_TABLES` whitelist for all legitimate tables
     - Created `ALLOWED_COLUMNS` dict mapping tables to allowed columns
     - Added `validate_table_name()` and `validate_column_name()` functions
     - All table/column references validated against whitelists
 
 2. **Safe Introspection Helpers**:
+
     - `column_exists(table, column)`: Uses SQLAlchemy inspector instead of PRAGMA
     - `table_exists(table)`: Uses SQLAlchemy inspector instead of sqlite_master
     - Both functions validate inputs before database access
 
 3. **Replaced Raw SQL with ORM** (`verify_database()`):
+
     - Changed from `text("SELECT COUNT(*) FROM users")` to `db.session.query(User).count()`
     - Uses SQLAlchemy ORM for all counting operations
     - No raw SQL for data queries
