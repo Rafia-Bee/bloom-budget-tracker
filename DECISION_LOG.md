@@ -6,6 +6,32 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-19
 
+### Added SendGrid to Requirements
+
+**Context:** CI pipeline failing with `ModuleNotFoundError: No module named 'sendgrid'` after fixing workflow dependency installation.
+
+**Problem:**
+
+-   `backend/services/email_service.py` imports SendGrid
+-   SendGrid was missing from root `requirements.txt`
+-   Tests failed during CI because app initialization requires SendGrid import
+
+**Solution:**
+
+-   Added `sendgrid==6.11.0` to [requirements.txt](h:/Code/bloom-budget-tracker/requirements.txt)
+
+**Rationale:**
+
+-   SendGrid is a production dependency, not optional
+-   Email service is imported during app initialization
+-   Must be in requirements.txt for CI and production deployments
+
+**Impact:**
+
+-   ✅ CI tests can now run successfully
+-   ✅ Production deployments will include SendGrid
+-   No code changes needed, just dependency declaration
+
 ### Fixed GitHub Actions Workflows and Script Import Issues
 
 **Context:** GitHub Actions cleanup workflow failing with `ModuleNotFoundError: No module named 'backend'`. Multiple workflows and scripts had inconsistent dependency installation and import ordering issues.
