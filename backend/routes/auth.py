@@ -64,8 +64,7 @@ def register():
     db.session.commit()
 
     # Send welcome email
-    frontend_url = current_app.config.get(
-        "FRONTEND_URL", "http://localhost:3000")
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
     email_result = email_service.send_welcome_email(
         to_email=user.email, user_name=user.email, frontend_url=frontend_url
     )
@@ -118,8 +117,7 @@ def login():
     # Check if account is locked
     if user.is_locked():
         lockout_time = (
-            user.locked_until.strftime(
-                "%H:%M") if user.locked_until else "unknown"
+            user.locked_until.strftime("%H:%M") if user.locked_until else "unknown"
         )
         return (
             jsonify(
@@ -216,8 +214,7 @@ def refresh():
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
     """Clear authentication cookies (#80 security fix)"""
-    response = make_response(
-        jsonify({"message": "Logged out successfully"}), 200)
+    response = make_response(jsonify({"message": "Logged out successfully"}), 200)
     unset_jwt_cookies(response)
     return response
 
