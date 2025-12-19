@@ -56,6 +56,18 @@ def create_app(config_name="development"):
 
     db.init_app(app)
 
+    # Configure JWT for httpOnly cookies (#80)
+    app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+    app.config["JWT_COOKIE_SECURE"] = not app.config.get(
+        "DEBUG", False
+    )  # HTTPS only in production
+    app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
+    app.config["JWT_REFRESH_COOKIE_PATH"] = "/auth/refresh"
+    # Disable for now (can enable later)
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+    # Prevent CSRF while allowing navigation
+    app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+
     # Flask-Migrate: migrations folder is in backend/migrations
     migrate = Migrate(app, db, directory="backend/migrations")
 
@@ -132,8 +144,16 @@ def create_app(config_name="development"):
 
 
 # Create app instance for gunicorn
-# Determine environment from FLASK_ENV or default to production for deployed environments
-config_name = os.getenv("FLASK_ENV", "production")
+# Determine environment from FLASK_ENV. For local dev, run.py passes 'development' explicitly.
+# For production (Render), DATABASE_URL indicates production environment.
+database_url = os.getenv("DATABASE_URL", "")
+if "postgresql" in database_url:
+    # Production environment (Neon PostgreSQL)
+    config_name = "production"
+else:
+    # Local development (SQLite)
+    config_name = os.getenv("FLASK_ENV", "development")
+
 app = create_app(config_name)
 
 if __name__ == "__main__":

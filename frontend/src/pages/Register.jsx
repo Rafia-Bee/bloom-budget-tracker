@@ -41,9 +41,8 @@ function Register({ setIsAuthenticated }) {
 
     try {
       const response = await authAPI.register({ email, password })
-      localStorage.setItem('access_token', response.data.access_token)
-      localStorage.setItem('refresh_token', response.data.refresh_token)
-      localStorage.setItem('user_email', response.data.user.email)
+      // Tokens are now in httpOnly cookies - no localStorage needed (#80 security fix)
+      localStorage.setItem('user_email', response.data.user.email) // Keep email for UI
       setIsAuthenticated(true)
       navigate('/dashboard')
     } catch (err) {

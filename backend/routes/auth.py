@@ -7,16 +7,20 @@ Endpoints:
 - POST /auth/register: Create new user account
 - POST /auth/login: Authenticate and get JWT token
 - POST /auth/refresh: Refresh access token
+- POST /auth/logout: Clear authentication cookies
 - GET /auth/me: Get current user info
 """
 
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, make_response
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     jwt_required,
     get_jwt_identity,
+    unset_jwt_cookies,
+    set_access_cookies,
+    set_refresh_cookies,
 )
 from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
@@ -60,7 +64,8 @@ def register():
     db.session.commit()
 
     # Send welcome email
-    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+    frontend_url = current_app.config.get(
+        "FRONTEND_URL", "http://localhost:3000")
     email_result = email_service.send_welcome_email(
         to_email=user.email, user_name=user.email, frontend_url=frontend_url
     )
@@ -73,20 +78,26 @@ def register():
             f"Failed to send welcome email to {user.email}: {email_result.get('error')}"
         )
 
+    # Create JWT tokens
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    return (
+    # Set tokens in httpOnly cookies using Flask-JWT-Extended helpers (#80 security fix)
+    response = make_response(
         jsonify(
             {
                 "message": "User created successfully",
-                "access_token": access_token,
-                "refresh_token": refresh_token,
                 "user": {"id": user.id, "email": user.email},
             }
         ),
         201,
     )
+
+    # Flask-JWT-Extended automatically sets httpOnly, secure, and samesite based on config
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -107,7 +118,8 @@ def login():
     # Check if account is locked
     if user.is_locked():
         lockout_time = (
-            user.locked_until.strftime("%H:%M") if user.locked_until else "unknown"
+            user.locked_until.strftime(
+                "%H:%M") if user.locked_until else "unknown"
         )
         return (
             jsonify(
@@ -165,19 +177,25 @@ def login():
     user.reset_failed_attempts()
     db.session.commit()
 
+    # Create JWT tokens
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    return (
+    # Set tokens in httpOnly cookies using Flask-JWT-Extended helpers (#80 security fix)
+    response = make_response(
         jsonify(
             {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
                 "user": {"id": user.id, "email": user.email},
             }
         ),
         200,
     )
+
+    # Flask-JWT-Extended automatically sets httpOnly, secure, and samesite based on config
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
 
 
 @auth_bp.route("/refresh", methods=["POST"])
@@ -186,7 +204,22 @@ def refresh():
     current_user_id = get_jwt_identity()
     access_token = create_access_token(identity=str(current_user_id))
 
-    return jsonify({"access_token": access_token}), 200
+    # Return new access token in httpOnly cookie using Flask-JWT-Extended helpers (#80 security fix)
+    response = make_response(jsonify({"message": "Token refreshed"}), 200)
+    set_access_cookies(response, access_token)
+
+    return response
+
+    return response
+
+
+@auth_bp.route("/logout", methods=["POST"])
+def logout():
+    """Clear authentication cookies (#80 security fix)"""
+    response = make_response(
+        jsonify({"message": "Logged out successfully"}), 200)
+    unset_jwt_cookies(response)
+    return response
 
 
 @auth_bp.route("/me", methods=["GET"])

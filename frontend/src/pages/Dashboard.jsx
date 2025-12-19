@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api'
+import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI } from '../api'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
@@ -544,12 +544,16 @@ function Dashboard({ setIsAuthenticated }) {
     return creditLimit - creditBalance
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user_email')
-    setIsAuthenticated(false)
-  }
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    localStorage.removeItem('user_email'); // Only email is stored locally now
+    setIsAuthenticated(false);
+  };
 
   const handleAddExpense = async (expenseData) => {
     const expenseAmount = expenseData.amount / 100 // Convert cents to euros

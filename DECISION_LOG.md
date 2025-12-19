@@ -6,6 +6,85 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-19
 
+### JWT Token Migration to httpOnly Cookies (#80)
+
+**Context:** JWT tokens stored in localStorage were vulnerable to XSS attacks. If any XSS vulnerability exists in the application, attackers could steal tokens and impersonate users. Migrated to httpOnly cookies for enhanced security.
+
+**Problem:**
+
+-   JWT access_token and refresh_token stored in browser localStorage
+-   JavaScript has full access to tokens via `localStorage.getItem()`
+-   Any XSS vulnerability could lead to token theft and account takeover
+-   Tokens persisted across sessions, increasing exposure window
+
+**Solution - Backend Changes:**
+
+1. **JWT Configuration** ([backend/app.py](backend/app.py)):
+
+    - Changed `JWT_TOKEN_LOCATION` from default to `["cookies"]`
+    - Set `JWT_COOKIE_SECURE` = True in production (HTTPS only)
+    - Set `JWT_COOKIE_SAMESITE` = "Lax" (CSRF protection while allowing navigation)
+    - Disabled CSRF protection for now (can enable later with CSRF tokens)
+    - Environment detection: PostgreSQL = production, SQLite = development
+
+2. **Auth Endpoints** ([backend/routes/auth.py](backend/routes/auth.py)):
+    - `/auth/register`: Returns cookies instead of JSON tokens
+    - `/auth/login`: Returns cookies instead of JSON tokens
+    - `/auth/refresh`: Updates access token cookie
+    - `/auth/logout` (NEW): Clears httpOnly cookies via `unset_jwt_cookies()`
+    - All endpoints use `make_response()` + `set_cookie()` with proper security flags
+    - Cookies have httpOnly=True, secure=(not DEBUG), samesite="Lax"
+
+**Solution - Frontend Changes:**
+
+1. **API Client** ([frontend/src/api.js](frontend/src/api.js)):
+
+    - Added `withCredentials: true` to axios instance (sends cookies automatically)
+    - Removed Authorization header setting (no longer needed)
+    - Removed localStorage token cleanup on 401 errors
+    - Added `logout()` method to authAPI
+
+2. **Authentication Pages**:
+
+    - [frontend/src/pages/Login.jsx](frontend/src/pages/Login.jsx): Removed localStorage token storage
+    - [frontend/src/pages/Register.jsx](frontend/src/pages/Register.jsx): Removed localStorage token storage
+    - Both pages now only store `user_email` in localStorage (for UI display)
+
+3. **Auth State Management** ([frontend/src/App.jsx](frontend/src/App.jsx)):
+
+    - Changed from localStorage check to API call (`authAPI.getCurrentUser()`)
+    - Cookies sent automatically with request
+    - Authentication verified server-side on each app load
+
+4. **Logout Functions**:
+    - [frontend/src/components/Header.jsx](frontend/src/components/Header.jsx): Calls `authAPI.logout()` before redirecting
+    - [frontend/src/pages/Dashboard.jsx](frontend/src/pages/Dashboard.jsx): Calls `authAPI.logout()` before redirecting
+    - Server clears httpOnly cookies on logout
+
+**Impact:**
+
+-   ✅ **XSS Protection**: Tokens inaccessible to JavaScript (httpOnly flag)
+-   ✅ **HTTPS Enforcement**: Cookies only sent over HTTPS in production (secure flag)
+-   ✅ **CSRF Mitigation**: SameSite=Lax prevents cross-site request forgery
+-   ✅ **Automatic Transmission**: Cookies sent with every request (no manual header setting)
+-   ✅ **Server-Side Control**: Server manages cookie lifecycle
+-   ⚠️ **Breaking Change**: Old localStorage tokens incompatible (users must re-login)
+
+**Testing:**
+
+-   Development mode: Cookies sent over HTTP (secure=False)
+-   Production mode: Cookies only sent over HTTPS (secure=True)
+-   Login/Register: Verify cookies set correctly
+-   Logout: Verify cookies cleared
+-   Authenticated requests: Verify cookies sent automatically
+
+**Trade-offs:**
+
+-   ✅ Better security (httpOnly protection)
+-   ✅ Simpler code (no manual token management)
+-   ⚠️ Requires server-side session management
+-   ⚠️ More complex CORS configuration (credentials=True)
+
 ### Critical Security Fixes (#79, #82)
 
 **Context:** Addressed two high-priority security vulnerabilities identified in security audit: weak production secret keys and password reset token exposure in development mode.

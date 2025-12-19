@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
+import { authAPI } from '../api';
 
 function Header({
   setIsAuthenticated,
@@ -34,10 +35,14 @@ function Header({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_email');
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    localStorage.removeItem('user_email'); // Only email is stored locally now
     if (setIsAuthenticated) {
       setIsAuthenticated(false);
     } else {

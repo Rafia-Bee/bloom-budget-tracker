@@ -18,13 +18,12 @@ export const setLoadingCallback = (callback) => {
 
 const api = axios.create({
     baseURL: API_URL,
+    withCredentials: true, // Send cookies with requests (#80 security fix)
 });
 
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Remove localStorage token handling - cookies are sent automatically (#80 security fix)
+    // config.headers.Authorization = `Bearer ${token}`;  // No longer needed
 
     config.metadata = { startTime: Date.now() };
 
@@ -58,14 +57,15 @@ api.interceptors.response.use(
 
         const originalRequest = error.config;
 
-        // Don't redirect if the 401 is from login/register endpoints
+        // Don't redirect if the 401 is from login/register/me endpoints
+        // Let the calling code handle authentication failures
         if (
             error.response?.status === 401 &&
             !originalRequest.url.includes("/auth/login") &&
-            !originalRequest.url.includes("/auth/register")
+            !originalRequest.url.includes("/auth/register") &&
+            !originalRequest.url.includes("/auth/me")
         ) {
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
+            // No need to clear localStorage - cookies are cleared by server (#80 security fix)
             window.location.href = "/login";
         }
         return Promise.reject(error);
@@ -75,6 +75,7 @@ api.interceptors.response.use(
 export const authAPI = {
     register: (data) => api.post("/auth/register", data),
     login: (data) => api.post("/auth/login", data),
+    logout: () => api.post("/auth/logout"), // New logout endpoint (#80)
     getCurrentUser: () => api.get("/auth/me"),
 };
 

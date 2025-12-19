@@ -201,6 +201,20 @@ Bloom/
 
 This starts both backend (port 5000) and frontend (port 3000) simultaneously.
 
+**⚠️ Important: Cookie-Based Authentication**
+
+Starting from security update #80, authentication uses httpOnly cookies instead of localStorage for enhanced security. For cookies to work correctly:
+
+-   **Local development**: Access via `http://localhost:3000` (default)
+-   **Network/mobile testing**: Access via your computer's IP (e.g., `http://192.168.0.156:3000`)
+-   **Key requirement**: Frontend and backend must be on the same domain
+
+**Configuration:**
+
+-   Default (`frontend/.env`): Uses `localhost` for local development
+-   Network testing (`frontend/.env.local`): Set `VITE_API_URL=http://YOUR_IP:5000/api/v1` and access frontend via `http://YOUR_IP:3000`
+-   `.env.local` is git-ignored and safe for local IP addresses
+
 **Manual start:**
 
 ```powershell
@@ -212,7 +226,7 @@ cd frontend
 npm run dev
 ```
 
-Access the app at `http://localhost:3000`
+Access the app at `http://localhost:3000` (or your network IP if configured)
 
 ### Production Deployment
 

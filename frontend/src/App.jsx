@@ -15,7 +15,7 @@ import RecurringExpenses from './pages/RecurringExpenses'
 import ResetPassword from './pages/ResetPassword'
 import CatLoading from './components/CatLoading'
 import OfflineIndicator from './components/OfflineIndicator'
-import { setLoadingCallback } from './api'
+import { setLoadingCallback, authAPI } from './api'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 
@@ -27,9 +27,20 @@ function App() {
   const initialLoadComplete = useRef(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    setIsAuthenticated(!!token)
-    setLoading(false)
+    // Check authentication by trying to fetch current user (#80 security fix)
+    // Cookies are automatically sent with requests
+    const checkAuth = async () => {
+      try {
+        await authAPI.getCurrentUser()
+        setIsAuthenticated(true)
+      } catch (error) {
+        setIsAuthenticated(false)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
 
     setTimeout(() => {
       initialLoadComplete.current = true
