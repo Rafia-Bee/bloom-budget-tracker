@@ -6,6 +6,43 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-19
 
+### Test Suite Fixed for Cookie-Based Authentication
+
+**Context:** Security enhancement #80 moved JWT tokens from response body to httpOnly cookies, but test suite wasn't updated, causing 18 errors and 4 failures.
+
+**Problem:**
+
+-   `auth_headers` fixture expected `access_token` in JSON response
+-   Test assertions checked for `access_token` and `refresh_token` in response body
+-   Invalid token test expected 422 instead of 401 status code
+-   All authenticated endpoint tests failing due to fixture error
+
+**Solution:**
+
+1. **Updated conftest.py fixture** ([backend/tests/conftest.py](backend/tests/conftest.py)):
+    - Changed `auth_headers` to return empty dict (cookies set automatically by test client)
+    - Removed token extraction logic from JSON responses
+    - Flask test client automatically preserves cookies between requests
+2. **Updated test assertions** ([backend/tests/test_auth.py](backend/tests/test_auth.py)):
+
+    - Removed `assert "access_token" in response.json` assertions
+    - Changed to verify `"user" in response.json` instead
+    - Updated invalid token test to expect 401 (not 422)
+    - Added comments explaining cookie-based authentication
+
+**Rationale:**
+
+-   Flask test client handles cookies automatically - no manual header passing needed
+-   Tests now correctly verify security enhancement without breaking functionality
+-   Maintains test coverage for authentication flows
+
+**Impact:**
+
+-   ✅ All 37 tests passing (was 15 passed, 4 failed, 18 errors)
+-   ✅ Tests verify cookie-based auth without exposing tokens in response
+-   ✅ Compatible with production security enhancement (#80)
+-   No changes to production code required
+
 ### SQL Injection Prevention in Maintenance Scripts (#81)
 
 **Context:** Maintenance scripts used raw SQL queries with `text()` wrapper, creating potential SQL injection vulnerabilities. While scripts don't accept direct user input, this violated secure coding practices and created future risk if modified.

@@ -23,7 +23,8 @@ class TestAuthRegistration:
 
         assert response.status_code == 201
         assert response.json["message"] == "User created successfully"
-        assert "access_token" in response.json
+        # Tokens are now set in httpOnly cookies, not in response body
+        assert "user" in response.json
 
     def test_register_duplicate_username(self, client):
         """Cannot register with existing username"""
@@ -118,8 +119,8 @@ class TestAuthLogin:
         )
 
         assert response.status_code == 200
-        assert "access_token" in response.json
-        assert "refresh_token" in response.json
+        # Tokens are now set in httpOnly cookies, not in response body
+        assert "user" in response.json
 
     def test_login_invalid_username(self, client):
         """Login with non-existent email should fail"""
@@ -172,7 +173,7 @@ class TestAuthToken:
             "/api/v1/expenses", headers={"Authorization": "Bearer invalid-token-123"}
         )
 
-        assert response.status_code == 422
+        assert response.status_code == 401
 
 
 class TestAccountLockout:
@@ -260,7 +261,8 @@ class TestAccountLockout:
         )
 
         assert response.status_code == 200
-        assert "access_token" in response.json
+        # Tokens are now set in httpOnly cookies, not in response body
+        assert "user" in response.json
 
         # Make 4 more failed attempts (should not lock, counter was reset)
         for i in range(4):

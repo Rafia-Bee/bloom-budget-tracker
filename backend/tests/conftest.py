@@ -103,8 +103,8 @@ def client(app):
 
 @pytest.fixture(scope="function")
 def auth_headers(client):
-    """Register and login a test user, return auth headers"""
-    # Register and use token directly from registration
+    """Register and login a test user, return empty dict (auth via cookies)"""
+    # Register user - tokens set in httpOnly cookies automatically
     register_response = client.post(
         "/api/v1/auth/register",
         json={
@@ -115,9 +115,9 @@ def auth_headers(client):
     )
 
     if register_response.status_code == 201:
-        # Registration successful, use that token
-        token = register_response.json["access_token"]
-        return {"Authorization": f"Bearer {token}"}
+        # Registration successful, cookies are set automatically in test client
+        # Return empty dict since auth is now cookie-based
+        return {}
 
     # If registration failed, try login (user might exist)
     login_response = client.post(
@@ -130,8 +130,8 @@ def auth_headers(client):
             f"Auth failed - Register: {register_response.status_code}, Login: {login_response.status_code}"
         )
 
-    token = login_response.json["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    # Return empty dict since auth is now cookie-based
+    return {}
 
 
 @pytest.fixture(scope="function")
