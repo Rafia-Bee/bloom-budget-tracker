@@ -6,6 +6,34 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-20
 
+### Updated GitHub Workflows for Cookie-Based Authentication
+
+**Context:** GitHub Actions recurring expenses workflow failing because it expects JWT token in response JSON, but app now uses httpOnly cookies (#80).
+
+**Problem:**
+
+-   Workflow tries to extract `access_token` from login response JSON
+-   Cookie-based auth doesn't return tokens in response body
+-   Cookies need to be stored and reused between curl requests
+
+**Solution:**
+
+-   Updated [.github/workflows/recurring-expenses.yml](.github/workflows/recurring-expenses.yml) to use cookie-based auth
+-   Use `curl -c cookies.txt` to save cookies from login
+-   Use `curl -b cookies.txt` to send cookies in subsequent requests
+-   Changed API URL from `bloom-backend-b44r.onrender.com` to `api.bloom-tracker.app` subdomain
+
+**Rationale:**
+
+-   Matches production authentication method (httpOnly cookies)
+-   More secure than sending tokens in headers for automated workflows
+-   Subdomain allows cookies to work properly with CORS
+
+**Impact:**
+
+-   Automated recurring expense generation works with new auth system
+-   Workflows use new subdomain API endpoint
+
 ### Fixed Maintenance Scripts Production Validation
 
 **Context:** GitHub Actions cleanup job failing with "SECURITY ERROR: SECRET_KEY not set" because maintenance scripts triggered production secret validation.

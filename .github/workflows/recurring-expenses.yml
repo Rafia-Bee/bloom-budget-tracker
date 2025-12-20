@@ -16,26 +16,28 @@ jobs:
         run: |
           echo "🚀 Triggering recurring expense generation..."
 
-          # Login first to get JWT token
+          # Login first to get authentication cookies
           LOGIN_RESPONSE=$(curl -s -X POST \
-            https://bloom-backend-b44r.onrender.com/auth/login \
+            -c cookies.txt \
+            https://api.bloom-tracker.app/auth/login \
             -H "Content-Type: application/json" \
             -d '{"email": "${{ secrets.BLOOM_ADMIN_EMAIL }}", "password": "${{ secrets.BLOOM_ADMIN_PASSWORD }}"}')
 
-          TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.access_token')
+          # Check if login was successful (should have user object)
+          USER_ID=$(echo $LOGIN_RESPONSE | jq -r '.user.id')
 
-          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+          if [ "$USER_ID" = "null" ] || [ -z "$USER_ID" ]; then
             echo "❌ Failed to authenticate"
             echo "Response: $LOGIN_RESPONSE"
             exit 1
           fi
 
-          echo "✅ Authenticated successfully"
+          echo "✅ Authenticated successfully (User ID: $USER_ID)"
 
-          # Generate recurring expenses for all users
+          # Generate recurring expenses for all users using cookies
           RESPONSE=$(curl -s -X POST \
-            "https://bloom-backend-b44r.onrender.com/recurring-generation/generate/all?days_ahead=60" \
-            -H "Authorization: Bearer $TOKEN" \
+            -b cookies.txt \
+            "https://api.bloom-tracker.app/recurring-generation/generate/all?days_ahead=60" \
             -H "Content-Type: application/json")
 
           echo "📊 Generation Response:"
