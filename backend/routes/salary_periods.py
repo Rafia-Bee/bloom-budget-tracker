@@ -15,6 +15,7 @@ from backend.models.database import (
     Expense,
     Income,
 )
+from backend.services.balance_service import get_display_balances
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import and_, or_, func
@@ -196,6 +197,9 @@ def get_current_salary_period():
             if end_date < today:
                 cumulative_carryover = remaining
 
+        # Get real-time balances using balance service
+        real_balances = get_display_balances(salary_period.id)
+
         return (
             jsonify(
                 {
@@ -208,6 +212,16 @@ def get_current_salary_period():
                         "credit_limit": salary_period.credit_limit,
                         "initial_debit_balance": salary_period.initial_debit_balance,
                         "initial_credit_balance": salary_period.initial_credit_balance,
+                        # Add real-time balances (in cents for consistency with other amounts)
+                        "display_debit_balance": int(
+                            real_balances["debit_balance"] * 100
+                        ),
+                        "display_credit_balance": int(
+                            real_balances["credit_balance"] * 100
+                        ),
+                        "display_credit_available": int(
+                            real_balances["credit_available"] * 100
+                        ),
                         "credit_budget_allowance": salary_period.credit_budget_allowance,
                         "start_date": salary_period.start_date.isoformat(),
                         "end_date": salary_period.end_date.isoformat(),

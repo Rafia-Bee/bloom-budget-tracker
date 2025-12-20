@@ -189,7 +189,7 @@ function Dashboard({ setIsAuthenticated }) {
         setExpenses(expensesData)
       }
 
-      await calculateCumulativeBalances()
+      // Don't recalculate balances - we use backend-calculated balances from salary period
       // Refresh weekly budget card to update spent amount
       weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
@@ -244,7 +244,7 @@ function Dashboard({ setIsAuthenticated }) {
         setIncome(incomeData)
       }
 
-      await calculateCumulativeBalances()
+      // Don't recalculate balances - we use backend-calculated balances from salary period
       // Refresh weekly budget card to update balances
       weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
@@ -303,6 +303,14 @@ function Dashboard({ setIsAuthenticated }) {
         // Load credit limit from salary period
         if (salaryPeriod.credit_limit) {
           setCreditLimit(salaryPeriod.credit_limit / 100) // Convert cents to euros
+        }
+
+        // Use display balances from backend (real-time calculated from transactions)
+        if (salaryPeriod.display_debit_balance !== undefined) {
+          setDebitBalance(salaryPeriod.display_debit_balance / 100) // Convert cents to euros
+        }
+        if (salaryPeriod.display_credit_balance !== undefined) {
+          setCreditBalance(salaryPeriod.display_credit_balance / 100) // Convert cents to euros
         }
 
         // Create a budget period object from current week data
@@ -535,12 +543,12 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   const getDebitAvailable = () => {
-    // Available = Net balance (total income - total expenses)
-    return totalIncome - debitBalance
+    // debitBalance from backend is already the available amount (income - expenses)
+    return debitBalance
   }
 
   const getCreditAvailable = () => {
-    // Available credit = limit - current balance
+    // Credit available = limit - current balance owed
     return creditLimit - creditBalance
   }
 
