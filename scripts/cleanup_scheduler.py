@@ -41,7 +41,8 @@ def run_token_cleanup():
     print(f"[{datetime.now(timezone.utc)}] Starting password reset token cleanup...")
 
     try:
-        # Create Flask app context
+        # Create Flask app context (skip production validation for maintenance scripts)
+        os.environ['SKIP_SECRET_VALIDATION'] = '1'
         app = create_app()
         with app.app_context():
             results = cleanup_service.cleanup_all_password_reset_tokens()

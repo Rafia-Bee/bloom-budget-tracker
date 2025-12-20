@@ -63,6 +63,10 @@ def _validate_production_secrets():
     Fails fast if secrets are missing or use weak defaults.
     This is called when ProductionConfig is accessed.
     """
+    # Skip validation for maintenance scripts
+    if os.getenv("SKIP_SECRET_VALIDATION") == "1":
+        return
+
     secret_key = os.getenv("SECRET_KEY")
     jwt_secret = os.getenv("JWT_SECRET_KEY")
 

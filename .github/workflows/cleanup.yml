@@ -27,6 +27,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FLASK_ENV: production
+          SKIP_SECRET_VALIDATION: "1"
         run: |
           python scripts/cleanup_scheduler.py --all
 

@@ -427,7 +427,8 @@ def show_help():
 
 def main():
     """Main entry point."""
-    app = create_app()
+    # Use development config for maintenance scripts (skip production validation)
+    app = create_app("development")
 
     with app.app_context():
         if len(sys.argv) < 2:

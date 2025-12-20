@@ -4,6 +4,38 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-20
+
+### Fixed Maintenance Scripts Production Validation
+
+**Context:** GitHub Actions cleanup job failing with "SECURITY ERROR: SECRET_KEY not set" because maintenance scripts triggered production secret validation.
+
+**Problem:**
+
+-   `cleanup_scheduler.py` calls `create_app()` which auto-detects environment from `DATABASE_URL`
+-   Production environment triggers strict secret validation
+-   Maintenance scripts don't need JWT/cookies but fail without production secrets
+
+**Solution:**
+
+-   Added `SKIP_SECRET_VALIDATION` environment variable bypass in [backend/config.py](backend/config.py)
+-   Updated [scripts/cleanup_scheduler.py](scripts/cleanup_scheduler.py) to set this flag
+-   Updated [scripts/maintenance.py](scripts/maintenance.py) to use development config
+-   Added env var to [.github/workflows/cleanup.yml](.github/workflows/cleanup.yml)
+
+**Rationale:**
+
+-   Cleanup scripts only need database access, not authentication
+-   Simpler than duplicating all production secrets in GitHub Actions
+-   Maintains security validation for actual production deployments
+
+**Impact:**
+
+-   GitHub Actions cleanup jobs can run without production secrets
+-   Security validation still enforced for Render production deployments
+
+---
+
 ## 2025-12-19
 
 ### Added SendGrid to Requirements
