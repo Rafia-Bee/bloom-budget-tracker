@@ -6,6 +6,90 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-20
 
+### Fixed Test Suite to Use Dynamic Dates
+
+**Context:** Tests failing because they used hardcoded dates ("2025-11-22") that don't match dynamically created salary periods.
+
+**Problem:**
+
+-   Fixture creates salary period relative to "today" (dynamic)
+-   Tests used hardcoded dates from November 2025 (static)
+-   Period created in fixture doesn't contain hardcoded test dates
+-   `test_get_current_salary_period` returns 404 because period is in past
+
+**Solution:**
+
+-   Updated [backend/tests/conftest.py](backend/tests/conftest.py) to create period starting 2 weeks ago
+-   Modified [backend/tests/test_business_logic.py](backend/tests/test_business_logic.py) to fetch week dates from API
+-   Tests now use `week["start_date"]` instead of hardcoded strings
+-   Fixed remaining `salary_period["id"]` references in [backend/tests/test_crud.py](backend/tests/test_crud.py)
+
+**Rationale:**
+
+-   Tests should work regardless of when they're run
+-   Dates relative to current time prevent brittleness
+-   Mirrors real-world usage where dates are dynamic
+
+**Impact:**
+
+-   All 37 tests now pass
+-   Tests are future-proof and date-independent
+
+### Updated CSP Headers for API Subdomain
+
+**Context:** After subdomain migration, frontend CSP blocked API calls to `api.bloom-tracker.app`.
+
+**Problem:**
+
+-   Frontend CSP in `_headers` file only allowed old domain `bloom-backend-b44r.onrender.com`
+-   Browser blocked all API calls to new subdomain
+-   Login and all API requests failed
+
+**Solution:**
+
+-   Added `https://api.bloom-tracker.app` to frontend [public/\_headers](frontend/public/_headers) CSP
+-   Removed CSP from backend (API-only service doesn't need CSP)
+-   Keep old domain temporarily for rollback capability
+
+**Rationale:**
+
+-   CSP should be set by frontend (serves HTML), not backend API
+-   Allow both domains during transition period
+-   Frontend controls security policy for its own resources
+
+**Impact:**
+
+-   API calls now work with new subdomain
+-   Maintained security headers while allowing new endpoint
+
+### Fixed Test Suite Salary Period Fixture
+
+**Context:** CI tests failing with `KeyError: 'salary_period'` because salary_period fixture was returning wrong data structure.
+
+**Problem:**
+
+-   `/create` endpoint returns `{"id": 123, "message": "..."}`
+-   `/current` endpoint returns `{"salary_period": {...}, "current_week": {...}}`
+-   Test fixture tried to extract `salary_period` from create response
+-   Tests expected full salary period data immediately after creation
+
+**Solution:**
+
+-   Updated [backend/tests/conftest.py](backend/tests/conftest.py) fixture to return just the ID
+-   Fixed [backend/tests/test_crud.py](backend/tests/test_crud.py) to use ID directly
+-   Tests can call `/current` endpoint themselves to get full data
+
+**Rationale:**
+
+-   Separation of concerns: create returns confirmation, get returns data
+-   More realistic test scenario (matches actual API usage)
+-   Fixtures should be minimal and focused
+
+**Impact:**
+
+-   All CI tests now pass
+-   Tests properly validate API response structure
+
 ### Updated GitHub Workflows for Cookie-Based Authentication
 
 **Context:** GitHub Actions recurring expenses workflow failing because it expects JWT token in response JSON, but app now uses httpOnly cookies (#80).

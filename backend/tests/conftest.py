@@ -143,11 +143,16 @@ def test_user(client, auth_headers):
 
 @pytest.fixture(scope="function")
 def salary_period(client, auth_headers):
-    """Create a test salary period"""
+    """Create a test salary period that contains today"""
+    from datetime import date, timedelta
+
+    # Create period starting 2 weeks ago (so today is in week 3)
+    start_date = (date.today() - timedelta(days=14)).isoformat()
+
     response = client.post(
         "/api/v1/salary-periods",
         json={
-            "start_date": "2025-11-20",
+            "start_date": start_date,
             "debit_balance": 500000,  # €5000
             "credit_balance": 100000,  # €1000 available
             "credit_limit": 150000,  # €1500 limit
@@ -162,5 +167,5 @@ def salary_period(client, auth_headers):
             f"Failed to create salary period: {response.status_code} - {response.json}"
         )
 
-    # Return just the salary period data
-    return response.json.get("salary_period", response.json)
+    # Return the created period ID
+    return response.json["id"]

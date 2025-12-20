@@ -115,20 +115,8 @@ def create_app(config_name="development"):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
-        # Content Security Policy
-        csp_policy = (
-            "default-src 'self'; "
-            f"connect-src 'self' {' '.join(cors_origins)}; "
-            "img-src 'self' data: blob:; "
-            "media-src 'self' blob:; "
-            "style-src 'self' 'unsafe-inline'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "font-src 'self' data:; "
-            "frame-ancestors 'none'; "
-            "form-action 'self'; "
-            "base-uri 'self';"
-        )
-        response.headers["Content-Security-Policy"] = csp_policy
+        # Don't set CSP for API-only backend
+        # Frontend (Cloudflare Pages) should set its own CSP if needed
 
         if config_name == "production":
             response.headers[

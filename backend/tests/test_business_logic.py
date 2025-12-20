@@ -14,19 +14,28 @@ class TestCarryoverLogic:
 
     def test_carryover_with_leftover(self, client, auth_headers, salary_period):
         """Week with leftover budget should carry to next week"""
-        # Create expense in Week 1 (less than budget)
+        # Get current period data to find week dates
+        response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        assert response.status_code == 200
+        weeks = response.json["salary_period"]["weeks"]
+        week1 = next((w for w in weeks if w["week_number"] == 1), None)
+        assert week1 is not None
+
+        # Create expense in Week 1 (less than budget) using week's start date
+        expense_date = week1["start_date"]
+
         client.post(
             "/api/v1/expenses",
             json={
                 "name": "Small Expense",
                 "amount": 5000,  # €50 (weekly budget likely higher)
                 "category": "Shopping",
-                "date": "2025-11-22",
+                "date": expense_date,
             },
             headers=auth_headers,
         )
 
-        # Get current period data
+        # Get updated period data
         response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
         weeks = response.json["salary_period"]["weeks"]
 
@@ -45,11 +54,17 @@ class TestCarryoverLogic:
 
     def test_carryover_with_overspend(self, client, auth_headers, salary_period):
         """Week with overspending should reduce next week's budget"""
-        # Get weekly budget amount
+        # Get weekly budget amount and week dates
         period_response = client.get(
             "/api/v1/salary-periods/current", headers=auth_headers
         )
+        assert period_response.status_code == 200
         weekly_budget = period_response.json["salary_period"]["weekly_budget"]
+        weeks = period_response.json["salary_period"]["weeks"]
+        week1 = next((w for w in weeks if w["week_number"] == 1), None)
+        assert week1 is not None
+
+        expense_date = week1["start_date"]
 
         # Create expense exceeding budget in Week 1
         client.post(
@@ -58,7 +73,7 @@ class TestCarryoverLogic:
                 "name": "Large Expense",
                 "amount": weekly_budget + 10000,  # Overspend by €100
                 "category": "Shopping",
-                "date": "2025-11-22",
+                "date": expense_date,
             },
             headers=auth_headers,
         )
@@ -173,14 +188,23 @@ class TestExpenseDateAssignment:
         self, client, auth_headers, salary_period
     ):
         """Expense with future date should be assigned to future week"""
-        # Create expense in Week 3 (Dec 4-10)
+        # Get salary period weeks to find Week 3 dates
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
+        assert period_response.status_code == 200
+        weeks = period_response.json["salary_period"]["weeks"]
+        week3 = next((w for w in weeks if w["week_number"] == 3), None)
+        assert week3 is not None
+
+        # Create expense in Week 3 using its start date
         response = client.post(
             "/api/v1/expenses",
             json={
                 "name": "Future Expense",
                 "amount": 3000,
                 "category": "Shopping",
-                "date": "2025-12-06",
+                "date": week3["start_date"],
             },
             headers=auth_headers,
         )
@@ -194,12 +218,6 @@ class TestExpenseDateAssignment:
         )
         assert expense_response.status_code == 200
         budget_period_id = expense_response.json.get("budget_period_id")
-
-        # Get salary period weeks
-        period_response = client.get(
-            "/api/v1/salary-periods/current", headers=auth_headers
-        )
-        weeks = period_response.json["salary_period"]["weeks"]
 
         if budget_period_id:
             # Find which week this expense belongs to
@@ -218,14 +236,27 @@ class TestExpenseDateAssignment:
         self, client, auth_headers, salary_period
     ):
         """Expense with past date should be assigned to past week"""
-        # Create expense in Week 1 (Nov 20-26)
+        # Get salary period weeks to find Week 1 dates
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
+        assert period_response.status_code == 200
+        weeks = period_response.json["salary_period"]["weeks"]
+        week1 = next((w for w in weeks if w["week_number"] == 1), None)
+        assert week1 is not None
+
+        # Create expense in Week 1 using a date within the week
+        from datetime import datetime, timedelta
+
+        week1_date = datetime.fromisoformat(week1["start_date"]) + timedelta(days=1)
+
         response = client.post(
             "/api/v1/expenses",
             json={
                 "name": "Past Expense",
                 "amount": 2000,
                 "category": "Food & Dining",
-                "date": "2025-11-21",
+                "date": week1_date.strftime("%Y-%m-%d"),
             },
             headers=auth_headers,
         )

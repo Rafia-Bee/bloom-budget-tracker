@@ -160,7 +160,7 @@ class TestIncomeCRUD:
                 "type": "Salary",
                 "amount": 300000,  # €3000
                 "date": "2025-11-20",
-                "budget_period_id": salary_period["id"],
+                "budget_period_id": salary_period,  # salary_period is now just the ID
             },
             headers=auth_headers,
         )
@@ -178,7 +178,7 @@ class TestIncomeCRUD:
                 "source": "Salary",
                 "amount": 300000,
                 "date": "2025-11-20",
-                "budget_period_id": salary_period["id"],
+                "budget_period_id": salary_period,  # salary_period is now just the ID
             },
             headers=auth_headers,
         )
@@ -226,7 +226,7 @@ class TestSalaryPeriodCRUD:
 
     def test_delete_salary_period(self, client, auth_headers, salary_period):
         """Should prevent deletion when salary period has transactions"""
-        period_id = salary_period["id"]
+        period_id = salary_period  # salary_period fixture now returns just the ID
 
         # Salary period has Initial Balance income, so deletion should be prevented
         response = client.delete(
