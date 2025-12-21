@@ -9,6 +9,8 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing backups to repository
 
     steps:
       - name: Checkout repository
