@@ -21,15 +21,23 @@ def remove_duplicate_initial_balances():
     This is a one-time data cleanup for a bug that created multiple Initial Balance
     entries when creating salary periods.
 
+    ⚠️ ADMIN ONLY - For personal app, only use this in development or when you're
+    the only user. In production, use Neon SQL Editor instead.
+
     Returns:
         200: Success with details of removed entries
-        403: Forbidden if user is not admin
         500: Error if operation fails
     """
     try:
-        # TODO: Add admin check here
-        # For now, any authenticated user can run this
-        # In the future, add: if not current_user.is_admin: return 403
+        current_user_id = int(get_jwt_identity())
+
+        # Security: Only allow if user_id = 1 (the app owner)
+        # Or if in development mode
+        from flask import current_app
+        if current_user_id != 1 and not current_app.config.get('DEBUG'):
+            return jsonify({
+                "error": "Unauthorized. Use Neon SQL Editor for production cleanup."
+            }), 403
 
         # Find all users with multiple Initial Balance entries
         users_with_duplicates = (

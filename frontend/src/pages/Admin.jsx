@@ -25,7 +25,7 @@ function Admin() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/admin/remove-duplicate-initial-balances`,
+        `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}/admin/remove-duplicate-initial-balances`,
         {
           method: 'POST',
           credentials: 'include', // Send cookies (JWT)
