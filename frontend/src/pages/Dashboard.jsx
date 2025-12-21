@@ -406,7 +406,10 @@ function Dashboard({ setIsAuthenticated }) {
       // First, get ALL income (including Initial Balance which has no budget_period_id)
       const allIncomeRes = await incomeAPI.getAll({})
       const allIncome = Array.isArray(allIncomeRes.data) ? allIncomeRes.data : (allIncomeRes.data?.income || [])
+
+      // Normalize today to end of day for accurate comparisons
       const today = new Date()
+      today.setHours(23, 59, 59, 999)
 
       // Add only realized income to totals (income that has already occurred)
       const periodStart = new Date(currentPeriod.start_date)
@@ -548,7 +551,12 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   const getCreditAvailable = () => {
-    // Credit available = limit - current balance owed
+    // creditBalance from backend is the available amount (limit - debt)
+    return creditBalance
+  }
+
+  const getCreditDebt = () => {
+    // Debt = limit - available
     return creditLimit - creditBalance
   }
 
@@ -1188,11 +1196,11 @@ function Dashboard({ setIsAuthenticated }) {
               <div className="mt-4">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                   <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
-                  <span>Total balance: €{creditBalance.toFixed(2)}</span>
+                  <span>Total balance: €{getCreditDebt().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
                   <span>Credit limit: €{creditLimit}</span>
-                  <span>{((creditBalance / creditLimit) * 100).toFixed(0)}% used</span>
+                  <span>{((getCreditDebt() / creditLimit) * 100).toFixed(0)}% used</span>
                 </div>
               </div>
             </div>

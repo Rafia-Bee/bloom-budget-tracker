@@ -100,45 +100,20 @@ function Debts({ setIsAuthenticated }) {
       }
 
       const salaryPeriod = salaryPeriodRes.data.salary_period
-      const salaryPeriodStart = new Date(salaryPeriod.start_date)
 
-      // Start from initial debt (limit - initial available balance)
-      const initialDebt = (salaryPeriod.credit_limit - salaryPeriod.initial_credit_balance) / 100
-      let cumulativeCredit = initialDebt
-
-      // Get ALL expenses with high limit to avoid pagination cutting off expenses
-      const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
-      const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
-
-      // Calculate credit balance changes within salary period
-      const today = new Date()
-
-      allExpenses.forEach(expense => {
-        const amount = expense.amount / 100
-        const expenseDate = new Date(expense.date_iso || expense.date)
-
-        // Skip future expenses
-        if (expenseDate > today) return
-
-        // Only include expenses within the salary period
-        if (expenseDate < salaryPeriodStart) return
-
-        if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
-          cumulativeCredit -= amount // Payment reduces credit card debt
-        } else if (expense.payment_method === 'Credit card') {
-          cumulativeCredit += amount // Credit card purchase increases balance
-        }
-      })
-
-      const currentBalance = Math.round(cumulativeCredit * 100) // Convert to cents
-      const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of current balance
+      // display_credit_balance returns AVAILABLE amount (what you can spend)
+      // Debt = limit - available (what you owe)
+      const creditAvailable = salaryPeriod.display_credit_balance // Already in cents
+      const creditLimit = salaryPeriod.credit_limit // Already in cents
+      const currentBalance = creditLimit - creditAvailable // Debt (what you owe)
+      const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of debt
 
       if (currentBalance > 0) {
         setCreditCardDebt({
           id: 'credit-card',
           name: 'Credit Card',
-          original_amount: salaryPeriod.credit_limit, // Already in cents
-          current_balance: currentBalance,
+          original_amount: creditLimit,
+          current_balance: currentBalance, // Debt amount
           monthly_payment: monthlyPayment,
           isVirtual: true
         })
@@ -214,12 +189,20 @@ function Debts({ setIsAuthenticated }) {
         ? expensesRes.data
         : (expensesRes.data?.expenses || [])
 
+      // Filter out future payments (scheduled but not yet occurred)
+      const today = new Date()
+      today.setHours(23, 59, 59, 999) // End of today
+      const realizedPayments = allPayments.filter(payment => {
+        const paymentDate = new Date(payment.date_iso || payment.date)
+        return paymentDate <= today
+      })
+
       // Sort by date (newest first)
-      allPayments.sort((a, b) => new Date(b.date) - new Date(a.date))
+      realizedPayments.sort((a, b) => new Date(b.date) - new Date(a.date))
 
       setDebtTransactions(prev => ({
         ...prev,
-        [debtId]: allPayments
+        [debtId]: realizedPayments
       }))
     } catch (error) {
       console.error('Failed to load debt transactions:', error)
@@ -510,7 +493,7 @@ function Debts({ setIsAuthenticated }) {
                                   <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">{transaction.date}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-green-600 dark:text-dark-success">-€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="font-semibold text-green-600 dark:text-dark-success">€{(transaction.amount / 100).toFixed(2)}</p>
                                   <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{transaction.payment_method}</p>
                                 </div>
                               </div>
@@ -519,7 +502,7 @@ function Debts({ setIsAuthenticated }) {
                               <div className="flex justify-between items-center font-bold text-gray-800 dark:text-dark-text">
                                 <span>Total Paid:</span>
                                 <span className="text-green-600 dark:text-dark-success">
-                                  -€{debtTransactions[debt.id].reduce((sum, t) => sum + (t.amount / 100), 0).toFixed(2)}
+                                  €{debtTransactions[debt.id].reduce((sum, t) => sum + (t.amount / 100), 0).toFixed(2)}
                                 </span>
                               </div>
                             </div>
@@ -696,11 +679,17 @@ function Debts({ setIsAuthenticated }) {
             setShowPaymentModal(false)
             setSelectedDebt(null)
           }}
-          onAdd={() => {
-            loadDebts()
-            loadCreditCardDebt()
-            setShowPaymentModal(false)
-            setSelectedDebt(null)
+          onAdd={async (paymentData) => {
+            try {
+              await expenseAPI.create(paymentData)
+              loadDebts()
+              loadCreditCardDebt()
+              setShowPaymentModal(false)
+              setSelectedDebt(null)
+            } catch (error) {
+              console.error('Failed to create debt payment:', error)
+              throw error // Re-throw so modal can handle the error
+            }
           }}
           preSelectedDebt={selectedDebt.name}
         />
