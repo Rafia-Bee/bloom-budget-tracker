@@ -91,6 +91,7 @@ export const incomeAPI = {
     create: (data) => api.post("/income", data),
     update: (id, data) => api.put(`/income/${id}`, data),
     delete: (id) => api.delete(`/income/${id}`),
+    getStats: () => api.get("/income/stats"),
 };
 
 export const budgetPeriodAPI = {

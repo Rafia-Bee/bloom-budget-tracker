@@ -209,6 +209,73 @@ def update_income(income_id):
     )
 
 
+@income_bp.route("/stats", methods=["GET"])
+@jwt_required()
+def get_income_stats():
+    """Get income statistics for the current user.
+
+    Returns:
+        - total_income: All-time income INCLUDING first Initial Balance (starting money),
+                        excluding subsequent Initial Balance snapshots (in cents)
+        - period_income: Income for current salary period excluding all Initial Balance (in cents)
+    """
+    from backend.models.database import SalaryPeriod
+    from sqlalchemy import func
+
+    user_id = int(get_jwt_identity())
+
+    # Find the earliest Initial Balance (the actual starting money)
+    earliest_initial_balance = (
+        db.session.query(Income)
+        .filter(Income.user_id == user_id, Income.type == "Initial Balance")
+        .order_by(Income.actual_date)
+        .first()
+    )
+
+    # Start with the first Initial Balance as the starting money
+    starting_balance = earliest_initial_balance.amount if earliest_initial_balance else 0
+
+    # Sum all other income (excluding ALL Initial Balance entries)
+    other_income = (
+        db.session.query(func.coalesce(func.sum(Income.amount), 0))
+        .filter(Income.user_id == user_id, Income.type != "Initial Balance")
+        .scalar()
+        or 0
+    )
+
+    # Total income = starting balance + all other income
+    total_income = starting_balance + other_income
+
+    # Period income (current salary period) - excludes all Initial Balance entries
+    current_period = SalaryPeriod.query.filter_by(
+        user_id=user_id, is_active=True
+    ).first()
+
+    period_income = 0
+    if current_period:
+        period_income = (
+            db.session.query(func.coalesce(func.sum(Income.amount), 0))
+            .filter(
+                Income.user_id == user_id,
+                Income.type != "Initial Balance",
+                Income.actual_date >= current_period.start_date,
+                Income.actual_date <= current_period.end_date,
+            )
+            .scalar()
+            or 0
+        )
+
+    return (
+        jsonify(
+            {
+                "total_income": total_income,  # cents
+                "period_income": period_income,  # cents
+            }
+        ),
+        200,
+    )
+
+
 @income_bp.route("/<int:income_id>", methods=["DELETE"])
 @jwt_required()
 def delete_income(income_id):

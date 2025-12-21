@@ -105,6 +105,12 @@ function Dashboard({ setIsAuthenticated }) {
 
   useEffect(() => {
     if (currentPeriod) {
+      loadIncomeStats()
+    }
+  }, [currentPeriod])
+
+  useEffect(() => {
+    if (currentPeriod) {
       loadTransactionsAndBalances()
     }
   }, [currentPeriod])
@@ -392,112 +398,15 @@ function Dashboard({ setIsAuthenticated }) {
   // Keep old loadPeriods method for other callers
   const loadPeriods = loadPeriodsAndCurrentWeek
 
-  const calculateCumulativeBalances = async () => {
+  const loadIncomeStats = async () => {
     if (!currentPeriod) return
 
     try {
-      let cumulativeDebit = 0
-      let cumulativeCredit = 0
-      let cumulativeIncome = 0
-      let currentDebit = 0
-      let currentCredit = 0
-      let currentIncome = 0
-
-      // First, get ALL income (including Initial Balance which has no budget_period_id)
-      const allIncomeRes = await incomeAPI.getAll({})
-      const allIncome = Array.isArray(allIncomeRes.data) ? allIncomeRes.data : (allIncomeRes.data?.income || [])
-
-      // Normalize today to end of day for accurate comparisons
-      const today = new Date()
-      today.setHours(23, 59, 59, 999)
-
-      // Add only realized income to totals (income that has already occurred)
-      const periodStart = new Date(currentPeriod.start_date)
-      const periodEnd = new Date(currentPeriod.end_date)
-
-      allIncome.forEach(income => {
-        const amount = income.amount / 100
-        // Use ISO date format for reliable parsing
-        const incomeDate = new Date(income.date_iso || income.date || income.actual_date)
-
-        // Only include income that has already occurred
-        if (incomeDate <= today) {
-          // Exclude "Initial Balance" entries from cumulative income total
-          // These are period snapshots, not real income (except the first one which is the starting balance)
-          if (income.type !== 'Initial Balance') {
-            cumulativeIncome += amount
-          }
-
-          // Check if income date falls within current period
-          if (incomeDate >= periodStart && incomeDate <= periodEnd) {
-            // Also exclude Initial Balance from current period income
-            if (income.type !== 'Initial Balance') {
-              currentIncome += amount
-            }
-          }
-        }
-      })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)
-      // Use high limit to avoid pagination cutting off expenses
-      const allExpensesRes = await expenseAPI.getAll({ limit: 10000 })
-      const allExpenses = Array.isArray(allExpensesRes.data) ? allExpensesRes.data : (allExpensesRes.data?.expenses || [])
-
-      // Get the parent salary period to determine cumulative start date
-      let cumulativeStartDate = periodStart
-      try {
-        const salaryPeriodRes = await salaryPeriodAPI.getCurrent()
-        if (salaryPeriodRes?.data?.salary_period) {
-          cumulativeStartDate = new Date(salaryPeriodRes.data.salary_period.start_date)
-        }
-      } catch (error) {
-        // If no salary period, fall back to current period start
-        console.warn('No salary period found, using current period start date')
-      }
-
-      allExpenses.forEach(expense => {
-        const amount = expense.amount / 100
-        // Use ISO date format for reliable parsing
-        const expenseDate = new Date(expense.date_iso || expense.date)
-
-        // Skip future expenses (expenses dated after today)
-        if (expenseDate > today) return
-
-        // Special case: Pre-existing Credit Card Debt should always be included
-        const isPreExistingDebt = expense.name === 'Pre-existing Credit Card Debt' &&
-          expense.category === 'Debt' &&
-          expense.subcategory === 'Credit Card'
-
-        // Check if expense is within salary period or is pre-existing debt
-        const isInIncludedPeriod = isPreExistingDebt || expenseDate >= cumulativeStartDate
-
-        if (!isInIncludedPeriod) return // Skip expenses from before the salary period
-
-        // Determine if expense belongs to current period based on date
-        const belongsToCurrentPeriod = expenseDate >= periodStart && expenseDate <= periodEnd
-
-        if (expense.category === 'Debt Payments' && expense.subcategory === 'Credit Card' && expense.payment_method === 'Debit card') {
-          cumulativeCredit -= amount // Payment reduces credit card debt
-          cumulativeDebit += amount  // Payment comes from debit card
-          if (belongsToCurrentPeriod) {
-            currentCredit -= amount
-            currentDebit += amount
-          }
-        } else if (expense.payment_method === 'Debit card') {
-          cumulativeDebit += amount
-          if (belongsToCurrentPeriod) currentDebit += amount
-        } else if (expense.payment_method === 'Credit card') {
-          cumulativeCredit += amount
-          if (belongsToCurrentPeriod) currentCredit += amount
-        }
-      })
-
-      setDebitBalance(cumulativeDebit)
-      setCreditBalance(cumulativeCredit)
-      setTotalIncome(cumulativeIncome)
-      setCurrentPeriodDebitSpent(currentDebit)
-      setCurrentPeriodCreditSpent(currentCredit)
-      setCurrentPeriodIncome(currentIncome)
+      const response = await incomeAPI.getStats()
+      setTotalIncome(response.data.total_income / 100)  // Convert cents to euros
+      setCurrentPeriodIncome(response.data.period_income / 100)  // Convert cents to euros
     } catch (error) {
-      console.error('Failed to calculate cumulative balances:', error)
+      console.error('Failed to load income stats:', error)
     }
   }
 

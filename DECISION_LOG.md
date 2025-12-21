@@ -4,9 +4,56 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-22
+
+### Fixed All-Time Income Display - Removed Manual Frontend Balance Calculations
+
+**Context:** Frontend was showing "All-time income: €0" despite having €3118.95 in real income (€303.50 + €2815.45). Backend balance calculations were correct, but frontend was duplicating logic.
+
+**Problem:**
+
+-   Frontend had `calculateCumulativeBalances()` function that manually fetched all transactions and calculated balances
+-   This duplicated backend logic from `balance_service.py`
+-   The manual calculation was complex (~100 lines) and showed €0 for all-time income
+-   Maintenance burden: two calculation codebases to keep in sync
+
+**Solution:**
+
+1. **Added `/income/stats` endpoint** ([backend/routes/income.py](backend/routes/income.py)):
+
+    - Returns `total_income` = first Initial Balance + all other income (Salary + Other)
+    - Returns `period_income` (current salary period, excluding all Initial Balance)
+    - First Initial Balance represents actual starting money when user began using app
+    - Subsequent Initial Balance entries are period snapshots (excluded from total)
+    - Both in cents, calculated server-side
+
+2. **Replaced `calculateCumulativeBalances()`** with simple `loadIncomeStats()` ([frontend/src/pages/Dashboard.jsx](frontend/src/pages/Dashboard.jsx)):
+
+    ```jsx
+    const loadIncomeStats = async () => {
+        const response = await incomeAPI.getStats();
+        setTotalIncome(response.data.total_income / 100);
+        setCurrentPeriodIncome(response.data.period_income / 100);
+    };
+    ```
+
+3. **Added useEffect** to load stats when period changes
+
+**Impact:**
+
+-   ✅ All-time income now shows correct value (€3118.95)
+-   ✅ Period income shows correct value
+-   ✅ Single source of truth (backend calculations)
+-   ✅ Simpler, more maintainable code
+-   ✅ Frontend trusts backend values
+
+**Related:** Issue #96
+
+---
+
 ## 2025-12-21
 
-### Fixed Debit Card Balance to Be Period-Independent (IN PROGRESS)
+### Fixed Debit Card Balance to Be Period-Independent (COMPLETED)
 
 **Context:** Debit card balance was resetting each budget period. Credit card was already fixed to be period-agnostic, but debit still used period boundaries.
 
