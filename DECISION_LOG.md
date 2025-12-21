@@ -4,6 +4,152 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-21
+
+### Fixed Credit Card Balance Calculation to Be Period-Independent
+
+**Context:** Credit card was showing incorrect available/debt amounts. User's actual balance was €1254.72 available, but Dashboard showed €491.79. Debts page showed negative progress percentages.
+
+**Problem:**
+
+-   Balance calculation was filtering by salary period dates (`date >= start_date`)
+-   Periods are just cosmetic budget divisions, not transaction boundaries
+-   User had imported historical data from production, creating transactions before current period
+-   Dec 19 debt payment (€800) was excluded because period started Dec 20
+-   Calculation didn't account for "Pre-existing Credit Card Debt" markers
+
+**Root Cause:** `_calculate_credit_balance()` used period dates as filters, making balance depend on which period was active.
+
+**Solution:**
+
+Rewrote balance calculation to be **period-agnostic**:
+
+```python
+def _calculate_credit_balance():
+    """
+    Calculate real-time credit available (periods are cosmetic only).
+    
+    1. Find earliest "Pre-existing Debt" marker (category=Debt, subcategory=Credit Card)
+    2. Starting available = Credit Limit - that debt
+    3. Available = Starting + All Payments Since - All Expenses Since (excluding Debt markers)
+    """
+    # Find earliest debt snapshot
+    earliest_marker = query(Expense).filter(
+        category=="Debt", subcategory=="Credit Card"
+    ).order_by(date).first()
+    
+    starting_available = credit_limit - earliest_marker.amount
+    
+    # Sum ALL transactions since that date
+    expenses = sum(payment_method=="Credit card", category!="Debt", date>=earliest_marker.date)
+    payments = sum(category=="Debt Payments", subcategory=="Credit Card", date>=earliest_marker.date)
+    
+    return starting_available + payments - expenses
+```
+
+**Result:**
+
+-   Correct real-time balance: €1254.72 available, €245.28 debt (16.4% used)
+-   Debt payments on period boundaries now count properly
+-   Balance survives period transitions without resetting
+
+**Impact:**
+
+-   Fixes: Credit card display, Debts page auto-calculation, progress tracking
+-   Clarifies: Periods are for budgeting only, not transaction accounting
+-   **Important:** "Pre-existing Debt" entries (category=Debt) are now treated as balance snapshots, excluded from expense totals
+
+---
+
+## 2025-12-21
+
+### Fixed Test Suite Database Isolation Issue
+
+**Context:** Development database kept getting wiped repeatedly when VSCode auto-test-discovery was enabled.
+
+**Problem:**
+
+-   VSCode Python extension with "auto test discovery on save" enabled
+-   Test discovery imports `conftest.py` to find fixtures
+-   `conftest.py` sets `DATABASE_URL=sqlite:///:memory:` inside fixture, but test discovery happens BEFORE fixture runs
+-   Test discovery connected to real `instance/bloom.db` and called `db.drop_all()` during cleanup
+-   Database wiped every time a file was saved
+
+**Root Cause:** Environment variable set too late (inside fixture) instead of at module import time
+
+**Solution:**
+
+```python
+# SAFETY: Force DATABASE_URL to in-memory DB IMMEDIATELY when conftest is imported
+# This prevents test discovery from accidentally using the real database
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+```
+
+**Impact:**
+
+-   ✅ Tests ALWAYS use in-memory database, even during discovery phase
+-   ✅ Development database never touched by test suite
+-   ✅ Safe to use VSCode auto-test-discovery
+-   Future-proof against similar issues
+
+**Files Changed:**
+
+-   `backend/tests/conftest.py`: Lines 32-35 (added module-level environment variable)
+
+---
+
+### Fixed Production Balance and Debt Calculation Issues
+
+**Context:** Four critical bugs reported in production affecting balance calculations and debt tracking.
+
+**Problems:**
+
+1. **Credit Card Debt Display:** Debt page showing incorrect progress (€501.78 / €1500) instead of actual debt paid off
+2. **Future Payments Showing:** Payment history displaying scheduled future transactions that haven't occurred yet
+3. **Debt Progress Not Updating:** Recurring debt payments visible in transactions but not updating debt balance
+4. **Today's Expenses Missing:** Expenses added today (Dec 21) not appearing in dashboard balance calculations
+
+**Root Causes:**
+
+1. **Debt Calculation Inconsistency:** Debts.jsx was recalculating credit card balance from scratch starting with `initial_credit_balance`, missing transactions that occurred before salary period. Dashboard.jsx used backend's `display_credit_balance` (correct real-time value).
+2. **No Future Filter:** `loadDebtTransactions` didn't filter out payments with dates > today
+3. **Same as #1:** Backend correctly calculated all debt payments, but frontend Debts page wasn't using that value
+4. **Date Comparison Precision:** Using `new Date()` with timestamp compared against midnight dates caused off-by-one issues
+
+**Solution:**
+
+```javascript
+// Debts.jsx - Use backend's authoritative balance
+const currentBalance = salaryPeriod.display_credit_balance; // Already in cents
+
+// Filter future payments
+const today = new Date();
+today.setHours(23, 59, 59, 999); // End of today
+const realizedPayments = allPayments.filter((payment) => {
+    const paymentDate = new Date(payment.date_iso || payment.date);
+    return paymentDate <= today;
+});
+
+// Dashboard.jsx - Normalize date for comparisons
+const today = new Date();
+today.setHours(23, 59, 59, 999); // End of today for accurate comparisons
+```
+
+**Impact:**
+
+-   ✅ Credit card debt now shows correct paid amount / limit
+-   ✅ Payment history only shows realized payments
+-   ✅ Debt progress updates immediately when payments made
+-   ✅ Today's expenses appear in balances instantly
+-   Single source of truth: backend calculates balances, frontend displays them
+
+**Files Changed:**
+
+-   `frontend/src/pages/Debts.jsx`: Lines 100-150 (use backend balance), Lines 205-225 (filter future payments)
+-   `frontend/src/pages/Dashboard.jsx`: Lines 406-410 (normalize date comparison)
+
+---
+
 ## 2025-12-20
 
 ### Fixed Test Suite to Use Dynamic Dates

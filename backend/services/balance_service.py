@@ -57,16 +57,19 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
     # Calculate real debit balance
     debit_balance = _calculate_debit_balance(period_start, period_end)
 
-    # Calculate real credit balance
-    credit_balance = _calculate_credit_balance(period_start, period_end)
+    # Calculate real credit available (start with initial balance)
+    initial_credit_balance = salary_period.initial_credit_balance  # Already in cents
+    credit_available = _calculate_credit_balance(
+        period_start, period_end, initial_credit_balance
+    )
 
-    # Calculate available credit
+    # Ensure available doesn't exceed limit
     credit_limit = salary_period.credit_limit / 100  # Convert cents to euros
-    credit_available = max(0, credit_limit - credit_balance)
+    credit_available = min(credit_available, credit_limit)  # Cap at limit
 
     return {
         "debit_balance": debit_balance,
-        "credit_balance": credit_balance,
+        "credit_balance": credit_available,  # Return AVAILABLE (what user can spend)
         "credit_available": credit_available,
     }
 
@@ -110,48 +113,96 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
     return balance_cents / 100  # Convert cents to euros
 
 
-def _calculate_credit_balance(start_date: datetime, end_date: datetime) -> float:
+def _calculate_credit_balance(
+    start_date: datetime, end_date: datetime, initial_balance: int
+) -> float:
     """
-    Calculate real-time credit balance by analyzing transactions before period start.
+    Calculate current real-time credit card available balance.
 
-    Credit balance = (all credit expenses before period) - (all credit card payments before period)
-    This represents the amount owed on the credit card.
+    Periods are cosmetic filters only - balance reflects ALL transactions ever made.
+
+    Method:
+    1. Find earliest "Pre-existing Credit Card Debt" marker (category=Debt, subcategory=Credit Card)
+    2. Calculate starting available = Credit Limit - that debt amount
+    3. Add all credit payments since that date
+    4. Subtract all credit expenses since that date (excluding Debt category markers)
 
     Args:
-        start_date: Period start date (calculate balance as of this date)
-        end_date: Period end date (unused for credit, but kept for consistency)
+        start_date: Unused - kept for API compatibility
+        end_date: Unused - kept for API compatibility
+        initial_balance: Unused - we calculate from transactions
 
     Returns:
-        Credit balance in euros (can be negative if overpaid, usually >= 0)
+        Current available credit balance in euros
     """
-    # Get all credit expenses before period start (payment_method is a string field)
+    from datetime import datetime
+    from backend.models.database import SalaryPeriod
+
+    today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    # Get credit limit from current salary period
+    current_period = SalaryPeriod.query.filter_by(is_active=True).first()
+    if not current_period:
+        return 0.0
+
+    credit_limit_cents = current_period.credit_limit
+
+    # Find earliest "Pre-existing Credit Card Debt" entry
+    earliest_debt_marker = (
+        db.session.query(Expense)
+        .filter(
+            and_(
+                Expense.category == "Debt",
+                Expense.subcategory == "Credit Card",
+                Expense.payment_method == "Credit card",
+            )
+        )
+        .order_by(Expense.date)
+        .first()
+    )
+
+    if earliest_debt_marker:
+        # Start from this marker's date
+        start_from_date = earliest_debt_marker.date
+        # Starting available = limit - debt
+        starting_available_cents = credit_limit_cents - earliest_debt_marker.amount
+    else:
+        # No marker found - assume started with full credit limit available
+        start_from_date = datetime(2000, 1, 1)  # Beginning of time
+        starting_available_cents = credit_limit_cents
+
+    # Get ALL credit card expenses since start date (excluding Debt category markers)
     total_credit_expenses = (
         db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
         .filter(
             and_(
                 Expense.payment_method == "Credit card",
-                Expense.date < start_date,
+                Expense.category != "Debt",  # Exclude pre-existing debt markers
+                Expense.date >= start_from_date,
+                Expense.date <= today,
             )
         )
         .scalar()
         or 0
     )
 
-    # Get all credit card payments (debt payments) before period start
+    # Get ALL debt payments since start date
     total_credit_payments = (
         db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
         .filter(
             and_(
                 Expense.category == "Debt Payments",
                 Expense.subcategory == "Credit Card",
-                Expense.date < start_date,
+                Expense.date >= start_from_date,
+                Expense.date <= today,
             )
         )
         .scalar()
         or 0
     )
 
-    balance_cents = total_credit_expenses - total_credit_payments
+    # Available = Starting + Payments - Expenses
+    balance_cents = starting_available_cents + total_credit_payments - total_credit_expenses
     return balance_cents / 100  # Convert cents to euros
 
 
