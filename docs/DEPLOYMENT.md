@@ -215,6 +215,19 @@ After the first deployment with Flask-Migrate, all future migrations will work a
 4. **Include migrations in commits** with corresponding model changes
 5. **Never edit applied migrations** - create new ones instead
 
+#### Data Cleanup Scripts
+
+For one-time data fixes (not schema changes), use manual scripts:
+
+**Remove Duplicate Initial Balance Entries** (Run after deploying fix):
+
+```bash
+# SSH into Render or run via Render shell
+python scripts/remove_duplicate_initial_balances.py
+```
+
+This script removes duplicate "Initial Balance" entries that were created by a bug (fixed in commit 76fb0c0). It keeps only the earliest Initial Balance for each user.
+
 ### Backups
 
 -   **Automatic**: Render performs daily backups (free tier: 7-day retention)
