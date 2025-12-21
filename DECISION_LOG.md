@@ -6,6 +6,62 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-21
 
+### Fixed Debit Card Balance to Be Period-Independent (IN PROGRESS)
+
+**Context:** Debit card balance was resetting each budget period. Credit card was already fixed to be period-agnostic, but debit still used period boundaries.
+
+**Problem:**
+
+-   Debit calculation filtered by period dates (`income/expenses >= start_date`)
+-   Balance reset to 0 at the start of each new salary period
+-   "Initial Balance" income entries were being counted as real income, inflating totals
+-   Multiple "Initial Balance" entries exist (one per period) but only the first represents actual starting money
+
+**Root Cause:** `_calculate_debit_balance()` summed all income within period, including period snapshot markers.
+
+**Solution:**
+
+Rewrote debit calculation to match credit card logic:
+
+```python
+def _calculate_debit_balance():
+    """
+    Calculate real-time debit balance (period-agnostic).
+
+    1. Find earliest "Initial Balance" income entry = starting money
+    2. Exclude ALL "Initial Balance" entries from income sum (period snapshots)
+    3. Sum all other income since that date
+    4. Subtract all debit expenses since that date
+    5. Balance = Starting + Income - Expenses
+    """
+    earliest_initial = query(Income).filter(type=="Initial Balance").order_by(date).first()
+    starting_balance = earliest_initial.amount
+
+    # Sum income EXCLUDING all Initial Balance entries
+    total_income = sum(amount WHERE type!="Initial Balance", date>=earliest_initial.date)
+    total_expenses = sum(amount WHERE payment_method=="Debit card", date>=earliest_initial.date)
+
+    return starting_balance + total_income - total_expenses
+```
+
+**Status:** PARTIALLY WORKING
+
+-   ✅ Available balance now shows correctly (€416.16)
+-   ❌ Frontend still shows "All-time income: €0.00" (should show €3118.95)
+
+**Remaining Issue:**
+Frontend `calculateCumulativeBalances()` still calculates totals manually from transactions. Should use backend's calculated values instead. Frontend needs refactoring to trust backend balance calculations.
+
+**Impact:**
+
+-   Both debit and credit now period-agnostic (real-time account balances)
+-   "Initial Balance" entries treated as snapshots, not income
+-   Balances persist across period transitions
+
+---
+
+## 2025-12-21
+
 ### Fixed Credit Card Balance Calculation to Be Period-Independent
 
 **Context:** Credit card was showing incorrect available/debt amounts. User's actual balance was €1254.72 available, but Dashboard showed €491.79. Debts page showed negative progress percentages.

@@ -422,11 +422,18 @@ function Dashboard({ setIsAuthenticated }) {
 
         // Only include income that has already occurred
         if (incomeDate <= today) {
-          cumulativeIncome += amount
+          // Exclude "Initial Balance" entries from cumulative income total
+          // These are period snapshots, not real income (except the first one which is the starting balance)
+          if (income.type !== 'Initial Balance') {
+            cumulativeIncome += amount
+          }
 
           // Check if income date falls within current period
           if (incomeDate >= periodStart && incomeDate <= periodEnd) {
-            currentIncome += amount
+            // Also exclude Initial Balance from current period income
+            if (income.type !== 'Initial Balance') {
+              currentIncome += amount
+            }
           }
         }
       })      // Get ALL expenses (including pre-existing debt which has no budget_period_id)

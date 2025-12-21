@@ -76,40 +76,79 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
 
 def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
     """
-    Calculate real-time debit balance by analyzing transactions before period start.
+    Calculate real-time debit balance from all-time transactions.
 
-    Debit balance = (all income before period) - (all debit expenses before period)
-    This represents the actual money available in the debit account.
+    Periods are cosmetic filters only - balance reflects actual account state.
+
+    Method:
+    1. Find earliest "Initial Balance" income entry (starting money)
+    2. Exclude subsequent "Initial Balance" entries (period snapshots)
+    3. Sum all other income since that date
+    4. Subtract all debit expenses since that date
 
     Args:
-        start_date: Period start date (calculate balance as of this date)
-        end_date: Period end date (unused for debit, but kept for consistency)
+        start_date: Unused - kept for API compatibility
+        end_date: Unused - kept for API compatibility
 
     Returns:
         Debit balance in euros (can be negative if overdrawn)
     """
-    # Get all income before period start (use actual_date for realized income)
-    total_income = (
-        db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
-        .filter(Income.actual_date < start_date)
-        .scalar()
-        or 0
+    from datetime import datetime
+
+    today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    # Find earliest "Initial Balance" entry
+    earliest_initial_balance = (
+        db.session.query(Income)
+        .filter(Income.type == "Initial Balance")
+        .order_by(Income.actual_date)
+        .first()
     )
 
-    # Get all debit expenses before period start (payment_method is a string field)
-    total_debit_expenses = (
-        db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+    if not earliest_initial_balance:
+        # No initial balance, use earliest income instead
+        earliest_income = db.session.query(Income).order_by(Income.actual_date).first()
+        if not earliest_income:
+            return 0.0
+        start_from_date = earliest_income.actual_date
+        starting_balance = 0
+    else:
+        start_from_date = earliest_initial_balance.actual_date
+        starting_balance = earliest_initial_balance.amount
+
+    # Get all NON-initial-balance income since tracking started (up to today)
+    # Exclude all "Initial Balance" entries as they're snapshots, not real income
+    # EXCEPT we already counted the first one as starting_balance
+    total_income = (
+        db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
         .filter(
             and_(
-                Expense.payment_method == "Debit card",
-                Expense.date < start_date,
+                Income.type
+                != "Initial Balance",  # Exclude all initial balance snapshots
+                Income.actual_date >= start_from_date,
+                Income.actual_date <= today,
             )
         )
         .scalar()
         or 0
     )
 
-    balance_cents = total_income - total_debit_expenses
+    # Get ALL debit expenses since tracking started (up to today)
+    total_debit_expenses = (
+        db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+        .filter(
+            and_(
+                Expense.payment_method == "Debit card",
+                Expense.date >= start_from_date,
+                Expense.date <= today,
+            )
+        )
+        .scalar()
+        or 0
+    )
+
+    # Balance = Starting + Income - Expenses
+    balance_cents = starting_balance + total_income - total_debit_expenses
     return balance_cents / 100  # Convert cents to euros
 
 
@@ -202,7 +241,9 @@ def _calculate_credit_balance(
     )
 
     # Available = Starting + Payments - Expenses
-    balance_cents = starting_available_cents + total_credit_payments - total_credit_expenses
+    balance_cents = (
+        starting_available_cents + total_credit_payments - total_credit_expenses
+    )
     return balance_cents / 100  # Convert cents to euros
 
 
