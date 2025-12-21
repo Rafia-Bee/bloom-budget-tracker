@@ -6,6 +6,60 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Fixed Initial Balance Duplication Bug
+
+**Context:** System was creating a new "Initial Balance" income entry every time a salary period was created, leading to multiple Initial Balance entries per user. Database had 2 entries (€3072.00 and €2893.74) instead of just 1.
+
+**Problem:**
+
+-   `POST /salary-periods` created Initial Balance for EVERY salary period
+-   `PUT /salary-periods/:id` updated Initial Balance date on edit, making it look like a new entry
+-   Initial Balance should represent user's starting money ONCE, not be recreated every period
+
+**Root Cause:**
+
+-   [backend/routes/salary_periods.py](backend/routes/salary_periods.py) line 542: Always created Initial Balance if `debit_balance > 0`
+-   Line 848: Updated Initial Balance date to new period's start_date, causing it to move in time
+-   No check for existing Initial Balance before creation
+
+**Solution:**
+
+1. **CREATE endpoint**: Check if Initial Balance exists before creating
+
+    ```python
+    existing_initial_balance = Income.query.filter_by(
+        user_id=current_user_id, type="Initial Balance"
+    ).first()
+    if not existing_initial_balance and debit_balance > 0:
+        # Only create if none exists
+    ```
+
+2. **UPDATE endpoint**: Never change Initial Balance date, only update amount
+
+    ```python
+    if initial_income:
+        initial_income.amount = debit_balance  # Update amount only
+        # Keep original actual_date and scheduled_date
+    ```
+
+3. **Database cleanup**: Deleted duplicate Initial Balance (kept earliest one: €3072.00)
+
+**Rationale:**
+
+-   Initial Balance = user's actual starting money when they first used the app
+-   It's a historical record, not a period snapshot
+-   Date should never change (represents when user started)
+-   Amount can be updated if user realizes they entered wrong starting balance
+
+**Impact:**
+
+-   ✅ Only 1 Initial Balance per user (verified in database)
+-   ✅ All-time income now correctly includes just the first Initial Balance
+-   ✅ Future salary periods won't create duplicates
+-   ✅ Initial Balance date stays constant (historical record)
+
+---
+
 ### Fixed All-Time Income Display - Removed Manual Frontend Balance Calculations
 
 **Context:** Frontend was showing "All-time income: €0" despite having €3118.95 in real income (€303.50 + €2815.45). Backend balance calculations were correct, but frontend was duplicating logic.

@@ -537,9 +537,14 @@ def create_salary_period():
                 db.session.add(budget_period)
                 current_start = week_end + timedelta(days=1)
 
-            # Create initial income entry for the debit balance
+            # Create initial income entry for the debit balance ONLY for the first salary period
             # This makes the dashboard debit/credit cards show correct available amounts
-            if debit_balance > 0:
+            # Subsequent salary periods should NOT create new Initial Balance entries
+            existing_initial_balance = Income.query.filter_by(
+                user_id=current_user_id, type="Initial Balance"
+            ).first()
+
+            if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(
                     user_id=current_user_id,
                     type="Initial Balance",
@@ -844,23 +849,26 @@ def update_salary_period_full(id):
             current_start = week_end + timedelta(days=1)
 
         # Update Initial Balance income entry if it exists
+        # NEVER create a new Initial Balance - it should only be created with the first salary period
         # Search for ANY Initial Balance entry for this user (not just by date)
-        # to avoid creating duplicates when start_date changes
         initial_income = (
             Income.query.filter_by(
                 user_id=current_user_id,
                 type="Initial Balance",
             )
-            .order_by(Income.id.desc())
+            .order_by(Income.actual_date)  # Get the FIRST one (earliest)
             .first()
         )
 
         if initial_income:
+            # Only update the amount, keep the original date
             initial_income.amount = debit_balance
-            initial_income.actual_date = start_date
-            initial_income.scheduled_date = start_date
         elif debit_balance > 0:
-            # Create if doesn't exist
+            # This should never happen in normal flow (only if user deleted it manually)
+            # Create a new one with a warning
+            current_app.logger.warning(
+                f"Creating missing Initial Balance for user {current_user_id} - this should only happen once"
+            )
             initial_income = Income(
                 user_id=current_user_id,
                 type="Initial Balance",

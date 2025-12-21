@@ -1,5 +1,5 @@
 """
-Check income entries to diagnose the €1769.20 issue
+Check income entries to diagnose Initial Balance creation
 """
 import sqlite3
 
@@ -11,28 +11,29 @@ try:
     print("\n=== ALL INCOME ENTRIES ===")
     cursor.execute(
         """
-        SELECT id, type, amount, scheduled_date, actual_date, budget_period_id
+        SELECT id, type, amount, scheduled_date, actual_date
         FROM income
-        ORDER BY scheduled_date
+        ORDER BY actual_date
     """
     )
 
     incomes = cursor.fetchall()
     total = 0
+    initial_balance_count = 0
 
-    for inc_id, inc_type, amount, sched, actual, bp_id in incomes:
+    for inc_id, inc_type, amount, sched, actual in incomes:
         print(f"\nID: {inc_id}")
         print(f"  Type: {inc_type}")
         print(f"  Amount: €{amount/100:.2f}")
         print(f"  Scheduled: {sched}")
         print(f"  Actual: {actual}")
-        print(f"  Budget Period ID: {bp_id}")
         total += amount
 
-    print(f"\n=== TOTAL INCOME: €{total/100:.2f} ===")
+        if inc_type == "Initial Balance":
+            initial_balance_count += 1
 
-    if total == 176920:  # 1769.20 in cents
-        print("⚠️ This matches the incorrect amount shown!")
+    print(f"\n=== TOTAL INCOME: €{total/100:.2f} ===")
+    print(f"=== INITIAL BALANCE COUNT: {initial_balance_count} ===")
 
 finally:
     conn.close()
