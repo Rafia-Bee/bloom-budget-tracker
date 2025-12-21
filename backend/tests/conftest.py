@@ -31,6 +31,11 @@ class TestConfig(Config):
     SENDGRID_API_KEY = None
 
 
+# SAFETY: Force DATABASE_URL to in-memory DB IMMEDIATELY when conftest is imported
+# This prevents test discovery from accidentally using the real database
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+
+
 @pytest.fixture(scope="function", autouse=True)
 def disable_sendgrid():
     """Ensure SendGrid is disabled for ALL tests by removing API key from environment"""

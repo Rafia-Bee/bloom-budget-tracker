@@ -28,7 +28,7 @@ Rewrote balance calculation to be **period-agnostic**:
 def _calculate_credit_balance():
     """
     Calculate real-time credit available (periods are cosmetic only).
-    
+
     1. Find earliest "Pre-existing Debt" marker (category=Debt, subcategory=Credit Card)
     2. Starting available = Credit Limit - that debt
     3. Available = Starting + All Payments Since - All Expenses Since (excluding Debt markers)
@@ -37,13 +37,13 @@ def _calculate_credit_balance():
     earliest_marker = query(Expense).filter(
         category=="Debt", subcategory=="Credit Card"
     ).order_by(date).first()
-    
+
     starting_available = credit_limit - earliest_marker.amount
-    
+
     # Sum ALL transactions since that date
     expenses = sum(payment_method=="Credit card", category!="Debt", date>=earliest_marker.date)
     payments = sum(category=="Debt Payments", subcategory=="Credit Card", date>=earliest_marker.date)
-    
+
     return starting_available + payments - expenses
 ```
 
