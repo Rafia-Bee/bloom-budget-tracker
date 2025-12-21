@@ -27,6 +27,7 @@ from backend.routes.recurring_generation import recurring_generation_bp
 from backend.routes.salary_periods import salary_periods_bp
 from backend.routes.password_reset import password_reset_bp
 from backend.routes.export_import import export_import_bp
+from backend.routes.admin import admin_bp
 
 
 def create_app(config_name="development"):
@@ -88,6 +89,7 @@ def create_app(config_name="development"):
     app.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     app.register_blueprint(password_reset_bp, url_prefix="/auth")
     app.register_blueprint(export_import_bp)
+    app.register_blueprint(admin_bp, url_prefix="/admin")
 
     # Database tables are now managed by Flask-Migrate
     # with app.app_context():

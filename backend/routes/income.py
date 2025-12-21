@@ -233,7 +233,9 @@ def get_income_stats():
     )
 
     # Start with the first Initial Balance as the starting money
-    starting_balance = earliest_initial_balance.amount if earliest_initial_balance else 0
+    starting_balance = (
+        earliest_initial_balance.amount if earliest_initial_balance else 0
+    )
 
     # Sum all other income (excluding ALL Initial Balance entries)
     other_income = (

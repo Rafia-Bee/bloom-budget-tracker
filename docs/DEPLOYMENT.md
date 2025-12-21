@@ -217,16 +217,25 @@ After the first deployment with Flask-Migrate, all future migrations will work a
 
 #### Data Cleanup Scripts
 
-For one-time data fixes (not schema changes), use manual scripts:
+For one-time data fixes (not schema changes), use admin endpoints or manual scripts:
 
 **Remove Duplicate Initial Balance Entries** (Run after deploying fix):
 
+Option A - Via API (Recommended for Render free tier):
+
 ```bash
-# SSH into Render or run via Render shell
+# Use curl or Postman to call the admin endpoint
+curl -X POST https://bloom-backend-b44r.onrender.com/admin/remove-duplicate-initial-balances \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Option B - Via Script (Requires Render shell access):
+
+```bash
 python scripts/remove_duplicate_initial_balances.py
 ```
 
-This script removes duplicate "Initial Balance" entries that were created by a bug (fixed in commit 76fb0c0). It keeps only the earliest Initial Balance for each user.
+This removes duplicate "Initial Balance" entries that were created by a bug (fixed in commit 76fb0c0). It keeps only the earliest Initial Balance for each user.
 
 ### Backups
 
