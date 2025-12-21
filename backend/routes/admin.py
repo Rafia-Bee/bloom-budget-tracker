@@ -34,10 +34,16 @@ def remove_duplicate_initial_balances():
         # Security: Only allow if user_id = 1 (the app owner)
         # Or if in development mode
         from flask import current_app
-        if current_user_id != 1 and not current_app.config.get('DEBUG'):
-            return jsonify({
-                "error": "Unauthorized. Use Neon SQL Editor for production cleanup."
-            }), 403
+
+        if current_user_id != 1 and not current_app.config.get("DEBUG"):
+            return (
+                jsonify(
+                    {
+                        "error": "Unauthorized. Use Neon SQL Editor for production cleanup."
+                    }
+                ),
+                403,
+            )
 
         # Find all users with multiple Initial Balance entries
         users_with_duplicates = (
