@@ -319,6 +319,14 @@ function Dashboard({ setIsAuthenticated }) {
           setCreditBalance(salaryPeriod.display_credit_balance / 100) // Convert cents to euros
         }
 
+        // Set period-level spending by payment method (NEW)
+        if (salaryPeriod.period_debit_spent !== undefined) {
+          setCurrentPeriodDebitSpent(salaryPeriod.period_debit_spent / 100) // Convert cents to euros
+        }
+        if (salaryPeriod.period_credit_spent !== undefined) {
+          setCurrentPeriodCreditSpent(salaryPeriod.period_credit_spent / 100) // Convert cents to euros
+        }
+
         // Create a budget period object from current week data
         const weekPeriod = {
           id: currentWeek.id, // Use actual budget_period ID from database

@@ -197,6 +197,37 @@ def get_current_salary_period():
             if end_date < today:
                 cumulative_carryover = remaining
 
+        # Calculate period-level spending by payment method (excluding fixed bills)
+        period_debit_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= salary_period.start_date,
+                    Expense.date <= salary_period.end_date,
+                    Expense.is_fixed_bill == False,
+                    Expense.payment_method == "Debit card",
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        period_credit_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= salary_period.start_date,
+                    Expense.date <= salary_period.end_date,
+                    Expense.is_fixed_bill == False,
+                    Expense.payment_method == "Credit card",
+                )
+            )
+            .scalar()
+            or 0
+        )
+
         # Get real-time balances using balance service
         real_balances = get_display_balances(salary_period.id)
 
@@ -222,6 +253,9 @@ def get_current_salary_period():
                         "display_credit_available": int(
                             real_balances["credit_available"] * 100
                         ),
+                        # Add period-level spending by payment method (in cents)
+                        "period_debit_spent": period_debit_spent,
+                        "period_credit_spent": period_credit_spent,
                         "credit_budget_allowance": salary_period.credit_budget_allowance,
                         "start_date": salary_period.start_date.isoformat(),
                         "end_date": salary_period.end_date.isoformat(),
