@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI } from '../api'
+import { debtAPI, subcategoryAPI } from '../api'
 import PropTypes from 'prop-types';
 
 function EditExpenseModal({ onClose, onEdit, expense }) {
@@ -18,9 +18,11 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
+  const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
     loadDebts()
+    loadSubcategories()
   }, [])
 
   const loadDebts = async () => {
@@ -32,6 +34,16 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
     }
   }
 
+  const loadSubcategories = async () => {
+    try {
+      const response = await subcategoryAPI.getAll()
+      setSubcategoriesData(response.data.subcategories || {})
+    } catch (error) {
+      console.error('Failed to load subcategories:', error)
+      setSubcategoriesData({})
+    }
+  }
+
   const categories = [
     'Fixed Expenses',
     'Flexible Expenses',
@@ -40,13 +52,24 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
   ]
 
   const getSubcategories = () => {
+    // Use API data if available, otherwise fallback to hardcoded
+    if (subcategoriesData[category]) {
+      const subcats = subcategoriesData[category].map(s => typeof s === 'string' ? s : s.name)
+      // Add debts to Debt Payments category
+      if (category === 'Debt Payments') {
+        return [...subcats, ...debts.map(d => d.name)]
+      }
+      return subcats
+    }
+
+    // Fallback to hardcoded subcategories
     const baseSubcategories = {
       'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
       'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
       'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
       'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
     }
-    return baseSubcategories
+    return baseSubcategories[category] || []
   }
 
   const subcategories = getSubcategories()
@@ -72,10 +95,19 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
       const parsedDate = parseDisplayDate(expense.date)
       setDate(parsedDate)
       setCategory(expense.category)
-      setSubcategory(expense.subcategory || subcategories[expense.category]?.[0] || '')
+
+      // Set subcategory - get subcategories for this category
+      let expenseSubcats = []
+      if (subcategoriesData[expense.category]) {
+        expenseSubcats = subcategoriesData[expense.category].map(s => typeof s === 'string' ? s : s.name)
+        if (expense.category === 'Debt Payments') {
+          expenseSubcats = [...expenseSubcats, ...debts.map(d => d.name)]
+        }
+      }
+      setSubcategory(expense.subcategory || expenseSubcats[0] || '')
       setPaymentMethod(expense.payment_method)
     }
-  }, [expense])
+  }, [expense, debts, subcategoriesData]) // Add dependencies to re-run when data loads
 
   const parseDisplayDate = (dateStr) => {
     // Parse "13 Nov, 2025" format to "2025-11-13"
@@ -187,8 +219,30 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
             <select
               value={category}
               onChange={(e) => {
-                setCategory(e.target.value)
-                setSubcategory(subcategories[e.target.value][0])
+                const newCategory = e.target.value
+                setCategory(newCategory)
+
+                // Get subcategories for the new category
+                let newSubcats = []
+                if (subcategoriesData[newCategory]) {
+                  newSubcats = subcategoriesData[newCategory].map(s => typeof s === 'string' ? s : s.name)
+                  if (newCategory === 'Debt Payments') {
+                    newSubcats = [...newSubcats, ...debts.map(d => d.name)]
+                  }
+                } else {
+                  // Fallback to hardcoded
+                  const fallback = {
+                    'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
+                    'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
+                    'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
+                    'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
+                  }
+                  newSubcats = fallback[newCategory] || []
+                }
+
+                if (newSubcats.length > 0) {
+                  setSubcategory(newSubcats[0])
+                }
               }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
@@ -205,7 +259,7 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
               onChange={(e) => handleSubcategoryChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
-              {subcategories[category]?.map(sub => (
+              {subcategories.map(sub => (
                 <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>

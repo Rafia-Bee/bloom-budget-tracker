@@ -16,6 +16,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from sqlalchemy import and_
 from backend.models.database import db, Expense, ExpenseNameMapping, Debt, BudgetPeriod
+from backend.utils.validators import ALLOWED_CATEGORIES
 
 expenses_bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 
@@ -131,6 +132,12 @@ def create_expense():
     ):
         return jsonify({"error": "Name, amount, and category required"}), 400
 
+    # Validate category
+    if data["category"] not in ALLOWED_CATEGORIES:
+        return jsonify({
+            "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
+        }), 400
+
     date_str = data.get("date")
     if date_str:
         try:
@@ -245,6 +252,12 @@ def update_expense(expense_id):
         return jsonify({"error": "Expense not found"}), 404
 
     data = request.get_json()
+
+    # Validate category if provided
+    if "category" in data and data["category"] not in ALLOWED_CATEGORIES:
+        return jsonify({
+            "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
+        }), 400
 
     # Track if this was a debt payment and if amount changed
     old_was_debt_payment = (

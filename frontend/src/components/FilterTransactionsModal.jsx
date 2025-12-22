@@ -11,11 +11,13 @@
  */
 
 import { useState, useEffect } from 'react'
+import { subcategoryAPI } from '../api'
 import useDebounce from '../hooks/useDebounce'
 
 export default function FilterTransactionsModal({ isOpen, onClose, onApply, initialFilters }) {
   const [searchInput, setSearchInput] = useState('') // Immediate search input
   const debouncedSearch = useDebounce(searchInput, 500) // Debounced value
+  const [subcategoriesData, setSubcategoriesData] = useState({})
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -27,6 +29,20 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
     search: '',
     transactionType: 'both' // 'expense', 'income', 'both'
   })
+
+  useEffect(() => {
+    loadSubcategories()
+  }, [])
+
+  const loadSubcategories = async () => {
+    try {
+      const response = await subcategoryAPI.getAll()
+      setSubcategoriesData(response.data.subcategories || {})
+    } catch (error) {
+      console.error('Failed to load subcategories:', error)
+      setSubcategoriesData({})
+    }
+  }
 
   useEffect(() => {
     if (initialFilters) {
@@ -61,6 +77,18 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
     setSearchInput('') // Clear search input
     onApply(clearedFilters)
     onClose()
+  }
+
+  const categories = [
+    'Fixed Expenses',
+    'Flexible Expenses',
+    'Savings & Investments',
+    'Debt Payments'
+  ]
+
+  const getSubcategories = () => {
+    if (!filters.category || !subcategoriesData[filters.category]) return []
+    return subcategoriesData[filters.category].map(s => typeof s === 'string' ? s : s.name)
   }
 
   if (!isOpen) return null
@@ -170,14 +198,13 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
               </label>
               <select
                 value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                onChange={(e) => setFilters({ ...filters, category: e.target.value, subcategory: '' })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
               >
                 <option value="">All Categories</option>
-                <option value="Flexible Expenses">Flexible Expenses</option>
-                <option value="Fixed Expenses">Fixed Expenses</option>
-                <option value="Debt Payments">Debt Payments</option>
-                <option value="Debt">Debt</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
           )}
@@ -194,15 +221,9 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                 className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
               >
                 <option value="">All Subcategories</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Food">Food</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Subscriptions">Subscriptions</option>
-                <option value="Utilities">Utilities</option>
-                <option value="Insurance">Insurance</option>
-                <option value="Rent">Rent</option>
-                <option value="Credit Card">Credit Card</option>
+                {getSubcategories().map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
               </select>
             </div>
           )}
