@@ -6,6 +6,33 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Implemented Custom Subcategories System (Issue #98)
+
+**Context:** Users needed ability to create custom subcategories for expense organization. System previously used hardcoded category/subcategory arrays.
+
+**Decision:**
+
+-   Keep 4 main categories **fixed**: Fixed Expenses, Flexible Expenses, Savings & Investments, Debt Payments
+-   Allow users to create/edit/delete custom **subcategories** within each category
+-   Store subcategories in database with system defaults + user custom entries
+-   System subcategories (`is_system=true`) cannot be edited/deleted by users
+
+**Implementation:**
+
+-   Added `Subcategory` model with user_id (null for system), category, name, is_system, is_active
+-   Created `/subcategories` API endpoints (GET, POST, PUT, DELETE)
+-   Updated AddExpenseModal to load subcategories from API with fallback to hardcoded
+-   Added migration to seed system default subcategories
+
+**Impact:**
+
+-   Users can now customize expense categorization
+-   Maintains data integrity with system defaults
+-   Backward compatible with existing expense data
+-   Foundation for Goals feature (Goal Contribution subcategories)
+
+---
+
 ### Clarified Credit Card Terminology: "Available" vs "Balance" (Issue #98)
 
 **Context:** Confusion arose between traditional credit card terminology and Bloom's prepaid card model. Traditional credit cards use "credit balance" to mean "amount owed," but Bloom treats credit cards like prepaid cards where "balance" means "money you have available."

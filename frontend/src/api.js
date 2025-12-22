@@ -143,4 +143,13 @@ export const userAPI = {
         api.post("/user/delete-all", { confirmation }),
 };
 
+export const subcategoryAPI = {
+    getAll: (category = null) =>
+        api.get("/subcategories", { params: category ? { category } : {} }),
+    create: (data) => api.post("/subcategories", data),
+    update: (id, data) => api.put(`/subcategories/${id}`, data),
+    delete: (id, force = false) =>
+        api.delete(`/subcategories/${id}`, { params: { force } }),
+};
+
 export default api;

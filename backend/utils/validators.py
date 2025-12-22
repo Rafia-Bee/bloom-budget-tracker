@@ -90,9 +90,8 @@ def sanitize_string(value):
 ALLOWED_CATEGORIES = [
     "Fixed Expenses",
     "Flexible Expenses",
-    "Leisure",
+    "Savings & Investments",
     "Debt Payments",
-    "Savings",
 ]
 
 ALLOWED_INCOME_TYPES = ["salary", "freelance", "investment", "gift", "other"]

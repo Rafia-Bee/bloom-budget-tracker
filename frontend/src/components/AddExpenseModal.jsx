@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI, recurringExpenseAPI } from '../api'
+import { debtAPI, recurringExpenseAPI, subcategoryAPI } from '../api'
 import PropTypes from 'prop-types';
 
 function AddExpenseModal({ onClose, onAdd }) {
@@ -24,9 +24,11 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
+  const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
     loadDebts()
+    loadSubcategories()
   }, [])
 
   const loadDebts = async () => {
@@ -38,6 +40,17 @@ function AddExpenseModal({ onClose, onAdd }) {
     }
   }
 
+  const loadSubcategories = async () => {
+    try {
+      const response = await subcategoryAPI.getAll()
+      setSubcategoriesData(response.data.subcategories || {})
+    } catch (error) {
+      console.error('Failed to load subcategories:', error)
+      // Fallback to empty object if API fails
+      setSubcategoriesData({})
+    }
+  }
+
   const categories = [
     'Fixed Expenses',
     'Flexible Expenses',
@@ -46,13 +59,24 @@ function AddExpenseModal({ onClose, onAdd }) {
   ]
 
   const getSubcategories = () => {
+    // Use API data if available, otherwise fallback to hardcoded
+    if (subcategoriesData[category]) {
+      const subcats = subcategoriesData[category].map(s => typeof s === 'string' ? s : s.name)
+      // Add debts to Debt Payments category
+      if (category === 'Debt Payments') {
+        return [...subcats, ...debts.map(d => d.name)]
+      }
+      return subcats
+    }
+
+    // Fallback to hardcoded subcategories
     const baseSubcategories = {
       'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
       'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
       'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
       'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
     }
-    return baseSubcategories
+    return baseSubcategories[category] || []
   }
 
   const subcategories = getSubcategories()
@@ -62,11 +86,17 @@ function AddExpenseModal({ onClose, onAdd }) {
   const handleSubcategoryChange = (value) => {
     setSubcategory(value)
 
-    // If Debt Payments category and a debt is selected, autofill the amount and name
-    if (category === 'Debt Payments' && value !== 'Credit Card') {
-      const selectedDebt = debts.find(d => d.name === value)
-      if (selectedDebt && selectedDebt.monthly_payment) {
-        setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
+    // If Debt Payments category, autofill the name based on selection
+    if (category === 'Debt Payments') {
+      if (value === 'Credit Card') {
+        setName('Credit Card Payment')
+        setAmount('') // Clear amount for manual entry
+      } else {
+        // For other debts, try to autofill amount from debt data
+        const selectedDebt = debts.find(d => d.name === value)
+        if (selectedDebt && selectedDebt.monthly_payment) {
+          setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
+        }
         setName(`${value} Payment`)
       }
     }
@@ -190,8 +220,30 @@ function AddExpenseModal({ onClose, onAdd }) {
             <select
               value={category}
               onChange={(e) => {
-                setCategory(e.target.value)
-                setSubcategory(subcategories[e.target.value][0])
+                const newCategory = e.target.value
+                setCategory(newCategory)
+
+                // Get subcategories for the new category
+                let newSubcats = []
+                if (subcategoriesData[newCategory]) {
+                  newSubcats = subcategoriesData[newCategory].map(s => typeof s === 'string' ? s : s.name)
+                  if (newCategory === 'Debt Payments') {
+                    newSubcats = [...newSubcats, ...debts.map(d => d.name)]
+                  }
+                } else {
+                  // Fallback to hardcoded
+                  const fallback = {
+                    'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
+                    'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
+                    'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
+                    'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
+                  }
+                  newSubcats = fallback[newCategory] || []
+                }
+
+                if (newSubcats.length > 0) {
+                  setSubcategory(newSubcats[0])
+                }
               }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
@@ -208,7 +260,7 @@ function AddExpenseModal({ onClose, onAdd }) {
               onChange={(e) => handleSubcategoryChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
             >
-              {subcategories[category].map(sub => (
+              {subcategories.map(sub => (
                 <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>
