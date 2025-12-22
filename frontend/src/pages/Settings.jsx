@@ -10,6 +10,9 @@ import { subcategoryAPI } from '../api'
 import Header from '../components/Header'
 import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
 import EditSubcategoryModal from '../components/EditSubcategoryModal'
+import ExportImportModal from '../components/ExportImportModal'
+import BankImportModal from '../components/BankImportModal'
+import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 
 function Settings({ setIsAuthenticated }) {
   const [activeTab, setActiveTab] = useState('subcategories')
@@ -21,6 +24,12 @@ function Settings({ setIsAuthenticated }) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingSubcategory, setEditingSubcategory] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+
+  // Modal states for Header functionality
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportMode, setExportMode] = useState('export')
+  const [showBankImportModal, setShowBankImportModal] = useState(false)
+  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
   const categories = [
     'Fixed Expenses',
@@ -119,8 +128,14 @@ function Settings({ setIsAuthenticated }) {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bloom-pink/5 via-purple-50/30 to-cyan-100/20 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <Header setIsAuthenticated={setIsAuthenticated} />
+    <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-dark-base dark:to-dark-surface">
+      <Header
+        setIsAuthenticated={setIsAuthenticated}
+        onExport={() => { setShowExportModal(true); setExportMode('export'); }}
+        onImport={() => { setShowExportModal(true); setExportMode('import'); }}
+        onBankImport={() => setShowBankImportModal(true)}
+        onShowExperimental={() => setShowExperimentalModal(true)}
+      />
 
       <div className="container mx-auto px-6 py-8">
         <div className="mb-8">
@@ -360,6 +375,29 @@ function Settings({ setIsAuthenticated }) {
             setEditingSubcategory(null)
           }}
           onUpdate={handleUpdateSubcategory}
+        />
+      )}
+
+      {/* Header Modal Components */}
+      {showExportModal && (
+        <ExportImportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          mode={exportMode}
+        />
+      )}
+
+      {showBankImportModal && (
+        <BankImportModal
+          isOpen={showBankImportModal}
+          onClose={() => setShowBankImportModal(false)}
+        />
+      )}
+
+      {showExperimentalModal && (
+        <ExperimentalFeaturesModal
+          isOpen={showExperimentalModal}
+          onClose={() => setShowExperimentalModal(false)}
         />
       )}
     </div>

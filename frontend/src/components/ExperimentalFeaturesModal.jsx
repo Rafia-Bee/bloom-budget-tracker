@@ -49,9 +49,14 @@ export default function ExperimentalFeaturesModal({ onClose }) {
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text">⚗️ Experimental Features</h2>
-            <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">Enable features in development</p>
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-yellow-500 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text">Experimental Features</h2>
+              <p className="text-sm text-gray-500 dark:text-dark-text-secondary mt-1">Enable features in development</p>
+            </div>
           </div>
           <button
             onClick={onClose}
