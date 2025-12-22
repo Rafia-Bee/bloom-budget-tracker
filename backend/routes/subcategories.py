@@ -141,27 +141,37 @@ def update_subcategory(id):
 
     # Update name if provided
     if "name" in data:
-        name = data["name"].strip()
+        old_name = subcategory.name
+        new_name = data["name"].strip()
 
         # Check for duplicate
         existing = Subcategory.query.filter(
             Subcategory.id != id,
             (Subcategory.user_id == current_user_id) | (Subcategory.user_id == None),
             Subcategory.category == subcategory.category,
-            db.func.lower(Subcategory.name) == name.lower(),
+            db.func.lower(Subcategory.name) == new_name.lower(),
         ).first()
 
         if existing:
             return (
                 jsonify(
                     {
-                        "error": f"Subcategory '{name}' already exists in {subcategory.category}"
+                        "error": f"Subcategory '{new_name}' already exists in {subcategory.category}"
                     }
                 ),
                 409,
             )
 
-        subcategory.name = name
+        # Update all existing expenses to use the new subcategory name
+        if old_name != new_name:
+            expenses_to_update = Expense.query.filter_by(
+                user_id=current_user_id, subcategory=old_name
+            ).all()
+
+            for expense in expenses_to_update:
+                expense.subcategory = new_name
+
+        subcategory.name = new_name
 
     # Update active status if provided
     if "is_active" in data:
@@ -213,23 +223,70 @@ def delete_subcategory(id):
         return (
             jsonify(
                 {
-                    "error": f"Subcategory is used by {expense_count} expense(s). Use force=true to delete anyway.",
+                    "error": f"Cannot delete subcategory - it's used by {expense_count} expense(s)",
                     "expense_count": expense_count,
+                    "can_force": True,
                 }
             ),
             409,
         )
 
-    # Soft delete (mark as inactive)
-    subcategory.is_active = False
-    db.session.commit()
+    if force:
+        # Force delete - move expenses to "Other" subcategory instead of deleting
+        if expense_count > 0:
+            # Use the system "Other" subcategory for this category
+            other_subcategory = Subcategory.query.filter_by(
+                name="Other", category=subcategory.category, is_system=True
+            ).first()
 
-    return (
-        jsonify(
-            {
-                "message": "Subcategory deleted successfully",
-                "expense_count": expense_count,
-            }
-        ),
-        200,
-    )
+            if not other_subcategory:
+                # This shouldn't happen with system defaults, but create as fallback
+                other_subcategory = Subcategory(
+                    name="Other",
+                    category=subcategory.category,
+                    user_id=None,  # System subcategory
+                    is_system=True,
+                    is_active=True,
+                )
+                db.session.add(other_subcategory)
+                db.session.flush()  # Get ID before continuing
+
+            # Move all expenses to "Other" subcategory and add explanatory note
+            expenses_to_update = Expense.query.filter_by(
+                user_id=current_user_id, subcategory=subcategory.name
+            ).all()
+
+            for expense in expenses_to_update:
+                # Add note about the subcategory change
+                note_text = f"[Auto-updated] Moved from deleted subcategory '{subcategory.name}'"
+                if expense.notes:
+                    expense.notes = f"{expense.notes}\n{note_text}"
+                else:
+                    expense.notes = note_text
+                expense.subcategory = "Other"
+
+        # Delete the subcategory itself
+        db.session.delete(subcategory)
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "message": f"Subcategory deleted. {expense_count} expense(s) moved to 'Other' subcategory",
+                    "expense_count": expense_count,
+                }
+            ),
+            200,
+        )
+    else:
+        # Soft delete (mark as inactive)
+        subcategory.is_active = False
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "message": "Subcategory deleted successfully",
+                    "expense_count": expense_count,
+                }
+            ),
+            200,
+        )

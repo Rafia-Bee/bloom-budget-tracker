@@ -134,9 +134,14 @@ def create_expense():
 
     # Validate category
     if data["category"] not in ALLOWED_CATEGORIES:
-        return jsonify({
-            "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
-        }), 400
+        return (
+            jsonify(
+                {
+                    "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
+                }
+            ),
+            400,
+        )
 
     date_str = data.get("date")
     if date_str:
@@ -255,9 +260,14 @@ def update_expense(expense_id):
 
     # Validate category if provided
     if "category" in data and data["category"] not in ALLOWED_CATEGORIES:
-        return jsonify({
-            "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
-        }), 400
+        return (
+            jsonify(
+                {
+                    "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
+                }
+            ),
+            400,
+        )
 
     # Track if this was a debt payment and if amount changed
     old_was_debt_payment = (

@@ -4,6 +4,30 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-01-22
+
+### Enhanced Subcategories: Force Delete & User Hints
+
+**Context:** User feedback revealed two issues: force delete was destructive (deleted expenses), and new users didn't discover custom subcategory feature.
+
+**Decision:**
+
+1. **Force Delete Behavior**: Instead of permanently deleting expenses, move them to "Other" subcategory with explanatory notes
+2. **System "Other" Category**: Make "Other" a system default in all categories as catch-all
+3. **User Discovery Hints**: Add UI hints in Settings page and expense modals to guide new users
+
+**Implementation:**
+
+-   Updated force delete to preserve expense data by moving to "Other" + adding auto-generated notes
+-   Added "Other" as system subcategory in all 4 categories via migration
+-   Added helpful UI hints in Settings (blue info box) and AddExpenseModal (subtle text below dropdown)
+
+**Rationale:** Data preservation is critical for expense tracking. "Other" provides logical fallback category. UI hints improve feature discoverability without cluttering interface.
+
+**Impact:** Users maintain complete expense history during subcategory reorganization. New users naturally discover customization features.
+
+---
+
 ## 2025-12-22
 
 ### Implemented Custom Subcategories System (Issue #98)

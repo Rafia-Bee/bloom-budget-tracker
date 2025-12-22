@@ -32,9 +32,11 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
   })
 
   useEffect(() => {
-    loadSubcategories()
-    loadDebts()
-  }, [])
+    if (isOpen) {
+      loadSubcategories()
+      loadDebts()
+    }
+  }, [isOpen])
 
   const loadDebts = async () => {
     try {

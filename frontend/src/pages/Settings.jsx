@@ -74,10 +74,14 @@ function Settings({ setIsAuthenticated }) {
       await loadSubcategories()
       setDeleteConfirm(null)
     } catch (err) {
-      if (err.response?.status === 409) {
-        // Subcategory is in use - show force delete option
-        setError(`${err.response.data.error} Click "Force Delete" to delete anyway.`)
-        setDeleteConfirm({ ...deleteConfirm, showForce: true })
+      if (err.response?.status === 409 && err.response?.data?.can_force) {
+        // Subcategory is in use - show error in modal with force option
+        setDeleteConfirm({
+          ...subcategory,
+          showForce: true,
+          error: err.response.data.error,
+          expense_count: err.response.data.expense_count
+        })
       } else {
         setError(err.response?.data?.error || 'Failed to delete subcategory')
       }
@@ -91,7 +95,10 @@ function Settings({ setIsAuthenticated }) {
       setDeleteConfirm(null)
       setError('')
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to delete subcategory')
+      setDeleteConfirm({
+        ...deleteConfirm,
+        error: err.response?.data?.error || 'Failed to delete subcategory'
+      })
     }
   }
 
@@ -149,7 +156,7 @@ function Settings({ setIsAuthenticated }) {
         {/* Subcategories Tab */}
         {activeTab === 'subcategories' && (
           <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Subcategories</h2>
                 <p className="text-gray-600 dark:text-gray-300">Manage your expense subcategories</p>
@@ -160,6 +167,22 @@ function Settings({ setIsAuthenticated }) {
               >
                 + Add Subcategory
               </button>
+            </div>
+
+            {/* Help hint for new users */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <div className="text-blue-600 dark:text-blue-400 mt-0.5">
+                  💡
+                </div>
+                <div>
+                  <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-1">Pro Tip: Customize Your Categories</h3>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    Create custom subcategories to better organize your expenses. For example, add "Gym Membership" under Fixed Expenses,
+                    or "Coffee Shops" under Flexible Expenses. You can edit, delete, and organize them by category.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Category Tabs */}
@@ -272,9 +295,23 @@ function Settings({ setIsAuthenticated }) {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Delete Subcategory
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Are you sure you want to delete "{deleteConfirm.name}"? This action cannot be undone.
-              </p>
+
+              {deleteConfirm.error ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                  <p className="text-red-700 dark:text-red-400 text-sm">
+                    {deleteConfirm.error}
+                  </p>
+                  {deleteConfirm.expense_count && (
+                    <p className="text-red-600 dark:text-red-300 text-xs mt-2">
+                      Force Delete will move {deleteConfirm.expense_count} expense(s) to "Other" subcategory instead of deleting them.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Are you sure you want to delete "{deleteConfirm.name}"? This action cannot be undone.
+                </p>
+              )}
 
               <div className="flex space-x-3 justify-center">
                 <button
@@ -283,12 +320,14 @@ function Settings({ setIsAuthenticated }) {
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={() => handleDeleteSubcategory(deleteConfirm)}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
+                {!deleteConfirm.showForce && (
+                  <button
+                    onClick={() => handleDeleteSubcategory(deleteConfirm)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
                 {deleteConfirm.showForce && (
                   <button
                     onClick={() => handleForceDeleteSubcategory(deleteConfirm)}

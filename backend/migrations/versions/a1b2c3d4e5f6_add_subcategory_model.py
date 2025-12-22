@@ -49,18 +49,22 @@ def upgrade():
         ("Fixed Expenses", "Utilities"),
         ("Fixed Expenses", "Insurance"),
         ("Fixed Expenses", "Subscriptions"),
+        ("Fixed Expenses", "Other"),
         # Flexible Expenses
         ("Flexible Expenses", "Food"),
         ("Flexible Expenses", "Transportation"),
         ("Flexible Expenses", "Entertainment"),
         ("Flexible Expenses", "Shopping"),
         ("Flexible Expenses", "Health"),
+        ("Flexible Expenses", "Other"),
         # Savings & Investments
         ("Savings & Investments", "Emergency Fund"),
         ("Savings & Investments", "Investments"),
         ("Savings & Investments", "Savings Goals"),
+        ("Savings & Investments", "Other"),
         # Debt Payments
         ("Debt Payments", "Credit Card"),
+        ("Debt Payments", "Other"),
     ]
 
     # Build insert statement

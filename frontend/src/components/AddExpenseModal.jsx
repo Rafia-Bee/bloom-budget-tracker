@@ -27,9 +27,10 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
+    // Always load fresh data when component mounts (modal opens)
     loadDebts()
     loadSubcategories()
-  }, [])
+  }, []) // Only run on mount since modal is conditionally rendered
 
   const loadDebts = async () => {
     try {
@@ -71,10 +72,10 @@ function AddExpenseModal({ onClose, onAdd }) {
 
     // Fallback to hardcoded subcategories
     const baseSubcategories = {
-      'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
-      'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
-      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
-      'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
+      'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions', 'Other'],
+      'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health', 'Other'],
+      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals', 'Other'],
+      'Debt Payments': ['Credit Card', 'Other', ...debts.map(d => d.name)]
     }
     return baseSubcategories[category] || []
   }
@@ -264,6 +265,9 @@ function AddExpenseModal({ onClose, onAdd }) {
                 <option key={sub} value={sub}>{sub}</option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              💡 Need a custom subcategory? Create one in Settings → Subcategories
+            </p>
           </div>
 
           <div>

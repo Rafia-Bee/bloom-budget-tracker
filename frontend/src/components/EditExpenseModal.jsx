@@ -21,9 +21,10 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
   const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
+    // Always load fresh data when component mounts (modal opens)
     loadDebts()
     loadSubcategories()
-  }, [])
+  }, []) // Only run on mount since modal is conditionally rendered
 
   const loadDebts = async () => {
     try {
@@ -64,10 +65,10 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
 
     // Fallback to hardcoded subcategories
     const baseSubcategories = {
-      'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
-      'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
-      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
-      'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
+      'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions', 'Other'],
+      'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health', 'Other'],
+      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals', 'Other'],
+      'Debt Payments': ['Credit Card', 'Other', ...debts.map(d => d.name)]
     }
     return baseSubcategories[category] || []
   }
