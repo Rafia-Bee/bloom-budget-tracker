@@ -6,6 +6,98 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Fixed Export/Import Bugs for Comprehensive Data Portability (Issue #90)
+
+**Context:** Export/import functionality was designed to transfer all user data between environments, but had two critical bugs preventing full data portability.
+
+**Problems:**
+
+1. **Export Bug:** Only exported `is_active=True` salary periods
+
+    - If user had 2 periods (Nov 20-Dec 19 inactive, Dec 20-Jan 19 active), only current period exported
+    - Historical periods lost during migration
+    - Made testing with production data incomplete
+
+2. **Import Bug:** No overlap detection for salary periods
+
+    - Used exact match check: `start_date == start_date AND end_date == end_date`
+    - Importing overlapping periods (Nov 15-Dec 14 vs Nov 20-Dec 19) created both → invalid state
+    - Multiple periods covering same dates broke budget calculations
+
+3. **Missing Version Field:** No compatibility checking
+    - Future format changes would break old exports
+    - No way to warn users about incomplete imports
+
+**Solutions:**
+
+1. **Export All Periods:**
+
+```python
+# Before
+salary_periods = SalaryPeriod.query.filter_by(
+    user_id=current_user_id, is_active=True  # Only active!
+).all()
+
+# After
+salary_periods = SalaryPeriod.query.filter_by(
+    user_id=current_user_id
+).order_by(SalaryPeriod.start_date).all()  # All periods, chronological
+```
+
+2. **Overlap Detection:**
+
+```python
+# Before: exact match only
+existing = SalaryPeriod.query.filter_by(
+    start_date=start_date, end_date=end_date
+).first()
+
+# After: detect ANY overlap
+overlapping = SalaryPeriod.query.filter(
+    and_(
+        SalaryPeriod.start_date <= import_end_date,
+        SalaryPeriod.end_date >= import_start_date
+    )
+).first()
+
+if overlapping:
+    skipped_counts["salary_periods"] += 1
+    continue  # Reject overlapping period
+```
+
+3. **Version Field:**
+
+```python
+export_data = {
+    "version": "2.0",
+    "exported_at": datetime.now().isoformat(),
+    "data": {...}
+}
+```
+
+**Rationale:**
+
+-   **Export all periods:** Historical data is valuable for analysis and debugging. Inactive periods represent completed budget cycles with full expense/income history.
+-   **Reject overlaps:** Allowing overlapping salary periods would break:
+    -   Carryover calculations (which week owns the overlap?)
+    -   Balance displays (double-counting expenses?)
+    -   Period navigation (which period is "active"?)
+-   **Future enhancement:** "Smart merge" - import only non-overlapping portion (e.g., Nov 15-19 if user has Nov 20-Dec 19)
+
+**Impact:**
+
+-   ✅ Complete data export (all salary periods, not just current)
+-   ✅ Prevents invalid state from overlapping periods
+-   ✅ Version field enables future compatibility checking
+-   ✅ Clear skip messages when periods overlap
+-   ⚠️ Users must manually resolve overlapping periods (delete existing or adjust dates)
+
+**Files Changed:**
+
+-   [backend/routes/export_import.py](backend/routes/export_import.py): Lines 151-158 (version), Lines 195-202 (export all), Lines 566-586 (overlap detection)
+
+---
+
 ### Redesigned Experimental Features UX - Inline Toggle (Issue #95)
 
 **Context:** After implementing collapsible submenu system, user tested it and found the experimental features flow too complex: click submenu → expand → click Delete All Data → modal with feature flag toggle → enable flag → finally see delete button.

@@ -152,7 +152,11 @@ def export_data():
         if not export_types:
             return jsonify({"error": "No data types selected for export"}), 400
 
-        export_data = {"exported_at": datetime.now().isoformat(), "data": {}}
+        export_data = {
+            "version": "2.0",
+            "exported_at": datetime.now().isoformat(),
+            "data": {},
+        }
 
         # Export Debts
         if "debts" in export_types:
@@ -194,9 +198,11 @@ def export_data():
 
         # Export Salary Periods
         if "salary_periods" in export_types:
-            salary_periods = SalaryPeriod.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).all()
+            salary_periods = (
+                SalaryPeriod.query.filter_by(user_id=current_user_id)
+                .order_by(SalaryPeriod.start_date)
+                .all()
+            )
             export_data["data"]["salary_periods"] = []
 
             for sp in salary_periods:
@@ -552,15 +558,16 @@ def import_data():
                         sp_data["end_date"].replace("Z", "+00:00")
                     ).date()
 
-                    # Check for duplicate: same start_date and end_date
-                    existing_salary_period = SalaryPeriod.query.filter_by(
-                        user_id=current_user_id,
-                        start_date=start_date,
-                        end_date=end_date,
-                        is_active=True,
+                    # Check for overlapping date ranges (not just exact match)
+                    overlapping_period = SalaryPeriod.query.filter(
+                        and_(
+                            SalaryPeriod.user_id == current_user_id,
+                            SalaryPeriod.start_date <= end_date,
+                            SalaryPeriod.end_date >= start_date,
+                        )
                     ).first()
 
-                    if existing_salary_period:
+                    if overlapping_period:
                         skipped_counts["salary_periods"] += 1
                         continue
 
