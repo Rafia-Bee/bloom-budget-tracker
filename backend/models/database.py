@@ -33,6 +33,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
+    recurring_lookahead_days = db.Column(db.Integer, default=14, nullable=False)
 
     budget_periods = db.relationship(
         "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
@@ -54,6 +55,10 @@ class User(db.Model):
         db.CheckConstraint("email LIKE '%@%'", name="check_user_email_format"),
         db.CheckConstraint(
             "failed_login_attempts >= 0", name="check_user_failed_attempts"
+        ),
+        db.CheckConstraint(
+            "recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90",
+            name="check_user_lookahead_range",
         ),
     )
 

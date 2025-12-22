@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import (
     db,
+    User,
     Expense,
     Income,
     BudgetPeriod,
@@ -101,6 +102,85 @@ def delete_all_user_data():
                         "recurring_expenses": recurring_count,
                         "total": total_records,
                     },
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@user_data_bp.route("/settings/recurring-lookahead", methods=["GET"])
+@jwt_required()
+def get_recurring_lookahead():
+    """
+    Get the user's recurring expense lookahead setting.
+
+    Returns:
+        - recurring_lookahead_days: Number of days to look ahead (7-90)
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        return jsonify({"recurring_lookahead_days": user.recurring_lookahead_days}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@user_data_bp.route("/settings/recurring-lookahead", methods=["PUT"])
+@jwt_required()
+def update_recurring_lookahead():
+    """
+    Update the user's recurring expense lookahead setting.
+
+    Body:
+        - recurring_lookahead_days: Number of days (7-90)
+
+    Returns:
+        - Success message with updated value
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        data = request.get_json()
+        days = data.get("recurring_lookahead_days")
+
+        if days is None:
+            return jsonify({"error": "recurring_lookahead_days is required"}), 400
+
+        # Validate range
+        try:
+            days = int(days)
+        except (ValueError, TypeError):
+            return jsonify({"error": "recurring_lookahead_days must be a number"}), 400
+
+        if days < 7 or days > 90:
+            return (
+                jsonify(
+                    {"error": "recurring_lookahead_days must be between 7 and 90 days"}
+                ),
+                400,
+            )
+
+        user.recurring_lookahead_days = days
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Recurring lookahead setting updated successfully",
+                    "recurring_lookahead_days": days,
                 }
             ),
             200,

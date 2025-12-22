@@ -40,7 +40,7 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     v1_bp.register_blueprint(password_reset_bp, url_prefix="/auth")
     v1_bp.register_blueprint(export_import_bp)
-    v1_bp.register_blueprint(user_data_bp, url_prefix="/user")
+    v1_bp.register_blueprint(user_data_bp, url_prefix="/user-data")
     v1_bp.register_blueprint(subcategories_bp)
     v1_bp.register_blueprint(goals_bp, url_prefix="/goals")
 

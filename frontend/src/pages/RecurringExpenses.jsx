@@ -21,12 +21,15 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [editingExpense, setEditingExpense] = useState(null)
   const [generating, setGenerating] = useState(false)
   const [generationResult, setGenerationResult] = useState(null)
-  const [showConfirmGenerate, setShowConfirmGenerate] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
   const [showExperimentalModal, setShowExperimentalModal] = useState(false)
+  const [view, setView] = useState('active') // 'active' or 'upcoming'
+  const [scheduledExpenses, setScheduledExpenses] = useState([])
+  const [selectedScheduled, setSelectedScheduled] = useState([])
+  const [selectionMode, setSelectionMode] = useState(false)
 
   const handleExport = () => {
     setExportMode('export');
@@ -46,6 +49,14 @@ function RecurringExpenses({ setIsAuthenticated }) {
     loadRecurringExpenses()
   }, [])
 
+  useEffect(() => {
+    // Load scheduled expenses when switching to upcoming view
+    if (view === 'upcoming') {
+      loadScheduledExpenses()
+      setSelectedScheduled([])
+    }
+  }, [view])
+
   const loadRecurringExpenses = async () => {
     try {
       const response = await recurringExpenseAPI.getAll()
@@ -57,16 +68,17 @@ function RecurringExpenses({ setIsAuthenticated }) {
     }
   }
 
+  const loadScheduledExpenses = async () => {
+    try {
+      const response = await recurringExpenseAPI.previewUpcoming()
+      setScheduledExpenses(response.data.upcoming || [])
+    } catch (error) {
+      console.error('Failed to load scheduled expenses:', error)
+    }
+  }
+
   const handleAdd = async (data) => {
     await recurringExpenseAPI.create(data)
-
-    // Automatically generate the first instance
-    try {
-      await recurringExpenseAPI.generateNow(false, 90)
-    } catch (err) {
-      console.warn('Failed to auto-generate recurring expense:', err)
-    }
-
     await loadRecurringExpenses()
     setShowAddModal(false)
   }
@@ -108,23 +120,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
       await loadRecurringExpenses()
     } catch (error) {
       console.error('Failed to delete recurring expense:', error)
-    }
-  }
-
-  const handleGenerateNow = async () => {
-    setShowConfirmGenerate(false)
-    setGenerating(true)
-    setGenerationResult(null)
-
-    try {
-      const response = await recurringExpenseAPI.generateNow(false)
-      setGenerationResult(response.data)
-      await loadRecurringExpenses()
-    } catch (error) {
-      console.error('Failed to generate expenses:', error)
-      setGenerationResult({ message: 'Failed to generate expenses', generated_count: 0 })
-    } finally {
-      setGenerating(false)
     }
   }
 
@@ -172,26 +167,64 @@ function RecurringExpenses({ setIsAuthenticated }) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Recurring Expenses</h2>
-            <p className="text-gray-600 dark:text-dark-text-secondary mt-1">Manage your automatic expense templates</p>
+            {/* View Toggle Buttons */}
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setView('active')}
+                className={`px-4 py-2 rounded-lg transition font-semibold ${
+                  view === 'active'
+                    ? 'bg-bloom-pink text-white'
+                    : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setView('upcoming')}
+                className={`px-4 py-2 rounded-lg transition font-semibold ${
+                  view === 'upcoming'
+                    ? 'bg-bloom-pink text-white'
+                    : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                }`}
+              >
+                Upcoming
+              </button>
+            </div>
+            <p className="text-gray-600 dark:text-dark-text-secondary mt-1">
+              {view === 'active' ? 'Manage your automatic expense templates' : 'Preview and confirm scheduled expenses'}
+            </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => setShowConfirmGenerate(true)}
-              disabled={generating || recurringExpenses.filter(e => e.is_active).length === 0}
-              className="px-6 py-3 bg-green-600 dark:bg-dark-mint/30 text-white dark:text-dark-success rounded-lg hover:bg-green-700 dark:hover:bg-dark-mint/40 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              title={recurringExpenses.filter(e => e.is_active).length === 0
-                ? "No active recurring expenses to generate"
-                : "Generate due recurring expenses now"}
-            >
-              {generating ? 'Generating...' : '⚡ Generate Now'}
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors font-semibold shadow-sm whitespace-nowrap"
-            >
-              + Add Recurring Expense
-            </button>
+            {view === 'active' ? (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-6 py-3 bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors font-semibold shadow-sm whitespace-nowrap"
+              >
+                + Add Recurring Expense
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  try {
+                    setGenerating(true)
+                    const result = await recurringExpenseAPI.generateNow(false)
+                    setGenerationResult(result.data)
+                    loadScheduledExpenses() // Reload to show updated list
+                  } catch (error) {
+                    console.error('Failed to confirm scheduled expenses:', error)
+                  } finally {
+                    setGenerating(false)
+                  }
+                }}
+                disabled={generating || scheduledExpenses.length === 0}
+                className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {generating ? 'Confirming...' : 'Confirm Scheduled Expenses'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -227,8 +260,11 @@ function RecurringExpenses({ setIsAuthenticated }) {
           <CatLoading message="Loading recurring expenses..." />
         ) : (
           <div className="space-y-6">
-            {/* Active Recurring Expenses */}
-            <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
+            {/* Active View - Show active/inactive recurring expenses */}
+            {view === 'active' && (
+              <>
+                {/* Active Recurring Expenses */}
+                <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">
                 Active ({activeExpenses.length})
               </h3>
@@ -476,6 +512,48 @@ function RecurringExpenses({ setIsAuthenticated }) {
                 </div>
               </div>
             )}
+              </>
+            )}
+
+            {/* Upcoming View - Show scheduled expenses */}
+            {view === 'upcoming' && (
+              <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
+                {scheduledExpenses.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
+                    <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p>No upcoming scheduled expenses</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {scheduledExpenses.map((expense, idx) => (
+                      <div
+                        key={`scheduled-${expense.template_id}-${idx}`}
+                        className="border border-gray-200 dark:border-dark-border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                              <h4 className="font-semibold text-gray-800 dark:text-dark-text">{expense.name}</h4>
+                              <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded">
+                                {new Date(expense.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-dark-text-tertiary">
+                              €{expense.amount.toFixed(2)} • {expense.category} {expense.subcategory && `• ${expense.subcategory}`}
+                            </div>
+                            <div className="text-xs text-gray-400 dark:text-dark-text-tertiary mt-1 capitalize">
+                              {expense.frequency}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -494,32 +572,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
           onAdd={handleEdit}
           existingExpense={editingExpense}
         />
-      )}
-
-      {/* Confirm Generate Modal */}
-      {showConfirmGenerate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Generate Recurring Expenses?</h3>
-            <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
-              This will create expense entries for all recurring expenses that are due. Do you want to continue?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowConfirmGenerate(false)}
-                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-elevated/80 transition font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGenerateNow}
-                className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition font-semibold"
-              >
-                ⚡ Generate Now
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Delete Confirmation Modal */}

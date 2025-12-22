@@ -4,6 +4,66 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-23
+
+### Recurring Expenses: Radical Redesign Implementation (#93)
+
+**Context:** User requested complete overhaul of recurring expense system from automatic scheduling to on-demand generation with user-configurable preview settings.
+
+**Decision:**
+
+1. **On-Demand Generation**: Removed all automatic recurring expense generation
+
+    - Eliminated automatic generation from AddExpenseModal
+    - Removed "Generate Now" button from RecurringExpenses page
+    - Removed GitHub Actions workflow for automated generation
+
+2. **User-Configurable Lookahead**: Added recurring_lookahead_days setting to User model
+
+    - Range: 7-90 days (default 14)
+    - Database column with CHECK constraint
+    - API endpoints: GET/PUT `/user-data/settings/recurring-lookahead`
+    - Settings → Preferences UI for configuration
+
+3. **Dashboard Integration**: Added Transactions/Scheduled toggle
+
+    - Shows upcoming recurring expenses in scheduled view
+    - Uses user's lookahead setting for preview window
+    - "Confirm Schedule" button generates expenses on-demand
+
+4. **RecurringExpenses Integration**: Added Active/Upcoming toggle
+    - Active tab: Manage templates (no Generate Now button)
+    - Upcoming tab: Preview and confirm scheduled expenses
+    - Bulk selection/deletion for scheduled items
+
+**Implementation:**
+
+-   **Backend Changes**:
+
+    -   User model: Added `recurring_lookahead_days` column with constraint
+    -   Routes: Added lookahead setting endpoints in `user_data.py`
+    -   Generator: Updated to use user setting as default in `recurring_generation.py`
+    -   API: Modified `recurringExpenseAPI` to support null daysAhead (uses user setting)
+
+-   **Frontend Changes**:
+
+    -   Dashboard: Added transactionView state with Transactions/Scheduled toggle
+    -   RecurringExpenses: Added view state with Active/Upcoming toggle
+    -   Settings: Added Preferences tab with lookahead dropdown (7-90 days)
+    -   Removed automatic generation from AddExpenseModal
+
+-   **Database Migration**:
+    -   Added `recurring_lookahead_days` INTEGER NOT NULL DEFAULT 14 to users table
+    -   Check constraint: `recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90`
+
+**Rationale:** User feedback indicated automatic generation was intrusive and unpredictable. On-demand model gives users full control over when expenses are created while maintaining the convenience of templates. User-configurable lookahead accommodates different planning horizons (weekly vs monthly expense cycles).
+
+**Impact:** Complete shift from "push" to "pull" model for recurring expenses. Users now intentionally preview and confirm scheduled expenses rather than having them automatically generated. Improved user agency and predictability while maintaining template convenience.
+
+**Status:** ✅ FULLY COMPLETE - All automatic generation removed, on-demand system implemented, user lookahead configuration functional.
+
+---
+
 ## 2025-12-22
 
 ### Goals & Savings: Complete Feature Implementation (#4)

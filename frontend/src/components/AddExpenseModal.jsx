@@ -149,10 +149,6 @@ function AddExpenseModal({ onClose, onAdd }) {
         }
 
         await recurringExpenseAPI.create(recurringData)
-
-        // Automatically generate the first instance
-        await recurringExpenseAPI.generateNow(false, 60)
-
         onClose()
       } else {
         // Create one-time expense

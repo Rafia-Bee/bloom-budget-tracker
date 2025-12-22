@@ -122,14 +122,21 @@ export const recurringExpenseAPI = {
         api.patch(`/recurring-expenses/${id}/fixed-bill`, {
             is_fixed_bill: isFixedBill,
         }),
-    generateNow: (dryRun = false, daysAhead = 60) =>
+    generateNow: (dryRun = false, daysAhead = null) =>
         api.post(
             `/recurring-generation/generate`,
             {},
-            { params: { dry_run: dryRun, days_ahead: daysAhead } }
+            {
+                params: {
+                    dry_run: dryRun,
+                    ...(daysAhead && { days_ahead: daysAhead }),
+                },
+            }
         ),
-    previewUpcoming: (days = 30) =>
-        api.get(`/recurring-generation/preview`, { params: { days } }),
+    previewUpcoming: (days = null) =>
+        api.get(`/recurring-generation/preview`, {
+            params: days ? { days } : {},
+        }),
 };
 
 export const salaryPeriodAPI = {
@@ -140,7 +147,13 @@ export const salaryPeriodAPI = {
 
 export const userAPI = {
     deleteAllData: (confirmation) =>
-        api.post("/user/delete-all", { confirmation }),
+        api.post("/user-data/delete-all", { confirmation }),
+    getRecurringLookahead: () =>
+        api.get("/user-data/settings/recurring-lookahead"),
+    updateRecurringLookahead: (days) =>
+        api.put("/user-data/settings/recurring-lookahead", {
+            recurring_lookahead_days: days,
+        }),
 };
 
 export const subcategoryAPI = {

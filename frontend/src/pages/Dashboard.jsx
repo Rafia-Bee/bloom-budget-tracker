@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI } from '../api'
+import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI, recurringExpenseAPI } from '../api'
 import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
@@ -31,6 +31,9 @@ function Dashboard({ setIsAuthenticated }) {
   const [income, setIncome] = useState([])
   const [transactions, setTransactions] = useState([])
   const [filter, setFilter] = useState('all') // 'all', 'income', 'expense', 'debit', 'credit'
+  const [transactionView, setTransactionView] = useState('transactions') // 'transactions' or 'scheduled'
+  const [scheduledExpenses, setScheduledExpenses] = useState([])
+  const [selectedScheduled, setSelectedScheduled] = useState([]) // Array of template_ids for scheduled view
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
@@ -139,6 +142,15 @@ function Dashboard({ setIsAuthenticated }) {
       // calculateCumulativeBalances is called within loadExpenses/loadIncome
     } catch (error) {
       console.error('Failed to load transactions and balances:', error)
+    }
+  }
+
+  const loadScheduledExpenses = async () => {
+    try {
+      const response = await recurringExpenseAPI.previewUpcoming()
+      setScheduledExpenses(response.data.upcoming || [])
+    } catch (error) {
+      console.error('Failed to load scheduled expenses:', error)
     }
   }
 
@@ -273,6 +285,16 @@ function Dashboard({ setIsAuthenticated }) {
     setSelectedTransactions([])
     setSelectionMode(false)
   }, [filter])
+
+  useEffect(() => {
+    // Load scheduled expenses when switching to scheduled view
+    if (transactionView === 'scheduled') {
+      loadScheduledExpenses()
+      setSelectedScheduled([])
+    } else {
+      setSelectedScheduled([])
+    }
+  }, [transactionView])
 
   useEffect(() => {
     // Reload transactions when active filters change
@@ -925,7 +947,29 @@ function Dashboard({ setIsAuthenticated }) {
         <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-4 sm:p-6">
           <div className="mb-6">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">Transactions</h2>
+              {/* View Toggle Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTransactionView('transactions')}
+                  className={`px-4 py-2 rounded-lg transition font-semibold ${
+                    transactionView === 'transactions'
+                      ? 'bg-bloom-pink text-white'
+                      : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                  }`}
+                >
+                  Transactions
+                </button>
+                <button
+                  onClick={() => setTransactionView('scheduled')}
+                  className={`px-4 py-2 rounded-lg transition font-semibold ${
+                    transactionView === 'scheduled'
+                      ? 'bg-bloom-pink text-white'
+                      : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                  }`}
+                >
+                  Scheduled
+                </button>
+              </div>
 
               {/* Selection Mode Controls */}
               <div className="flex items-center gap-2">
@@ -968,9 +1012,13 @@ function Dashboard({ setIsAuthenticated }) {
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
+          {/* Transactions View */}
+          {transactionView === 'transactions' && (
+            <>
+                {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
+                <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
               {/* Advanced Filter Button */}
               <button
                 onClick={() => setShowFilterModal(true)}
@@ -1069,7 +1117,6 @@ function Dashboard({ setIsAuthenticated }) {
                 </label>
               </div>
             )}
-          </div>
 
           {transactions.filter(t => {
             if (filter === 'all') return true
@@ -1225,9 +1272,143 @@ function Dashboard({ setIsAuthenticated }) {
               </button>
             </div>
           )}
-        </div>
-        </>
+          </>
         )}
+
+        {/* Scheduled View */}
+        {transactionView === 'scheduled' && (
+          <>
+            {/* Scheduled Actions */}
+            {scheduledExpenses.length > 0 && (
+              <div className="flex justify-between items-center mb-4">
+                {selectionMode ? (
+                  <>
+                    {selectedScheduled.length > 0 && (
+                      <>
+                        <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                          {selectedScheduled.length} selected
+                        </span>
+                        <button
+                          onClick={async () => {
+                            try {
+                              // Delete selected scheduled items from recurring templates
+                              await Promise.all(
+                                selectedScheduled.map(id => recurringExpenseAPI.delete(id))
+                              )
+                              loadScheduledExpenses()
+                              setSelectedScheduled([])
+                              setSelectionMode(false)
+                            } catch (error) {
+                              console.error('Failed to delete scheduled expenses:', error)
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
+                        >
+                          Delete Selected
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectionMode(false)
+                        setSelectedScheduled([])
+                      }}
+                      className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await recurringExpenseAPI.generateNow(false)
+                        // Reload transactions and switch to transactions view
+                        loadTransactionsAndBalances()
+                        setTransactionView('transactions')
+                      } catch (error) {
+                        console.error('Failed to confirm scheduled expenses:', error)
+                      }
+                    }}
+                    className="px-4 py-2 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition font-semibold flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Confirm Schedule
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Scheduled Expenses List */}
+            {scheduledExpenses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
+                <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>No upcoming scheduled expenses</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {scheduledExpenses.map((expense, idx) => {
+                  const isSelected = selectedScheduled.includes(expense.template_id)
+                  return (
+                    <div
+                      key={`scheduled-${expense.template_id}-${idx}`}
+                      className={`bg-gray-50 dark:bg-dark-elevated rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
+                        isSelected ? 'ring-2 ring-bloom-pink' : ''
+                      }`}
+                      onClick={() => {
+                        if (selectionMode) {
+                          setSelectedScheduled(prev =>
+                            prev.includes(expense.template_id)
+                              ? prev.filter(id => id !== expense.template_id)
+                              : [...prev, expense.template_id]
+                          )
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {selectionMode && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <div>
+                              <h4 className="font-semibold text-gray-800 dark:text-dark-text">
+                                {expense.name}
+                              </h4>
+                              <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                                {expense.category} {expense.subcategory && `• ${expense.subcategory}`}
+                              </p>
+                            </div>
+                            <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                              -€{expense.amount.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
+                            <span>{new Date(expense.date).toLocaleDateString()}</span>
+                            <span className="capitalize">{expense.frequency}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+        </div>
+      </>
+      )}
       </main>
 
       {/* Floating Add Button with Menu - Only show if period exists */}

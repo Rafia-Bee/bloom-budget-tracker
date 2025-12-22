@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { subcategoryAPI } from '../api'
+import { subcategoryAPI, userAPI } from '../api'
 import Header from '../components/Header'
 import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
 import EditSubcategoryModal from '../components/EditSubcategoryModal'
@@ -31,6 +31,11 @@ function Settings({ setIsAuthenticated }) {
   const [showBankImportModal, setShowBankImportModal] = useState(false)
   const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
+  // Preferences state
+  const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14)
+  const [savingLookahead, setSavingLookahead] = useState(false)
+  const [lookaheadSuccess, setLookaheadSuccess] = useState('')
+
   const categories = [
     'Fixed Expenses',
     'Flexible Expenses',
@@ -40,7 +45,19 @@ function Settings({ setIsAuthenticated }) {
 
   useEffect(() => {
     loadSubcategories()
-  }, [])
+    if (activeTab === 'preferences') {
+      loadPreferences()
+    }
+  }, [activeTab])
+
+  const loadPreferences = async () => {
+    try {
+      const response = await userAPI.getRecurringLookahead()
+      setRecurringLookaheadDays(response.data.recurring_lookahead_days)
+    } catch (err) {
+      console.error('Failed to load preferences:', err)
+    }
+  }
 
   const loadSubcategories = async () => {
     setLoading(true)
@@ -110,7 +127,20 @@ function Settings({ setIsAuthenticated }) {
       })
     }
   }
-
+  const handleSaveLookahead = async () => {
+    setSavingLookahead(true)
+    setLookaheadSuccess('')
+    setError('')
+    try {
+      await userAPI.updateRecurringLookahead(recurringLookaheadDays)
+      setLookaheadSuccess('Lookahead setting saved successfully!')
+      setTimeout(() => setLookaheadSuccess(''), 3000)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save setting')
+    } finally {
+      setSavingLookahead(false)
+    }
+  }
   const openEditModal = (subcategory) => {
     setEditingSubcategory(subcategory)
     setShowEditModal(true)
@@ -278,9 +308,49 @@ function Settings({ setIsAuthenticated }) {
         {activeTab === 'preferences' && (
           <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Preferences</h2>
-            <div className="space-y-6">
-              <div className="text-gray-600 dark:text-gray-300">
-                <p>Preference settings coming soon...</p>
+
+            {/* Recurring Expenses Lookahead Setting */}
+            <div className="space-y-4">
+              <div className="border-b dark:border-gray-700 pb-4">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Recurring Expenses Preview
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Set how far ahead you want to see upcoming recurring expenses in the Scheduled view.
+                </p>
+
+                <div className="flex items-center gap-4">
+                  <label htmlFor="lookahead-days" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    Look ahead:
+                  </label>
+                  <select
+                    id="lookahead-days"
+                    value={recurringLookaheadDays}
+                    onChange={(e) => setRecurringLookaheadDays(parseInt(e.target.value))}
+                    className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+                  >
+                    <option value={7}>7 days (1 week)</option>
+                    <option value={14}>14 days (2 weeks)</option>
+                    <option value={21}>21 days (3 weeks)</option>
+                    <option value={30}>30 days (1 month)</option>
+                    <option value={45}>45 days (1.5 months)</option>
+                    <option value={60}>60 days (2 months)</option>
+                    <option value={90}>90 days (3 months)</option>
+                  </select>
+                  <button
+                    onClick={handleSaveLookahead}
+                    disabled={savingLookahead}
+                    className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {savingLookahead ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+
+                {lookaheadSuccess && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-green-700 dark:text-green-400 text-sm">{lookaheadSuccess}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
