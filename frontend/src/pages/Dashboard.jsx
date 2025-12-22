@@ -46,7 +46,7 @@ function Dashboard({ setIsAuthenticated }) {
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
   const [debitBalance, setDebitBalance] = useState(0)
-  const [creditBalance, setCreditBalance] = useState(0)
+  const [creditAvailable, setCreditAvailable] = useState(0)
   const [totalIncome, setTotalIncome] = useState(0)
   const [currentPeriodDebitSpent, setCurrentPeriodDebitSpent] = useState(0)
   const [currentPeriodCreditSpent, setCurrentPeriodCreditSpent] = useState(0)
@@ -314,8 +314,8 @@ function Dashboard({ setIsAuthenticated }) {
         if (salaryPeriod.display_debit_balance !== undefined) {
           setDebitBalance(salaryPeriod.display_debit_balance / 100) // Convert cents to euros
         }
-        if (salaryPeriod.display_credit_balance !== undefined) {
-          setCreditBalance(salaryPeriod.display_credit_balance / 100) // Convert cents to euros
+        if (salaryPeriod.display_credit_available !== undefined) {
+          setCreditAvailable(salaryPeriod.display_credit_available / 100) // Convert cents to euros
         }
 
         // Set period-level spending by payment method (NEW)
@@ -474,13 +474,13 @@ function Dashboard({ setIsAuthenticated }) {
   }
 
   const getCreditAvailable = () => {
-    // creditBalance from backend is the available amount (limit - debt)
-    return creditBalance
+    // creditAvailable from backend is the available amount (what you can spend)
+    return creditAvailable
   }
 
   const getCreditDebt = () => {
     // Debt = limit - available
-    return creditLimit - creditBalance
+    return creditLimit - creditAvailable
   }
 
   const handleLogout = async () => {
@@ -910,7 +910,7 @@ function Dashboard({ setIsAuthenticated }) {
               <div className="mt-4">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                   <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
-                  <span>Total balance: €{getCreditDebt().toFixed(2)}</span>
+                  <span>Total debt: €{getCreditDebt().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
                   <span>Credit limit: €{creditLimit}</span>
@@ -1349,7 +1349,7 @@ function Dashboard({ setIsAuthenticated }) {
             ) : (
               <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
                 <p>You're trying to spend <strong>€{warningModal.expenseAmount.toFixed(2)}</strong> but only have <strong>€{warningModal.available.toFixed(2)}</strong> available credit.</p>
-                <p>Your credit limit is €{creditLimit.toFixed(2)} and current balance is €{creditBalance.toFixed(2)}.</p>
+                <p>Your credit limit is €{creditLimit.toFixed(2)} and you have €{creditAvailable.toFixed(2)} available.</p>
                 <p className="text-red-600 dark:text-dark-danger font-semibold">This will exceed your limit by €{(warningModal.expenseAmount - warningModal.available).toFixed(2)}.</p>
                 <p className="text-sm">Do you want to proceed anyway?</p>
               </div>

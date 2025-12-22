@@ -18,7 +18,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   const [error, setError] = useState('')
 
   const [debitBalance, setDebitBalance] = useState('')
-  const [creditBalance, setCreditBalance] = useState('')
+  const [creditAvailable, setCreditAvailable] = useState('')
   const [creditLimit, setCreditLimit] = useState('1500')
   const [creditAllowance, setCreditAllowance] = useState(0)
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
@@ -29,14 +29,14 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   useEffect(() => {
     if (editPeriod) {
       setDebitBalance((editPeriod.initial_debit_balance / 100).toFixed(2))
-      setCreditBalance((editPeriod.initial_credit_balance / 100).toFixed(2))
+      setCreditAvailable((editPeriod.initial_credit_balance / 100).toFixed(2))
       setCreditLimit((editPeriod.credit_limit / 100).toFixed(2))
       setCreditAllowance(editPeriod.credit_budget_allowance || 0)
       setStartDate(editPeriod.start_date)
     } else if (rolloverData) {
       // Pre-fill with rollover balances
       setDebitBalance((rolloverData.suggestedDebitBalance / 100).toFixed(2))
-      setCreditBalance((rolloverData.suggestedCreditBalance / 100).toFixed(2))
+      setCreditAvailable((rolloverData.suggestedCreditAvailable / 100).toFixed(2))
       setCreditLimit((rolloverData.creditLimit / 100).toFixed(2))
       setCreditAllowance(rolloverData.creditAllowance || 0)
 
@@ -59,7 +59,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
   const handleStep1Next = async () => {
     const debitCents = parseCurrency(debitBalance)
-    const creditCents = parseCurrency(creditBalance)
+    const creditAvailableCents = parseCurrency(creditAvailable)
 
     if (debitCents <= 0) {
       setError('Please enter your current debit balance')
@@ -74,7 +74,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     try {
       const response = await api.post('/salary-periods/preview', {
         debit_balance: debitCents,
-        credit_balance: creditCents,
+        credit_balance: creditAvailableCents,
         credit_limit: parseCurrency(creditLimit),
         credit_allowance: creditAllowance,
         start_date: startDate
@@ -97,7 +97,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     try {
       const response = await api.post('/salary-periods/preview', {
         debit_balance: parseCurrency(debitBalance),
-        credit_balance: parseCurrency(creditBalance),
+        credit_balance: parseCurrency(creditAvailable),
         credit_limit: parseCurrency(creditLimit),
         credit_allowance: creditAllowance,
         start_date: startDate,
@@ -120,7 +120,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     try {
       const payload = {
         debit_balance: parseCurrency(debitBalance),
-        credit_balance: parseCurrency(creditBalance),
+        credit_balance: parseCurrency(creditAvailable),
         credit_limit: parseCurrency(creditLimit),
         credit_allowance: creditAllowance,
         start_date: startDate,
@@ -220,8 +220,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
                   <input
                     type="text"
-                    value={creditBalance}
-                    onChange={(e) => setCreditBalance(e.target.value)}
+                    value={creditAvailable}
+                    onChange={(e) => setCreditAvailable(e.target.value)}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1000.00"
                   />
@@ -244,13 +244,13 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   />
                 </div>
                 <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
-                  {parseCurrency(creditLimit) > parseCurrency(creditBalance)
-                    ? `You currently owe €${((parseCurrency(creditLimit) - parseCurrency(creditBalance)) / 100).toFixed(2)}`
+                  {parseCurrency(creditLimit) > parseCurrency(creditAvailable)
+                    ? `You currently owe €${((parseCurrency(creditLimit) - parseCurrency(creditAvailable)) / 100).toFixed(2)}`
                     : 'No pre-existing debt'}
                 </p>
               </div>
 
-              {parseCurrency(creditBalance) > 0 && (
+              {parseCurrency(creditAvailable) > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                     Credit Allowance (Optional)
@@ -261,7 +261,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   <input
                     type="range"
                     min="0"
-                    max={parseCurrency(creditBalance)}
+                    max={parseCurrency(creditAvailable)}
                     step="1000"
                     value={creditAllowance}
                     onChange={(e) => setCreditAllowance(parseInt(e.target.value))}
@@ -270,12 +270,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                     <span>€0</span>
                     <span className="font-semibold text-bloom-pink dark:text-dark-pink">{formatCurrency(creditAllowance)}</span>
-                    <span>{formatCurrency(parseCurrency(creditBalance))}</span>
+                    <span>{formatCurrency(parseCurrency(creditAvailable))}</span>
                   </div>
                 </div>
               )}
 
-              {parseCurrency(creditBalance) === 0 && (
+              {parseCurrency(creditAvailable) === 0 && (
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                   <p className="text-sm text-yellow-800 dark:text-yellow-400">
                     ⚠️ No credit available (card is maxed out). Only your debit balance will be used for budgeting.

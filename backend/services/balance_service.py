@@ -37,8 +37,7 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
     Returns:
         dict with keys:
             - debit_balance: Current debit card balance (in euros)
-            - credit_balance: Current credit card balance (in euros)
-            - credit_available: Remaining credit limit (in euros)
+            - credit_available: Available credit (what user can spend, in euros)
     """
     salary_period = SalaryPeriod.query.get_or_404(salary_period_id)
 
@@ -69,8 +68,7 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
 
     return {
         "debit_balance": debit_balance,
-        "credit_balance": credit_available,  # Return AVAILABLE (what user can spend)
-        "credit_available": credit_available,
+        "credit_available": credit_available,  # Available credit (what user can spend)
     }
 
 

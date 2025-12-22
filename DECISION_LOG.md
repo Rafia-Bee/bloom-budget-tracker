@@ -6,6 +6,85 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Clarified Credit Card Terminology: "Available" vs "Balance" (Issue #98)
+
+**Context:** Confusion arose between traditional credit card terminology and Bloom's prepaid card model. Traditional credit cards use "credit balance" to mean "amount owed," but Bloom treats credit cards like prepaid cards where "balance" means "money you have available."
+
+**Problem:**
+
+-   Code used `creditBalance` and `credit_balance` to mean "available money"
+-   This conflicts with traditional credit card terminology where "balance" = debt
+-   Caused communication issues when explaining calculations
+-   Made code harder to understand for new developers
+
+**Solution:**
+
+Renamed all user-facing and internal references to clarify intent:
+
+1. **Backend API:**
+
+    ```python
+    # Before
+    return {
+        "credit_balance": credit_available,  # Ambiguous!
+        "credit_available": credit_available  # Duplicate field
+    }
+
+    # After
+    return {
+        "credit_available": credit_available  # Clear: what you can spend
+    }
+    ```
+
+2. **Frontend State:**
+
+    ```jsx
+    // Before
+    const [creditBalance, setCreditBalance] = useState(0); // Confusing!
+
+    // After
+    const [creditAvailable, setCreditAvailable] = useState(0); // Clear!
+    ```
+
+3. **API Response Fields:**
+    - `display_credit_balance` → `display_credit_available`
+    - Removed duplicate field from salary period responses
+
+**Kept As-Is:**
+
+-   `initial_credit_balance` (database field) - Kept for migration safety
+-   `credit_limit` - Already clear
+-   `getCreditDebt()` - Already clear (limit - available)
+
+**Rationale:**
+
+-   **Prepaid Model:** Credit card works like a bank account with max capacity (limit)
+    -   `creditAvailable` = Money you HAVE (like account balance)
+    -   `creditLimit` = Maximum capacity (like max account balance)
+    -   `creditDebt` = Money you've SPENT (limit - available)
+-   **Eliminates Ambiguity:** "Available" is unambiguous - always means "what you can spend"
+-   **Better Communication:** Easier to explain to users and developers
+-   **Consistency:** Matches how debit card uses "balance" to mean "money you have"
+
+**Impact:**
+
+-   ✅ All frontend components now use `creditAvailable` state
+-   ✅ Backend returns `credit_available` in API responses
+-   ✅ Dashboard, Debts, SalaryPeriodWizard, rollover prompt updated
+-   ✅ Helper functions `getCreditAvailable()` and `getCreditDebt()` clearly named
+-   ⚠️ Database field `initial_credit_balance` kept for backwards compatibility
+
+**Files Changed:**
+
+-   [backend/services/balance_service.py](backend/services/balance_service.py): Return dict key renamed
+-   [backend/routes/salary_periods.py](backend/routes/salary_periods.py): API response field renamed
+-   [frontend/src/pages/Dashboard.jsx](frontend/src/pages/Dashboard.jsx): State variable renamed
+-   [frontend/src/pages/Debts.jsx](frontend/src/pages/Debts.jsx): API field reference updated
+-   [frontend/src/components/SalaryPeriodWizard.jsx](frontend/src/components/SalaryPeriodWizard.jsx): All form fields and state renamed
+-   [frontend/src/components/SalaryPeriodRolloverPrompt.jsx](frontend/src/components/SalaryPeriodRolloverPrompt.jsx): Rollover data props renamed
+
+---
+
 ### Consolidated Dashboard Header to Use Shared Component (Issue #97)
 
 **Context:** After implementing the collapsible submenu system with experimental features toggle (issue #95), Dashboard.jsx and Header.jsx had duplicate implementations. Changing the header required editing 2 files instead of 1.

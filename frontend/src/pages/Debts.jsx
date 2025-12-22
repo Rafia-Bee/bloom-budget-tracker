@@ -103,9 +103,9 @@ function Debts({ setIsAuthenticated }) {
 
       const salaryPeriod = salaryPeriodRes.data.salary_period
 
-      // display_credit_balance returns AVAILABLE amount (what you can spend)
+      // display_credit_available returns AVAILABLE amount (what you can spend)
       // Debt = limit - available (what you owe)
-      const creditAvailable = salaryPeriod.display_credit_balance // Already in cents
+      const creditAvailable = salaryPeriod.display_credit_available // Already in cents
       const creditLimit = salaryPeriod.credit_limit // Already in cents
       const currentBalance = creditLimit - creditAvailable // Debt (what you owe)
       const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0 // 50% of debt

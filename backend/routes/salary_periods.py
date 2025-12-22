@@ -247,9 +247,6 @@ def get_current_salary_period():
                         "display_debit_balance": int(
                             real_balances["debit_balance"] * 100
                         ),
-                        "display_credit_balance": int(
-                            real_balances["credit_balance"] * 100
-                        ),
                         "display_credit_available": int(
                             real_balances["credit_available"] * 100
                         ),

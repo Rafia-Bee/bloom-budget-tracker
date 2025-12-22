@@ -36,14 +36,14 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 
       // Use backend-calculated real-time balances (already in cents)
       const currentDebitBalance = salary_period.display_debit_balance
-      const currentCreditAvailable = salary_period.display_credit_balance
+      const currentCreditAvailable = salary_period.display_credit_available
       const creditLimit = salary_period.credit_limit
 
       setRolloverData({
         daysRemaining,
         isOverdue: daysRemaining < 0,
         suggestedDebitBalance: currentDebitBalance,
-        suggestedCreditBalance: currentCreditAvailable,
+        suggestedCreditAvailable: currentCreditAvailable,
         creditLimit: creditLimit,
         creditAllowance: salary_period.credit_budget_allowance || 0,
         endDate: salary_period.end_date
@@ -61,7 +61,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
     return null
   }
 
-  const { daysRemaining, isOverdue, suggestedDebitBalance, suggestedCreditBalance, creditLimit } = rolloverData
+  const { daysRemaining, isOverdue, suggestedDebitBalance, suggestedCreditAvailable, creditLimit } = rolloverData
 
   return (
     <div className={`rounded-xl p-6 mb-6 ${isOverdue ? 'bg-red-50 border-2 border-red-300 dark:bg-red-900/20 dark:border-red-700' : 'bg-yellow-50 border-2 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700'}`}>
@@ -87,7 +87,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
             <p className="font-semibold mb-1">Calculated balances for next period:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Debit: €{(suggestedDebitBalance / 100).toFixed(2)}</li>
-              <li>Credit Available: €{(suggestedCreditBalance / 100).toFixed(2)} / €{(creditLimit / 100).toFixed(2)}</li>
+              <li>Credit Available: €{(suggestedCreditAvailable / 100).toFixed(2)} / €{(creditLimit / 100).toFixed(2)}</li>
             </ul>
           </div>
 
