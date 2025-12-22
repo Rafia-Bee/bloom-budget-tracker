@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { authAPI } from '../api';
+import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Header({
   setIsAuthenticated,
@@ -20,6 +21,8 @@ function Header({
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [expandedSubmenu, setExpandedSubmenu] = useState(null); // 'import-export' | null
+  const { flags, toggleFlag } = useFeatureFlag();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -101,6 +104,41 @@ function Header({
     </>
   );
 
+  // Submenu Button Component for collapsible submenus
+  const SubmenuButton = ({ icon, label, isExpanded, onClick, children }) => (
+    <>
+      <button
+        onClick={onClick}
+        className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center justify-between group"
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <span>{label}</span>
+        </div>
+        <svg
+          className={`w-4 h-4 transition-transform duration-150 ${
+            isExpanded ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+      {isExpanded && (
+        <div className="bg-gray-50 dark:bg-dark-elevated border-l-2 border-bloom-pink dark:border-dark-pink ml-4 my-1 overflow-hidden transition-all duration-150">
+          {children}
+        </div>
+      )}
+    </>
+  );
+
   const userMenu = (
     <div className="relative user-menu">
       <button
@@ -112,56 +150,124 @@ function Header({
       </button>
 
       {showUserMenu && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50">
           <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
             <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
             <p className="text-sm font-semibold text-gray-800 dark:text-dark-text truncate">{localStorage.getItem('user_email')}</p>
           </div>
+
+          {/* Theme Toggle */}
           <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
             <ThemeToggle />
           </div>
-          <button
-            onClick={() => {
-              onExport();
-              setShowUserMenu(false);
-            }}
-            className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
+
+          {/* Import/Export Submenu */}
+          <SubmenuButton
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            }
+            label="Import/Export"
+            isExpanded={expandedSubmenu === "import-export"}
+            onClick={() =>
+              setExpandedSubmenu(
+                expandedSubmenu === "import-export" ? null : "import-export"
+              )
+            }
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            Export Data
-          </button>
-          <button
-            onClick={() => {
-              onImport();
-              setShowUserMenu(false);
-            }}
-            className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            Import Data
-          </button>
-          <button
-            onClick={() => {
-              onBankImport();
-              setShowUserMenu(false);
-            }}
-            className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-            Import Bank Transactions
-          </button>
-          {onShowExperimental && (
             <button
               onClick={() => {
-                onShowExperimental();
+                onExport();
                 setShowUserMenu(false);
+                setExpandedSubmenu(null);
               }}
-              className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-              ⚗️ Experimental Features
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export Financial Data
+              </div>
             </button>
+            <button
+              onClick={() => {
+                onImport();
+                setShowUserMenu(false);
+                setExpandedSubmenu(null);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Import Financial Data
+              </div>
+            </button>
+            <button
+              onClick={() => {
+                onBankImport();
+                setShowUserMenu(false);
+                setExpandedSubmenu(null);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Import Bank Transactions
+              </div>
+            </button>
+          </SubmenuButton>
+
+          {/* Experimental Features Toggle */}
+          {onShowExperimental && (
+            <>
+              <div className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-dark-elevated transition">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>⚗️</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">Experimental Features</span>
+                  </div>
+                  <button
+                    onClick={() => toggleFlag('experimentalFeaturesEnabled')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      flags.experimentalFeaturesEnabled
+                        ? 'bg-bloom-pink dark:bg-dark-pink'
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        flags.experimentalFeaturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Delete All Data - only show when experimental is ON */}
+              {flags.experimentalFeaturesEnabled && (
+                <button
+                  onClick={() => {
+                    onShowExperimental();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition flex items-center gap-2 ml-0"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  🗑️ Delete All Data
+                </button>
+              )}
+            </>
           )}
+
+          {/* Logout */}
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2 border-t border-gray-200 dark:border-dark-border mt-2 pt-2"

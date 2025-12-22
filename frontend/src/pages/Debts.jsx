@@ -12,6 +12,7 @@ import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditDebtModal from '../components/EditDebtModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
+import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import Header from '../components/Header'
 
 function Debts({ setIsAuthenticated }) {
@@ -30,6 +31,7 @@ function Debts({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
+  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
   const creditLimit = 1500
 
   const handleExport = () => {
@@ -240,6 +242,7 @@ function Debts({ setIsAuthenticated }) {
         onExport={handleExport}
         onImport={handleImport}
         onBankImport={handleBankImport}
+        onShowExperimental={() => setShowExperimentalModal(true)}
       />
 
       {/* Main Content */}
@@ -713,6 +716,13 @@ function Debts({ setIsAuthenticated }) {
             loadArchivedDebts();
             if (currentPeriod) loadCreditCardDebt();
           }}
+        />
+      )}
+
+      {/* Experimental Features Modal */}
+      {showExperimentalModal && (
+        <ExperimentalFeaturesModal
+          onClose={() => setShowExperimentalModal(false)}
         />
       )}
     </div>

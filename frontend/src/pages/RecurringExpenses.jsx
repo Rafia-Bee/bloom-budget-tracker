@@ -10,6 +10,7 @@ import { recurringExpenseAPI } from '../api'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
+import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import CatLoading from '../components/CatLoading'
 import Header from '../components/Header'
 
@@ -25,6 +26,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
+  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
   const handleExport = () => {
     setExportMode('export');
@@ -163,6 +165,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
         onExport={handleExport}
         onImport={handleImport}
         onBankImport={handleBankImport}
+        onShowExperimental={() => setShowExperimentalModal(true)}
       />
 
       {/* Main Content */}
@@ -561,6 +564,13 @@ function RecurringExpenses({ setIsAuthenticated }) {
             setShowBankImportModal(false);
             loadRecurringExpenses();
           }}
+        />
+      )}
+
+      {/* Experimental Features Modal */}
+      {showExperimentalModal && (
+        <ExperimentalFeaturesModal
+          onClose={() => setShowExperimentalModal(false)}
         />
       )}
     </div>
