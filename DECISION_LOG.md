@@ -6,6 +6,31 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-01-22
 
+### Navigation UX Improvements: Settings to User Menu
+
+**Context:** User feedback requested moving Settings from main navigation bar to user menu. Also needed consistent icon styling and experimental features access across all pages.
+
+**Decision:**
+
+1. **Settings Location**: Move Settings from main nav bar to user menu dropdown
+2. **Icon Consistency**: Replace all emojis with matching SVG icons throughout UI
+3. **Cross-Page Functionality**: Enable all Header features (export, experimental) on every page
+
+**Implementation:**
+
+-   Removed Settings from main navigation links (desktop & mobile)
+-   Added Settings to user menu with gear icon (both desktop & mobile versions)
+-   Added modal state management to Settings page for Header functionality
+-   Replaced beaker emoji with yellow lightning bolt SVG for experimental features
+-   Cleaned up "Delete All Data" to use only SVG icon (removed redundant emoji)
+-   Fixed Settings page background to match Dashboard styling
+
+**Rationale:** Cleaner main navigation focuses on core features. User menu is logical place for account/settings. Consistent SVG icons provide professional, theme-aware styling. All pages should have same functionality access.
+
+**Impact:** Simplified navigation, improved visual consistency, better user experience across all pages. Settings easily discoverable but doesn't clutter main nav.
+
+---
+
 ### Enhanced Subcategories: Force Delete & User Hints
 
 **Context:** User feedback revealed two issues: force delete was destructive (deleted expenses), and new users didn't discover custom subcategory feature.
