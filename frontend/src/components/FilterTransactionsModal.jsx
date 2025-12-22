@@ -11,13 +11,14 @@
  */
 
 import { useState, useEffect } from 'react'
-import { subcategoryAPI } from '../api'
+import { subcategoryAPI, debtAPI } from '../api'
 import useDebounce from '../hooks/useDebounce'
 
 export default function FilterTransactionsModal({ isOpen, onClose, onApply, initialFilters }) {
   const [searchInput, setSearchInput] = useState('') // Immediate search input
   const debouncedSearch = useDebounce(searchInput, 500) // Debounced value
   const [subcategoriesData, setSubcategoriesData] = useState({})
+  const [debts, setDebts] = useState([])
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -32,7 +33,17 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
 
   useEffect(() => {
     loadSubcategories()
+    loadDebts()
   }, [])
+
+  const loadDebts = async () => {
+    try {
+      const response = await debtAPI.getAll()
+      setDebts(response.data)
+    } catch (error) {
+      console.error('Failed to load debts:', error)
+    }
+  }
 
   const loadSubcategories = async () => {
     try {
@@ -88,7 +99,15 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
 
   const getSubcategories = () => {
     if (!filters.category || !subcategoriesData[filters.category]) return []
-    return subcategoriesData[filters.category].map(s => typeof s === 'string' ? s : s.name)
+
+    const subcats = subcategoriesData[filters.category].map(s => typeof s === 'string' ? s : s.name)
+
+    // Add debts to Debt Payments category
+    if (filters.category === 'Debt Payments') {
+      return [...subcats, ...debts.map(d => d.name)]
+    }
+
+    return subcats
   }
 
   if (!isOpen) return null

@@ -63,6 +63,7 @@ function Header({
       <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Dashboard</NavLink>
       <NavLink to="/recurring-expenses" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Recurring</NavLink>
       <NavLink to="/debts" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Debts</NavLink>
+      <NavLink to="/settings" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Settings</NavLink>
     </>
   );
 
@@ -100,6 +101,17 @@ function Header({
         className={`${mobileNavLinkClasses} text-left w-full`}
       >
         💳 Debts
+      </button>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowMobileMenu(false);
+          navigate('/settings');
+        }}
+        className={`${mobileNavLinkClasses} text-left w-full`}
+      >
+        ⚙️ Settings
       </button>
     </>
   );
