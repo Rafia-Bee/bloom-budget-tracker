@@ -29,7 +29,9 @@ class TestCarryoverLogic:
             json={
                 "name": "Small Expense",
                 "amount": 5000,  # €50 (weekly budget likely higher)
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": expense_date,
             },
             headers=auth_headers,
@@ -72,7 +74,9 @@ class TestCarryoverLogic:
             json={
                 "name": "Large Expense",
                 "amount": weekly_budget + 10000,  # Overspend by €100
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": expense_date,
             },
             headers=auth_headers,
@@ -203,7 +207,9 @@ class TestExpenseDateAssignment:
             json={
                 "name": "Future Expense",
                 "amount": 3000,
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": week3["start_date"],
             },
             headers=auth_headers,
@@ -255,7 +261,9 @@ class TestExpenseDateAssignment:
             json={
                 "name": "Past Expense",
                 "amount": 2000,
-                "category": "Food & Dining",
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
                 "date": week1_date.strftime("%Y-%m-%d"),
             },
             headers=auth_headers,
@@ -300,7 +308,9 @@ class TestExpenseDateAssignment:
             json={
                 "name": "Far Future Expense",
                 "amount": 1000,
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": "2026-06-01",
             },
             headers=auth_headers,

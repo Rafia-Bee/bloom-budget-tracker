@@ -18,8 +18,8 @@ class TestExpenseCRUD:
             json={
                 "name": "Groceries",
                 "amount": 5000,  # €50
-                "category": "Food & Dining",
-                "subcategory": "Groceries",
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
                 "payment_method": "Debit card",
                 "date": "2025-11-25",
             },
@@ -40,7 +40,9 @@ class TestExpenseCRUD:
             json={
                 "name": "Test Expense",
                 "amount": 1000,
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": "2025-11-22",
             },
             headers=auth_headers,
@@ -67,7 +69,9 @@ class TestExpenseCRUD:
             json={
                 "name": "Expense 1",
                 "amount": 1000,
-                "category": "Food & Dining",
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
                 "date": "2025-11-25",
             },
             headers=auth_headers,
@@ -78,7 +82,9 @@ class TestExpenseCRUD:
             json={
                 "name": "Expense 2",
                 "amount": 2000,
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Credit card",
                 "date": "2025-11-26",
             },
             headers=auth_headers,
@@ -98,7 +104,9 @@ class TestExpenseCRUD:
             json={
                 "name": "Original Name",
                 "amount": 1000,
-                "category": "Food & Dining",
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
                 "date": "2025-11-25",
             },
             headers=auth_headers,
@@ -129,7 +137,9 @@ class TestExpenseCRUD:
             json={
                 "name": "To Delete",
                 "amount": 1000,
-                "category": "Shopping",
+                "category": "Flexible Expenses",
+                "subcategory": "Shopping",
+                "payment_method": "Debit card",
                 "date": "2025-11-25",
             },
             headers=auth_headers,
