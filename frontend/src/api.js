@@ -152,4 +152,13 @@ export const subcategoryAPI = {
         api.delete(`/subcategories/${id}`, { params: { force } }),
 };
 
+export const goalAPI = {
+    getAll: () => api.get("/goals"),
+    create: (data) => api.post("/goals", data),
+    update: (id, data) => api.put(`/goals/${id}`, data),
+    delete: (id, force = false) =>
+        api.delete(`/goals/${id}`, { params: { force } }),
+    getProgress: (id) => api.get(`/goals/${id}/progress`),
+};
+
 export default api;

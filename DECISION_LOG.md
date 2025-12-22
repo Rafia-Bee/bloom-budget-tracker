@@ -4,6 +4,35 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-22
+
+### Goals & Savings Tracking: Subcategory Integration Approach
+
+**Context:** Implementing issue #4 (Goals & Savings Tracking) after completing custom subcategories foundation. User requested savings goals with progress tracking and automatic contribution monitoring.
+
+**Decision:**
+
+1. **Goals as Subcategories**: Each goal automatically creates a subcategory under "Savings & Investments"
+2. **Progress Calculation**: Track goal progress by summing positive expenses in the goal's subcategory
+3. **Expense Integration**: Savings contributions recorded as regular expenses, automatically count toward goals
+4. **Currency Handling**: Frontend converts euros to cents, backend stores/processes in cents throughout
+
+**Implementation:**
+
+-   Goal model with target_amount, target_date, subcategory_name linking
+-   Automatic subcategory creation/update when goals are created/renamed
+-   calculate_progress() method sums expenses by category+subcategory for real-time progress
+-   Full CRUD API (create, read, update, delete with force option)
+-   Complete UI with goal cards, progress bars, create/edit modals
+
+**Rationale:** Leverages existing expense system for automatic tracking. No duplicate transaction recording needed. Users naturally add "savings" as expenses. Subcategory approach maintains data consistency and simplifies progress calculation.
+
+**Impact:** Seamless integration with existing budget tracking. Users can create multiple goals simultaneously. Progress updates automatically as expenses are added. Data preservation through force delete to "Other" subcategory.
+
+**Status:** Core functionality complete, testing phase. Dashboard widgets and expense modal integration pending.
+
+---
+
 ## 2025-01-22
 
 ### Navigation UX Improvements: Settings to User Menu

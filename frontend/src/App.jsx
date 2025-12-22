@@ -15,6 +15,7 @@ import RecurringExpenses from './pages/RecurringExpenses'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
+import Goals from './pages/Goals'
 import CatLoading from './components/CatLoading'
 import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback, authAPI } from './api'
@@ -107,6 +108,10 @@ function App() {
         <Route
           path="/settings"
           element={isAuthenticated ? <Settings setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/goals"
+          element={isAuthenticated ? <Goals setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
         />
         <Route
           path="/admin"

@@ -453,3 +453,80 @@ class Subcategory(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class Goal(db.Model):
+    """
+    Goal model for tracking savings goals and financial targets.
+
+    Goals are linked to subcategories in the 'Savings & Investments' category.
+    Progress is tracked through expense entries in the linked subcategory.
+    """
+
+    __tablename__ = "goals"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    target_amount = db.Column(db.Integer, nullable=False)  # Amount in cents
+    target_date = db.Column(db.Date, nullable=True)
+    subcategory_name = db.Column(db.String(100), nullable=False)  # Links to subcategory
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    # Relationships
+    user = db.relationship("User", backref="goals")
+
+    # Indexes for performance
+    __table_args__ = (
+        db.Index("idx_goal_user_active", "user_id", "is_active"),
+        db.Index("idx_goal_user_subcategory", "user_id", "subcategory_name"),
+        db.CheckConstraint("target_amount > 0", name="check_goal_positive_amount"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "target_amount": self.target_amount,
+            "target_date": self.target_date.isoformat() if self.target_date else None,
+            "subcategory_name": self.subcategory_name,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def calculate_progress(self):
+        """Calculate progress towards goal based on expenses in linked subcategory."""
+        from backend.models.database import Expense  # Avoid circular import
+
+        total_contributions = (
+            db.session.query(db.func.sum(Expense.amount))
+            .filter(
+                Expense.user_id == self.user_id,
+                Expense.category == "Savings & Investments",
+                Expense.subcategory == self.subcategory_name,
+                Expense.amount > 0,  # Only positive contributions count
+            )
+            .scalar()
+            or 0
+        )
+
+        return {
+            "current_amount": total_contributions,
+            "target_amount": self.target_amount,
+            "percentage": (total_contributions / self.target_amount * 100)
+            if self.target_amount > 0
+            else 0,
+            "remaining": max(0, self.target_amount - total_contributions),
+        }

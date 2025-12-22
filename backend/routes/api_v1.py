@@ -18,6 +18,7 @@ from backend.routes.password_reset import password_reset_bp
 from backend.routes.export_import import export_import_bp
 from backend.routes.user_data import user_data_bp
 from backend.routes.subcategories import subcategories_bp
+from backend.routes.goals import goals_bp
 
 
 def create_v1_blueprint():
@@ -41,5 +42,6 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(export_import_bp)
     v1_bp.register_blueprint(user_data_bp, url_prefix="/user")
     v1_bp.register_blueprint(subcategories_bp)
+    v1_bp.register_blueprint(goals_bp, url_prefix="/goals")
 
     return v1_bp

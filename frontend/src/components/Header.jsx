@@ -61,6 +61,7 @@ function Header({
   const navigationLinks = (
     <>
       <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Dashboard</NavLink>
+      <NavLink to="/goals" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Goals</NavLink>
       <NavLink to="/recurring-expenses" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Recurring</NavLink>
       <NavLink to="/debts" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Debts</NavLink>
     </>
@@ -78,6 +79,17 @@ function Header({
         className={`${mobileNavLinkClasses} text-left w-full`}
       >
         🏠 Dashboard
+      </button>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowMobileMenu(false);
+          navigate('/goals');
+        }}
+        className={`${mobileNavLinkClasses} text-left w-full`}
+      >
+        🎯 Goals
       </button>
       <button
         onClick={(e) => {
