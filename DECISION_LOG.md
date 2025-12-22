@@ -6,6 +6,66 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Removed Remaining Frontend Balance Calculations (Issue #96)
+
+**Context:** After implementing `/income/stats` endpoint, one component still had manual balance calculations: `SalaryPeriodRolloverPrompt.jsx` was fetching all transactions and manually calculating period balances.
+
+**Problem:**
+
+-   `SalaryPeriodRolloverPrompt.jsx` used `getAll()` to fetch active period, then fetched ALL expenses/income
+-   Manually looped through ~100 lines of code calculating `periodDebitSpent`, `periodCreditSpent`, `periodIncome`
+-   Computed `currentDebitBalance` and `currentCreditAvailable` from scratch
+-   Duplicated backend logic, maintenance burden, potential inconsistency
+
+**Solution:**
+
+1. **Changed to use `getCurrent()` endpoint**: Gets salary period with backend-calculated balances
+2. **Removed manual calculations**: Deleted ~80 lines of forEach loops and balance math
+3. **Use backend values directly**:
+    - `display_debit_balance` → suggestedDebitBalance
+    - `display_credit_balance` → suggestedCreditBalance
+4. **Removed unused imports**: `expenseAPI`, `incomeAPI` no longer needed
+
+**Impact:**
+
+-   ✅ All frontend components now use backend-calculated balances
+-   ✅ Single source of truth for all financial calculations
+-   ✅ Rollover prompt shows accurate real-time balances
+-   ✅ Simpler, more maintainable code
+
+---
+
+### Fixed Card Balances Not Updating After Transactions
+
+**Context:** After adding/editing/deleting expenses or income, users had to manually refresh the page to see updated card balances.
+
+**Problem:**
+
+-   Transaction handlers (`handleAddExpense`, `handleEditExpense`, etc.) called `loadExpenses()` or `loadIncome()`
+-   These functions only refreshed the transaction list, not the salary period data
+-   Card balances (`display_debit_balance`, `display_credit_balance`) come from salary period data
+-   Result: stale balance display until page refresh
+
+**Solution:**
+
+Added `loadPeriodsAndCurrentWeek()` call to all transaction handlers:
+
+-   `handleAddExpense` - Reloads period data after creating expense
+-   `handleEditExpense` - Reloads period data after updating expense
+-   `handleDeleteExpense` - Reloads period data after deleting expense
+-   `handleAddIncome` - Reloads period data + income stats after creating income
+-   `handleEditIncome` - Reloads period data + income stats after updating income
+-   `handleDeleteIncome` - Reloads period data + income stats after deleting income
+
+**Impact:**
+
+-   ✅ Card balances update immediately after any transaction change
+-   ✅ No page refresh required
+-   ✅ Better UX, real-time feedback
+-   ✅ Weekly budget card also refreshes (already had `weeklyBudgetCardRef.current?.refresh()`)
+
+---
+
 ### Fixed Initial Balance Duplication Bug
 
 **Context:** System was creating a new "Initial Balance" income entry every time a salary period was created, leading to multiple Initial Balance entries per user. Database had 2 entries (€3072.00 and €2893.74) instead of just 1.

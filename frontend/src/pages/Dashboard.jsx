@@ -551,6 +551,7 @@ function Dashboard({ setIsAuthenticated }) {
         budget_period_id: targetPeriodId
       })
       await loadExpenses()
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
       setShowAddModal(false)
       setModalType(null)
     } catch (error) {
@@ -618,6 +619,8 @@ function Dashboard({ setIsAuthenticated }) {
       setShowAddModal(false)
       setModalType(null)
       await loadIncome() // Reload income list
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      await loadIncomeStats() // Update income stats
     } catch (error) {
       console.error('Failed to add income:', error)
       throw error
@@ -628,6 +631,8 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await incomeAPI.delete(id)
       await loadIncome()
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      await loadIncomeStats() // Update income stats
     } catch (error) {
       console.error('Failed to delete income:', error)
     }
@@ -637,6 +642,7 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await expenseAPI.delete(id)
       await loadExpenses()
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
     } catch (error) {
       console.error('Failed to delete expense:', error)
     }
@@ -646,6 +652,7 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await expenseAPI.update(id, expenseData)
       await loadExpenses()
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
       setShowEditModal(false)
       setEditType(null)
       setSelectedTransaction(null)
@@ -659,6 +666,8 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await incomeAPI.update(id, incomeData)
       await loadIncome()
+      await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      await loadIncomeStats() // Update income stats
       setShowEditModal(false)
       setEditType(null)
       setSelectedTransaction(null)

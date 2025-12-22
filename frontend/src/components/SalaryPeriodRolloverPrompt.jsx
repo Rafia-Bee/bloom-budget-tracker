@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { salaryPeriodAPI, expenseAPI, incomeAPI } from '../api'
+import { salaryPeriodAPI } from '../api'
 
 function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
   const [rolloverData, setRolloverData] = useState(null)
@@ -20,9 +20,9 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 
   const checkRolloverStatus = async () => {
     try {
-      // Get full salary period data (getCurrent doesn't include initial balances)
-      const allPeriodsRes = await salaryPeriodAPI.getAll()
-      const salary_period = allPeriodsRes.data.find(p => p.is_active)
+      // Get current salary period with real-time balances from backend
+      const currentRes = await salaryPeriodAPI.getCurrent()
+      const salary_period = currentRes.data.salary_period
 
       if (!salary_period) {
         setError('No active salary period found')
@@ -31,73 +31,13 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
       }
 
       const endDate = new Date(salary_period.end_date)
-      const startDate = new Date(salary_period.start_date)
       const today = new Date()
       const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
 
-      // Calculate current balances starting from INITIAL balances
-      // Only count transactions WITHIN current salary period
-      const [expensesRes, incomeRes] = await Promise.all([
-        expenseAPI.getAll({ limit: 10000 }),
-        incomeAPI.getAll({ limit: 10000 })
-      ])
-
-      const expenses = Array.isArray(expensesRes.data)
-        ? expensesRes.data
-        : (expensesRes.data?.expenses || [])
-
-      const incomeList = incomeRes.data?.income || []
-
-      // Start from the INITIAL balances of current period
-      let periodDebitSpent = 0
-      let periodCreditSpent = 0
-      let periodIncome = 0
-
-      // Filter transactions to ONLY those within current salary period
-      incomeList.forEach(income => {
-        const incomeDate = new Date(income.date || income.actual_date)
-        // Only count income within current period (excluding Initial Balance)
-        if (incomeDate >= startDate && incomeDate <= endDate && income.type !== 'Initial Balance') {
-          periodIncome += income.amount
-        }
-      })
-
-      // Process only expenses within current period
-      expenses.forEach(expense => {
-        const expenseDate = new Date(expense.date)
-
-        // Skip system-generated expenses (dated before period)
-        if (expense.name === 'Pre-existing Credit Card Debt') {
-          return // This is auto-created BEFORE period, skip it
-        }
-
-        // Use date-only comparison to avoid timezone issues
-        const expenseDateOnly = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate())
-        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
-        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-        const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-        // Only include expenses that are:
-        // 1. Within the period date range AND
-        // 2. Not in the future (date <= today)
-        if (expenseDateOnly >= startDateOnly && expenseDateOnly <= endDateOnly && expenseDateOnly <= todayDateOnly) {
-          if (expense.category === 'Debt Payments' &&
-              expense.subcategory === 'Credit Card' &&
-              expense.payment_method === 'Debit card') {
-            periodCreditSpent -= expense.amount  // Payment reduces credit debt
-            periodDebitSpent += expense.amount   // Payment comes from debit
-          } else if (expense.payment_method === 'Debit card') {
-            periodDebitSpent += expense.amount
-          } else if (expense.payment_method === 'Credit card') {
-            periodCreditSpent += expense.amount
-          }
-        }
-      })      // Current balance = initial balance + period income - period expenses
-      const currentDebitBalance = salary_period.initial_debit_balance + periodIncome - periodDebitSpent
-
-      // For credit: start from initial available, subtract period spending
+      // Use backend-calculated real-time balances (already in cents)
+      const currentDebitBalance = salary_period.display_debit_balance
+      const currentCreditAvailable = salary_period.display_credit_balance
       const creditLimit = salary_period.credit_limit
-      const currentCreditAvailable = salary_period.initial_credit_balance - periodCreditSpent
 
       setRolloverData({
         daysRemaining,
