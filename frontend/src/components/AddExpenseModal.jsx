@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI, recurringExpenseAPI, subcategoryAPI } from '../api'
+import { debtAPI, recurringExpenseAPI, subcategoryAPI, goalAPI } from '../api'
 import PropTypes from 'prop-types';
 
 function AddExpenseModal({ onClose, onAdd }) {
@@ -24,11 +24,13 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
+  const [goals, setGoals] = useState([])
   const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
     // Always load fresh data when component mounts (modal opens)
     loadDebts()
+    loadGoals()
     loadSubcategories()
   }, []) // Only run on mount since modal is conditionally rendered
 
@@ -38,6 +40,15 @@ function AddExpenseModal({ onClose, onAdd }) {
       setDebts(response.data)
     } catch (error) {
       console.error('Failed to load debts:', error)
+    }
+  }
+
+  const loadGoals = async () => {
+    try {
+      const response = await goalAPI.getAll()
+      setGoals(response.data.goals || [])
+    } catch (error) {
+      console.error('Failed to load goals:', error)
     }
   }
 
@@ -99,6 +110,16 @@ function AddExpenseModal({ onClose, onAdd }) {
           setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
         }
         setName(`${value} Payment`)
+      }
+    }
+
+    // If Savings & Investments category, autofill name based on goal selection
+    if (category === 'Savings & Investments') {
+      const selectedGoal = goals.find(g => g.subcategory_name === value)
+      if (selectedGoal) {
+        setName(`${selectedGoal.name} Contribution`)
+      } else if (value === 'Other') {
+        setName('Other Contribution')
       }
     }
   }

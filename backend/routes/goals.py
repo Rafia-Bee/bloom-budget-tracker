@@ -68,7 +68,7 @@ def create_goal():
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 
     # Generate unique subcategory name
-    base_subcategory_name = f"{name} Goal"
+    base_subcategory_name = name
     subcategory_name = base_subcategory_name
     counter = 1
 
@@ -136,7 +136,7 @@ def update_goal(id):
         if "name" in data and data["name"].strip() != goal.name:
             new_name = data["name"].strip()
             old_subcategory_name = goal.subcategory_name
-            new_subcategory_name = f"{new_name} Goal"
+            new_subcategory_name = new_name
 
             # Check if new subcategory name conflicts
             counter = 1

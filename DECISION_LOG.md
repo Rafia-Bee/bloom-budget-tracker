@@ -6,30 +6,37 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
-### Goals & Savings Tracking: Subcategory Integration Approach
+### Goals & Savings: Complete Feature Implementation (#4)
 
-**Context:** Implementing issue #4 (Goals & Savings Tracking) after completing custom subcategories foundation. User requested savings goals with progress tracking and automatic contribution monitoring.
+**Context:** Implemented comprehensive goals and savings tracking system with seamless expense integration, leftover budget allocation, and date-aware progress calculation.
 
-**Decision:**
+**Final Implementation:**
 
-1. **Goals as Subcategories**: Each goal automatically creates a subcategory under "Savings & Investments"
-2. **Progress Calculation**: Track goal progress by summing positive expenses in the goal's subcategory
-3. **Expense Integration**: Savings contributions recorded as regular expenses, automatically count toward goals
-4. **Currency Handling**: Frontend converts euros to cents, backend stores/processes in cents throughout
+1. **Core Features:**
 
-**Implementation:**
+    - Goals create/manage subcategories under "Savings & Investments" (without "Goal" suffix)
+    - Progress calculation: date-filtered (only past/today expenses count)
+    - Expense modal auto-completion: "{Goal Name} Contribution" or "Other Contribution"
+    - Recurring expense modal: dynamic goal integration with empty state hints
 
--   Goal model with target_amount, target_date, subcategory_name linking
--   Automatic subcategory creation/update when goals are created/renamed
--   calculate_progress() method sums expenses by category+subcategory for real-time progress
--   Full CRUD API (create, read, update, delete with force option)
--   Complete UI with goal cards, progress bars, create/edit modals
+2. **Leftover Budget Integration:**
 
-**Rationale:** Leverages existing expense system for automatic tracking. No duplicate transaction recording needed. Users naturally add "savings" as expenses. Subcategory approach maintains data consistency and simplifies progress calculation.
+    - Users can allocate leftover weekly budget to EITHER debts OR goals
+    - Allocation type selector: 💳 Debt Payments or 🎯 Savings Goals
+    - Goal selection shows progress bars and target amounts
+    - Creates proper expense with goal's subcategory for tracking
 
-**Impact:** Seamless integration with existing budget tracking. Users can create multiple goals simultaneously. Progress updates automatically as expenses are added. Data preservation through force delete to "Other" subcategory.
+3. **UX Refinements:**
+    - Only show "Other" subcategory when no goals exist (with creation hint)
+    - Show only actual goal names when goals exist (no default categories)
+    - Handle NaN display for zero-progress goals ($0.00, 0%)
+    - Proper subcategory object-to-string conversion in all modals
 
-**Status:** Core functionality complete, testing phase. Dashboard widgets and expense modal integration pending.
+**Rationale:** Date-filtering ensures progress reflects actual contributions, not scheduled/future ones. Leftover allocation integration encourages intentional savings. Clean subcategory display reduces cognitive load.
+
+**Impact:** Complete end-to-end savings tracking. Users can create goals, track progress through natural expense flow, and allocate leftover budget meaningfully. System automatically maintains data integrity across goals, expenses, and subcategories.
+
+**Status:** ✅ FULLY COMPLETE - All core functionality + integrations implemented and tested.
 
 ---
 

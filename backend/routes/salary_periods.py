@@ -14,6 +14,8 @@ from backend.models.database import (
     RecurringExpense,
     Expense,
     Income,
+    Debt,
+    Goal,
 )
 from backend.services.balance_service import get_display_balances
 from datetime import datetime, timedelta
@@ -682,6 +684,11 @@ def get_week_leftover(id, week_number):
             user_id=current_user_id, archived=False
         ).all()
 
+        # Get user's active goals for allocation suggestions
+        active_goals = Goal.query.filter_by(
+            user_id=current_user_id, is_active=True
+        ).all()
+
         return (
             jsonify(
                 {
@@ -702,7 +709,20 @@ def get_week_leftover(id, week_number):
                                 "monthly_payment": debt.monthly_payment,
                             }
                             for debt in active_debts
-                        ]
+                        ],
+                        "goals": [
+                            {
+                                "id": goal.id,
+                                "name": goal.name,
+                                "target_amount": goal.target_amount,
+                                "target_date": goal.target_date.isoformat()
+                                if goal.target_date
+                                else None,
+                                "progress": goal.calculate_progress(),
+                                "subcategory_name": goal.subcategory_name,
+                            }
+                            for goal in active_goals
+                        ],
                     },
                 }
             ),

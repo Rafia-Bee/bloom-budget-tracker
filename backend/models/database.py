@@ -509,6 +509,9 @@ class Goal(db.Model):
     def calculate_progress(self):
         """Calculate progress towards goal based on expenses in linked subcategory."""
         from backend.models.database import Expense  # Avoid circular import
+        from datetime import date
+
+        today = date.today()
 
         total_contributions = (
             db.session.query(db.func.sum(Expense.amount))
@@ -517,6 +520,7 @@ class Goal(db.Model):
                 Expense.category == "Savings & Investments",
                 Expense.subcategory == self.subcategory_name,
                 Expense.amount > 0,  # Only positive contributions count
+                Expense.date <= today,  # Only count expenses that have occurred
             )
             .scalar()
             or 0

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { debtAPI } from '../api'
+import { debtAPI, goalAPI, subcategoryAPI } from '../api'
 
 function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   const isEditing = !!existingExpense
@@ -29,9 +29,13 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [debts, setDebts] = useState([])
+  const [goals, setGoals] = useState([])
+  const [subcategoriesData, setSubcategoriesData] = useState({})
 
   useEffect(() => {
     loadDebts()
+    loadGoals()
+    loadSubcategories()
   }, [])
 
   const loadDebts = async () => {
@@ -43,6 +47,26 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
     }
   }
 
+  const loadGoals = async () => {
+    try {
+      const response = await goalAPI.getAll()
+      setGoals(response.data.goals || [])
+    } catch (error) {
+      console.error('Failed to load goals:', error)
+    }
+  }
+
+  const loadSubcategories = async () => {
+    try {
+      const response = await subcategoryAPI.getAll()
+      setSubcategoriesData(response.data.subcategories || {})
+    } catch (error) {
+      console.error('Failed to load subcategories:', error)
+      // Fallback to empty object if API fails
+      setSubcategoriesData({})
+    }
+  }
+
   const categories = [
     'Fixed Expenses',
     'Flexible Expenses',
@@ -50,14 +74,24 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
     'Debt Payments'
   ]
 
-  const getSubcategories = () => {
+  const getSubcategories = (targetCategory = category) => {
+    // Start with base subcategories
     const baseSubcategories = {
       'Fixed Expenses': ['Rent', 'Utilities', 'Insurance', 'Subscriptions'],
       'Flexible Expenses': ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Health'],
-      'Savings & Investments': ['Emergency Fund', 'Investments', 'Savings Goals'],
+      'Savings & Investments': goals.length > 0
+        ? ['Other', ...goals.map(g => g.subcategory_name)]
+        : ['Other'],
       'Debt Payments': ['Credit Card', ...debts.map(d => d.name)]
     }
-    return baseSubcategories
+
+    // Merge with custom subcategories from API if available (for categories other than Savings & Investments)
+    if (subcategoriesData[targetCategory] && targetCategory !== 'Savings & Investments') {
+      const customSubcats = subcategoriesData[targetCategory].map(s => typeof s === 'string' ? s : s.name)
+      baseSubcategories[targetCategory] = [...new Set([...baseSubcategories[targetCategory], ...customSubcats])]
+    }
+
+    return baseSubcategories[targetCategory] || []
   }
 
   const subcategories = getSubcategories()
@@ -67,8 +101,10 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   const handleCategoryChange = (value) => {
     setCategory(value)
     // Reset to first subcategory of new category
-    const newSubcategories = getSubcategories()[value]
-    setSubcategory(newSubcategories[0])
+    const newSubcategories = getSubcategories(value)
+    if (newSubcategories.length > 0) {
+      setSubcategory(newSubcategories[0])
+    }
   }
 
   const handleSubcategoryChange = (value) => {
@@ -80,6 +116,16 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
       if (selectedDebt && selectedDebt.monthly_payment) {
         setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
         setName(`${value} Payment`)
+      }
+    }
+
+    // If Savings & Investments category, autofill name based on goal selection
+    if (category === 'Savings & Investments') {
+      const selectedGoal = goals.find(g => g.subcategory_name === value)
+      if (selectedGoal) {
+        setName(`${selectedGoal.name} Contribution`)
+      } else if (value === 'Other') {
+        setName('Other Contribution')
       }
     }
   }
@@ -212,10 +258,15 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                 onChange={(e) => handleSubcategoryChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
               >
-                {subcategories[category]?.map(sub => (
+                {getSubcategories().map(sub => (
                   <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>
+              {category === 'Savings & Investments' && goals.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                  💡 Create goals in the Goals page to track your savings progress automatically
+                </p>
+              )}
             </div>
           </div>
 

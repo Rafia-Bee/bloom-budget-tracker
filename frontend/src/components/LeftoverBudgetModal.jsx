@@ -12,7 +12,9 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
   const [leftoverData, setLeftoverData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [allocating, setAllocating] = useState(false)
+  const [allocationType, setAllocationType] = useState('debts') // 'debts' or 'goals'
   const [selectedDebt, setSelectedDebt] = useState(null)
+  const [selectedGoal, setSelectedGoal] = useState(null)
   const [customAmount, setCustomAmount] = useState('')
   const [error, setError] = useState('')
 
@@ -35,6 +37,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
   }
 
   const formatCurrency = (cents) => {
+    if (cents == null || isNaN(cents)) return '$0.00'
     return `$${(cents / 100).toFixed(2)}`
   }
 
@@ -57,8 +60,13 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
       return
     }
 
-    if (!selectedDebt) {
+    if (allocationType === 'debts' && !selectedDebt) {
       setError('Please select a debt to pay')
+      return
+    }
+
+    if (allocationType === 'goals' && !selectedGoal) {
+      setError('Please select a goal to contribute to')
       return
     }
 
@@ -69,11 +77,26 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
       // Use the week's end date for allocation (not today's date)
       const allocationDate = leftoverData.end_date
 
-      await api.post('/debts/pay', {
-        debt_id: selectedDebt,
-        amount: amount,
-        date: allocationDate
-      })
+      if (allocationType === 'debts') {
+        await api.post('/debts/pay', {
+          debt_id: selectedDebt,
+          amount: amount,
+          date: allocationDate
+        })
+      } else if (allocationType === 'goals') {
+        // Find the selected goal to get its subcategory name
+        const goal = leftoverData.allocation_options.goals.find(g => g.id === selectedGoal)
+
+        // Create an expense with the goal's subcategory
+        await api.post('/expenses', {
+          name: `${goal.name} Contribution`,
+          amount: amount,
+          date: allocationDate,
+          category: 'Savings & Investments',
+          subcategory: goal.subcategory_name,
+          payment_method: 'Debit card' // Default for leftover allocation
+        })
+      }
 
       onAllocate()
     } catch (err) {
@@ -150,44 +173,136 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
 
           <div>
             <p className="text-sm text-gray-700 dark:text-dark-text mb-4">
-              💡 <strong>Important:</strong> Leftover budget doesn't carry over. Allocate it now to debt payments!
+              💡 <strong>Important:</strong> Leftover budget doesn't carry over. Allocate it now to debt payments or savings goals!
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">Select Debt</label>
-            {leftoverData.allocation_options.debts.length === 0 ? (
-              <div className="p-4 bg-gray-50 dark:bg-dark-elevated rounded-lg text-center text-sm text-gray-600 dark:text-dark-text-secondary">
-                No active debts. Consider saving instead!
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {leftoverData.allocation_options.debts.map((debt) => (
-                  <button
-                    key={debt.id}
-                    onClick={() => setSelectedDebt(debt.id)}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition ${
-                      selectedDebt === debt.id
-                        ? 'border-bloom-pink dark:border-dark-pink bg-bloom-pink/10 dark:bg-dark-pink/20'
-                        : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold text-gray-800 dark:text-dark-text">{debt.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                          Balance: {formatCurrency(debt.current_balance)}
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-3">Allocate To</label>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={() => {
+                  setAllocationType('debts')
+                  setSelectedGoal(null)
+                }}
+                className={`p-4 rounded-xl border-2 transition ${
+                  allocationType === 'debts'
+                    ? 'border-bloom-pink dark:border-dark-pink bg-bloom-pink/10 dark:bg-dark-pink/20'
+                    : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">💳</div>
+                  <div className="font-semibold text-gray-800 dark:text-dark-text">Debt Payments</div>
+                  <div className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                    Pay down your debts
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setAllocationType('goals')
+                  setSelectedDebt(null)
+                }}
+                className={`p-4 rounded-xl border-2 transition ${
+                  allocationType === 'goals'
+                    ? 'border-bloom-pink dark:border-dark-pink bg-bloom-pink/10 dark:bg-dark-pink/20'
+                    : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <div className="font-semibold text-gray-800 dark:text-dark-text">Savings Goals</div>
+                  <div className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                    Contribute to your goals
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {allocationType === 'debts' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">Select Debt</label>
+              {leftoverData.allocation_options.debts.length === 0 ? (
+                <div className="p-4 bg-gray-50 dark:bg-dark-elevated rounded-lg text-center text-sm text-gray-600 dark:text-dark-text-secondary">
+                  No active debts. Try allocating to savings goals instead!
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leftoverData.allocation_options.debts.map((debt) => (
+                    <button
+                      key={debt.id}
+                      onClick={() => setSelectedDebt(debt.id)}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition ${
+                        selectedDebt === debt.id
+                          ? 'border-bloom-pink dark:border-dark-pink bg-bloom-pink/10 dark:bg-dark-pink/20'
+                          : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold text-gray-800 dark:text-dark-text">{debt.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                            Balance: {formatCurrency(debt.current_balance)}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                          Min: {formatCurrency(debt.monthly_payment)}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                        Min: {formatCurrency(debt.monthly_payment)}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">Select Goal</label>
+              {leftoverData.allocation_options.goals.length === 0 ? (
+                <div className="p-4 bg-gray-50 dark:bg-dark-elevated rounded-lg text-center text-sm text-gray-600 dark:text-dark-text-secondary">
+                  No active goals. Create goals in the Goals page to start tracking your savings!
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leftoverData.allocation_options.goals.map((goal) => {
+                    const progress = Number(goal.progress) || 0
+                    const targetAmount = Number(goal.target_amount) || 1
+                    const progressPercent = ((progress / targetAmount) * 100) || 0
+                    return (
+                      <button
+                        key={goal.id}
+                        onClick={() => setSelectedGoal(goal.id)}
+                        className={`w-full p-3 rounded-lg border-2 text-left transition ${
+                          selectedGoal === goal.id
+                            ? 'border-bloom-pink dark:border-dark-pink bg-bloom-pink/10 dark:bg-dark-pink/20'
+                            : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="font-semibold text-gray-800 dark:text-dark-text">{goal.name}</div>
+                            <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                              {progressPercent.toFixed(0)}%
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-2 mb-1">
+                            <div
+                              className="bg-bloom-pink dark:bg-dark-pink h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                            {formatCurrency(progress)} / {formatCurrency(targetAmount)}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">Amount</label>
@@ -218,7 +333,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
             </button>
             <button
               onClick={handleAllocate}
-              disabled={allocating || !selectedDebt}
+              disabled={allocating || (allocationType === 'debts' ? !selectedDebt : !selectedGoal)}
               className="flex-1 bg-bloom-pink dark:bg-dark-pink text-white py-3 rounded-lg font-semibold hover:bg-pink-600 dark:hover:bg-dark-pink/80 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {allocating ? 'Allocating...' : 'Allocate Funds'}
