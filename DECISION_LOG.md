@@ -6,6 +6,93 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-22
 
+### Consolidated Dashboard Header to Use Shared Component (Issue #97)
+
+**Context:** After implementing the collapsible submenu system with experimental features toggle (issue #95), Dashboard.jsx and Header.jsx had duplicate implementations. Changing the header required editing 2 files instead of 1.
+
+**Problem:**
+
+-   Dashboard had 310 lines (753-1063) of custom header code duplicating Header.jsx functionality
+-   Dashboard managed its own mobile menu state: `showUserMenu`, `showMobileMenu`, `expandedMobileSubmenu`
+-   Adding new header features (like submenu system) required implementing twice:
+    -   Header.jsx for Debts and RecurringExpenses pages
+    -   Dashboard.jsx custom header
+-   Technical debt from previous iterations where Dashboard needed unique period selector placement
+
+**Solution:**
+
+1. **Made Header.jsx flexible with children prop:**
+
+    ```jsx
+    // Desktop: Logo | {children} | Nav | UserMenu
+    <div className="flex items-center gap-4">
+        {children}
+        <NavLink to="/debts">Debts</NavLink>
+        {/* ... */}
+    </div>;
+
+    // Mobile: Added children slot at top of drawer menu
+    {
+        children && <div className="mb-4">{children}</div>;
+    }
+    <NavLink to="/debts">💳 Debts</NavLink>;
+    ```
+
+2. **Migrated Dashboard to use Header component:**
+
+    ```jsx
+    <Header
+        setIsAuthenticated={setIsAuthenticated}
+        onExport={() => {
+            setShowExportModal(true);
+            setExportMode("export");
+        }}
+        onImport={() => {
+            setShowExportModal(true);
+            setExportMode("import");
+        }}
+        onBankImport={() => setShowBankImportModal(true)}
+        onShowExperimental={() => setShowExperimentalModal(true)}
+    >
+        <PeriodSelector
+            currentPeriod={currentPeriod}
+            periods={salaryPeriods}
+            onPeriodChange={handlePeriodChange}
+            onCreateNew={() => setShowSalaryWizard(true)}
+            onEdit={handleEditPeriod}
+            onDelete={handleDeletePeriod}
+        />
+    </Header>
+    ```
+
+3. **Removed duplicate state and imports:**
+    - Deleted `showUserMenu`, `showMobileMenu`, `expandedMobileSubmenu` state variables
+    - Removed `ThemeToggle` import (Header handles it)
+    - Cleaned up click-outside event listener
+
+**Rationale:**
+
+-   **Single source of truth:** Header changes now apply to all pages automatically
+-   **Reduced code:** Eliminated 310 lines of duplicate header code from Dashboard
+-   **Maintainability:** Future header features (new nav items, menu options) only need 1 update
+-   **Consistency:** All pages share exact same header behavior and styling
+-   **Flexibility:** `children` prop allows page-specific content (PeriodSelector) while keeping header logic centralized
+
+**Impact:**
+
+-   ✅ Dashboard now uses shared Header component (reduced from 310 to ~25 lines)
+-   ✅ PeriodSelector appears correctly in both desktop and mobile layouts
+-   ✅ All pages (Dashboard, Debts, RecurringExpenses) share same header implementation
+-   ✅ Future header changes only need editing Header.jsx
+-   ⚠️ If PeriodSelector behavior changes, only Dashboard is affected (good isolation)
+
+**Files Changed:**
+
+-   [frontend/src/components/Header.jsx](frontend/src/components/Header.jsx): Line 308-310 (mobile children slot)
+-   [frontend/src/pages/Dashboard.jsx](frontend/src/pages/Dashboard.jsx): Removed lines 753-1063, added Header import, removed 3 state variables
+
+---
+
 ### Fixed Export/Import Bugs for Comprehensive Data Portability (Issue #90)
 
 **Context:** Export/import functionality was designed to transfer all user data between environments, but had two critical bugs preventing full data portability.

@@ -13,6 +13,7 @@ import AddIncomeModal from '../components/AddIncomeModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditExpenseModal from '../components/EditExpenseModal'
 import EditIncomeModal from '../components/EditIncomeModal'
+import Header from '../components/Header'
 import PeriodSelector from '../components/PeriodSelector'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
@@ -24,7 +25,6 @@ import FilterTransactionsModal from '../components/FilterTransactionsModal'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
-import ThemeToggle from '../components/ThemeToggle'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -42,9 +42,6 @@ function Dashboard({ setIsAuthenticated }) {
   const [salaryPeriods, setSalaryPeriods] = useState([]) // Salary periods for selector
   const [showRolloverPrompt, setShowRolloverPrompt] = useState(false)
   const [rolloverData, setRolloverData] = useState(null)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [expandedMobileSubmenu, setExpandedMobileSubmenu] = useState(null) // 'import-export' | 'experimental' | null
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
@@ -97,9 +94,6 @@ function Dashboard({ setIsAuthenticated }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest('.user-menu')) {
-        setShowUserMenu(false)
-      }
       if (!e.target.closest('.add-menu')) {
         setShowAddMenu(false)
       }
@@ -749,318 +743,29 @@ function Dashboard({ setIsAuthenticated }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-dark-base dark:to-dark-surface">
-      {/* Header */}
-      <header className="bg-white dark:bg-dark-surface shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {/* Mobile Header */}
-          <div className="flex justify-between items-center md:hidden">
-            <div className="max-w-[70%]">
-              <h1 className="text-2xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-[10px] leading-tight text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
-            </div>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="w-10 h-10 rounded-lg bg-bloom-pink/10 hover:bg-bloom-pink/20 transition flex items-center justify-center text-bloom-pink"
-              aria-label="Menu"
-            >
-              {showMobileMenu ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Desktop Header */}
-          <div className="hidden md:flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-bloom-pink">Bloom</h1>
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Financial Habits That Grow With You</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <PeriodSelector
-                currentPeriod={currentPeriod}
-                periods={salaryPeriods}
-                onPeriodChange={handlePeriodChange}
-                onCreateNew={() => setShowSalaryWizard(true)}
-                onEdit={(period) => {
-                  // Only allow editing salary periods (has weekly_budget field)
-                  if (period.weekly_budget !== undefined) {
-                    setEditSalaryPeriod(period)
-                    setShowSalaryWizard(true)
-                  }
-                  // Individual weeks (salary_period_id set) are not editable
-                }}
-                onDelete={handleDeletePeriod}
-              />
-              <a
-                href="/debts"
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold"
-              >
-                Debts
-              </a>
-              <a
-                href="/recurring-expenses"
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold"
-              >
-                Recurring
-              </a>
-              <div className="relative user-menu">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-10 h-10 rounded-full bg-bloom-pink dark:bg-dark-pink hover:bg-opacity-80 transition flex items-center justify-center text-white font-semibold"
-                  title="User menu"
-                >
-                  {localStorage.getItem('user_email')?.charAt(0).toUpperCase() || 'U'}
-                </button>
-
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
-                      <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Signed in as</p>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
-                    </div>
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-dark-border">
-                      <ThemeToggle />
-                    </div>
-                    <button
-                      onClick={() => {
-                        setShowExportModal(true)
-                        setExportMode('export')
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Export Data
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowExportModal(true)
-                        setExportMode('import')
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      Import Data
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowBankImportModal(true)
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                      </svg>
-                      Import Bank Transactions
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowExperimentalModal(true)
-                        setShowUserMenu(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                      </svg>
-                      ⚗️ Experimental Features
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2 border-t border-gray-200 dark:border-dark-border mt-2 pt-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {showMobileMenu && (
-            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
-              <div className="space-y-3">
-                {/* Period Selector - Mobile */}
-                <div className="mb-4">
-                  <PeriodSelector
-                    currentPeriod={currentPeriod}
-                    periods={allPeriods}
-                    onPeriodChange={handlePeriodChange}
-                    onCreateNew={() => {
-                      setShowSalaryWizard(true)
-                      setShowMobileMenu(false)
-                    }}
-                    onEdit={(period) => {
-                      // Only allow editing salary periods (has weekly_budget field)
-                      if (period.weekly_budget !== undefined) {
-                        setEditSalaryPeriod(period)
-                        setShowSalaryWizard(true)
-                      }
-                      // Individual weeks (salary_period_id set) are not editable
-                      setShowMobileMenu(false)
-                    }}
-                    onDelete={handleDeletePeriod}
-                  />
-                </div>
-
-                {/* Navigation Links */}
-                <a
-                  href="/debts"
-                  className="block px-4 py-3 text-gray-700 dark:text-dark-text hover:bg-bloom-pink/10 dark:hover:bg-dark-pink/20 hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  💳 Debts
-                </a>
-                <a
-                  href="/recurring-expenses"
-                  className="block px-4 py-3 text-gray-700 dark:text-dark-text hover:bg-bloom-pink/10 dark:hover:bg-dark-pink/20 hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  🔄 Recurring Expenses
-                </a>
-
-                {/* User Info & Action Buttons */}
-                <div className="border-t border-gray-200 dark:border-dark-border pt-3 mt-3">
-                  <div className="px-4 py-2 mb-2">
-                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary">Signed in as</p>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-dark-text">{localStorage.getItem('user_email')}</p>
-                  </div>
-                  <div className="px-4 py-2 border-b border-t border-gray-200 dark:border-dark-border">
-                    <ThemeToggle />
-                  </div>
-
-                  {/* Import/Export Submenu */}
-                  <>
-                    <button
-                      onClick={() =>
-                        setExpandedMobileSubmenu(
-                          expandedMobileSubmenu === "import-export" ? null : "import-export"
-                        )
-                      }
-                      className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center justify-between group font-semibold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                        </svg>
-                        <span>Import/Export</span>
-                      </div>
-                      <svg
-                        className={`w-5 h-5 transition-transform duration-150 ${
-                          expandedMobileSubmenu === "import-export" ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                    {expandedMobileSubmenu === "import-export" && (
-                      <div className="bg-gray-50 dark:bg-dark-elevated border-l-2 border-bloom-pink dark:border-dark-pink ml-4 my-1 rounded-lg overflow-hidden transition-all duration-150">
-                        <button
-                          onClick={() => { setShowExportModal(true); setExportMode('export'); setShowMobileMenu(false); setExpandedMobileSubmenu(null); }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                          Export Financial Data
-                        </button>
-                        <button
-                          onClick={() => { setShowExportModal(true); setExportMode('import'); setShowMobileMenu(false); setExpandedMobileSubmenu(null); }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                          Import Financial Data
-                        </button>
-                        <button
-                          onClick={() => { setShowBankImportModal(true); setShowMobileMenu(false); setExpandedMobileSubmenu(null); }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-border transition flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                          Import Bank Transactions
-                        </button>
-                      </div>
-                    )}
-                  </>
-
-                  {/* Experimental Features Toggle */}
-                  <>
-                    <div className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>⚗️</span>
-                          <span className="text-sm font-semibold text-gray-700 dark:text-dark-text-secondary">Experimental Features</span>
-                        </div>
-                        <button
-                          onClick={() => toggleFlag('experimentalFeaturesEnabled')}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            flags.experimentalFeaturesEnabled
-                              ? 'bg-bloom-pink dark:bg-dark-pink'
-                              : 'bg-gray-200 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              flags.experimentalFeaturesEnabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Delete All Data - only show when experimental is ON */}
-                    {flags.experimentalFeaturesEnabled && (
-                      <button
-                        onClick={() => { setShowExperimentalModal(true); setShowMobileMenu(false); }}
-                        className="w-full text-left px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition rounded-lg flex items-center gap-2 font-semibold"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        🗑️ Delete All Data
-                      </button>
-                    )}
-                  </>
-
-                  <button
-                    onClick={() => {
-                      handleLogout()
-                      setShowMobileMenu(false)
-                    }}
-                    className="w-full text-left px-4 py-3 text-red-600 dark:text-dark-danger hover:bg-red-50 dark:hover:bg-red-950/30 transition rounded-lg flex items-center gap-2 font-semibold"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
+      <Header
+        setIsAuthenticated={setIsAuthenticated}
+        onExport={() => { setShowExportModal(true); setExportMode('export'); }}
+        onImport={() => { setShowExportModal(true); setExportMode('import'); }}
+        onBankImport={() => setShowBankImportModal(true)}
+        onShowExperimental={() => setShowExperimentalModal(true)}
+      >
+        <PeriodSelector
+          currentPeriod={currentPeriod}
+          periods={salaryPeriods}
+          onPeriodChange={handlePeriodChange}
+          onCreateNew={() => setShowSalaryWizard(true)}
+          onEdit={(period) => {
+            // Only allow editing salary periods (has weekly_budget field)
+            if (period.weekly_budget !== undefined) {
+              setEditSalaryPeriod(period)
+              setShowSalaryWizard(true)
+            }
+            // Individual weeks (salary_period_id set) are not editable
+          }}
+          onDelete={handleDeletePeriod}
+        />
+      </Header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">{!currentPeriod ? (

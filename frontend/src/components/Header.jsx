@@ -307,6 +307,9 @@ function Header({
           {showMobileMenu && (
             <div className="mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4">
             <div className="space-y-3">
+              {/* Custom content slot (e.g., PeriodSelector for Dashboard) */}
+              {children && <div className="mb-4">{children}</div>}
+
               <nav className="flex flex-col space-y-2">
                 {mobileNavigationLinks}
               </nav>
