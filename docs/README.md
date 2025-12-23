@@ -56,12 +56,12 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 ### [RECURRING_EXPENSES.md](RECURRING_EXPENSES.md)
 
-**Automation system for repeating expenses:**
+**On-demand expense generation system:**
 
 -   Data model and API endpoints
 -   Frontend components and UI
 -   Scheduling options (weekly/biweekly/monthly/custom)
--   Auto-generation with 60-day lookahead
+-   Manual "Generate Now" button for user-controlled generation
 
 ### [BANK_IMPORT.md](BANK_IMPORT.md)
 
@@ -91,22 +91,21 @@ Comprehensive documentation for the Bloom budget tracking application.
 
 ## 🗄️ Infrastructure Documentation
 
-### [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
+### [DATABASE_ANALYSIS.md](DATABASE_ANALYSIS.md)
 
-**Database management and scaling:**
+**Database schema documentation:**
 
--   Current: SQLite on Render persistent disk (free, no expiration)
--   ✅ Migrated to Neon PostgreSQL (Dec 4, 2025)
--   Future scaling: Neon Launch ($19/month) for 3GB + unlimited compute
--   Backup strategies and cost comparison
+-   Complete entity relationship diagram
+-   Table structure and relationships
+-   SQLAlchemy model mappings
 
-### [CLOUDFLARE_MIGRATION.md](CLOUDFLARE_MIGRATION.md)
+### ~~DATABASE_MIGRATION.md~~ (Archived)
 
-**✅ Completed migration (Dec 2, 2025):**
+Historical migration guide - now using Neon PostgreSQL in production.
 
--   Netlify → Cloudflare Pages migration
--   Configuration and setup steps
--   Post-migration checklist
+### ~~CLOUDFLARE_MIGRATION.md~~ (Archived)
+
+Completed migration (Dec 2, 2025) - Netlify → Cloudflare Pages.
 
 ## 🧪 Development Documentation
 

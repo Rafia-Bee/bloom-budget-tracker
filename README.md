@@ -2,159 +2,82 @@
 
 > Financial Habits That Grow With You
 
-A flexible web-based budget tracking application accessible from any device (Android, iPad, PC).
+A balance-based weekly budget tracker with 4-week salary period planning. Track expenses across debit and credit cards, manage debts with payoff projections, and hit your savings goals.
 
-**🌐 Live Demo:** [https://bloom-tracker.app](https://bloom-tracker.app)
+**🌐 Live:** [https://bloom-tracker.app](https://bloom-tracker.app)
 
-**📱 Progressive Web App:** Install on your device for offline access!
+**📱 Progressive Web App:** Install on any device for offline access!
 
-## Current Status
+## ✨ Features
 
-✅ **Fully Functional Budget Tracker** - All core features implemented and working
+### 💰 Balance-Based Weekly Budgeting
 
-### Completed Features
+-   **4-Week Salary Periods**: Break monthly pay into 4 manageable weekly budgets
+-   **Smart Carryover**: Overspend Week 1? Week 2's budget auto-adjusts
+-   **Wizard Setup**: 3-step wizard - enter balances, review fixed bills, confirm budget
+-   **Dual Card Tracking**: Separate debit and credit balance monitoring
 
--   ✅ User authentication with JWT tokens
--   ✅ Flexible budget periods (weekly, monthly, custom intervals)
--   ✅ Unified transaction tracking (expenses and income)
--   ✅ Transaction editing and deletion
--   ✅ Debit/Credit card payment tracking with balance limits
--   ✅ Debt management with automatic balance updates
--   ✅ Debt payment tracking with expandable history
--   ✅ Debt archive system (auto-archives when paid off)
--   ✅ Visual progress indicators and payoff projections
--   ✅ Period-based transaction filtering
--   ✅ Cumulative balance calculations across periods
--   ✅ Future/scheduled transaction indicators
--   ✅ Sticky navigation with user email display
--   ✅ Streamlined debt payment workflow
--   ✅ Recurring expenses automation with smart scheduling
--   ✅ Auto-generation of recurring expenses (60-day lookahead)
--   ✅ Recurring expense templates management
--   ✅ Purple "Recurring" badge on Dashboard transactions
--   ✅ Comprehensive seed data for testing
--   ✅ **PWA Support** - Installable as offline-capable app
--   ✅ **Production Deployment** - Live on Cloudflare Pages with unlimited builds
--   ✅ **Mobile Optimized** - Responsive hamburger navigation and touch-friendly UI
--   ✅ **Dark Mode** - Warm plum-tinted theme with system/manual toggle across entire app
+### 📊 Transaction Management
 
-### In Development
+-   **Quick Entry**: Pre-filled defaults, 3 clicks to add an expense
+-   **Bank Import**: Paste transactions directly from your bank statement
+-   **European Date Format**: DD/MM/YYYY throughout
+-   **Smart Categorization**: Auto-categorizes common merchants (Wolt → Food, Netflix → Entertainment)
 
--   🚧 End-of-period suggestions
--   📋 Budget categories & spending limits
--   📋 Reports & analytics
+### 🔄 Recurring Expenses
 
-## Core Features
+-   **On-Demand Generation**: Preview scheduled expenses and confirm when ready
+-   **Configurable Lookahead**: Choose how far ahead to preview (7-90 days)
+-   **Fixed Bills Toggle**: Mark essential bills to exclude from weekly budget
 
-### Budget Management
+### 💳 Debt Management
 
--   **Flexible Budget Periods**: User-defined periods (weekly, bi-weekly, monthly, custom)
--   **Cross-Platform**: Web interface accessible from all devices
--   **Budget Monitoring**: Visual progress tracking against budget limits
--   **Period History**: View past budget periods and spending patterns
+-   **Progress Tracking**: Visual progress bars with payoff projections
+-   **Auto-Archive**: Paid-off debts automatically archive
+-   **Payment History**: Expandable payment log per debt
+-   **Credit Card Integration**: Credit card debt shown on Debts page
 
-### Quick Expense Entry (Max 3-4 Clicks)
+### 🎯 Goals & Savings
 
--   **Smart Defaults**: Pre-filled form with most common expense (Wolt, Flex category, Food subcategory)
--   **Quick Save**: Enter amount only and press Enter/Save
--   **Flexible Override**: Can modify any pre-filled field when needed
--   **Date Auto-Fill**: Defaults to current date
--   **Payment Method**: Credit card checkbox (default: checked)
+-   **Savings Goals**: Set targets with progress tracking
+-   **Visual Progress**: See how close you are to each goal
+-   **Category Integration**: Goals linked to expense categories
 
-### Expense Categories
+### 📤 Data Export/Import
 
-1. **Fixed Expenses**: Rent, bills, subscriptions, insurance
-2. **Debt Payments**: Student loans, personal loans, credit card debt (paid monthly on payday)
-3. **Sinking Funds**: Travel savings, clothing fund, etc.
-4. **Flexible Expenses**: Food, shopping, cat food
-5. **Investments**: Funds, ETFs (tracked separately, excluded from Total Balance)
-6. **Savings**: Money to savings account (tracked separately, excluded from Total Balance)
+-   **JSON Export**: Full backup for re-importing
+-   **CSV Export**: Weekly budget breakdowns for spreadsheet analysis
+-   **Selective Export**: Choose periods, transactions, debts, or settings
 
-### AI-Powered Subcategorization
+### 🎨 User Experience
 
--   **Automatic Classification**: Expense names automatically subcategorized
-    -   "wolt" → Food
-    -   "netflix" → Entertainment
-    -   "temu", "shein" → Shopping
-    -   "zooplus" → Cat Stuff
--   **Manual Updates**: Developer periodically updates subcategories via database access
--   **No API Key Needed**: Assistant manually categorizes new expense names
+-   **Dark Mode**: Warm plum-tinted theme with system/manual toggle
+-   **Mobile-First**: Responsive design with hamburger navigation
+-   **Draggable FAB**: Floating action button you can reposition
+-   **Custom Categories**: Create your own subcategories per expense type
+-   **Offline Support**: Works without internet after first visit
 
-### Payment Method Tracking
+### 🔒 Security
 
--   **Debit Card**: Default bank account balance
--   **Credit Card**: €1,500 credit limit with goal to pay off monthly
--   **No Cash Tracking**: App handles card payments only
--   Each expense can be assigned to either debit or credit card
-
-### Income Tracking
-
-1. **Salary**:
-    - Fixed amount paid on the 20th of each month
-    - Auto-adjusts to previous Friday if 20th falls on weekend
-2. **Savings**:
-    - Auto-calculated from Savings category expenses
-    - Displayed separately, excluded from Total Balance
-3. **Investments**:
-    - Similar to Savings tracking
-    - Excluded from Total Balance
-
-### End-of-Period Suggestions
-
--   **Smart Recommendations**: App suggests how to use leftover balance
-    -   Priority 1: Pay off credit card in full
-    -   Priority 2: Make extra debt payments
-    -   Priority 3: Add to savings
--   **User Choice**: Accept all, customize, or decline suggestions
+-   **Secure Auth**: HttpOnly cookie-based JWT (no localStorage tokens)
+-   **Account Lockout**: Auto-locks after failed login attempts
+-   **Password Reset**: Email-based reset flow via SendGrid
+-   **Rate Limiting**: Protected against brute force attacks
 
 ## Tech Stack
 
--   **Frontend**: React + Vite
--   **Backend**: Flask (Python) - RESTful API
--   **Database**: Neon PostgreSQL (serverless, 0.5GB free tier)
-    -   ✅ Optimized composite indexes for fast query performance
-    -   ✅ Database-level CHECK constraints for data integrity
-    -   ✅ Proper foreign key cascade behavior
-    -   ✅ Flask-Migrate for schema versioning
--   **Styling**: Tailwind CSS
--   **Authentication**: JWT tokens
--   **PWA**: Service Worker for offline support
--   **Hosting**: Cloudflare Pages (Frontend), Render (Backend), Neon (Database)
+| Layer        | Technology                                     |
+| ------------ | ---------------------------------------------- |
+| **Frontend** | React 18 + Vite                                |
+| **Styling**  | Tailwind CSS                                   |
+| **Backend**  | Flask (Python 3.11)                            |
+| **Database** | PostgreSQL (Neon - serverless)                 |
+| **Auth**     | JWT in HttpOnly cookies                        |
+| **Email**    | SendGrid                                       |
+| **Hosting**  | Cloudflare Pages (Frontend) + Render (Backend) |
+| **PWA**      | Workbox + vite-plugin-pwa                      |
 
-## Project Structure
-
-```text
-Bloom/
-├── backend/              # Flask API
-│   ├── models/          # Database models (User, BudgetPeriod, Expense, Income, Debt)
-│   ├── routes/          # API endpoints (auth, budget_periods, expenses, income, debts)
-│   ├── utils/           # Helper functions (recurring expense generation)
-│   ├── app.py           # Flask application setup
-│   ├── config.py        # Configuration
-│   ├── seed_data.py     # Test data generation
-│   └── run_recurring_generation.py  # Scheduled task for recurring expenses
-├── frontend/            # React web app
-│   └── src/
-│       ├── components/  # Reusable UI components
-│       ├── pages/       # Main pages (Dashboard, Debts, Login, Register, RecurringExpenses)
-│       ├── api.js       # API client
-│       └── main.jsx     # App entry point
-├── scripts/             # Utility scripts
-│   ├── maintenance.py   # Database maintenance & migrations
-│   ├── test_api.py      # API testing script
-│   └── README.md        # Scripts documentation
-├── docs/                # Documentation
-│   ├── FEATURES.md      # Feature specifications
-│   ├── FRONTEND_REQUIREMENTS.md  # UI/UX requirements
-│   ├── RECURRING_EXPENSES.md     # Recurring expenses documentation
-│   └── README.md        # Documentation index
-├── instance/            # SQLite database (gitignored)
-├── run.py              # Application entry point
-├── start.ps1           # Development startup script
-└── requirements.txt    # Python dependencies
-```
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
@@ -163,179 +86,84 @@ Bloom/
 
 ### Installation
 
-1. **Install backend dependencies:**
-
-    ```powershell
-    pip install -r requirements.txt
-    ```
-
-2. **Install frontend dependencies:**
-
-    ```powershell
-    cd frontend
-    npm install
-    cd ..
-    ```
-
-3. **Seed test data (optional):**
-
-    ```powershell
-    python -m backend.seed_data
-    ```
-
-    Creates test user (email: `test@test.com`, password: `test`) with 4 weekly November periods and 62 sample transactions.
-
-4. **Run database migrations (if upgrading from older version):**
-
-    ```powershell
-    python scripts/maintenance.py migrate
-    ```
-
-### Running the Application
-
-**Development mode (concurrent servers):**
-
 ```powershell
-.\start.ps1
+# Backend
+pip install -r requirements.txt
+
+# Frontend
+cd frontend && npm install && cd ..
 ```
 
-This starts both backend (port 5000) and frontend (port 3000) simultaneously.
+### Development
 
-**⚠️ Important: Cookie-Based Authentication**
+```powershell
+.\start.ps1   # Runs backend (:5000) + frontend (:3000) concurrently
+```
 
-Starting from security update #80, authentication uses httpOnly cookies instead of localStorage for enhanced security. For cookies to work correctly:
-
--   **Local development**: Access via `http://localhost:3000` (default)
--   **Network/mobile testing**: Access via your computer's IP (e.g., `http://192.168.0.156:3000`)
--   **Key requirement**: Frontend and backend must be on the same domain
-
-**Configuration:**
-
--   Default (`frontend/.env`): Uses `localhost` for local development
--   Network testing (`frontend/.env.local`): Set `VITE_API_URL=http://YOUR_IP:5000/api/v1` and access frontend via `http://YOUR_IP:3000`
--   `.env.local` is git-ignored and safe for local IP addresses
-
-**Manual start:**
+Or manually:
 
 ```powershell
 # Terminal 1 - Backend
 python run.py
 
 # Terminal 2 - Frontend
-cd frontend
-npm run dev
+cd frontend && npm run dev
 ```
 
-Access the app at `http://localhost:3000` (or your network IP if configured)
+Access at `http://localhost:3000`
 
-### Production Deployment
+### Test Account
 
-The app is deployed to Cloudflare Pages and accessible at:
-**https://bloom-tracker.app** (custom domain via Cloudflare Pages)
+-   **Email:** `test@test.com`
+-   **Password:** `test`
 
-**Features:**
+## 🗺️ Roadmap
 
--   ✅ Progressive Web App (PWA) - Install on any device
--   ✅ Offline support - Works without internet after first visit
--   ✅ Auto-updates - Always get the latest version
--   ✅ Unlimited deploys via Cloudflare Pages
+### In Progress
 
-**Install on iPad/Mobile:**
+-   🔧 Day-by-day transaction navigation (#92)
+-   🔧 Comprehensive calculation audit (#94)
 
-1. Open Safari (iOS) or Chrome (Android)
-2. Visit the live URL
-3. Tap Share → "Add to Home Screen"
-4. Access the app icon like a native app
-5. Works offline during flights! ✈️
+### Planned Features
 
-## Usage
+-   📋 End-of-period smart suggestions (#1)
+-   📋 Budget categories with spending limits (#2)
+-   📋 Reports & analytics dashboard (#3)
+-   📋 Notifications & reminders (#6)
+-   📋 Multi-currency support (#7)
+-   📋 Receipt OCR scanning (#8)
+-   📋 Flexible sub-period division (#9)
+-   📋 Google Calendar integration (#25)
 
-### First Time Setup
+### Technical Improvements
 
-1. Register a new account or use test credentials:
+-   🔧 Redis-based rate limiting (#32)
+-   🔧 Email verification flow (#33)
+-   🔧 Sentry error tracking (#38)
 
-    - Email: `test@test.com`
-    - Password: `test`
+## Project Structure
 
-2. Create your first budget period:
-
-    - Click "Create New Period" button
-    - Choose period type (weekly/monthly/custom)
-    - Set start and end dates
-
-3. Add transactions:
-    - Use floating "+" button for quick access
-    - Add Income, Add Expense, or Debt Payment
-    - Transactions are automatically linked to the active period
-
-### Managing Debts
-
-1. Navigate to "Debts" page
-2. Click "Add Debt" to create a new debt
-3. Record payments via "Debt Payment" button (pre-fills category)
-4. View payment history by expanding debt cards
-5. Archived debts (fully paid) appear in collapsible "Archived Debts" section
-
-### Managing Recurring Expenses
-
-1. Navigate to "Recurring" page from Dashboard or Debts page
-2. Click "Add Recurring Expense" to create templates
-3. Choose frequency (weekly, biweekly, monthly, or custom intervals)
-4. Set scheduling options (day of week/month, start/end dates)
-5. Click "⚡ Generate Now" to manually create expenses from templates
-6. View active and paused templates with edit/delete options
-
-**Quick Create:** Use "Make this recurring" checkbox in Add Expense modal for faster template creation.
-
-## Documentation
-
--   **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment setup and troubleshooting
--   **[Feature Specifications](docs/FEATURES.md)** - Detailed feature documentation
--   **[Frontend Requirements](docs/FRONTEND_REQUIREMENTS.md)** - UI/UX design system
--   **[Recurring Expenses](docs/RECURRING_EXPENSES.md)** - Automation setup and usage
--   **[Scripts](scripts/README.md)** - Maintenance and utility scripts
-
-## Utility Scripts
-
-### Database Maintenance
-
-```powershell
-# Run all migrations
-python scripts/maintenance.py migrate
-
-# Remove orphaned recurring expenses
-python scripts/maintenance.py cleanup-recurring
-
-# Remove duplicate recurring templates
-python scripts/maintenance.py remove-duplicates
-
-# Verify database integrity
-python scripts/maintenance.py verify-db
 ```
-
-See [scripts/README.md](scripts/README.md) for full documentation.
+bloom-budget-tracker/
+├── backend/                 # Flask API
+│   ├── models/             # SQLAlchemy models
+│   ├── routes/             # API endpoints
+│   ├── services/           # Business logic (balance calculations)
+│   └── migrations/         # Database migrations (Flask-Migrate)
+├── frontend/               # React + Vite app
+│   └── src/
+│       ├── components/     # Reusable UI components
+│       ├── pages/          # Dashboard, Debts, Goals, Settings, etc.
+│       └── contexts/       # Theme, Feature Flags
+├── scripts/                # Maintenance & migration utilities
+├── docs/                   # Documentation
+└── start.ps1              # Development startup script
+```
 
 ## Support
 
--   **Email**: support@bloom-tracker.app
--   **Questions**: Email support for help with features or issues
--   **Bug Reports**: Send bug details to support@bloom-tracker.app
+📧 **Email:** support@bloom-tracker.app
 
-## Next Steps
+---
 
-1. ~~Set up development environment~~ ✅
-2. ~~Design database schema~~ ✅
-3. ~~Build backend API with Flask~~ ✅
-4. ~~Build frontend with React~~ ✅
-5. ~~Implement core features (expense tracking, budget monitoring)~~ ✅
-6. ~~Implement recurring expenses automation~~ ✅
-7. ~~Add PWA support for offline access~~ ✅
-8. ~~Deploy to production (Cloudflare Pages)~~ ✅
-9. ~~Mobile UI optimization~~ ✅
-10. ~~Set up support email (CloudFlare Email Routing)~~ ✅
-11. Add end-of-period suggestions
-12. Add budget categories with spending limits
-13. Deploy backend to cloud (Render/Railway)
-14. Add budget visualizations and spending trends
-15. Cross-browser testing
-16. Performance optimization for large datasets
+<p align="center">Made with 🌸 for mindful money management</p>

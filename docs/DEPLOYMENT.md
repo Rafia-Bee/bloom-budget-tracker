@@ -25,13 +25,13 @@ This guide covers the production deployment setup for Bloom Budget Tracker.
 -   Auto-deploys from: `main` branch
 -   Start command: `gunicorn -w 4 -b 0.0.0.0:$PORT backend.app:app`
 
-**Database**
+**Database (Neon PostgreSQL)**
 
--   Type: SQLite (perfect for personal use, no expiration)
--   Storage: Render persistent disk (1GB free)
--   Location: `/opt/render/project/data/bloom.db`
--   Backup: Automatic daily backups via GitHub Actions
--   Future scaling: See [DATABASE_MIGRATION.md](DATABASE_MIGRATION.md)
+-   Type: PostgreSQL (Neon serverless)
+-   Plan: Free tier (0.5GB storage, 100 hours compute/month)
+-   Auto-suspends after 5 minutes of inactivity
+-   Connection pooling enabled
+-   Backup: Automatic via Neon
 
 ---
 

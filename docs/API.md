@@ -10,94 +10,94 @@ All endpoints require JWT authentication unless otherwise specified.
 
 ## Table of Contents
 
-- [Authentication](#authentication)
-- [Expenses](#expenses)
-- [Income](#income)
-- [Debts](#debts)
-- [Budget Periods](#budget-periods)
-- [Salary Periods](#salary-periods)
-- [Recurring Expenses](#recurring-expenses)
-- [Import/Export](#importexport)
-- [Error Responses](#error-responses)
+-   [Authentication](#authentication)
+-   [Expenses](#expenses)
+-   [Income](#income)
+-   [Debts](#debts)
+-   [Budget Periods](#budget-periods)
+-   [Salary Periods](#salary-periods)
+-   [Recurring Expenses](#recurring-expenses)
+-   [Import/Export](#importexport)
+-   [Error Responses](#error-responses)
 
 ---
 
 ## Authentication
 
+> **Note:** As of December 2025, authentication uses HttpOnly cookies instead of Bearer tokens in the Authorization header. Tokens are automatically set/sent via cookies.
+
 ### Register
 
-Create a new user account.
+Create a new user account. Tokens are set in HttpOnly cookies.
 
 **Endpoint:** `POST /auth/register`
 
 **Authentication:** None required
 
 **Request Body:**
+
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword123"
+    "email": "user@example.com",
+    "password": "securepassword123"
 }
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
-  "message": "User created successfully",
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "user": {
-    "id": 1,
-    "email": "user@example.com"
-  }
+    "message": "User created successfully",
+    "user": {
+        "id": 1,
+        "email": "user@example.com"
+    }
 }
 ```
 
 ### Login
 
-Authenticate and receive JWT tokens.
+Authenticate and receive JWT tokens (set in HttpOnly cookies).
 
 **Endpoint:** `POST /auth/login`
 
 **Authentication:** None required
 
 **Request Body:**
+
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword123"
+    "email": "user@example.com",
+    "password": "securepassword123"
 }
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "user": {
-    "id": 1,
-    "email": "user@example.com"
-  }
+    "message": "Login successful",
+    "user": {
+        "id": 1,
+        "email": "user@example.com"
+    }
 }
 ```
 
 ### Refresh Token
 
-Get a new access token using refresh token.
+Get a new access token using refresh token (from cookie).
 
 **Endpoint:** `POST /auth/refresh`
 
-**Authentication:** Refresh token required
-
-**Headers:**
-```
-Authorization: Bearer <refresh_token>
-```
+**Authentication:** Refresh token required (sent automatically via cookie)
 
 **Response:** `200 OK`
+
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  "message": "Token refreshed successfully"
+}
 }
 ```
 
@@ -110,11 +110,12 @@ Get information about the authenticated user.
 **Authentication:** Required
 
 **Response:** `200 OK`
+
 ```json
 {
-  "id": 1,
-  "email": "user@example.com",
-  "created_at": "2025-12-02T12:00:00"
+    "id": 1,
+    "email": "user@example.com",
+    "created_at": "2025-12-02T12:00:00"
 }
 ```
 
@@ -127,16 +128,18 @@ Request a password reset email.
 **Authentication:** None required
 
 **Request Body:**
+
 ```json
 {
-  "email": "user@example.com"
+    "email": "user@example.com"
 }
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "If an account with that email exists, a password reset link has been sent."
+    "message": "If an account with that email exists, a password reset link has been sent."
 }
 ```
 
@@ -145,10 +148,11 @@ Request a password reset email.
 **Endpoint:** `POST /auth/password-reset/reset`
 
 **Request Body:**
+
 ```json
 {
-  "token": "reset-token-from-email",
-  "new_password": "newsecurepassword123"
+    "token": "reset-token-from-email",
+    "new_password": "newsecurepassword123"
 }
 ```
 
@@ -165,44 +169,46 @@ Retrieve expenses with optional filtering and pagination.
 **Authentication:** Required
 
 **Query Parameters:**
-- `page` (integer, default: 1) - Page number
-- `limit` (integer, default: 50) - Items per page
-- `budget_period_id` (integer) - Filter by budget period
-- `category` (string) - Filter by category
-- `subcategory` (string) - Filter by subcategory
-- `payment_method` (string) - "debit" or "credit"
-- `start_date` (string) - YYYY-MM-DD format
-- `end_date` (string) - YYYY-MM-DD format
-- `min_amount` (number) - Minimum amount in cents
-- `max_amount` (number) - Maximum amount in cents
-- `search` (string) - Search in name/notes
+
+-   `page` (integer, default: 1) - Page number
+-   `limit` (integer, default: 50) - Items per page
+-   `budget_period_id` (integer) - Filter by budget period
+-   `category` (string) - Filter by category
+-   `subcategory` (string) - Filter by subcategory
+-   `payment_method` (string) - "debit" or "credit"
+-   `start_date` (string) - YYYY-MM-DD format
+-   `end_date` (string) - YYYY-MM-DD format
+-   `min_amount` (number) - Minimum amount in cents
+-   `max_amount` (number) - Maximum amount in cents
+-   `search` (string) - Search in name/notes
 
 **Response:** `200 OK`
+
 ```json
 {
-  "expenses": [
-    {
-      "id": 1,
-      "name": "Groceries",
-      "amount": 5000,
-      "category": "Flexible Expenses",
-      "subcategory": "Food",
-      "payment_method": "debit",
-      "date": "2025-12-02",
-      "notes": "Weekly shopping",
-      "budget_period_id": 1,
-      "recurring_expense_id": null,
-      "is_debt_payment": false,
-      "debt_id": null,
-      "created_at": "2025-12-02T12:00:00"
+    "expenses": [
+        {
+            "id": 1,
+            "name": "Groceries",
+            "amount": 5000,
+            "category": "Flexible Expenses",
+            "subcategory": "Food",
+            "payment_method": "debit",
+            "date": "2025-12-02",
+            "notes": "Weekly shopping",
+            "budget_period_id": 1,
+            "recurring_expense_id": null,
+            "is_debt_payment": false,
+            "debt_id": null,
+            "created_at": "2025-12-02T12:00:00"
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 50,
+        "total": 100,
+        "pages": 2
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 50,
-    "total": 100,
-    "pages": 2
-  }
 }
 ```
 
@@ -215,26 +221,30 @@ Create a new expense.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "name": "Groceries",
-  "amount": 5000,
-  "category": "Flexible Expenses",
-  "subcategory": "Food",
-  "payment_method": "debit",
-  "date": "2025-12-02",
-  "notes": "Weekly shopping",
-  "budget_period_id": 1,
-  "is_debt_payment": false,
-  "debt_id": null
+    "name": "Groceries",
+    "amount": 5000,
+    "category": "Flexible Expenses",
+    "subcategory": "Food",
+    "payment_method": "debit",
+    "date": "2025-12-02",
+    "notes": "Weekly shopping",
+    "budget_period_id": 1,
+    "is_debt_payment": false,
+    "debt_id": null
 }
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
-  "message": "Expense created successfully",
-  "expense": { /* expense object */ }
+    "message": "Expense created successfully",
+    "expense": {
+        /* expense object */
+    }
 }
 ```
 
@@ -249,10 +259,13 @@ Update an existing expense.
 **Request Body:** Same as Create Expense
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "Expense updated successfully",
-  "expense": { /* updated expense object */ }
+    "message": "Expense updated successfully",
+    "expense": {
+        /* updated expense object */
+    }
 }
 ```
 
@@ -265,9 +278,10 @@ Delete an expense.
 **Authentication:** Required
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "Expense deleted successfully"
+    "message": "Expense deleted successfully"
 }
 ```
 
@@ -284,32 +298,34 @@ Retrieve all income transactions.
 **Authentication:** Required
 
 **Query Parameters:**
-- `page` (integer, default: 1)
-- `limit` (integer, default: 50)
-- `type` (string) - "Salary", "Side Hustle", "Gift", "Other"
-- `start_date` (string) - YYYY-MM-DD
-- `end_date` (string) - YYYY-MM-DD
+
+-   `page` (integer, default: 1)
+-   `limit` (integer, default: 50)
+-   `type` (string) - "Salary", "Side Hustle", "Gift", "Other"
+-   `start_date` (string) - YYYY-MM-DD
+-   `end_date` (string) - YYYY-MM-DD
 
 **Response:** `200 OK`
+
 ```json
 {
-  "income": [
-    {
-      "id": 1,
-      "source": "Monthly Salary",
-      "amount": 250000,
-      "type": "Salary",
-      "date": "2025-12-20",
-      "notes": "",
-      "created_at": "2025-12-02T12:00:00"
+    "income": [
+        {
+            "id": 1,
+            "source": "Monthly Salary",
+            "amount": 250000,
+            "type": "Salary",
+            "date": "2025-12-20",
+            "notes": "",
+            "created_at": "2025-12-02T12:00:00"
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 50,
+        "total": 12,
+        "pages": 1
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 50,
-    "total": 12,
-    "pages": 1
-  }
 }
 ```
 
@@ -320,13 +336,14 @@ Retrieve all income transactions.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "source": "Monthly Salary",
-  "amount": 250000,
-  "type": "Salary",
-  "date": "2025-12-20",
-  "notes": ""
+    "source": "Monthly Salary",
+    "amount": 250000,
+    "type": "Salary",
+    "date": "2025-12-20",
+    "notes": ""
 }
 ```
 
@@ -357,25 +374,27 @@ Retrieve all debts including archived.
 **Authentication:** Required
 
 **Query Parameters:**
-- `active_only` (boolean, default: false) - Show only active debts
+
+-   `active_only` (boolean, default: false) - Show only active debts
 
 **Response:** `200 OK`
+
 ```json
 {
-  "debts": [
-    {
-      "id": 1,
-      "name": "Student Loan",
-      "total_amount": 1000000,
-      "remaining_balance": 500000,
-      "monthly_payment": 25000,
-      "interest_rate": 5.5,
-      "due_date": 15,
-      "priority": 1,
-      "is_archived": false,
-      "created_at": "2025-01-01T00:00:00"
-    }
-  ]
+    "debts": [
+        {
+            "id": 1,
+            "name": "Student Loan",
+            "total_amount": 1000000,
+            "remaining_balance": 500000,
+            "monthly_payment": 25000,
+            "interest_rate": 5.5,
+            "due_date": 15,
+            "priority": 1,
+            "is_archived": false,
+            "created_at": "2025-01-01T00:00:00"
+        }
+    ]
 }
 ```
 
@@ -386,16 +405,17 @@ Retrieve all debts including archived.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "name": "Student Loan",
-  "total_amount": 1000000,
-  "remaining_balance": 1000000,
-  "monthly_payment": 25000,
-  "interest_rate": 5.5,
-  "due_date": 15,
-  "priority": 1,
-  "notes": "Federal student loan"
+    "name": "Student Loan",
+    "total_amount": 1000000,
+    "remaining_balance": 1000000,
+    "monthly_payment": 25000,
+    "interest_rate": 5.5,
+    "due_date": 15,
+    "priority": 1,
+    "notes": "Federal student loan"
 }
 ```
 
@@ -420,11 +440,12 @@ Retrieve all debts including archived.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "amount": 25000,
-  "payment_method": "debit",
-  "date": "2025-12-02"
+    "amount": 25000,
+    "payment_method": "debit",
+    "date": "2025-12-02"
 }
 ```
 
@@ -443,24 +464,26 @@ Retrieve all weekly/custom budget periods.
 **Authentication:** Required
 
 **Query Parameters:**
-- `salary_period_id` (integer) - Filter by salary period
-- `active_only` (boolean) - Current period only
+
+-   `salary_period_id` (integer) - Filter by salary period
+-   `active_only` (boolean) - Current period only
 
 **Response:** `200 OK`
+
 ```json
 {
-  "periods": [
-    {
-      "id": 1,
-      "period_type": "weekly",
-      "start_date": "2025-12-02",
-      "end_date": "2025-12-08",
-      "budget_amount": 15000,
-      "week_number": 1,
-      "salary_period_id": 1,
-      "created_at": "2025-12-02T00:00:00"
-    }
-  ]
+    "periods": [
+        {
+            "id": 1,
+            "period_type": "weekly",
+            "start_date": "2025-12-02",
+            "end_date": "2025-12-08",
+            "budget_amount": 15000,
+            "week_number": 1,
+            "salary_period_id": 1,
+            "created_at": "2025-12-02T00:00:00"
+        }
+    ]
 }
 ```
 
@@ -471,13 +494,14 @@ Retrieve all weekly/custom budget periods.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "period_type": "weekly",
-  "start_date": "2025-12-02",
-  "end_date": "2025-12-08",
-  "budget_amount": 15000,
-  "salary_period_id": 1
+    "period_type": "weekly",
+    "start_date": "2025-12-02",
+    "end_date": "2025-12-08",
+    "budget_amount": 15000,
+    "salary_period_id": 1
 }
 ```
 
@@ -496,35 +520,37 @@ Retrieve all monthly salary periods with 4-week budgets.
 **Authentication:** Required
 
 **Query Parameters:**
-- `active_only` (boolean) - Current period only
+
+-   `active_only` (boolean) - Current period only
 
 **Response:** `200 OK`
+
 ```json
 {
-  "salary_periods": [
-    {
-      "period_id": 1,
-      "start_date": "2025-11-20",
-      "end_date": "2025-12-19",
-      "starting_debit_balance": 100000,
-      "starting_credit_balance": 50000,
-      "credit_budget_allowance": 150000,
-      "total_budget_amount": 250000,
-      "weekly_budget": 62500,
-      "weekly_debit_budget": 25000,
-      "weekly_credit_budget": 37500,
-      "is_active": true,
-      "weeks": [
+    "salary_periods": [
         {
-          "id": 1,
-          "week_number": 1,
-          "start_date": "2025-11-20",
-          "end_date": "2025-11-26",
-          "budget_amount": 62500
+            "period_id": 1,
+            "start_date": "2025-11-20",
+            "end_date": "2025-12-19",
+            "starting_debit_balance": 100000,
+            "starting_credit_balance": 50000,
+            "credit_budget_allowance": 150000,
+            "total_budget_amount": 250000,
+            "weekly_budget": 62500,
+            "weekly_debit_budget": 25000,
+            "weekly_credit_budget": 37500,
+            "is_active": true,
+            "weeks": [
+                {
+                    "id": 1,
+                    "week_number": 1,
+                    "start_date": "2025-11-20",
+                    "end_date": "2025-11-26",
+                    "budget_amount": 62500
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 ```
 
@@ -537,17 +563,22 @@ Get the currently active salary period with spending details.
 **Authentication:** Required
 
 **Response:** `200 OK`
+
 ```json
 {
-  "salary_period": { /* full salary period object */ },
-  "current_week": {
-    "id": 1,
-    "week_number": 1,
-    "budget_amount": 62500,
-    "spent": 15000,
-    "remaining": 47500
-  },
-  "weeks": [ /* all weeks with spending */ ]
+    "salary_period": {
+        /* full salary period object */
+    },
+    "current_week": {
+        "id": 1,
+        "week_number": 1,
+        "budget_amount": 62500,
+        "spent": 15000,
+        "remaining": 47500
+    },
+    "weeks": [
+        /* all weeks with spending */
+    ]
 }
 ```
 
@@ -558,14 +589,15 @@ Get the currently active salary period with spending details.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "start_date": "2025-12-20",
-  "end_date": "2026-01-19",
-  "starting_debit_balance": 100000,
-  "starting_credit_balance": 50000,
-  "credit_limit": 150000,
-  "total_budget_amount": 250000
+    "start_date": "2025-12-20",
+    "end_date": "2026-01-19",
+    "starting_debit_balance": 100000,
+    "starting_credit_balance": 50000,
+    "credit_limit": 150000,
+    "total_budget_amount": 250000
 }
 ```
 
@@ -582,20 +614,21 @@ Preview 4-week budget breakdown before creation.
 **Request Body:** Same as Create Salary Period
 
 **Response:** `200 OK`
+
 ```json
 {
-  "preview": {
-    "total_budget": 250000,
-    "weekly_budget": 62500,
-    "weeks": [
-      {
-        "week": 1,
-        "start_date": "2025-12-20",
-        "end_date": "2025-12-26",
-        "budget": 62500
-      }
-    ]
-  }
+    "preview": {
+        "total_budget": 250000,
+        "weekly_budget": 62500,
+        "weeks": [
+            {
+                "week": 1,
+                "start_date": "2025-12-20",
+                "end_date": "2025-12-26",
+                "budget": 62500
+            }
+        ]
+    }
 }
 ```
 
@@ -610,29 +643,31 @@ Preview 4-week budget breakdown before creation.
 **Authentication:** Required
 
 **Query Parameters:**
-- `active_only` (boolean) - Exclude paused templates
+
+-   `active_only` (boolean) - Exclude paused templates
 
 **Response:** `200 OK`
+
 ```json
 {
-  "recurring_expenses": [
-    {
-      "id": 1,
-      "name": "Netflix",
-      "amount": 1999,
-      "category": "Fixed Expenses",
-      "subcategory": "Entertainment",
-      "payment_method": "credit",
-      "frequency": "monthly",
-      "interval": 1,
-      "start_date": "2025-01-01",
-      "end_date": null,
-      "day_of_month": 1,
-      "day_of_week": null,
-      "is_paused": false,
-      "notes": "Streaming subscription"
-    }
-  ]
+    "recurring_expenses": [
+        {
+            "id": 1,
+            "name": "Netflix",
+            "amount": 1999,
+            "category": "Fixed Expenses",
+            "subcategory": "Entertainment",
+            "payment_method": "credit",
+            "frequency": "monthly",
+            "interval": 1,
+            "start_date": "2025-01-01",
+            "end_date": null,
+            "day_of_month": 1,
+            "day_of_week": null,
+            "is_paused": false,
+            "notes": "Streaming subscription"
+        }
+    ]
 }
 ```
 
@@ -643,26 +678,28 @@ Preview 4-week budget breakdown before creation.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "name": "Netflix",
-  "amount": 1999,
-  "category": "Fixed Expenses",
-  "subcategory": "Entertainment",
-  "payment_method": "credit",
-  "frequency": "monthly",
-  "interval": 1,
-  "start_date": "2025-01-01",
-  "day_of_month": 1,
-  "notes": "Streaming subscription"
+    "name": "Netflix",
+    "amount": 1999,
+    "category": "Fixed Expenses",
+    "subcategory": "Entertainment",
+    "payment_method": "credit",
+    "frequency": "monthly",
+    "interval": 1,
+    "start_date": "2025-01-01",
+    "day_of_month": 1,
+    "notes": "Streaming subscription"
 }
 ```
 
 **Frequency Options:**
-- `weekly` - Requires `day_of_week` (0-6, Monday=0)
-- `biweekly` - Requires `day_of_week`
-- `monthly` - Requires `day_of_month` (1-31)
-- `custom` - Requires `interval` (number of days)
+
+-   `weekly` - Requires `day_of_week` (0-6, Monday=0)
+-   `biweekly` - Requires `day_of_week`
+-   `monthly` - Requires `day_of_month` (1-31)
+-   `custom` - Requires `interval` (number of days)
 
 **Response:** `201 Created`
 
@@ -675,11 +712,12 @@ Generate expenses from recurring templates for next 60 days.
 **Authentication:** Required
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "Recurring expenses generated successfully",
-  "generated_count": 12,
-  "period": "Next 60 days"
+    "message": "Recurring expenses generated successfully",
+    "generated_count": 12,
+    "period": "Next 60 days"
 }
 ```
 
@@ -696,22 +734,32 @@ Export all user data in JSON format.
 **Authentication:** Required
 
 **Query Parameters:**
-- `include_expenses` (boolean, default: true)
-- `include_income` (boolean, default: true)
-- `include_debts` (boolean, default: true)
-- `include_recurring` (boolean, default: true)
+
+-   `include_expenses` (boolean, default: true)
+-   `include_income` (boolean, default: true)
+-   `include_debts` (boolean, default: true)
+-   `include_recurring` (boolean, default: true)
 
 **Response:** `200 OK`
+
 ```json
 {
-  "user": {
-    "email": "user@example.com",
-    "export_date": "2025-12-02T12:00:00"
-  },
-  "expenses": [ /* all expenses */ ],
-  "income": [ /* all income */ ],
-  "debts": [ /* all debts */ ],
-  "recurring_expenses": [ /* all templates */ ]
+    "user": {
+        "email": "user@example.com",
+        "export_date": "2025-12-02T12:00:00"
+    },
+    "expenses": [
+        /* all expenses */
+    ],
+    "income": [
+        /* all income */
+    ],
+    "debts": [
+        /* all debts */
+    ],
+    "recurring_expenses": [
+        /* all templates */
+    ]
 }
 ```
 
@@ -724,28 +772,38 @@ Import data from JSON file.
 **Authentication:** Required
 
 **Request Body:**
+
 ```json
 {
-  "expenses": [ /* expense objects */ ],
-  "income": [ /* income objects */ ],
-  "debts": [ /* debt objects */ ],
-  "recurring_expenses": [ /* template objects */ ]
+    "expenses": [
+        /* expense objects */
+    ],
+    "income": [
+        /* income objects */
+    ],
+    "debts": [
+        /* debt objects */
+    ],
+    "recurring_expenses": [
+        /* template objects */
+    ]
 }
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "Import successful",
-  "imported": {
-    "expenses": 50,
-    "income": 12,
-    "debts": 3,
-    "recurring_expenses": 8
-  },
-  "skipped": {
-    "duplicates": 2
-  }
+    "message": "Import successful",
+    "imported": {
+        "expenses": 50,
+        "income": 12,
+        "debts": 3,
+        "recurring_expenses": 8
+    },
+    "skipped": {
+        "duplicates": 2
+    }
 }
 ```
 
@@ -758,17 +816,21 @@ Import transactions from bank CSV file.
 **Authentication:** Required
 
 **Request:** `multipart/form-data`
-- `file` - CSV file
-- `bank` - "nordea", "op", or "generic"
-- `default_category` - Category for imported items
+
+-   `file` - CSV file
+-   `bank` - "nordea", "op", or "generic"
+-   `default_category` - Category for imported items
 
 **Response:** `200 OK`
+
 ```json
 {
-  "message": "Import successful",
-  "imported": 45,
-  "duplicates_skipped": 3,
-  "transactions": [ /* imported expense objects */ ]
+    "message": "Import successful",
+    "imported": 45,
+    "duplicates_skipped": 3,
+    "transactions": [
+        /* imported expense objects */
+    ]
 }
 ```
 
@@ -779,51 +841,58 @@ Import transactions from bank CSV file.
 All endpoints return consistent error responses.
 
 ### 400 Bad Request
+
 ```json
 {
-  "error": "Invalid request data"
+    "error": "Invalid request data"
 }
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
-  "error": "Invalid credentials"
+    "error": "Invalid credentials"
 }
 ```
 
 ### 403 Forbidden
+
 ```json
 {
-  "error": "Access denied"
+    "error": "Access denied"
 }
 ```
 
 ### 404 Not Found
+
 ```json
 {
-  "error": "Resource not found"
+    "error": "Resource not found"
 }
 ```
 
 ### 409 Conflict
+
 ```json
 {
-  "error": "Resource already exists"
+    "error": "Resource already exists"
 }
 ```
 
 ### 429 Too Many Requests
+
 ```json
 {
-  "error": "Rate limit exceeded. Please try again later."
+    "error": "Rate limit exceeded. Please try again later."
 }
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
-  "error": "An error occurred. Please try again."
+    "error": "An error occurred. Please try again."
 }
 ```
 
@@ -833,9 +902,9 @@ All endpoints return consistent error responses.
 
 Rate limits are enforced on authentication endpoints:
 
-- **Register:** 3 requests per hour
-- **Login:** 5 requests per minute
-- **Password Reset:** 3 requests per hour
+-   **Register:** 3 requests per hour
+-   **Login:** 5 requests per minute
+-   **Password Reset:** 3 requests per hour
 
 ---
 
@@ -844,9 +913,214 @@ Rate limits are enforced on authentication endpoints:
 All monetary amounts are stored and returned in **cents** (integers).
 
 **Examples:**
-- €50.00 = `5000`
-- €1,234.56 = `123456`
-- €0.99 = `99`
+
+-   €50.00 = `5000`
+-   €1,234.56 = `123456`
+-   €0.99 = `99`
+
+---
+
+## Goals
+
+### Get All Goals
+
+Retrieve all active savings goals for the current user.
+
+**Endpoint:** `GET /goals`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Response:** `200 OK`
+
+```json
+{
+    "goals": [
+        {
+            "id": 1,
+            "name": "Emergency Fund",
+            "target_amount": 100000,
+            "target_date": "2025-06-30",
+            "subcategory_id": 15,
+            "is_active": true,
+            "created_at": "2025-12-01T10:00:00",
+            "progress": {
+                "current_amount": 25000,
+                "percentage": 25.0,
+                "remaining": 75000
+            }
+        }
+    ],
+    "count": 1
+}
+```
+
+### Create Goal
+
+Create a new savings goal with associated subcategory.
+
+**Endpoint:** `POST /goals`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Request Body:**
+
+```json
+{
+    "name": "Emergency Fund",
+    "target_amount": 100000,
+    "target_date": "2025-06-30"
+}
+```
+
+**Response:** `201 Created`
+
+```json
+{
+    "message": "Goal created successfully",
+    "goal": {
+        "id": 1,
+        "name": "Emergency Fund",
+        "target_amount": 100000,
+        "target_date": "2025-06-30",
+        "subcategory_id": 15
+    }
+}
+```
+
+### Update Goal
+
+Update an existing goal.
+
+**Endpoint:** `PUT /goals/<id>`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Request Body:**
+
+```json
+{
+    "name": "Emergency Fund",
+    "target_amount": 150000,
+    "target_date": "2025-12-31"
+}
+```
+
+**Response:** `200 OK`
+
+### Delete Goal
+
+Soft-delete a goal (marks as inactive).
+
+**Endpoint:** `DELETE /goals/<id>`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Response:** `200 OK`
+
+### Add Contribution
+
+Add a contribution to a goal (creates expense in Savings category).
+
+**Endpoint:** `POST /goals/<id>/contribute`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Request Body:**
+
+```json
+{
+    "amount": 5000,
+    "payment_method": "debit",
+    "date": "2025-12-24",
+    "notes": "Monthly contribution"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+## Subcategories
+
+### Get All Subcategories
+
+Get system and user custom subcategories.
+
+**Endpoint:** `GET /subcategories`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Query Parameters:**
+
+-   `category` (string) - Filter by category
+-   `active_only` (boolean, default: true) - Only active subcategories
+
+**Response:** `200 OK`
+
+```json
+{
+    "subcategories": {
+        "Flexible Expenses": [
+            {
+                "id": 1,
+                "name": "Food",
+                "category": "Flexible Expenses",
+                "is_custom": false
+            },
+            {
+                "id": 2,
+                "name": "Coffee",
+                "category": "Flexible Expenses",
+                "is_custom": true
+            }
+        ],
+        "Fixed Bills": [
+            {
+                "id": 10,
+                "name": "Rent",
+                "category": "Fixed Bills",
+                "is_custom": false
+            }
+        ]
+    },
+    "total": 25
+}
+```
+
+### Create Custom Subcategory
+
+Create a user-specific subcategory.
+
+**Endpoint:** `POST /subcategories`
+
+**Authentication:** Required (HttpOnly cookie)
+
+**Request Body:**
+
+```json
+{
+    "category": "Flexible Expenses",
+    "name": "Coffee Shops"
+}
+```
+
+**Response:** `201 Created`
+
+### Update Subcategory
+
+Update a custom subcategory (user-owned only).
+
+**Endpoint:** `PUT /subcategories/<id>`
+
+**Authentication:** Required (HttpOnly cookie)
+
+### Delete Subcategory
+
+Soft-delete a custom subcategory.
+
+**Endpoint:** `DELETE /subcategories/<id>`
+
+**Authentication:** Required (HttpOnly cookie)
 
 ---
 
@@ -855,22 +1129,34 @@ All monetary amounts are stored and returned in **cents** (integers).
 All dates use **ISO 8601** format: `YYYY-MM-DD`
 
 **Examples:**
-- `2025-12-02`
-- `2025-01-15`
+
+-   `2025-12-02`
+-   `2025-01-15`
 
 ---
 
-## Authentication Headers
+## Authentication Method
 
-Include JWT access token in all authenticated requests:
+Authentication uses **HttpOnly cookies** (set automatically on login/register).
 
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
-```
+**For API calls:**
+
+-   Include `credentials: 'include'` in fetch requests
+-   Cookies are sent automatically by the browser
+-   No manual Authorization header needed
 
 **Token Expiration:**
-- Access tokens: 24 hours
-- Refresh tokens: 30 days
+
+-   Access tokens: 24 hours
+-   Refresh tokens: 30 days
+
+**Example fetch call:**
+
+```javascript
+const response = await fetch("/api/v1/expenses", {
+    credentials: "include", // Required for cookies
+});
+```
 
 ---
 
@@ -880,13 +1166,15 @@ Paginated endpoints return:
 
 ```json
 {
-  "data": [ /* array of items */ ],
-  "pagination": {
-    "page": 1,
-    "limit": 50,
-    "total": 150,
-    "pages": 3
-  }
+    "data": [
+        /* array of items */
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 50,
+        "total": 150,
+        "pages": 3
+    }
 }
 ```
 
@@ -905,9 +1193,10 @@ Legacy endpoints (without version prefix) are deprecated and will be removed in 
 ## Support
 
 For API questions or issues:
-- Email: support@bloom-tracker.app
-- GitHub: [bloom-budget-tracker](https://github.com/Rafia-Bee/bloom-budget-tracker)
+
+-   Email: support@bloom-tracker.app
+-   GitHub: [bloom-budget-tracker](https://github.com/Rafia-Bee/bloom-budget-tracker)
 
 ---
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 24, 2025

