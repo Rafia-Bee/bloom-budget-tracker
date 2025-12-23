@@ -231,7 +231,7 @@ def get_current_salary_period():
         )
 
         # Get real-time balances using balance service
-        real_balances = get_display_balances(salary_period.id)
+        real_balances = get_display_balances(salary_period.id, current_user_id)
 
         return (
             jsonify(

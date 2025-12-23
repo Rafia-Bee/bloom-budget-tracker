@@ -4,6 +4,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-24
+
+### Security Audit: Cross-User Data Leakage Review (#100, #101)
+
+**Context:** Performed comprehensive security audit of backend routes and services for cross-user data leakage vulnerabilities.
+
+**Findings:**
+
+1. **SECURE - Properly Protected:**
+
+    - All major routes (expenses, income, debts, recurring_expenses, salary_periods, budget_periods) use `filter_by(id=X, user_id=Y)` pattern
+    - balance_service.py has user_id scoping (fixed in #100)
+    - Export/import routes properly scope all queries
+
+2. **LOW RISK - Enumeration Vulnerability (#101):**
+    - `goals.py`: 3 endpoints use `.query.get(id)` + ownership check
+    - `subcategories.py`: 2 endpoints use `.query.get(id)` + ownership check
+    - Pattern reveals resource existence (403 vs 404) but doesn't leak data
+
+**Recommendation:** Change to single-query pattern for consistency:
+
+```python
+# Before (reveals existence)
+goal = Goal.query.get(id)
+if goal.user_id != current_user_id: return 403
+
+# After (uniform 404)
+goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
+if not goal: return 404
+```
+
+**Impact:** Codebase is well-protected. 5 low-risk issues tracked in #101 for cleanup.
+
+---
+
 ## 2025-12-23
 
 ### Recurring Expenses: Radical Redesign Implementation (#93)

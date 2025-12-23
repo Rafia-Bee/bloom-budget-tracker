@@ -13,7 +13,7 @@ always calculates from source of truth (transactions).
 """
 
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 from backend.models.database import (
     db,
     SalaryPeriod,
@@ -24,7 +24,7 @@ from backend.models.database import (
 from sqlalchemy import and_
 
 
-def get_display_balances(salary_period_id: int) -> Dict[str, float]:
+def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float]:
     """
     Calculate real-time balances for a salary period based on actual transactions.
 
@@ -33,19 +33,22 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
 
     Args:
         salary_period_id: ID of the salary period to calculate balances for
+        user_id: ID of the user (for multi-tenant data isolation)
 
     Returns:
         dict with keys:
             - debit_balance: Current debit card balance (in euros)
             - credit_available: Available credit (what user can spend, in euros)
     """
-    salary_period = SalaryPeriod.query.get_or_404(salary_period_id)
+    salary_period = SalaryPeriod.query.filter_by(
+        id=salary_period_id, user_id=user_id
+    ).first_or_404()
 
     # Get date range for this salary period
     period_start = salary_period.start_date
     # Use the last budget period's end_date to ensure we capture the full period
     last_budget_period = (
-        BudgetPeriod.query.filter_by(salary_period_id=salary_period_id)
+        BudgetPeriod.query.filter_by(salary_period_id=salary_period_id, user_id=user_id)
         .order_by(BudgetPeriod.end_date.desc())
         .first()
     )
@@ -54,12 +57,12 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
     )
 
     # Calculate real debit balance
-    debit_balance = _calculate_debit_balance(period_start, period_end)
+    debit_balance = _calculate_debit_balance(user_id)
 
-    # Calculate real credit available (start with initial balance)
-    initial_credit_balance = salary_period.initial_credit_balance  # Already in cents
-    credit_available = _calculate_credit_balance(
-        period_start, period_end, initial_credit_balance
+    # Calculate real credit available (period-agnostic, uses all transactions)
+    credit_available = _calculate_credit_available(
+        user_id=user_id,
+        credit_limit_cents=salary_period.credit_limit,
     )
 
     # Ensure available doesn't exceed limit
@@ -72,7 +75,7 @@ def get_display_balances(salary_period_id: int) -> Dict[str, float]:
     }
 
 
-def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
+def _calculate_debit_balance(user_id: int) -> float:
     """
     Calculate real-time debit balance from all-time transactions.
 
@@ -85,8 +88,7 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
     4. Subtract all debit expenses since that date
 
     Args:
-        start_date: Unused - kept for API compatibility
-        end_date: Unused - kept for API compatibility
+        user_id: User ID to scope all transaction queries
 
     Returns:
         Debit balance in euros (can be negative if overdrawn)
@@ -95,17 +97,22 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
 
     today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Find earliest "Initial Balance" entry
+    # Find earliest "Initial Balance" entry for this user
     earliest_initial_balance = (
         db.session.query(Income)
-        .filter(Income.type == "Initial Balance")
+        .filter(and_(Income.user_id == user_id, Income.type == "Initial Balance"))
         .order_by(Income.actual_date)
         .first()
     )
 
     if not earliest_initial_balance:
         # No initial balance, use earliest income instead
-        earliest_income = db.session.query(Income).order_by(Income.actual_date).first()
+        earliest_income = (
+            db.session.query(Income)
+            .filter(Income.user_id == user_id)
+            .order_by(Income.actual_date)
+            .first()
+        )
         if not earliest_income:
             return 0.0
         start_from_date = earliest_income.actual_date
@@ -121,6 +128,7 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
         db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
         .filter(
             and_(
+                Income.user_id == user_id,
                 Income.type
                 != "Initial Balance",  # Exclude all initial balance snapshots
                 Income.actual_date >= start_from_date,
@@ -136,6 +144,7 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
         db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
         .filter(
             and_(
+                Expense.user_id == user_id,
                 Expense.payment_method == "Debit card",
                 Expense.date >= start_from_date,
                 Expense.date <= today,
@@ -150,45 +159,33 @@ def _calculate_debit_balance(start_date: datetime, end_date: datetime) -> float:
     return balance_cents / 100  # Convert cents to euros
 
 
-def _calculate_credit_balance(
-    start_date: datetime, end_date: datetime, initial_balance: int
-) -> float:
+def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
     """
     Calculate current real-time credit card available balance.
 
     Periods are cosmetic filters only - balance reflects ALL transactions ever made.
 
-    Method:
+    Method (period-agnostic):
     1. Find earliest "Pre-existing Credit Card Debt" marker (category=Debt, subcategory=Credit Card)
-    2. Calculate starting available = Credit Limit - that debt amount
-    3. Add all credit payments since that date
-    4. Subtract all credit expenses since that date (excluding Debt category markers)
+    2. Starting available = Credit Limit - that debt amount
+    3. Add ALL credit card payments since that date
+    4. Subtract ALL credit card expenses since that date (excluding Debt category markers)
 
     Args:
-        start_date: Unused - kept for API compatibility
-        end_date: Unused - kept for API compatibility
-        initial_balance: Unused - we calculate from transactions
+        user_id: User ID to scope all transaction queries
+        credit_limit_cents: Credit card limit (in cents)
 
     Returns:
         Current available credit balance in euros
     """
-    from datetime import datetime
-    from backend.models.database import SalaryPeriod
-
     today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Get credit limit from current salary period
-    current_period = SalaryPeriod.query.filter_by(is_active=True).first()
-    if not current_period:
-        return 0.0
-
-    credit_limit_cents = current_period.credit_limit
-
-    # Find earliest "Pre-existing Credit Card Debt" entry
+    # Find earliest "Pre-existing Credit Card Debt" entry for THIS USER
     earliest_debt_marker = (
         db.session.query(Expense)
         .filter(
             and_(
+                Expense.user_id == user_id,
                 Expense.category == "Debt",
                 Expense.subcategory == "Credit Card",
                 Expense.payment_method == "Credit card",
@@ -205,7 +202,7 @@ def _calculate_credit_balance(
         starting_available_cents = credit_limit_cents - earliest_debt_marker.amount
     else:
         # No marker found - assume started with full credit limit available
-        start_from_date = datetime(2000, 1, 1)  # Beginning of time
+        start_from_date = datetime(2000, 1, 1).date()  # Beginning of time
         starting_available_cents = credit_limit_cents
 
     # Get ALL credit card expenses since start date (excluding Debt category markers)
@@ -213,6 +210,7 @@ def _calculate_credit_balance(
         db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
         .filter(
             and_(
+                Expense.user_id == user_id,
                 Expense.payment_method == "Credit card",
                 Expense.category != "Debt",  # Exclude pre-existing debt markers
                 Expense.date >= start_from_date,
@@ -228,6 +226,7 @@ def _calculate_credit_balance(
         db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
         .filter(
             and_(
+                Expense.user_id == user_id,
                 Expense.category == "Debt Payments",
                 Expense.subcategory == "Credit Card",
                 Expense.date >= start_from_date,
@@ -245,29 +244,33 @@ def _calculate_credit_balance(
     return balance_cents / 100  # Convert cents to euros
 
 
-def get_period_summary(salary_period_id: int) -> Dict:
+def get_period_summary(salary_period_id: int, user_id: int) -> Dict:
     """
     Get comprehensive summary for a salary period including real-time balances
     and period statistics.
 
     Args:
         salary_period_id: ID of the salary period
+        user_id: ID of the user (for multi-tenant data isolation)
 
     Returns:
         dict with period info, real-time balances, and spending stats
     """
-    salary_period = SalaryPeriod.query.get_or_404(salary_period_id)
-    balances = get_display_balances(salary_period_id)
+    salary_period = SalaryPeriod.query.filter_by(
+        id=salary_period_id, user_id=user_id
+    ).first_or_404()
+    balances = get_display_balances(salary_period_id, user_id)
 
     # Get spending within this period
     budget_periods = BudgetPeriod.query.filter_by(
-        salary_period_id=salary_period_id
+        salary_period_id=salary_period_id, user_id=user_id
     ).all()
 
     total_spent = 0
     for bp in budget_periods:
         expenses = Expense.query.filter(
             and_(
+                Expense.user_id == user_id,
                 Expense.date >= bp.start_date,
                 Expense.date <= bp.end_date,
             )
