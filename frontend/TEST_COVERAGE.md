@@ -1,8 +1,8 @@
 # Frontend Test Coverage Summary
 
-> **Last Updated:** December 24, 2025
-> **Total Tests:** 150 passing
-> **Test Framework:** Vitest + React Testing Library
+> **Last Updated:** January 16, 2025
+> **Total Tests:** 150 passing (Frontend) + 37 business logic tests (Backend)
+> **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
 
@@ -175,6 +175,45 @@ npm test
 
 # Run with verbose output
 npm test -- --run --reporter=verbose
+```
+
+---
+
+## Backend Business Logic Tests (NEW)
+
+### Budget Service Unit Tests (37 tests)
+
+Pure function tests for core budget math - no database required.
+
+**File:** `backend/tests/test_budget_service.py`
+
+| Test Class                      | Tests | Description                       |
+| ------------------------------- | :---: | --------------------------------- |
+| TestCalculateWeeklyBudget       |  10   | Division of budget across weeks   |
+| TestCalculateAdjustedBudget     |   5   | Base budget + carryover           |
+| TestCalculateRemaining          |   5   | Remaining after spending          |
+| TestCalculateCarryover          |   5   | Carryover determination logic     |
+| TestCalculateWeeksWithCarryover |   7   | Multi-week carryover accumulation |
+| TestWeeksToDict                 |   2   | API response conversion           |
+| TestRealWorldScenarios          |   3   | Realistic budget scenarios        |
+
+**Key Math Verified:**
+
+-   ✅ Weekly budget division (integer cents)
+-   ✅ Carryover from underspend
+-   ✅ Debt carryover from overspend
+-   ✅ Cascading debt across weeks
+-   ✅ Current/future weeks don't contribute carryover
+-   ✅ Typical monthly salary period
+-   ✅ Emergency expense scenarios
+
+**Example Test:**
+
+```python
+def test_week_with_overspend():
+    # Week 1: €100 budget, €50 spent = €50 carryover
+    # Week 2: €150 adjusted, €200 spent = -€50 carryover (debt)
+    # Week 3: €50 adjusted budget (reduced by debt)
 ```
 
 ---

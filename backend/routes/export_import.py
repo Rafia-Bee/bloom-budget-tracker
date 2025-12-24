@@ -1,7 +1,7 @@
 """
 Bloom - Export/Import Routes
 
-Handles exporting and importing user data (debts, recurring expenses).
+Handles exporting and importing user data (debts, recurring expenses, goals).
 Includes weekly budget breakdown generation for enhanced financial transparency.
 """
 
@@ -16,6 +16,8 @@ from backend.models.database import (
     Income,
     Expense,
     ExpenseNameMapping,
+    Goal,
+    Subcategory,
 )
 from datetime import datetime, timedelta
 from sqlalchemy import and_
@@ -309,6 +311,24 @@ def export_data():
                 for i in incomes
             ]
 
+        # Export Goals
+        if "goals" in export_types:
+            goals = Goal.query.filter_by(user_id=current_user_id).all()
+            export_data["data"]["goals"] = [
+                {
+                    "name": g.name,
+                    "target_amount": g.target_amount,
+                    "current_amount": g.current_amount,
+                    "target_date": g.target_date.isoformat() if g.target_date else None,
+                    "icon": g.icon,
+                    "color": g.color,
+                    "is_active": g.is_active,
+                    "subcategory_name": g.subcategory_name,
+                    "notes": g.notes,
+                }
+                for g in goals
+            ]
+
         # Add Weekly Budget Breakdown if salary_periods are exported
         if "salary_periods" in export_types:
             export_data["data"][
@@ -338,6 +358,7 @@ def import_data():
             "salary_periods": 0,
             "expenses": 0,
             "income": 0,
+            "goals": 0,
         }
         skipped_counts = {
             "debts": 0,
@@ -345,6 +366,7 @@ def import_data():
             "salary_periods": 0,
             "expenses": 0,
             "income": 0,
+            "goals": 0,
         }
         skipped_items = {
             "expenses": [],
@@ -737,6 +759,58 @@ def import_data():
                     db.session.add(income)
                     imported_counts["income"] += 1
 
+            # Import Goals
+            if "goals" in data["data"]:
+                for goal_data in data["data"]["goals"]:
+                    # Check for duplicate by name
+                    existing_goal = Goal.query.filter_by(
+                        user_id=current_user_id,
+                        name=goal_data["name"],
+                    ).first()
+
+                    if existing_goal:
+                        skipped_counts["goals"] += 1
+                        continue
+
+                    # Ensure subcategory exists for goal transactions
+                    subcategory_name = goal_data.get("subcategory_name")
+                    if subcategory_name:
+                        existing_subcat = Subcategory.query.filter_by(
+                            user_id=current_user_id,
+                            name=subcategory_name,
+                            category="Savings Goals",
+                        ).first()
+                        if not existing_subcat:
+                            # Create the subcategory
+                            new_subcat = Subcategory(
+                                user_id=current_user_id,
+                                name=subcategory_name,
+                                category="Savings Goals",
+                                is_default=False,
+                            )
+                            db.session.add(new_subcat)
+
+                    target_date = None
+                    if goal_data.get("target_date"):
+                        target_date = datetime.fromisoformat(
+                            goal_data["target_date"]
+                        ).date()
+
+                    goal = Goal(
+                        user_id=current_user_id,
+                        name=goal_data["name"],
+                        target_amount=goal_data["target_amount"],
+                        current_amount=goal_data.get("current_amount", 0),
+                        target_date=target_date,
+                        icon=goal_data.get("icon"),
+                        color=goal_data.get("color"),
+                        is_active=goal_data.get("is_active", True),
+                        subcategory_name=subcategory_name,
+                        notes=goal_data.get("notes"),
+                    )
+                    db.session.add(goal)
+                    imported_counts["goals"] += 1
+
             # Commit all changes together for atomicity
             db.session.commit()
 
@@ -773,6 +847,8 @@ def import_data():
                 skipped_details.append(f"{skipped_counts['expenses']} expense(s)")
             if skipped_counts["income"] > 0:
                 skipped_details.append(f"{skipped_counts['income']} income(s)")
+            if skipped_counts["goals"] > 0:
+                skipped_details.append(f"{skipped_counts['goals']} goal(s)")
             message_parts.append(
                 f"Skipped {', '.join(skipped_details)} (already exists)"
             )

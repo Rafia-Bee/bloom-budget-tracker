@@ -1,7 +1,7 @@
 /**
  * Bloom - Export/Import Modal
  *
- * Modal for exporting and importing data (debts, recurring expenses).
+ * Modal for exporting and importing data (debts, recurring expenses, goals).
  */
 
 import React, { useState } from 'react'
@@ -13,7 +13,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
     recurring_expenses: true,
     salary_periods: true,
     expenses: true,
-    income: true
+    income: true,
+    goals: true
   })
   const [exportFormat, setExportFormat] = useState('json') // 'json' or 'csv'
   const [loading, setLoading] = useState(false)
@@ -69,7 +70,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
           recurring_expenses: 'recurring',
           salary_periods: 'periods',
           expenses: 'expenses',
-          income: 'income'
+          income: 'income',
+          goals: 'goals'
         }
         const typesStr = selectedTypes.map(t => typeAbbreviations[t] || t).join('-')
 
@@ -137,31 +139,24 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
       if (counts.salary_periods > 0) summary.push(`${counts.salary_periods} salary period(s)`)
       if (counts.expenses > 0) summary.push(`${counts.expenses} expense(s)`)
       if (counts.income > 0) summary.push(`${counts.income} income(s)`)
+      if (counts.goals > 0) summary.push(`${counts.goals} goal(s)`)
 
       let message = summary.length > 0 ? `Successfully imported: ${summary.join(', ')}` : 'No new data imported'
 
-      // Add skipped items info
+      // Add skipped items info (condensed summary only)
       const skippedSummary = []
       if (skipped?.debts > 0) skippedSummary.push(`${skipped.debts} debt(s)`)
       if (skipped?.recurring_expenses > 0) skippedSummary.push(`${skipped.recurring_expenses} recurring expense(s)`)
       if (skipped?.salary_periods > 0) skippedSummary.push(`${skipped.salary_periods} salary period(s)`)
       if (skipped?.expenses > 0) skippedSummary.push(`${skipped.expenses} expense(s)`)
       if (skipped?.income > 0) skippedSummary.push(`${skipped.income} income(s)`)
+      if (skipped?.goals > 0) skippedSummary.push(`${skipped.goals} goal(s)`)
 
       if (skippedSummary.length > 0) {
         message += `\n\nSkipped ${skippedSummary.join(', ')} (already exists)`
-
-        // Add details of what was skipped
-        const skippedItems = response.data.skipped_items
-        if (skippedItems?.expenses?.length > 0) {
-          message += `\n\nSkipped expenses:\n${skippedItems.expenses.map(e => `  • ${e}`).join('\n')}`
-        }
-        if (skippedItems?.income?.length > 0) {
-          message += `\n\nSkipped income:\n${skippedItems.income.map(i => `  • ${i}`).join('\n')}`
-        }
       }
 
-      setMessage(message + '\n\nData imported successfully!')
+      setMessage(message)
 
       // Trigger dashboard refresh if callback provided
       if (onImportComplete) {
@@ -176,7 +171,7 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text">
             {mode === 'export' ? 'Export Data' : 'Import Data'}
@@ -192,8 +187,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
         </div>
 
         {message && (
-          <div className="mb-4 bg-green-100 dark:bg-green-950/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded flex justify-between items-start">
-            <span>{message}</span>
+          <div className="mb-4 bg-green-100 dark:bg-green-950/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded flex justify-between items-start max-h-40 overflow-y-auto">
+            <span className="whitespace-pre-wrap">{message}</span>
             <button
               onClick={() => setMessage('')}
               className="text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 ml-4 flex-shrink-0"
@@ -206,7 +201,7 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
         )}
 
         {error && (
-          <div className="mb-4 bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-3 rounded flex justify-between items-start">
+          <div className="mb-4 bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-3 rounded flex justify-between items-start max-h-40 overflow-y-auto">
             <span>{error}</span>
             <button
               onClick={() => setError('')}
@@ -274,6 +269,16 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
                   className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
                 />
                 <span className="text-gray-700 dark:text-dark-text">Income</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={exportTypes.goals}
+                  onChange={(e) => setExportTypes({ ...exportTypes, goals: e.target.checked })}
+                  className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
+                />
+                <span className="text-gray-700 dark:text-dark-text">Goals</span>
               </label>
             </div>
 
