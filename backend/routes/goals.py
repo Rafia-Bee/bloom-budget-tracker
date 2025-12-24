@@ -57,6 +57,18 @@ def create_goal():
     if target_amount <= 0:
         return jsonify({"error": "Target amount must be greater than 0"}), 400
 
+    # Parse initial amount (pre-existing savings) if provided
+    initial_amount = 0
+    if data.get("initial_amount"):
+        initial_amount = int(data["initial_amount"])  # Already in cents from frontend
+        if initial_amount < 0:
+            return jsonify({"error": "Initial amount cannot be negative"}), 400
+        if initial_amount > target_amount:
+            return (
+                jsonify({"error": "Initial amount cannot exceed target amount"}),
+                400,
+            )
+
     # Parse target date if provided
     target_date = None
     if data.get("target_date"):
@@ -100,6 +112,7 @@ def create_goal():
             name=name,
             description=data.get("description", ""),
             target_amount=target_amount,
+            initial_amount=initial_amount,
             target_date=target_date,
             subcategory_name=subcategory_name,
             is_active=True,
@@ -183,6 +196,22 @@ def update_goal(id):
             if target_amount <= 0:
                 return jsonify({"error": "Target amount must be greater than 0"}), 400
             goal.target_amount = target_amount
+
+        # Update initial amount (pre-existing savings)
+        if "initial_amount" in data:
+            initial_amount = int(
+                data["initial_amount"]
+            )  # Already in cents from frontend
+            if initial_amount < 0:
+                return jsonify({"error": "Initial amount cannot be negative"}), 400
+            # Check against the potentially updated target amount
+            effective_target = goal.target_amount
+            if initial_amount > effective_target:
+                return (
+                    jsonify({"error": "Initial amount cannot exceed target amount"}),
+                    400,
+                )
+            goal.initial_amount = initial_amount
 
         # Update target date
         if "target_date" in data:
@@ -348,3 +377,94 @@ def get_goal_progress(id):
     progress["contribution_count"] = len(contribution_list)
 
     return jsonify({"goal": goal.to_dict(), "progress": progress}), 200
+
+
+@goals_bp.route("/<int:id>/transactions", methods=["GET"])
+@jwt_required()
+def get_goal_transactions(id):
+    """
+    Get paginated transaction history for a specific goal.
+    Returns all expenses in the goal's linked subcategory.
+    """
+    current_user_id = int(get_jwt_identity())
+
+    goal = Goal.query.get(id)
+    if not goal:
+        return jsonify({"error": "Goal not found"}), 404
+
+    if goal.user_id != current_user_id:
+        return jsonify({"error": "You don't have permission to view this goal"}), 403
+
+    # Pagination parameters
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    per_page = min(per_page, 100)  # Cap at 100 per page
+
+    # Get all contributions for this goal with pagination
+    transactions_query = Expense.query.filter_by(
+        user_id=current_user_id,
+        category="Savings & Investments",
+        subcategory=goal.subcategory_name,
+    ).order_by(Expense.date.desc())
+
+    total_count = transactions_query.count()
+    transactions = (
+        transactions_query.offset((page - 1) * per_page).limit(per_page).all()
+    )
+
+    # Calculate running balance for each transaction
+    # Get all transactions up to current page for running balance
+    all_prior_transactions = (
+        Expense.query.filter_by(
+            user_id=current_user_id,
+            category="Savings & Investments",
+            subcategory=goal.subcategory_name,
+        )
+        .order_by(Expense.date.asc())
+        .all()
+    )
+
+    # Build running balance map
+    running_balance = goal.initial_amount
+    balance_map = {}
+    for t in all_prior_transactions:
+        running_balance += t.amount
+        balance_map[t.id] = running_balance
+
+    transaction_list = []
+    for expense in transactions:
+        transaction_list.append(
+            {
+                "id": expense.id,
+                "amount": expense.amount,
+                "date": expense.date.isoformat(),
+                "name": expense.name,
+                "notes": expense.notes,
+                "payment_method": expense.payment_method,
+                "running_balance": balance_map.get(expense.id, 0),
+            }
+        )
+
+    # Calculate totals
+    total_contributions = sum(t.amount for t in all_prior_transactions)
+
+    return (
+        jsonify(
+            {
+                "transactions": transaction_list,
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total_count": total_count,
+                    "total_pages": (total_count + per_page - 1) // per_page,
+                },
+                "summary": {
+                    "initial_amount": goal.initial_amount,
+                    "total_contributions": total_contributions,
+                    "current_amount": goal.initial_amount + total_contributions,
+                    "target_amount": goal.target_amount,
+                },
+            }
+        ),
+        200,
+    )

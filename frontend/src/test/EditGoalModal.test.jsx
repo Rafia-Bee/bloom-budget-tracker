@@ -27,6 +27,7 @@ describe('EditGoalModal', () => {
     name: 'Emergency Fund',
     description: 'For unexpected expenses',
     target_amount: 100000, // €1000.00 in cents
+    initial_amount: 10000, // €100.00 in cents
     target_date: '2025-12-31',
     subcategory_name: 'Savings',
     progress: {
@@ -155,6 +156,23 @@ describe('EditGoalModal', () => {
 
       expect(screen.getByDisplayValue('Vacation')).toBeInTheDocument()
       expect(screen.getByDisplayValue('500.00')).toBeInTheDocument()
+    })
+
+    it('pre-fills initial amount in euros', () => {
+      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+
+      const initialAmountInput = screen.getByDisplayValue('100.00')
+      expect(initialAmountInput).toBeInTheDocument()
+    })
+
+    it('handles goal without initial amount', () => {
+      const goalNoInitial = { ...mockGoal, initial_amount: 0 }
+      render(<EditGoalModal goal={goalNoInitial} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+
+      // Should render empty field for 0 initial amount
+      const initialAmountInputs = screen.getAllByRole('textbox')
+      const hasEmptyInitial = initialAmountInputs.some(input => input.value === '')
+      expect(hasEmptyInitial).toBe(true)
     })
   })
 
@@ -491,6 +509,7 @@ describe('EditGoalModal', () => {
           name: 'Emergency Fund',
           description: 'For unexpected expenses',
           target_amount: 100000, // €1000.00 in cents
+          initial_amount: 10000, // €100.00 in cents
           target_date: '2025-12-31'
         })
       })

@@ -23,6 +23,11 @@ function Goals({ setIsAuthenticated }) {
   const [editingGoal, setEditingGoal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
+  // Transaction history state
+  const [expandedGoalId, setExpandedGoalId] = useState(null)
+  const [goalTransactions, setGoalTransactions] = useState({})
+  const [loadingTransactions, setLoadingTransactions] = useState(false)
+
   // Modal states for Header functionality
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
@@ -107,6 +112,31 @@ function Goals({ setIsAuthenticated }) {
   const openEditModal = (goal) => {
     setEditingGoal(goal)
     setShowEditModal(true)
+  }
+
+  const toggleGoalExpansion = async (goalId) => {
+    if (expandedGoalId === goalId) {
+      setExpandedGoalId(null)
+      return
+    }
+
+    setExpandedGoalId(goalId)
+
+    // Fetch transactions if not already loaded
+    if (!goalTransactions[goalId]) {
+      setLoadingTransactions(true)
+      try {
+        const response = await goalAPI.getTransactions(goalId)
+        setGoalTransactions(prev => ({
+          ...prev,
+          [goalId]: response.data
+        }))
+      } catch (err) {
+        console.error('Failed to load transactions:', err)
+      } finally {
+        setLoadingTransactions(false)
+      }
+    }
   }
 
   const formatCurrency = (cents) => {
@@ -312,6 +342,89 @@ function Goals({ setIsAuthenticated }) {
                         </svg>
                         <span className="text-sm font-medium">Goal Achieved! 🎉</span>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Expand/Collapse Button for Transaction History */}
+                  <div className="px-6 py-3 border-t border-gray-200 dark:border-dark-border">
+                    <button
+                      onClick={() => toggleGoalExpansion(goal.id)}
+                      className="flex items-center gap-2 text-bloom-pink dark:text-dark-pink hover:text-bloom-pink/80 dark:hover:text-dark-pink-hover transition font-semibold text-sm w-full"
+                    >
+                      <svg
+                        className={`w-4 h-4 transition-transform ${expandedGoalId === goal.id ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      {expandedGoalId === goal.id ? 'Hide' : 'View'} Contribution History
+                    </button>
+                  </div>
+
+                  {/* Transactions List (Expanded) */}
+                  {expandedGoalId === goal.id && (
+                    <div className="px-6 pb-6 border-t border-gray-200 dark:border-dark-border">
+                      {loadingTransactions ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-bloom-pink"></div>
+                          <span className="ml-2 text-gray-500 dark:text-gray-400 text-sm">Loading...</span>
+                        </div>
+                      ) : goalTransactions[goal.id] ? (
+                        <div className="pt-4">
+                          {/* Summary */}
+                          {goal.initial_amount > 0 && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-4">
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-blue-700 dark:text-blue-300">Starting Amount:</span>
+                                <span className="font-semibold text-blue-700 dark:text-blue-300">
+                                  {formatCurrency(goal.initial_amount)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {goalTransactions[goal.id].transactions?.length > 0 ? (
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {goalTransactions[goal.id].transactions.map(transaction => (
+                                <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-dark-surface rounded-lg">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-gray-800 dark:text-white truncate">{transaction.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(transaction.date)}</p>
+                                  </div>
+                                  <div className="text-right ml-3">
+                                    <p className="font-semibold text-green-600 dark:text-green-400">
+                                      +{formatCurrency(transaction.amount)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      Balance: {formatCurrency(transaction.running_balance)}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Total Summary */}
+                              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-dark-border">
+                                <div className="flex justify-between items-center font-bold text-gray-800 dark:text-white">
+                                  <span>Total Contributions:</span>
+                                  <span className="text-green-600 dark:text-green-400">
+                                    {formatCurrency(goalTransactions[goal.id].summary?.total_contributions || 0)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 dark:text-gray-400 text-center py-6 text-sm">
+                              No contributions yet. Add expenses to "Savings & Investments" → "{goal.subcategory_name}" to track progress!
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-6 text-sm">
+                          Unable to load contribution history
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

@@ -11,6 +11,7 @@ function CreateGoalModal({ onClose, onCreate }) {
     name: '',
     description: '',
     target_amount: '',
+    initial_amount: '',
     target_date: ''
   })
   const [errors, setErrors] = useState({})
@@ -60,6 +61,16 @@ function CreateGoalModal({ onClose, onCreate }) {
       newErrors.description = 'Description must be 200 characters or less'
     }
 
+    // Validate initial amount if provided
+    if (formData.initial_amount) {
+      const initialAmt = parseFloat(formData.initial_amount)
+      if (initialAmt < 0) {
+        newErrors.initial_amount = 'Initial amount cannot be negative'
+      } else if (formData.target_amount && initialAmt > parseFloat(formData.target_amount)) {
+        newErrors.initial_amount = 'Initial amount cannot exceed target amount'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -78,6 +89,9 @@ function CreateGoalModal({ onClose, onCreate }) {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         target_amount: Math.round(parseFloat(formData.target_amount) * 100), // Convert to cents
+        initial_amount: formData.initial_amount
+          ? Math.round(parseFloat(formData.initial_amount) * 100)
+          : 0, // Convert to cents
         target_date: formData.target_date || null
       }
 
@@ -118,6 +132,21 @@ function CreateGoalModal({ onClose, onCreate }) {
       setErrors(prev => ({
         ...prev,
         target_amount: ''
+      }))
+    }
+  }
+
+  const handleInitialAmountChange = (e) => {
+    const formatted = formatCurrencyInput(e.target.value)
+    setFormData(prev => ({
+      ...prev,
+      initial_amount: formatted
+    }))
+
+    if (errors.initial_amount) {
+      setErrors(prev => ({
+        ...prev,
+        initial_amount: ''
       }))
     }
   }
@@ -192,6 +221,32 @@ function CreateGoalModal({ onClose, onCreate }) {
               {errors.target_amount && (
                 <p className="text-red-500 text-sm mt-1">{errors.target_amount}</p>
               )}
+            </div>
+
+            {/* Initial Amount (Pre-existing savings) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Already Saved (€)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">€</span>
+                <input
+                  type="text"
+                  name="initial_amount"
+                  value={formData.initial_amount}
+                  onChange={handleInitialAmountChange}
+                  className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:bg-dark-surface dark:border-dark-border dark:text-white ${
+                    errors.initial_amount ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.initial_amount && (
+                <p className="text-red-500 text-sm mt-1">{errors.initial_amount}</p>
+              )}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Enter any amount you've already saved toward this goal
+              </div>
             </div>
 
             {/* Target Date */}

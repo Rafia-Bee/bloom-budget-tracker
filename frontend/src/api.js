@@ -174,6 +174,10 @@ export const goalAPI = {
     delete: (id, force = false) =>
         api.delete(`/goals/${id}`, { params: { force } }),
     getProgress: (id) => api.get(`/goals/${id}/progress`),
+    getTransactions: (id, page = 1, perPage = 20) =>
+        api.get(`/goals/${id}/transactions`, {
+            params: { page, per_page: perPage },
+        }),
 };
 
 export default api;

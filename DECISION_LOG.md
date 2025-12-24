@@ -6,6 +6,29 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-24
 
+### Goals: Initial Amount & Transaction History (Issues #99 & #105)
+
+**Context:** Users wanted to track pre-existing savings when creating goals and see contribution history for each goal.
+
+**Solution:**
+
+-   Added `initial_amount` field to Goal model (integer cents, default 0)
+-   Progress calculation now includes: `current_amount = initial_amount + contributions`
+-   New `GET /goals/{id}/transactions` endpoint with pagination and running balance
+-   Frontend: CreateGoalModal & EditGoalModal now have "Already Saved (€)" field
+-   Frontend: Goals page has expandable transaction history per goal (like Debts page)
+
+**Design Decisions:**
+
+1. **Initial amount stored separately** - Not as a fake expense, maintains clean transaction history
+2. **Running balance per transaction** - Shows how savings grew over time
+3. **Validation: initial_amount <= target_amount** - Cannot start already complete
+4. **Progress breakdown** - API returns `initial_amount`, `contributions_amount`, and `current_amount`
+
+**Impact:** Users can now enter money they've already saved before tracking, and view full contribution history. 21 backend tests + 113 frontend tests pass.
+
+---
+
 ### Day-by-Day Transaction Navigation (Issue #92)
 
 **Context:** Users wanted quick navigation between dates with transactions instead of using the filter modal.

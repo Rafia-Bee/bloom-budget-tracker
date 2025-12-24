@@ -45,6 +45,54 @@ class TestGoalsCRUD:
         assert response.status_code == 201
         assert response.json["goal"]["target_date"] is None
 
+    def test_create_goal_with_initial_amount(self, client, auth_headers):
+        """Should create goal with pre-existing initial amount"""
+        response = client.post(
+            "/api/v1/goals",
+            json={
+                "name": "Emergency Fund with Initial",
+                "target_amount": 100000,
+                "initial_amount": 25000,  # €250 already saved
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        assert response.json["goal"]["initial_amount"] == 25000
+        # Progress should include initial amount
+        assert response.json["goal"]["progress"]["current_amount"] == 25000
+        assert response.json["goal"]["progress"]["percentage"] == 25.0
+
+    def test_create_goal_initial_amount_exceeds_target(self, client, auth_headers):
+        """Should reject goal with initial amount greater than target"""
+        response = client.post(
+            "/api/v1/goals",
+            json={
+                "name": "Invalid Goal",
+                "target_amount": 10000,
+                "initial_amount": 20000,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "initial amount" in response.json["error"].lower()
+
+    def test_create_goal_negative_initial_amount(self, client, auth_headers):
+        """Should reject goal with negative initial amount"""
+        response = client.post(
+            "/api/v1/goals",
+            json={
+                "name": "Invalid Goal",
+                "target_amount": 10000,
+                "initial_amount": -5000,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "negative" in response.json["error"].lower()
+
     def test_create_goal_missing_name(self, client, auth_headers):
         """Should reject goal without name"""
         response = client.post(
@@ -160,6 +208,47 @@ class TestGoalsCRUD:
         assert response.json["goal"]["name"] == "Updated Name"
         assert response.json["goal"]["target_amount"] == 20000
 
+    def test_update_goal_initial_amount(self, client, auth_headers):
+        """Should update goal initial amount"""
+        # Create goal
+        create_response = client.post(
+            "/api/v1/goals",
+            json={"name": "Update Initial Test", "target_amount": 10000},
+            headers=auth_headers,
+        )
+        goal_id = create_response.json["goal"]["id"]
+
+        # Update initial amount
+        response = client.put(
+            f"/api/v1/goals/{goal_id}",
+            json={"initial_amount": 5000},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["goal"]["initial_amount"] == 5000
+        assert response.json["goal"]["progress"]["current_amount"] == 5000
+
+    def test_update_goal_initial_amount_exceeds_target(self, client, auth_headers):
+        """Should reject update if initial amount exceeds target"""
+        # Create goal
+        create_response = client.post(
+            "/api/v1/goals",
+            json={"name": "Update Initial Test", "target_amount": 10000},
+            headers=auth_headers,
+        )
+        goal_id = create_response.json["goal"]["id"]
+
+        # Try to update initial amount beyond target
+        response = client.put(
+            f"/api/v1/goals/{goal_id}",
+            json={"initial_amount": 15000},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "exceed" in response.json["error"].lower()
+
     def test_delete_goal(self, client, auth_headers):
         """Should soft delete goal"""
         # Create goal
@@ -248,3 +337,95 @@ class TestGoalProgress:
         assert progress["current_amount"] == 0
         assert progress["percentage"] == 0
         assert progress["remaining"] == 10000
+
+    def test_goal_progress_with_initial_amount(self, client, auth_headers):
+        """Should include initial amount in progress calculation"""
+        # Create goal with initial amount
+        create_response = client.post(
+            "/api/v1/goals",
+            json={
+                "name": "Initial Amount Progress",
+                "target_amount": 10000,
+                "initial_amount": 3000,
+            },
+            headers=auth_headers,
+        )
+        goal = create_response.json["goal"]
+
+        # Check progress includes initial amount
+        response = client.get(
+            f"/api/v1/goals/{goal['id']}/progress", headers=auth_headers
+        )
+        progress = response.json["progress"]
+
+        assert progress["initial_amount"] == 3000
+        assert progress["current_amount"] == 3000
+        assert progress["percentage"] == 30.0
+        assert progress["remaining"] == 7000
+
+
+class TestGoalTransactions:
+    """Test goal transaction history endpoint"""
+
+    def test_get_goal_transactions_empty(self, client, auth_headers):
+        """Should return empty transactions for new goal"""
+        # Create goal
+        create_response = client.post(
+            "/api/v1/goals",
+            json={"name": "Empty Transactions Goal", "target_amount": 10000},
+            headers=auth_headers,
+        )
+        goal_id = create_response.json["goal"]["id"]
+
+        # Get transactions
+        response = client.get(
+            f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        assert response.json["transactions"] == []
+        assert response.json["pagination"]["total_count"] == 0
+        assert response.json["summary"]["total_contributions"] == 0
+
+    def test_get_goal_transactions_with_initial_amount(self, client, auth_headers):
+        """Should include initial amount in transaction summary"""
+        # Create goal with initial amount
+        create_response = client.post(
+            "/api/v1/goals",
+            json={
+                "name": "Initial Amount Transactions",
+                "target_amount": 10000,
+                "initial_amount": 2500,
+            },
+            headers=auth_headers,
+        )
+        goal_id = create_response.json["goal"]["id"]
+
+        # Get transactions
+        response = client.get(
+            f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        assert response.json["summary"]["initial_amount"] == 2500
+        assert response.json["summary"]["current_amount"] == 2500
+
+    def test_get_goal_transactions_pagination(self, client, auth_headers):
+        """Should support pagination parameters"""
+        # Create goal
+        create_response = client.post(
+            "/api/v1/goals",
+            json={"name": "Pagination Test Goal", "target_amount": 100000},
+            headers=auth_headers,
+        )
+        goal_id = create_response.json["goal"]["id"]
+
+        # Get transactions with custom pagination
+        response = client.get(
+            f"/api/v1/goals/{goal_id}/transactions?page=1&per_page=5",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["pagination"]["page"] == 1
+        assert response.json["pagination"]["per_page"] == 5

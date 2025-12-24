@@ -480,6 +480,9 @@ class Goal(db.Model):
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
     target_amount = db.Column(db.Integer, nullable=False)  # Amount in cents
+    initial_amount = db.Column(
+        db.Integer, nullable=False, default=0
+    )  # Pre-existing savings in cents
     target_date = db.Column(db.Date, nullable=True)
     subcategory_name = db.Column(db.String(100), nullable=False)  # Links to subcategory
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -504,6 +507,7 @@ class Goal(db.Model):
             "name": self.name,
             "description": self.description,
             "target_amount": self.target_amount,
+            "initial_amount": self.initial_amount,
             "target_date": self.target_date.isoformat() if self.target_date else None,
             "subcategory_name": self.subcategory_name,
             "is_active": self.is_active,
@@ -512,7 +516,7 @@ class Goal(db.Model):
         }
 
     def calculate_progress(self):
-        """Calculate progress towards goal based on expenses in linked subcategory."""
+        """Calculate progress towards goal based on initial amount plus expenses in linked subcategory."""
         from backend.models.database import Expense  # Avoid circular import
         from datetime import date
 
@@ -531,11 +535,16 @@ class Goal(db.Model):
             or 0
         )
 
+        # Include initial_amount in current progress
+        current_amount = self.initial_amount + total_contributions
+
         return {
-            "current_amount": total_contributions,
+            "current_amount": current_amount,
+            "initial_amount": self.initial_amount,
+            "contributions_amount": total_contributions,
             "target_amount": self.target_amount,
-            "percentage": (total_contributions / self.target_amount * 100)
+            "percentage": (current_amount / self.target_amount * 100)
             if self.target_amount > 0
             else 0,
-            "remaining": max(0, self.target_amount - total_contributions),
+            "remaining": max(0, self.target_amount - current_amount),
         }
