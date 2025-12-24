@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL: ""
 
   frontend-checks:
-    name: Frontend - Build & Lint
+    name: Frontend - Build, Test & Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -74,6 +74,10 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test -- --run
 
       - name: Check for console.log statements
         run: |
