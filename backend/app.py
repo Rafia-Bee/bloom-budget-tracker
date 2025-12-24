@@ -39,6 +39,13 @@ def create_app(config_name="development"):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
+    # CRITICAL: Set database URI dynamically to support test isolation
+    # This must happen AFTER from_object but BEFORE db.init_app
+    from backend.config import Config
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = Config.get_database_uri()
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = Config.get_engine_options()
+
     # Production secret validation is now handled before app creation
     # Development mode allows weak defaults for convenience
 

@@ -14,37 +14,57 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # DB configuration - PostgreSQL or local SQLite
-    _raw_url = os.getenv("DATABASE_URL", "")
+    # DB configuration - check for test mode first, then PostgreSQL, then SQLite
+    @staticmethod
+    def get_database_uri():
+        """Get database URI - checks TESTING env var first for safety"""
+        # SAFETY: If TESTING=1, always use in-memory SQLite
+        if os.getenv("TESTING") == "1":
+            return "sqlite:///:memory:"
 
-    if _raw_url and "postgresql" in _raw_url:
-        # PostgreSQL (Neon or other)
-        SQLALCHEMY_DATABASE_URI = _raw_url
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,  # Test connections before use
-            "pool_recycle": 280,  # Recycle before Neon's 5min timeout
-            "pool_size": 3,  # Smaller pool for serverless
-            "max_overflow": 2,
-            "connect_args": {
-                "connect_timeout": 10,
-                "keepalives": 1,
-                "keepalives_idle": 30,
-                "keepalives_interval": 10,
-                "keepalives_count": 5,
-            },
-        }
-    else:
-        # Local SQLite fallback - use absolute path
-        import pathlib
+        raw_url = os.getenv("DATABASE_URL", "")
 
-        db_dir = pathlib.Path(__file__).parent.parent / "instance"
-        db_dir.mkdir(exist_ok=True)
-        db_path = db_dir / "bloom.db"
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-        }
+        if raw_url and "postgresql" in raw_url:
+            return raw_url
+        else:
+            # Local SQLite fallback - use absolute path
+            import pathlib
+
+            db_dir = pathlib.Path(__file__).parent.parent / "instance"
+            db_dir.mkdir(exist_ok=True)
+            db_path = db_dir / "bloom.db"
+            return f"sqlite:///{db_path}"
+
+    @staticmethod
+    def get_engine_options():
+        """Get SQLAlchemy engine options based on database type"""
+        if os.getenv("TESTING") == "1":
+            return {}
+
+        raw_url = os.getenv("DATABASE_URL", "")
+
+        if raw_url and "postgresql" in raw_url:
+            return {
+                "pool_pre_ping": True,
+                "pool_recycle": 280,
+                "pool_size": 3,
+                "max_overflow": 2,
+                "connect_args": {
+                    "connect_timeout": 10,
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5,
+                },
+            }
+        else:
+            return {
+                "pool_pre_ping": True,
+                "pool_recycle": 300,
+            }
+
+    # Use property-like behavior via __init_subclass__ or direct assignment
+    # For simplicity, we'll compute at access time in create_app
 
     # Email
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")

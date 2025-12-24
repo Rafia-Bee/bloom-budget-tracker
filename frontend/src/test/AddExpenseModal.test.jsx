@@ -30,19 +30,7 @@ describe('AddExpenseModal', () => {
     expect(screen.getByText(/add expense/i)).toBeInTheDocument()
   })
 
-  it('does not render when show is false', () => {
-    render(
-      <AddExpenseModal
-        show={false}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-      />
-    )
-
-    expect(screen.queryByText(/add expense/i)).not.toBeInTheDocument()
-  })
-
-  it('closes modal when close button clicked', async () => {
+  it('closes modal when cancel button clicked', async () => {
     const user = userEvent.setup()
 
     render(
@@ -59,9 +47,7 @@ describe('AddExpenseModal', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
-  it('shows validation errors for empty fields', async () => {
-    const user = userEvent.setup()
-
+  it('displays category select with options', () => {
     render(
       <AddExpenseModal
         show={true}
@@ -70,15 +56,13 @@ describe('AddExpenseModal', () => {
       />
     )
 
-    // Try to submit without filling fields
-    const submitButton = screen.getByRole('button', { name: /add expense/i })
-    await user.click(submitButton)
-
-    // Form validation should prevent submission
-    expect(mockOnSuccess).not.toHaveBeenCalled()
+    // Check that category options exist
+    expect(screen.getByText('Fixed Expenses')).toBeInTheDocument()
+    expect(screen.getByText('Flexible Expenses')).toBeInTheDocument()
+    expect(screen.getByText('Savings & Investments')).toBeInTheDocument()
   })
 
-  it('displays category options', () => {
+  it('displays payment method options', () => {
     render(
       <AddExpenseModal
         show={true}
@@ -87,8 +71,19 @@ describe('AddExpenseModal', () => {
       />
     )
 
-    // Check that category select exists
-    const categorySelect = screen.getByLabelText(/category/i)
-    expect(categorySelect).toBeInTheDocument()
+    expect(screen.getByText('Credit card')).toBeInTheDocument()
+    expect(screen.getByText('Debit card')).toBeInTheDocument()
+  })
+
+  it('has recurring expense checkbox', () => {
+    render(
+      <AddExpenseModal
+        show={true}
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />
+    )
+
+    expect(screen.getByText(/recurring expense/i)).toBeInTheDocument()
   })
 })

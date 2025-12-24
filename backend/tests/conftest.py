@@ -14,42 +14,77 @@ Sets up test database, test client, and common fixtures.
 import pytest
 import os
 from unittest.mock import patch, MagicMock
+
+# CRITICAL: Set TESTING=1 BEFORE any imports that load config
+# This tells Config.get_database_uri() to use in-memory SQLite
+os.environ["TESTING"] = "1"
+
 from backend.app import create_app
 from backend.models.database import db
-from backend.config import Config
 
 
-class TestConfig(Config):
-    """Test configuration - uses in-memory SQLite"""
+class TestConfig:
+    """
+    Test configuration values to apply after app creation.
+    Database URI is handled by Config.get_database_uri() based on TESTING env var.
+    """
 
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-    JWT_SECRET_KEY = "test-secret-key-for-testing-only"
+    DEBUG = True
+
+    # JWT config
+    SECRET_KEY = "test-secret-key-for-testing-only"
+    JWT_SECRET_KEY = "test-jwt-secret-key-for-testing-only"
+    from datetime import timedelta
+
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=1)
+
+    # JWT Cookie config (matches app.py settings)
+    JWT_TOKEN_LOCATION = ["cookies"]
+    JWT_COOKIE_SECURE = False  # HTTP OK in tests
+    JWT_ACCESS_COOKIE_PATH = "/"
+    JWT_REFRESH_COOKIE_PATH = "/auth/refresh"
+    JWT_COOKIE_CSRF_PROTECT = False
+    JWT_COOKIE_SAMESITE = "Lax"
+
+    # Disable features that could cause issues
     WTF_CSRF_ENABLED = False
-    RATELIMIT_ENABLED = False  # Disable rate limiting for tests
-    # Disable SendGrid to prevent real emails
+    RATELIMIT_ENABLED = False
+
+    # Disable email
     SENDGRID_API_KEY = None
-
-
-# SAFETY: Force DATABASE_URL to in-memory DB IMMEDIATELY when conftest is imported
-# This prevents test discovery from accidentally using the real database
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    SENDGRID_FROM_EMAIL = "test@test.com"
+    FRONTEND_URL = "http://localhost:3000"
 
 
 @pytest.fixture(scope="function", autouse=True)
-def disable_sendgrid():
-    """Ensure SendGrid is disabled for ALL tests by removing API key from environment"""
-    original_key = os.environ.get("SENDGRID_API_KEY")
+def isolate_environment():
+    """
+    Ensure test environment is completely isolated from development.
+    Runs automatically before each test.
+    """
+    # Store original values
+    original_env = {
+        "TESTING": os.environ.get("TESTING"),
+        "SENDGRID_API_KEY": os.environ.get("SENDGRID_API_KEY"),
+    }
+
+    # Force test environment
+    os.environ["TESTING"] = "1"
     if "SENDGRID_API_KEY" in os.environ:
         del os.environ["SENDGRID_API_KEY"]
+
     yield
-    if original_key:
-        os.environ["SENDGRID_API_KEY"] = original_key
+
+    # Restore original environment (keep TESTING=1 for other tests in session)
+    if original_env["SENDGRID_API_KEY"] is not None:
+        os.environ["SENDGRID_API_KEY"] = original_env["SENDGRID_API_KEY"]
 
 
 @pytest.fixture(scope="function")
-def app(disable_sendgrid):
-    """Create Flask app for testing with email service properly mocked"""
+def app(isolate_environment):
+    """Create Flask app for testing with completely isolated database"""
     # Patch the email service at the routes level to prevent ANY emails
     with patch("backend.routes.auth.email_service") as mock_auth_email, patch(
         "backend.routes.password_reset.email_service"
@@ -75,29 +110,38 @@ def app(disable_sendgrid):
                 "message": "Mocked email (not actually sent)",
             }
 
-        # CRITICAL FIX: Set DATABASE_URL before creating app to force in-memory DB
-        original_db_url = os.environ.get("DATABASE_URL")
-        os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+        # Create app - Config.get_database_uri() will return in-memory SQLite
+        # because TESTING=1 is set
+        app = create_app("development")
 
-        app = create_app()
-        app.config.from_object(TestConfig)
+        # Apply additional test config values
+        app.config["TESTING"] = True
+        app.config["DEBUG"] = True
+        app.config["RATELIMIT_ENABLED"] = False
+        for key in dir(TestConfig):
+            if key.isupper():
+                app.config[key] = getattr(TestConfig, key)
 
         with app.app_context():
+            # Verify we're using in-memory database (safety check)
+            uri = str(db.engine.url)
+            assert (
+                ":memory:" in uri or uri == "sqlite://"
+            ), f"SAFETY CHECK FAILED: Using real database! URI: {uri}"
+
             # Clear rate limiter state before each test
             from backend.utils.rate_limiter import _request_history
 
             _request_history.clear()
 
+            # Create fresh tables in in-memory database
             db.create_all()
+
             yield app
+
+            # Cleanup - safe because it's in-memory
             db.session.remove()
             db.drop_all()
-
-        # Restore original DATABASE_URL
-        if original_db_url:
-            os.environ["DATABASE_URL"] = original_db_url
-        elif "DATABASE_URL" in os.environ:
-            del os.environ["DATABASE_URL"]
 
 
 @pytest.fixture(scope="function")
