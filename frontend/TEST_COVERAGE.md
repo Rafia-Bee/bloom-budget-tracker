@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 549 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 594 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -37,6 +37,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | CreateGoalModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | EditGoalModal.jsx            |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | EditDebtModal.jsx            |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddDebtPaymentModal.jsx      |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -51,6 +52,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [CreateGoalModal.test.jsx](src/test/CreateGoalModal.test.jsx) | 52 | Goal creation form | **High** |
 | [EditGoalModal.test.jsx](src/test/EditGoalModal.test.jsx) | 53 | Goal editing form | **High** |
 | [EditDebtModal.test.jsx](src/test/EditDebtModal.test.jsx) | 38 | Debt editing form | **High** |
+| [AddDebtPaymentModal.test.jsx](src/test/AddDebtPaymentModal.test.jsx) | 45 | Debt payment form | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
@@ -61,6 +63,46 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### AddDebtPaymentModal (45 tests) - NEW
+
+Debt payment form with API-loaded debt selection, auto-fill amount, and Credit Card special case.
+
+**Covered:**
+
+-   ✅ Form rendering (title, fields, buttons, close X)
+-   ✅ Debt loading from API with dropdown display
+-   ✅ Auto-select first debt on load with amount auto-fill
+-   ✅ Pre-selected debt support with amount prefill
+-   ✅ Debt selection changes update amount field
+-   ✅ Credit Card option clears amount (no monthly payment)
+-   ✅ Payment method selection (Debit card, Cash, Bank transfer)
+-   ✅ Form interactions (custom amount, date changes)
+-   ✅ Input validation (required fields, min values, step values)
+-   ✅ Submit button disabled when no debt selected
+-   ✅ Form submission with cents conversion
+-   ✅ Creates expense name with "Payment" suffix
+-   ✅ Loading states during submission
+-   ✅ Error handling with dismiss button
+-   ✅ Empty debts list handling (shows only Credit Card option)
+
+**Test Categories:**
+
+-   Rendering (4 tests)
+-   Debt Loading (7 tests)
+-   Pre-selected Debt (2 tests)
+-   Debt Selection (3 tests)
+-   Form Interactions (5 tests)
+-   Input Validation (6 tests)
+-   Modal Actions (2 tests)
+-   Form Submission (5 tests)
+-   Loading State (2 tests)
+-   Error Handling (4 tests)
+-   Credit Card Special Case (2 tests)
+-   Payment Method Options (1 test)
+-   Empty Debts List (2 tests)
+
+---
 
 #### EditIncomeModal (29 tests) - NEW
 

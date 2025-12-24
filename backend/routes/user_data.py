@@ -16,6 +16,8 @@ from backend.models.database import (
     SalaryPeriod,
     Debt,
     RecurringExpense,
+    Subcategory,
+    Goal,
 )
 
 user_data_bp = Blueprint("user_data", __name__)
@@ -34,6 +36,8 @@ def delete_all_user_data():
     - All salary periods
     - All debts
     - All recurring expenses
+    - All goals
+    - All custom subcategories
 
     The user account and login credentials remain intact.
 
@@ -68,6 +72,10 @@ def delete_all_user_data():
         recurring_count = RecurringExpense.query.filter_by(
             user_id=current_user_id
         ).count()
+        goal_count = Goal.query.filter_by(user_id=current_user_id).count()
+        subcategory_count = Subcategory.query.filter_by(
+            user_id=current_user_id
+        ).count()
 
         total_records = (
             expense_count
@@ -76,6 +84,8 @@ def delete_all_user_data():
             + salary_period_count
             + debt_count
             + recurring_count
+            + goal_count
+            + subcategory_count
         )
 
         # Delete all data (order matters due to foreign keys)
@@ -85,6 +95,8 @@ def delete_all_user_data():
         SalaryPeriod.query.filter_by(user_id=current_user_id).delete()
         Debt.query.filter_by(user_id=current_user_id).delete()
         RecurringExpense.query.filter_by(user_id=current_user_id).delete()
+        Goal.query.filter_by(user_id=current_user_id).delete()
+        Subcategory.query.filter_by(user_id=current_user_id).delete()
 
         db.session.commit()
 
@@ -100,6 +112,8 @@ def delete_all_user_data():
                         "salary_periods": salary_period_count,
                         "debts": debt_count,
                         "recurring_expenses": recurring_count,
+                        "goals": goal_count,
+                        "subcategories": subcategory_count,
                         "total": total_records,
                     },
                 }

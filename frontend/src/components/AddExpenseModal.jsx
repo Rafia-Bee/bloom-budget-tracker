@@ -260,7 +260,33 @@ function AddExpenseModal({ onClose, onAdd }) {
                 }
 
                 if (newSubcats.length > 0) {
-                  setSubcategory(newSubcats[0])
+                  const firstSubcat = newSubcats[0]
+                  setSubcategory(firstSubcat)
+
+                  // Auto-fill name for Debt Payments category
+                  if (newCategory === 'Debt Payments') {
+                    if (firstSubcat === 'Credit Card') {
+                      setName('Credit Card Payment')
+                      setAmount('') // Clear amount for manual entry
+                    } else {
+                      // For other debts, try to autofill amount from debt data
+                      const selectedDebt = debts.find(d => d.name === firstSubcat)
+                      if (selectedDebt && selectedDebt.monthly_payment) {
+                        setAmount((selectedDebt.monthly_payment / 100).toFixed(2))
+                      }
+                      setName(`${firstSubcat} Payment`)
+                    }
+                  }
+
+                  // Auto-fill name for Savings & Investments category
+                  if (newCategory === 'Savings & Investments') {
+                    const selectedGoal = goals.find(g => g.subcategory_name === firstSubcat)
+                    if (selectedGoal) {
+                      setName(`${selectedGoal.name} Contribution`)
+                    } else {
+                      setName(`${firstSubcat} Contribution`)
+                    }
+                  }
                 }
               }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"

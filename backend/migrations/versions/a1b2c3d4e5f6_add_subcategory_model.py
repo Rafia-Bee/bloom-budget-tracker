@@ -57,10 +57,7 @@ def upgrade():
         ("Flexible Expenses", "Shopping"),
         ("Flexible Expenses", "Health"),
         ("Flexible Expenses", "Other"),
-        # Savings & Investments
-        ("Savings & Investments", "Emergency Fund"),
-        ("Savings & Investments", "Investments"),
-        ("Savings & Investments", "Savings Goals"),
+        # Savings & Investments (only "Other" - user creates specific goals via Goals page)
         ("Savings & Investments", "Other"),
         # Debt Payments
         ("Debt Payments", "Credit Card"),

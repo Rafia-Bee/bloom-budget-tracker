@@ -18,10 +18,10 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 **Solution:**
 
--   Created Python script to restore 17 system default subcategories:
+-   Created Python script to restore 14 system default subcategories:
     -   Fixed Expenses (5): Rent/Mortgage, Utilities, Insurance, Subscriptions, Other
     -   Flexible Expenses (6): Food, Transportation, Entertainment, Shopping, Health, Other
-    -   Savings & Investments (4): Emergency Fund, Investments, Savings Goals, Other
+    -   Savings & Investments (1): Other (users create specific goals via Goals page)
     -   Debt Payments (2): Credit Card, Other
 -   All subcategories have `user_id=NULL`, `is_system=True`, `is_active=True`
 
