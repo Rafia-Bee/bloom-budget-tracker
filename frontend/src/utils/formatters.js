@@ -9,16 +9,23 @@
 
 /**
  * Currency metadata for supported currencies
+ * Note: Flag emojis removed for better cross-platform compatibility
  */
 export const CURRENCY_INFO = {
-    EUR: { name: "Euro", symbol: "€", flag: "🇪🇺", locale: "de-DE" },
-    USD: { name: "US Dollar", symbol: "$", flag: "🇺🇸", locale: "en-US" },
-    GBP: { name: "British Pound", symbol: "£", flag: "🇬🇧", locale: "en-GB" },
-    PLN: { name: "Polish Złoty", symbol: "zł", flag: "🇵🇱", locale: "pl-PL" },
-    SEK: { name: "Swedish Krona", symbol: "kr", flag: "🇸🇪", locale: "sv-SE" },
-    NOK: { name: "Norwegian Krone", symbol: "kr", flag: "🇳🇴", locale: "nb-NO" },
-    CHF: { name: "Swiss Franc", symbol: "CHF", flag: "🇨🇭", locale: "de-CH" },
-    DKK: { name: "Danish Krone", symbol: "kr", flag: "🇩🇰", locale: "da-DK" },
+    EUR: { name: "Euro", symbol: "€", locale: "de-DE" },
+    USD: { name: "US Dollar", symbol: "$", locale: "en-US" },
+    GBP: { name: "British Pound", symbol: "£", locale: "en-GB" },
+    PLN: { name: "Polish Złoty", symbol: "zł", locale: "pl-PL" },
+    SEK: { name: "Swedish Krona", symbol: "kr", locale: "sv-SE" },
+    NOK: { name: "Norwegian Krone", symbol: "kr", locale: "nb-NO" },
+    CHF: { name: "Swiss Franc", symbol: "CHF", locale: "de-CH" },
+    DKK: { name: "Danish Krone", symbol: "kr", locale: "da-DK" },
+    BDT: { name: "Bangladeshi Taka", symbol: "৳", locale: "bn-BD" },
+    CAD: { name: "Canadian Dollar", symbol: "CA$", locale: "en-CA" },
+    AUD: { name: "Australian Dollar", symbol: "A$", locale: "en-AU" },
+    JPY: { name: "Japanese Yen", symbol: "¥", locale: "ja-JP" },
+    CNY: { name: "Chinese Renminbi", symbol: "¥", locale: "zh-CN" },
+    INR: { name: "Indian Rupee", symbol: "₹", locale: "en-IN" },
 };
 
 /**
@@ -101,16 +108,6 @@ export const getCurrencySymbol = (currency) => {
 };
 
 /**
- * Get currency flag emoji for a currency code
- *
- * @param {string} currency - ISO 4217 currency code
- * @returns {string} Flag emoji (e.g., '🇪🇺', '🇺🇸')
- */
-export const getCurrencyFlag = (currency) => {
-    return CURRENCY_INFO[currency]?.flag || "";
-};
-
-/**
  * Get full currency name for a currency code
  *
  * @param {string} currency - ISO 4217 currency code
@@ -121,15 +118,15 @@ export const getCurrencyName = (currency) => {
 };
 
 /**
- * Format currency display with flag
+ * Format currency display (text only, no flags)
  *
  * @param {string} currency - ISO 4217 currency code
- * @returns {string} Display string (e.g., '🇪🇺 EUR - Euro')
+ * @returns {string} Display string (e.g., 'EUR - Euro')
  */
 export const formatCurrencyOption = (currency) => {
     const info = CURRENCY_INFO[currency];
     if (!info) return currency;
-    return `${info.flag} ${currency} - ${info.name}`;
+    return `${currency} - ${info.name}`;
 };
 
 /**

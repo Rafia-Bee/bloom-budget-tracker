@@ -28,7 +28,7 @@ def list_currencies():
     Get list of supported currencies with metadata.
 
     Returns:
-        JSON array of currency objects with code, name, symbol, flag
+        JSON array of currency objects with code, name, symbol (no flags)
     """
     currencies = get_supported_currencies()
     return jsonify({"currencies": currencies}), 200

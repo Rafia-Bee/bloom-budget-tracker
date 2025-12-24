@@ -6,6 +6,48 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-24
 
+### Multi-Currency API Switch to ExchangeRate-API (Issue #7)
+
+**Context:** Initial implementation used frankfurter.app (ECB data, 30 currencies). User requested support for all world currencies including BDT (Bangladeshi Taka) for global accessibility. Emoji flags had rendering issues on some systems.
+
+**Solution - API Migration:**
+
+-   **Old:** frankfurter.app (ECB data, ~30 European currencies)
+-   **New:** ExchangeRate-API open access endpoint (165 currencies, global coverage)
+
+**Changes:**
+
+1. **Backend (`currency_service.py`):**
+    - Changed API endpoint: `api.frankfurter.app` → `open.er-api.com/v6/latest/{currency}`
+    - Expanded `SUPPORTED_CURRENCIES` from 8 to 165 currencies
+    - Added comprehensive `CURRENCY_INFO` with symbols for all currencies
+    - Removed `flag` field from currency metadata
+    - Updated API response parsing (frankfurter uses `date` field, ExchangeRate-API uses `time_last_update_unix`)
+2. **Frontend:**
+    - `formatters.js`: Removed flag emojis, text-only display
+    - `CurrencySelector.jsx`: Updated to show "CODE - Name" format (no flags)
+3. **API Documentation:**
+    - Attribution required: "Rates By Exchange Rate API (https://www.exchangerate-api.com)"
+    - Rate limits: Updates once per day, requests cached for 24 hours
+    - Free tier: No API key for open access endpoint
+
+**Rationale:**
+
+-   **Global coverage:** BDT and 150+ other currencies vs 30 European currencies
+-   **User accessibility:** Friends/users from Bangladesh, Asia, Africa, South America can now use the app
+-   **Better compatibility:** Text-only display works across all platforms (no emoji rendering issues)
+-   **Same architecture:** Daily caching strategy unchanged, still supports offline PWA
+
+**Trade-offs:**
+
+-   Attribution link required (acceptable for free tier)
+-   No historical rates in open access version (current rates only)
+-   Rate updates once per day (same as before)
+
+**Impact:** Bloom Budget Tracker is now truly global - supports currencies from 165 countries including developing nations. Users can select from BDT, INR, NGN, KES, etc.
+
+---
+
 ### Multi-Currency Support Phase 1 (Issue #7)
 
 **Context:** Users need to record expenses in different currencies for travel, foreign income, and cross-border shopping.
@@ -26,7 +68,7 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Design Decisions:**
 
 1. **Store in original currency, convert on read** - Preserves historical accuracy
-2. **frankfurter.app API** - Free, no API key, ECB data, no rate limits (vs paid alternatives)
+2. **ExchangeRate-API open access** - Free, no API key, 165 currencies, global coverage
 3. **Daily rate caching** - Minimize API calls, support offline PWA
 4. **EUR as default** - Existing data remains valid, user can change preference
 5. **Migration compatible** - All new fields have server defaults, existing records get EUR

@@ -2,12 +2,12 @@
  * CurrencySelector Component
  *
  * Reusable dropdown for selecting currencies in transaction forms.
- * Shows currency code, flag, and name.
+ * Shows currency code and name (text only, no flags).
  */
 
 import { useState, useEffect } from "react";
 import { currencyAPI } from "../api";
-import { CURRENCY_INFO, getCurrencyFlag, getCurrencyName } from "../utils/formatters";
+import { CURRENCY_INFO, getCurrencyName } from "../utils/formatters";
 
 function CurrencySelector({
     value = "EUR",
@@ -37,7 +37,6 @@ function CurrencySelector({
                     code,
                     name: CURRENCY_INFO[code].name,
                     symbol: CURRENCY_INFO[code].symbol,
-                    flag: CURRENCY_INFO[code].flag,
                 }))
             );
         } finally {
@@ -76,7 +75,7 @@ function CurrencySelector({
             >
                 {currencies.map((currency) => (
                     <option key={currency.code} value={currency.code}>
-                        {currency.flag} {currency.code}
+                        {currency.code}
                     </option>
                 ))}
             </select>
@@ -103,7 +102,7 @@ function CurrencySelector({
             >
                 {currencies.map((currency) => (
                     <option key={currency.code} value={currency.code}>
-                        {currency.flag} {currency.code} - {currency.name}
+                        {currency.code} - {currency.name}
                     </option>
                 ))}
             </select>
