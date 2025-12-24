@@ -6,6 +6,33 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-24
 
+### System Subcategories Database Restoration (Issue #103)
+
+**Context:** User reported all subcategories disappeared from Settings, but old subcategories still showing in Add Expense modal.
+
+**Investigation:**
+
+-   Migration `a1b2c3d4e5f6_add_subcategory_model.py` was correctly applied (alembic_version confirmed)
+-   Database query revealed 0 system subcategories despite migration having insert statements
+-   Determined data was accidentally deleted post-migration
+
+**Solution:**
+
+-   Created Python script to restore 17 system default subcategories:
+    -   Fixed Expenses (5): Rent/Mortgage, Utilities, Insurance, Subscriptions, Other
+    -   Flexible Expenses (6): Food, Transportation, Entertainment, Shopping, Health, Other
+    -   Savings & Investments (4): Emergency Fund, Investments, Savings Goals, Other
+    -   Debt Payments (2): Credit Card, Other
+-   All subcategories have `user_id=NULL`, `is_system=True`, `is_active=True`
+
+**Decision:** Added data validation check to prevent future accidental deletion of system defaults. Database restoration script can be reused if needed.
+
+**Impact:** Users now see default subcategories in Settings and can create custom subcategories again. Issue #103 closed.
+
+---
+
+## 2025-12-24
+
 ### Frontend Test Suite Expansion: Modal Component Coverage (6 components, 142 tests)
 
 **Context:** Expanded test coverage for critical modal components with comprehensive test suites covering form validation, user interactions, error handling, and accessibility.
