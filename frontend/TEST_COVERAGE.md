@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 312 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 341 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -32,6 +32,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | AddIncomeModal.jsx     |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | Header.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | AddDebtModal.jsx       |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditIncomeModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -41,6 +42,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx) | 35 | Bank transaction import | **High** |
 | [Header.test.jsx](src/test/Header.test.jsx) | 24 | Navigation & user menu | **High** |
 | [AddDebtModal.test.jsx](src/test/AddDebtModal.test.jsx) | 33 | Debt creation form | **High** |
+| [EditIncomeModal.test.jsx](src/test/EditIncomeModal.test.jsx) | 29 | Edit income form | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
@@ -51,6 +53,36 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### EditIncomeModal (29 tests) - NEW
+
+Income edit form with pre-filled data and type selection.
+
+**Covered:**
+
+-   ✅ Form rendering with all fields (type, amount, date)
+-   ✅ Pre-filled data from income object (type, amount in euros, converted date)
+-   ✅ Income type selection (Salary, Bonus, Freelance, Other)
+-   ✅ Amount and date editing with validation
+-   ✅ Date format conversion (display → YYYY-MM-DD)
+-   ✅ Form submission with cents conversion
+-   ✅ Loading states and error handling
+-   ✅ Accessibility with htmlFor labels
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 4 |
+| Pre-filled Data | 5 |
+| Income Types | 2 |
+| Form Editing | 6 |
+| Modal Close Actions | 2 |
+| Form Submission | 6 |
+| Error Handling | 4 |
+
+**Bug Fix:** Fixed incorrect "Type" label → "Date" label with proper date input field
+
+---
 
 #### AddDebtModal (33 tests) - NEW
 

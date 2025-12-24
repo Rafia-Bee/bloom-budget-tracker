@@ -93,8 +93,9 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           )}
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Type</label>
+            <label htmlFor="type-select" className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Type</label>
             <select
+              id="type-select"
               value={type}
               onChange={(e) => setType(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint dark:focus:ring-bloom-mint"
@@ -106,8 +107,9 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
+            <label htmlFor="amount-input" className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
             <input
+              id="amount-input"
               type="number"
               step="0.01"
               min="0.01"
@@ -119,12 +121,12 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Type</label>
+            <label htmlFor="date-input" className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Date</label>
             <input
-              type="text"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              maxLength={50}
+              id="date-input"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
               required
             />
