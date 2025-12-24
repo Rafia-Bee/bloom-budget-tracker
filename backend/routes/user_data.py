@@ -73,9 +73,7 @@ def delete_all_user_data():
             user_id=current_user_id
         ).count()
         goal_count = Goal.query.filter_by(user_id=current_user_id).count()
-        subcategory_count = Subcategory.query.filter_by(
-            user_id=current_user_id
-        ).count()
+        subcategory_count = Subcategory.query.filter_by(user_id=current_user_id).count()
 
         total_records = (
             expense_count
