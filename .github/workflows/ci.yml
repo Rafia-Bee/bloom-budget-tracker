@@ -46,11 +46,11 @@ jobs:
           echo "🎨 Checking code formatting..."
           black --check backend/
 
-      - name: Run backend tests
+      - name: Run backend tests with coverage
         run: |
-          echo "🧪 Running backend tests..."
+          echo "🧪 Running backend tests with coverage..."
           cd backend
-          python -m pytest tests/ -v --tb=short --color=yes
+          python -m pytest tests/ -v --tb=short --color=yes --cov=. --cov-report=term-missing --cov-fail-under=20
         env:
           # Ensure no real services are used during tests
           SENDGRID_API_KEY: ""
@@ -75,9 +75,11 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Run frontend tests
+      - name: Run frontend tests with coverage
         working-directory: ./frontend
-        run: npm test -- --run
+        run: |
+          echo "🧪 Running frontend tests with coverage..."
+          npm test -- --run --coverage
 
       - name: Check for console.log statements
         run: |
