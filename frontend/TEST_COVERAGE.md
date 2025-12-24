@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
-> **Last Updated:** January 16, 2025
-> **Total Tests:** 170 passing (Frontend) + 45 business logic tests (Backend)
+> **Last Updated:** December 24, 2025
+> **Total Tests:** 226 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -27,12 +27,16 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | SalaryPeriodWizard.jsx |  95%  |  90%   |  53%  |  95%  | ✅ Good |
 | AddExpenseModal.jsx    |  83%  |  64%   |  63%  |  83%  | ✅ Good |
 | ExportImportModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditExpenseModal.jsx   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| BankImportModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
 | [SalaryPeriodWizard.test.jsx](src/test/SalaryPeriodWizard.test.jsx) | 29 | Budget setup wizard | **High** |
 | [WeeklyBudgetCard.test.jsx](src/test/WeeklyBudgetCard.test.jsx) | 33 | Budget display card | **High** |
 | [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx) | 20 | Data export/import | **High** |
+| [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx) | 35 | Bank transaction import | **High** |
+| [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
 | [ExpenseList.test.jsx](src/test/ExpenseList.test.jsx) | 22 | Expense list with filtering | Low |
 
@@ -41,6 +45,34 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### BankImportModal (35 tests) - NEW
+
+Bank transaction import functionality with preview and confirmation.
+
+**Covered:**
+
+-   ✅ Input step: instructions, payment method, fixed bills checkbox
+-   ✅ Transaction data textarea with example paste
+-   ✅ Preview API call with correct parameters
+-   ✅ Preview step: transaction table display
+-   ✅ Import confirmation API call
+-   ✅ Success message with imported expenses list
+-   ✅ Error handling and dismissal
+-   ✅ Back to edit navigation
+-   ✅ Loading states during preview/import
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering - Input Step | 9 |
+| Input Step - Interactions | 7 |
+| Preview API Call | 5 |
+| Preview Step - Display | 8 |
+| Import Confirmation | 5 |
+| Error Dismissal | 1 |
+
+---
 
 #### ExportImportModal (20 tests) - NEW
 
@@ -150,6 +182,34 @@ Core budget tracking display.
 -   ✅ Payment method selection
 -   ✅ Recurring expense toggle
 -   ✅ Form submission
+
+---
+
+#### EditExpenseModal (21 tests) - NEW
+
+Edit expense form with pre-filled data.
+
+**Covered:**
+
+-   ✅ Pre-fill name, amount, date, category, payment method from expense
+-   ✅ Amount conversion (cents → display format)
+-   ✅ Date parsing (display format → input format)
+-   ✅ Form field updates
+-   ✅ Category and payment method changes
+-   ✅ Form submission with cents conversion
+-   ✅ Loading state during save
+-   ✅ Error handling and display
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 3 |
+| Pre-fill Expense Data | 5 |
+| Form Interactions | 4 |
+| Modal Actions | 2 |
+| Form Submission | 3 |
+| Error Handling | 2 |
+| Category/Payment Options | 2 |
 
 ---
 
