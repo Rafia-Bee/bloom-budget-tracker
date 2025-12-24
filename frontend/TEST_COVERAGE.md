@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** January 16, 2025
-> **Total Tests:** 150 passing (Frontend) + 37 business logic tests (Backend)
+> **Total Tests:** 170 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -26,11 +26,13 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | ExpenseList.jsx        |  99%  |  95%   | 100%  |  99%  | ✅ Full |
 | SalaryPeriodWizard.jsx |  95%  |  90%   |  53%  |  95%  | ✅ Good |
 | AddExpenseModal.jsx    |  83%  |  64%   |  63%  |  83%  | ✅ Good |
+| ExportImportModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
 | [SalaryPeriodWizard.test.jsx](src/test/SalaryPeriodWizard.test.jsx) | 29 | Budget setup wizard | **High** |
 | [WeeklyBudgetCard.test.jsx](src/test/WeeklyBudgetCard.test.jsx) | 33 | Budget display card | **High** |
+| [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx) | 20 | Data export/import | **High** |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
 | [ExpenseList.test.jsx](src/test/ExpenseList.test.jsx) | 22 | Expense list with filtering | Low |
 
@@ -39,6 +41,36 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### ExportImportModal (20 tests) - NEW
+
+Critical data export/import functionality.
+
+**Covered:**
+
+-   ✅ Export mode: all checkboxes rendered (Debts, Recurring, Salary Periods, Expenses, Income, Goals)
+-   ✅ Export format selection (JSON/CSV)
+-   ✅ Export type toggling
+-   ✅ API integration (POST /data/export)
+-   ✅ Error handling (no types selected, API errors)
+-   ✅ Loading state during export
+-   ✅ Success message display
+-   ✅ Import mode rendering
+-   ✅ File input with JSON acceptance
+-   ✅ Invalid JSON error handling
+-   ✅ Dismissible error messages
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Export Mode - Rendering | 5 |
+| Export Mode - Interactions | 4 |
+| Export Mode - API Integration | 5 |
+| Import Mode - Rendering | 3 |
+| Import Mode - File Upload | 2 |
+| Message/Error Dismissal | 1 |
+
+---
 
 #### SalaryPeriodWizard (29 tests)
 
