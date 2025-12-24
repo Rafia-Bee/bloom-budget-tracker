@@ -374,7 +374,7 @@ function AddExpenseModal({ onClose, onAdd }) {
               )}
 
               <p className="text-xs text-purple-700 dark:text-dark-text-secondary mt-2">
-                Start date will be: {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                Start date will be: {(() => { const d = new Date(date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
               </p>
             </div>
           )}

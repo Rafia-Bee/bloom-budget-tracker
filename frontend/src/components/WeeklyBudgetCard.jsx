@@ -137,7 +137,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
               {isCurrentWeek && <span className="text-xs bg-white/20 px-2 py-0.5 rounded">Current</span>}
             </div>
             <p className="text-xs opacity-75 mt-0.5">
-              {displayWeek?.start_date && new Date(displayWeek.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {displayWeek?.end_date && new Date(displayWeek.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {displayWeek?.start_date && (() => { const d = new Date(displayWeek.start_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()} - {displayWeek?.end_date && (() => { const d = new Date(displayWeek.end_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
             </p>
           </div>
         </div>

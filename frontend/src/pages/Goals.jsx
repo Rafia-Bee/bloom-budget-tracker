@@ -118,11 +118,11 @@ function Goals({ setIsAuthenticated }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return null
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    const date = new Date(dateString)
+    const day = date.getDate()
+    const month = date.toLocaleDateString('en-GB', { month: 'short' })
+    const year = date.getFullYear()
+    return `${day} ${month}, ${year}`
   }
 
   const getProgressColor = (percentage) => {

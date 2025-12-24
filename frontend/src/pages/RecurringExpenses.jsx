@@ -142,11 +142,11 @@ function RecurringExpenses({ setIsAuthenticated }) {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    const date = new Date(dateString)
+    const day = date.getDate()
+    const month = date.toLocaleDateString('en-GB', { month: 'short' })
+    const year = date.getFullYear()
+    return `${day} ${month}, ${year}`
   }
 
   const activeExpenses = recurringExpenses.filter(e => e.is_active)
@@ -537,7 +537,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             <div className="flex items-center gap-3 mb-2 flex-wrap">
                               <h4 className="font-semibold text-gray-800 dark:text-dark-text">{expense.name}</h4>
                               <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded">
-                                {new Date(expense.date).toLocaleDateString()}
+                                {formatDate(expense.date)}
                               </span>
                             </div>
                             <div className="text-sm text-gray-500 dark:text-dark-text-tertiary">

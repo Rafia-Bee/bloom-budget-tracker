@@ -1394,7 +1394,7 @@ function Dashboard({ setIsAuthenticated }) {
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
-                            <span>{new Date(expense.date).toLocaleDateString()}</span>
+                            <span>{(() => { const d = new Date(expense.date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}</span>
                             <span className="capitalize">{expense.frequency}</span>
                           </div>
                         </div>

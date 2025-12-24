@@ -426,7 +426,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="font-semibold">4-Week Schedule</h4>
                   <span className="text-sm text-gray-500">
-                    {new Date(preview.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {new Date(preview.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {(() => { const d = new Date(preview.start_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()} - {(() => { const d = new Date(preview.end_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -437,7 +437,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                       </div>
                       <div className="flex-1">
                         <div className="text-sm text-gray-600">
-                          {new Date(week.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {new Date(week.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {(() => { const d = new Date(week.start_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()} - {(() => { const d = new Date(week.end_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
                         </div>
                       </div>
                       <div className="font-semibold text-bloom-pink">

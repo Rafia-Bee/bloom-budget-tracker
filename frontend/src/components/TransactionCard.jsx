@@ -90,11 +90,7 @@ const TransactionCard = memo(function TransactionCard({
               : 'Income'}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {new Date(transaction.date + 'T00:00:00').toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            })}
+            {(() => { const d = new Date(transaction.date + 'T00:00:00'); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
           </p>
         </div>
       </div>

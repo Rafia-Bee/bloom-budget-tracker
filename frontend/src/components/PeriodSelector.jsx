@@ -14,12 +14,17 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00')
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    const day = date.getDate()
+    const month = date.toLocaleDateString('en-GB', { month: 'short' })
+    const year = date.getFullYear()
+    return `${day} ${month}, ${year}`
   }
 
   const formatShortDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00')
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    const day = date.getDate()
+    const month = date.toLocaleDateString('en-GB', { month: 'short' })
+    return `${day} ${month}`
   }
 
   const getPeriodLabel = (period) => {
