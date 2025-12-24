@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 226 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 279 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -29,6 +29,8 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | ExportImportModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | EditExpenseModal.jsx   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | BankImportModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddIncomeModal.jsx     |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| Header.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -36,7 +38,9 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [WeeklyBudgetCard.test.jsx](src/test/WeeklyBudgetCard.test.jsx) | 33 | Budget display card | **High** |
 | [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx) | 20 | Data export/import | **High** |
 | [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx) | 35 | Bank transaction import | **High** |
+| [Header.test.jsx](src/test/Header.test.jsx) | 24 | Navigation & user menu | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
+| [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
 | [ExpenseList.test.jsx](src/test/ExpenseList.test.jsx) | 22 | Expense list with filtering | Low |
 
@@ -45,6 +49,33 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### Header (24 tests) - NEW
+
+Navigation and user menu functionality.
+
+**Covered:**
+
+-   ✅ Desktop navigation links (Dashboard, Goals, Recurring, Debts)
+-   ✅ Mobile menu toggle and navigation items
+-   ✅ User menu with email display
+-   ✅ Theme toggle integration
+-   ✅ Import/Export submenu with callbacks
+-   ✅ Logout functionality (API + state)
+-   ✅ Link href validation
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 5 |
+| User Menu | 6 |
+| Import/Export Submenu | 4 |
+| Logout | 2 |
+| Mobile Menu | 2 |
+| Navigation Links | 4 |
+| User Initial Display | 2 |
+
+---
 
 #### BankImportModal (35 tests) - NEW
 
@@ -210,6 +241,36 @@ Edit expense form with pre-filled data.
 | Form Submission | 3 |
 | Error Handling | 2 |
 | Category/Payment Options | 2 |
+
+---
+
+#### AddIncomeModal (29 tests) - NEW
+
+Income entry form with type selection.
+
+**Covered:**
+
+-   ✅ Form fields rendering (type, amount, date)
+-   ✅ Default values (Salary, today's date)
+-   ✅ Income type options (Salary, Bonus, Freelance, Other)
+-   ✅ Form interactions and value updates
+-   ✅ Modal close actions (Cancel, X button)
+-   ✅ Form submission with cents conversion
+-   ✅ Loading state during submission
+-   ✅ Error handling and dismissal
+-   ✅ Amount validation (min, step, required)
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 6 |
+| Default Values | 3 |
+| Income Type Options | 2 |
+| Form Interactions | 4 |
+| Modal Close Actions | 2 |
+| Form Submission | 6 |
+| Error Handling | 3 |
+| Amount Validation | 3 |
 
 ---
 
