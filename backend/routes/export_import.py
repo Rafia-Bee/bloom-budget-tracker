@@ -317,14 +317,11 @@ def export_data():
             export_data["data"]["goals"] = [
                 {
                     "name": g.name,
+                    "description": g.description,
                     "target_amount": g.target_amount,
-                    "current_amount": g.current_amount,
                     "target_date": g.target_date.isoformat() if g.target_date else None,
-                    "icon": g.icon,
-                    "color": g.color,
-                    "is_active": g.is_active,
                     "subcategory_name": g.subcategory_name,
-                    "notes": g.notes,
+                    "is_active": g.is_active,
                 }
                 for g in goals
             ]
@@ -786,7 +783,7 @@ def import_data():
                                 user_id=current_user_id,
                                 name=subcategory_name,
                                 category="Savings Goals",
-                                is_default=False,
+                                is_system=False,
                             )
                             db.session.add(new_subcat)
 
@@ -799,14 +796,11 @@ def import_data():
                     goal = Goal(
                         user_id=current_user_id,
                         name=goal_data["name"],
+                        description=goal_data.get("description"),
                         target_amount=goal_data["target_amount"],
-                        current_amount=goal_data.get("current_amount", 0),
                         target_date=target_date,
-                        icon=goal_data.get("icon"),
-                        color=goal_data.get("color"),
-                        is_active=goal_data.get("is_active", True),
                         subcategory_name=subcategory_name,
-                        notes=goal_data.get("notes"),
+                        is_active=goal_data.get("is_active", True),
                     )
                     db.session.add(goal)
                     imported_counts["goals"] += 1
