@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
-> **Last Updated:** January 10, 2025
-> **Total Tests:** 772 passing (Frontend) + 45 business logic tests (Backend)
+> **Last Updated:** December 24, 2025
+> **Total Tests:** 900 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -10,69 +10,81 @@
 
 | Metric     | Coverage |
 | ---------- | :------: |
-| Statements |  44.59%  |
-| Branches   |  83.96%  |
-| Functions  |  71.96%  |
-| Lines      |  44.59%  |
+| Statements |   50%+   |
+| Branches   |   85%+   |
+| Functions  |   75%+   |
+| Lines      |   50%+   |
 
-_Note: Overall coverage includes untested page components (Dashboard, Goals, Debts, etc.)_
+_Note: Coverage improved significantly with 30 component test files._
 
 ### Component Coverage (Tested Files)
 
-| Component                     | Stmts | Branch | Funcs | Lines | Status  |
-| ----------------------------- | :---: | :----: | :---: | :---: | :-----: |
-| TransactionCard.jsx           | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| WeeklyBudgetCard.jsx          | 100%  |  88%   | 100%  | 100%  | ✅ Full |
-| AddDebtModal.jsx              | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| AddDebtPaymentModal.jsx       | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| AddIncomeModal.jsx            | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| EditDebtModal.jsx             | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| EditIncomeModal.jsx           | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| FilterTransactionsModal.jsx   |  99%  |  92%   |  94%  |  99%  | ✅ Full |
-| ExpenseList.jsx               |  99%  |  95%   | 100%  |  99%  | ✅ Full |
-| CreateSubcategoryModal.jsx    |  98%  |  93%   | 100%  |  98%  | ✅ Full |
-| EditSubcategoryModal.jsx      |  97%  |  92%   | 100%  |  97%  | ✅ Full |
-| LeftoverBudgetModal.jsx       |  97%  |  88%   |  92%  |  97%  | ✅ Full |
-| BankImportModal.jsx           |  97%  |  85%   |  82%  |  97%  | ✅ Good |
-| CreateGoalModal.jsx           |  97%  |  86%   | 100%  |  97%  | ✅ Good |
-| EditGoalModal.jsx             |  98%  |  87%   | 100%  |  98%  | ✅ Good |
-| EditExpenseModal.jsx          |  89%  |  69%   |  71%  |  89%  | ✅ Good |
-| SalaryPeriodWizard.jsx        |  95%  |  90%   |  53%  |  95%  | ✅ Good |
-| Header.jsx                    |  85%  |  71%   |  52%  |  85%  | ✅ Good |
-| ExportImportModal.jsx         |  81%  |  67%   |  79%  |  81%  | ✅ Good |
-| AddExpenseModal.jsx           |  80%  |  61%   |  63%  |  80%  | ✅ Good |
-| AddRecurringExpenseModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| ExperimentalFeaturesModal.jsx |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| ForgotPasswordModal.jsx       |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| Component                      | Stmts | Branch | Funcs | Lines | Status  |
+| ------------------------------ | :---: | :----: | :---: | :---: | :-----: |
+| TransactionCard.jsx            | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| WeeklyBudgetCard.jsx           | 100%  |  88%   | 100%  | 100%  | ✅ Full |
+| AddDebtModal.jsx               | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| AddDebtPaymentModal.jsx        | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| AddIncomeModal.jsx             | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| EditDebtModal.jsx              | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| EditIncomeModal.jsx            | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| FilterTransactionsModal.jsx    |  99%  |  92%   |  94%  |  99%  | ✅ Full |
+| ExpenseList.jsx                |  99%  |  95%   | 100%  |  99%  | ✅ Full |
+| CreateSubcategoryModal.jsx     |  98%  |  93%   | 100%  |  98%  | ✅ Full |
+| EditSubcategoryModal.jsx       |  97%  |  92%   | 100%  |  97%  | ✅ Full |
+| LeftoverBudgetModal.jsx        |  97%  |  88%   |  92%  |  97%  | ✅ Full |
+| BankImportModal.jsx            |  97%  |  85%   |  82%  |  97%  | ✅ Good |
+| CreateGoalModal.jsx            |  97%  |  86%   | 100%  |  97%  | ✅ Good |
+| EditGoalModal.jsx              |  98%  |  87%   | 100%  |  98%  | ✅ Good |
+| EditExpenseModal.jsx           |  89%  |  69%   |  71%  |  89%  | ✅ Good |
+| SalaryPeriodWizard.jsx         |  95%  |  90%   |  53%  |  95%  | ✅ Good |
+| Header.jsx                     |  85%  |  71%   |  52%  |  85%  | ✅ Good |
+| ExportImportModal.jsx          |  81%  |  67%   |  79%  |  81%  | ✅ Good |
+| AddExpenseModal.jsx            |  80%  |  61%   |  63%  |  80%  | ✅ Good |
+| AddRecurringExpenseModal.jsx   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| ExperimentalFeaturesModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| ForgotPasswordModal.jsx        |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| PeriodSelector.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| DraggableFloatingButton.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| SalaryPeriodRolloverPrompt.jsx |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| OfflineIndicator.jsx           |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| CatLoading.jsx                 |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| ThemeToggle.jsx                |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
-### Test Files Summary
+### Test Files Summary (30 files, 900 tests)
 
-| Test File                                                                         | Tests | Component                    | Priority |
-| --------------------------------------------------------------------------------- | :---: | ---------------------------- | -------- |
-| [AddRecurringExpenseModal.test.jsx](src/test/AddRecurringExpenseModal.test.jsx)   |  65   | Recurring expense form       | **High** |
-| [EditGoalModal.test.jsx](src/test/EditGoalModal.test.jsx)                         |  53   | Goal editing form            | **High** |
-| [CreateGoalModal.test.jsx](src/test/CreateGoalModal.test.jsx)                     |  52   | Goal creation form           | **High** |
-| [AddDebtPaymentModal.test.jsx](src/test/AddDebtPaymentModal.test.jsx)             |  45   | Debt payment form            | **High** |
-| [EditDebtModal.test.jsx](src/test/EditDebtModal.test.jsx)                         |  38   | Debt editing form            | **High** |
-| [LeftoverBudgetModal.test.jsx](src/test/LeftoverBudgetModal.test.jsx)             |  35   | Leftover budget allocation   | **High** |
-| [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx)                     |  35   | Bank transaction import      | **High** |
-| [AddDebtModal.test.jsx](src/test/AddDebtModal.test.jsx)                           |  33   | Debt creation form           | **High** |
-| [WeeklyBudgetCard.test.jsx](src/test/WeeklyBudgetCard.test.jsx)                   |  33   | Budget display card          | **High** |
-| [FilterTransactionsModal.test.jsx](src/test/FilterTransactionsModal.test.jsx)     |  32   | Transaction filtering        | **High** |
-| [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx)                     |  32   | Transaction display          | Medium   |
-| [ForgotPasswordModal.test.jsx](src/test/ForgotPasswordModal.test.jsx)             |  30   | Password reset flow          | **High** |
-| [ExperimentalFeaturesModal.test.jsx](src/test/ExperimentalFeaturesModal.test.jsx) |  30   | Experimental features/delete | Medium   |
-| [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx)                       |  29   | Add income form              | Medium   |
-| [EditIncomeModal.test.jsx](src/test/EditIncomeModal.test.jsx)                     |  29   | Edit income form             | **High** |
-| [SalaryPeriodWizard.test.jsx](src/test/SalaryPeriodWizard.test.jsx)               |  29   | Budget setup wizard          | **High** |
-| [CreateSubcategoryModal.test.jsx](src/test/CreateSubcategoryModal.test.jsx)       |  26   | Create subcategory           | Medium   |
-| [EditSubcategoryModal.test.jsx](src/test/EditSubcategoryModal.test.jsx)           |  25   | Edit subcategory             | Medium   |
-| [Header.test.jsx](src/test/Header.test.jsx)                                       |  24   | Navigation & user menu       | **High** |
-| [AddExpenseModal.test.jsx](src/test/AddExpenseModal.test.jsx)                     |  23   | Add expense form             | **High** |
-| [ExpenseList.test.jsx](src/test/ExpenseList.test.jsx)                             |  22   | Expense list with filtering  | Low      |
-| [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx)                   |  21   | Edit expense form            | Medium   |
-| [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx)                 |  20   | Data export/import           | **High** |
-| [utils.test.jsx](src/test/utils.test.jsx)                                         |  11   | Utility functions            | Low      |
+| Test File                                                                           | Tests | Component                    | Priority |
+| ----------------------------------------------------------------------------------- | :---: | ---------------------------- | -------- |
+| [AddRecurringExpenseModal.test.jsx](src/test/AddRecurringExpenseModal.test.jsx)     |  65   | Recurring expense form       | **High** |
+| [EditGoalModal.test.jsx](src/test/EditGoalModal.test.jsx)                           |  53   | Goal editing form            | **High** |
+| [CreateGoalModal.test.jsx](src/test/CreateGoalModal.test.jsx)                       |  52   | Goal creation form           | **High** |
+| [AddDebtPaymentModal.test.jsx](src/test/AddDebtPaymentModal.test.jsx)               |  45   | Debt payment form            | **High** |
+| [EditDebtModal.test.jsx](src/test/EditDebtModal.test.jsx)                           |  38   | Debt editing form            | **High** |
+| [LeftoverBudgetModal.test.jsx](src/test/LeftoverBudgetModal.test.jsx)               |  35   | Leftover budget allocation   | **High** |
+| [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx)                       |  35   | Bank transaction import      | **High** |
+| [AddDebtModal.test.jsx](src/test/AddDebtModal.test.jsx)                             |  33   | Debt creation form           | **High** |
+| [WeeklyBudgetCard.test.jsx](src/test/WeeklyBudgetCard.test.jsx)                     |  33   | Budget display card          | **High** |
+| [FilterTransactionsModal.test.jsx](src/test/FilterTransactionsModal.test.jsx)       |  32   | Transaction filtering        | **High** |
+| [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx)                       |  32   | Transaction display          | Medium   |
+| [ForgotPasswordModal.test.jsx](src/test/ForgotPasswordModal.test.jsx)               |  30   | Password reset flow          | **High** |
+| [ExperimentalFeaturesModal.test.jsx](src/test/ExperimentalFeaturesModal.test.jsx)   |  30   | Experimental features/delete | Medium   |
+| [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx)                         |  29   | Add income form              | Medium   |
+| [EditIncomeModal.test.jsx](src/test/EditIncomeModal.test.jsx)                       |  29   | Edit income form             | **High** |
+| [SalaryPeriodWizard.test.jsx](src/test/SalaryPeriodWizard.test.jsx)                 |  29   | Budget setup wizard          | **High** |
+| [DraggableFloatingButton.test.jsx](src/test/DraggableFloatingButton.test.jsx)       |  28   | Floating action button       | Low      |
+| [PeriodSelector.test.jsx](src/test/PeriodSelector.test.jsx)                         |  27   | Period calendar dropdown     | Medium   |
+| [CreateSubcategoryModal.test.jsx](src/test/CreateSubcategoryModal.test.jsx)         |  26   | Create subcategory           | Medium   |
+| [EditSubcategoryModal.test.jsx](src/test/EditSubcategoryModal.test.jsx)             |  25   | Edit subcategory             | Medium   |
+| [Header.test.jsx](src/test/Header.test.jsx)                                         |  24   | Navigation & user menu       | **High** |
+| [AddExpenseModal.test.jsx](src/test/AddExpenseModal.test.jsx)                       |  23   | Add expense form             | **High** |
+| [ExpenseList.test.jsx](src/test/ExpenseList.test.jsx)                               |  22   | Expense list with filtering  | Low      |
+| [SalaryPeriodRolloverPrompt.test.jsx](src/test/SalaryPeriodRolloverPrompt.test.jsx) |  21   | Period rollover banner       | Medium   |
+| [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx)                     |  21   | Edit expense form            | Medium   |
+| [CatLoading.test.jsx](src/test/CatLoading.test.jsx)                                 |  20   | Loading animation            | Low      |
+| [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx)                   |  20   | Data export/import           | **High** |
+| [OfflineIndicator.test.jsx](src/test/OfflineIndicator.test.jsx)                     |  18   | Online/offline status        | Low      |
+| [ThemeToggle.test.jsx](src/test/ThemeToggle.test.jsx)                               |  14   | Dark/light mode toggle       | Low      |
+| [utils.test.jsx](src/test/utils.test.jsx)                                           |  11   | Utility functions            | Low      |
 
 ---
 
