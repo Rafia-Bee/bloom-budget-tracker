@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 279 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 312 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -31,6 +31,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | BankImportModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | AddIncomeModal.jsx     |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | Header.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddDebtModal.jsx       |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -39,6 +40,7 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [ExportImportModal.test.jsx](src/test/ExportImportModal.test.jsx) | 20 | Data export/import | **High** |
 | [BankImportModal.test.jsx](src/test/BankImportModal.test.jsx) | 35 | Bank transaction import | **High** |
 | [Header.test.jsx](src/test/Header.test.jsx) | 24 | Navigation & user menu | **High** |
+| [AddDebtModal.test.jsx](src/test/AddDebtModal.test.jsx) | 33 | Debt creation form | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
@@ -49,6 +51,32 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 ## Detailed Coverage
 
 ### 🔴 High Priority Components
+
+#### AddDebtModal (33 tests) - NEW
+
+Debt creation form with validation and cents conversion.
+
+**Covered:**
+
+-   ✅ Form rendering with all fields (name, current balance, original amount, monthly payment)
+-   ✅ Input validation (name and current balance required)
+-   ✅ Optional fields (original amount defaults to current balance, monthly payment defaults to 0)
+-   ✅ Cents conversion for all monetary fields
+-   ✅ Loading states during submission
+-   ✅ Error handling with dismissible messages
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 5 |
+| Form Fields | 4 |
+| Input Validation | 7 |
+| Form Interactions | 4 |
+| Modal Close Actions | 2 |
+| Form Submission | 8 |
+| Error Handling | 3 |
+
+---
 
 #### Header (24 tests) - NEW
 
