@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 341 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 458 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -19,20 +19,22 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 
 ### Component Coverage (Tested Files)
 
-| Component              | Stmts | Branch | Funcs | Lines | Status  |
-| ---------------------- | :---: | :----: | :---: | :---: | :-----: |
-| TransactionCard.jsx    | 100%  |  100%  | 100%  | 100%  | ✅ Full |
-| WeeklyBudgetCard.jsx   | 100%  |  88%   | 100%  | 100%  | ✅ Full |
-| ExpenseList.jsx        |  99%  |  95%   | 100%  |  99%  | ✅ Full |
-| SalaryPeriodWizard.jsx |  95%  |  90%   |  53%  |  95%  | ✅ Good |
-| AddExpenseModal.jsx    |  83%  |  64%   |  63%  |  83%  | ✅ Good |
-| ExportImportModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| EditExpenseModal.jsx   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| BankImportModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| AddIncomeModal.jsx     |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| Header.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| AddDebtModal.jsx       |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
-| EditIncomeModal.jsx    |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| Component                    | Stmts | Branch | Funcs | Lines | Status  |
+| ---------------------------- | :---: | :----: | :---: | :---: | :-----: |
+| TransactionCard.jsx          | 100%  |  100%  | 100%  | 100%  | ✅ Full |
+| WeeklyBudgetCard.jsx         | 100%  |  88%   | 100%  | 100%  | ✅ Full |
+| ExpenseList.jsx              |  99%  |  95%   | 100%  |  99%  | ✅ Full |
+| SalaryPeriodWizard.jsx       |  95%  |  90%   |  53%  |  95%  | ✅ Good |
+| AddExpenseModal.jsx          |  83%  |  64%   |  63%  |  83%  | ✅ Good |
+| ExportImportModal.jsx        |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditExpenseModal.jsx         |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| BankImportModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddIncomeModal.jsx           |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| Header.jsx                   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddDebtModal.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditIncomeModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| AddRecurringExpenseModal.jsx |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| CreateGoalModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -43,6 +45,8 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [Header.test.jsx](src/test/Header.test.jsx) | 24 | Navigation & user menu | **High** |
 | [AddDebtModal.test.jsx](src/test/AddDebtModal.test.jsx) | 33 | Debt creation form | **High** |
 | [EditIncomeModal.test.jsx](src/test/EditIncomeModal.test.jsx) | 29 | Edit income form | **High** |
+| [AddRecurringExpenseModal.test.jsx](src/test/AddRecurringExpenseModal.test.jsx) | 65 | Recurring expense form | **High** |
+| [CreateGoalModal.test.jsx](src/test/CreateGoalModal.test.jsx) | 52 | Goal creation form | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
@@ -331,6 +335,89 @@ Income entry form with type selection.
 | Form Submission | 6 |
 | Error Handling | 3 |
 | Amount Validation | 3 |
+
+---
+
+#### AddRecurringExpenseModal (65 tests) - NEW
+
+Recurring expense template creation with frequency options, debt/goal autofill, and scheduling.
+
+**Covered:**
+
+-   ✅ Modal title and form fields rendering
+-   ✅ Frequency options (Weekly, Biweekly, Monthly, Custom)
+-   ✅ Custom frequency interval (number input)
+-   ✅ Custom frequency unit (Days, Weeks, Months, Years)
+-   ✅ Category selection and dynamic subcategory loading
+-   ✅ Payment method selection (Debit Card, Credit Card)
+-   ✅ Fixed bill toggle for budget calculations
+-   ✅ Debt autofill (selects debts dropdown, populates amount)
+-   ✅ Goal autofill (selects goals dropdown, populates amount)
+-   ✅ Form input interactions (name, amount, date)
+-   ✅ Modal close actions (Cancel, X button)
+-   ✅ Form submission with cents conversion
+-   ✅ Success callback after submission
+-   ✅ Error handling and dismissal
+-   ✅ Loading state during submission
+-   ✅ Name validation (minLength, maxLength, required)
+-   ✅ Amount validation (min value, required)
+-   ✅ Date validation (required)
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 3 |
+| Frequency Options | 9 |
+| Custom Frequency | 6 |
+| Category Selection | 5 |
+| Payment Method | 3 |
+| Fixed Bill Toggle | 2 |
+| Debt Autofill | 7 |
+| Goal Autofill | 7 |
+| Form Interactions | 3 |
+| Modal Actions | 4 |
+| Form Submission | 4 |
+| Error Handling | 3 |
+| Validation | 9 |
+
+---
+
+#### CreateGoalModal (52 tests) - NEW
+
+Goal creation form with amount validation, date picking, and character limits.
+
+**Covered:**
+
+-   ✅ Modal title and form fields rendering
+-   ✅ Name input with character count (50 char max)
+-   ✅ Target amount input with currency formatting
+-   ✅ Target date picker (optional)
+-   ✅ Description textarea with character count (200 char max)
+-   ✅ Form input interactions
+-   ✅ Modal close actions (Cancel, X button)
+-   ✅ Form submission with cents conversion
+-   ✅ Success callback after submission
+-   ✅ Error handling and dismissal
+-   ✅ Loading state during submission
+-   ✅ Name validation (required, length limits)
+-   ✅ Amount validation (required, positive number)
+-   ✅ Character count updates on typing
+-   ✅ Maximum length enforcement
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 3 |
+| Name Input | 5 |
+| Amount Input | 7 |
+| Date Input | 3 |
+| Description Input | 5 |
+| Form Interactions | 4 |
+| Modal Actions | 4 |
+| Form Submission | 4 |
+| Error Handling | 3 |
+| Validation | 9 |
+| Character Limits | 5 |
 
 ---
 
