@@ -8,10 +8,13 @@
 import { useState, useEffect } from 'react'
 import { debtAPI, recurringExpenseAPI, subcategoryAPI, goalAPI } from '../api'
 import PropTypes from 'prop-types';
+import CurrencySelector from './CurrencySelector'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function AddExpenseModal({ onClose, onAdd }) {
   const [name, setName] = useState('Wolt')
   const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState('EUR')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [category, setCategory] = useState('Flexible Expenses')
   const [subcategory, setSubcategory] = useState('Food')
@@ -155,6 +158,7 @@ function AddExpenseModal({ onClose, onAdd }) {
         await onAdd({
           name,
           amount: amountInCents,
+          currency,
           date,
           category,
           subcategory,
@@ -210,16 +214,26 @@ function AddExpenseModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
-              required
-            />
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount</label>
+            <div className="flex gap-2">
+              <CurrencySelector
+                value={currency}
+                onChange={setCurrency}
+                compact={true}
+                showLabel={false}
+                className="w-24 flex-shrink-0"
+              />
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={`0.00`}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
+                required
+              />
+            </div>
           </div>
 
           <div>

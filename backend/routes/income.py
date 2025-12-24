@@ -77,6 +77,8 @@ def get_income():
                         "id": entry.id,
                         "type": entry.type,
                         "amount": entry.amount,
+                        "currency": entry.currency,
+                        "original_amount": entry.original_amount,
                         "date": entry.actual_date.strftime("%d %b, %Y")
                         if entry.actual_date
                         else None,
@@ -130,11 +132,18 @@ def create_income():
     else:
         date = datetime.utcnow().date()
 
+    # Get currency, default to EUR
+    currency = data.get("currency", "EUR").upper()
+    # If foreign currency, store original amount
+    original_amount = data.get("original_amount") if currency != "EUR" else None
+
     # Create income entry
     income = Income(
         user_id=user_id,
         type=data["type"],
         amount=amount,
+        currency=currency,
+        original_amount=original_amount,
         actual_date=date,
         scheduled_date=date,
     )
@@ -150,6 +159,8 @@ def create_income():
                     "id": income.id,
                     "type": income.type,
                     "amount": income.amount,
+                    "currency": income.currency,
+                    "original_amount": income.original_amount,
                     "date": income.actual_date.strftime("%d %b, %Y"),
                 },
             }
@@ -188,6 +199,11 @@ def update_income(income_id):
             income.actual_date = datetime.strptime(data["date"], "%Y-%m-%d").date()
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    if "currency" in data:
+        income.currency = data["currency"].upper()
+    if "original_amount" in data:
+        income.original_amount = data["original_amount"]
 
     db.session.commit()
 

@@ -13,6 +13,7 @@ import EditSubcategoryModal from '../components/EditSubcategoryModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
+import CurrencySelector from '../components/CurrencySelector'
 
 function Settings({ setIsAuthenticated }) {
   const [activeTab, setActiveTab] = useState('subcategories')
@@ -35,6 +36,9 @@ function Settings({ setIsAuthenticated }) {
   const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14)
   const [savingLookahead, setSavingLookahead] = useState(false)
   const [lookaheadSuccess, setLookaheadSuccess] = useState('')
+  const [defaultCurrency, setDefaultCurrency] = useState('EUR')
+  const [savingCurrency, setSavingCurrency] = useState(false)
+  const [currencySuccess, setCurrencySuccess] = useState('')
 
   const categories = [
     'Fixed Expenses',
@@ -52,8 +56,12 @@ function Settings({ setIsAuthenticated }) {
 
   const loadPreferences = async () => {
     try {
-      const response = await userAPI.getRecurringLookahead()
-      setRecurringLookaheadDays(response.data.recurring_lookahead_days)
+      const [lookaheadRes, currencyRes] = await Promise.all([
+        userAPI.getRecurringLookahead(),
+        userAPI.getDefaultCurrency()
+      ])
+      setRecurringLookaheadDays(lookaheadRes.data.recurring_lookahead_days)
+      setDefaultCurrency(currencyRes.data.default_currency)
     } catch (err) {
       console.error('Failed to load preferences:', err)
     }
@@ -139,6 +147,21 @@ function Settings({ setIsAuthenticated }) {
       setError(err.response?.data?.error || 'Failed to save setting')
     } finally {
       setSavingLookahead(false)
+    }
+  }
+
+  const handleSaveCurrency = async () => {
+    setSavingCurrency(true)
+    setCurrencySuccess('')
+    setError('')
+    try {
+      await userAPI.updateDefaultCurrency(defaultCurrency)
+      setCurrencySuccess('Default currency saved successfully!')
+      setTimeout(() => setCurrencySuccess(''), 3000)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save currency')
+    } finally {
+      setSavingCurrency(false)
     }
   }
   const openEditModal = (subcategory) => {
@@ -349,6 +372,41 @@ function Settings({ setIsAuthenticated }) {
                 {lookaheadSuccess && (
                   <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <p className="text-green-700 dark:text-green-400 text-sm">{lookaheadSuccess}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Default Currency Setting */}
+              <div className="border-b dark:border-gray-700 pb-4">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Default Currency
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Set your preferred currency for displaying balances and totals.
+                </p>
+
+                <div className="flex items-center gap-4">
+                  <label htmlFor="default-currency" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    Currency:
+                  </label>
+                  <CurrencySelector
+                    value={defaultCurrency}
+                    onChange={setDefaultCurrency}
+                    showLabel={false}
+                    className="flex-1 max-w-xs"
+                  />
+                  <button
+                    onClick={handleSaveCurrency}
+                    disabled={savingCurrency}
+                    className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {savingCurrency ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+
+                {currencySuccess && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-green-700 dark:text-green-400 text-sm">{currencySuccess}</p>
                   </div>
                 )}
               </div>

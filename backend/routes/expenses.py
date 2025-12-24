@@ -92,6 +92,8 @@ def get_expenses():
                         "id": e.id,
                         "name": e.name,
                         "amount": e.amount,
+                        "currency": e.currency,
+                        "original_amount": e.original_amount,
                         "category": e.category,
                         "subcategory": e.subcategory,
                         "date": e.date.strftime("%d %b, %Y"),
@@ -167,10 +169,17 @@ def create_expense():
 
     # Note: budget_period_id removed - expenses are now tracked by date only
 
+    # Get currency, default to EUR
+    currency = data.get("currency", "EUR").upper()
+    # If foreign currency, store original amount
+    original_amount = data.get("original_amount") if currency != "EUR" else None
+
     expense = Expense(
         user_id=current_user_id,
         name=data["name"],
         amount=data["amount"],
+        currency=currency,
+        original_amount=original_amount,
         category=data["category"],
         subcategory=subcategory,
         date=date_obj,
@@ -206,6 +215,8 @@ def create_expense():
                     "id": expense.id,
                     "name": expense.name,
                     "amount": expense.amount,
+                    "currency": expense.currency,
+                    "original_amount": expense.original_amount,
                     "category": expense.category,
                     "subcategory": expense.subcategory,
                     "date": expense.date.strftime("%d %b, %Y"),
@@ -233,6 +244,8 @@ def get_expense(expense_id):
                 "id": expense.id,
                 "name": expense.name,
                 "amount": expense.amount,
+                "currency": expense.currency,
+                "original_amount": expense.original_amount,
                 "category": expense.category,
                 "subcategory": expense.subcategory,
                 "date": expense.date.strftime("%d %b, %Y"),
@@ -282,6 +295,10 @@ def update_expense(expense_id):
         expense.name = data["name"]
     if "amount" in data:
         expense.amount = data["amount"]
+    if "currency" in data:
+        expense.currency = data["currency"].upper()
+    if "original_amount" in data:
+        expense.original_amount = data["original_amount"]
     if "category" in data:
         expense.category = data["category"]
     if "subcategory" in data:

@@ -201,3 +201,81 @@ def update_recurring_lookahead():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@user_data_bp.route("/settings/default-currency", methods=["GET"])
+@jwt_required()
+def get_default_currency():
+    """
+    Get the user's default currency setting.
+
+    Returns:
+        - default_currency: ISO 4217 currency code (e.g., 'EUR')
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        return jsonify({"default_currency": user.default_currency}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@user_data_bp.route("/settings/default-currency", methods=["PUT"])
+@jwt_required()
+def update_default_currency():
+    """
+    Update the user's default currency setting.
+
+    Body:
+        - default_currency: ISO 4217 currency code (e.g., 'EUR', 'USD', 'GBP')
+
+    Returns:
+        - Success message with updated value
+    """
+    from backend.services.currency_service import SUPPORTED_CURRENCIES
+
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        data = request.get_json()
+        currency = data.get("default_currency")
+
+        if not currency:
+            return jsonify({"error": "default_currency is required"}), 400
+
+        currency = currency.upper()
+        if currency not in SUPPORTED_CURRENCIES:
+            return (
+                jsonify(
+                    {
+                        "error": f"Invalid currency. Supported: {', '.join(SUPPORTED_CURRENCIES)}"
+                    }
+                ),
+                400,
+            )
+
+        user.default_currency = currency
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Default currency updated successfully",
+                    "default_currency": currency,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

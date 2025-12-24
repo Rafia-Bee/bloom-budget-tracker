@@ -156,6 +156,24 @@ export const userAPI = {
         api.put("/user-data/settings/recurring-lookahead", {
             recurring_lookahead_days: days,
         }),
+    getDefaultCurrency: () => api.get("/user-data/settings/default-currency"),
+    updateDefaultCurrency: (currency) =>
+        api.put("/user-data/settings/default-currency", {
+            default_currency: currency,
+        }),
+};
+
+export const currencyAPI = {
+    getSupportedCurrencies: () => api.get("/currencies"),
+    getRates: (baseCurrency = "EUR") =>
+        api.get("/currencies/rates", { params: { base: baseCurrency } }),
+    convert: (amount, fromCurrency, toCurrency, date = null) =>
+        api.post("/currencies/convert", {
+            amount,
+            from_currency: fromCurrency,
+            to_currency: toCurrency,
+            ...(date && { date }),
+        }),
 };
 
 export const subcategoryAPI = {

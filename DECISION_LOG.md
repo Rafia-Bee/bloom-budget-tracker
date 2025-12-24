@@ -6,6 +6,43 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-24
 
+### Multi-Currency Support Phase 1 (Issue #7)
+
+**Context:** Users need to record expenses in different currencies for travel, foreign income, and cross-border shopping.
+
+**Solution - Phased Approach:**
+
+-   **Phase 1 (MVP):** Infrastructure + basic currency selection
+-   **Phase 2:** Historical rates, full conversion display
+-   **Phase 3:** Multi-currency accounts, reports
+
+**Database Changes:**
+
+-   `users.default_currency` - User's preferred base currency (VARCHAR(3), default 'EUR')
+-   `expenses.currency` & `income.currency` - Transaction currency (VARCHAR(3), default 'EUR')
+-   `expenses.original_amount` & `income.original_amount` - For storing unconverted amounts
+-   New `exchange_rates` table - Cache for frankfurter.app API rates
+
+**Design Decisions:**
+
+1. **Store in original currency, convert on read** - Preserves historical accuracy
+2. **frankfurter.app API** - Free, no API key, ECB data, no rate limits (vs paid alternatives)
+3. **Daily rate caching** - Minimize API calls, support offline PWA
+4. **EUR as default** - Existing data remains valid, user can change preference
+5. **Migration compatible** - All new fields have server defaults, existing records get EUR
+
+**New Files:**
+
+-   `backend/services/currency_service.py` - Exchange rate fetching, caching, conversion
+-   `backend/routes/currency.py` - `/currencies`, `/currencies/rates`, `/currencies/convert`
+-   `frontend/src/utils/formatters.js` - Centralized `formatCurrency`, `formatWithConversion`
+-   `frontend/src/components/CurrencySelector.jsx` - Reusable currency dropdown
+-   `docs/migrations/007_add_currency_support.sql` - Production migration for Neon
+
+**Impact:** Users can now select currency when adding expenses/income, set default currency in Settings. Phase 2 will add conversion display and historical rates.
+
+---
+
 ### Goals: Initial Amount & Transaction History (Issues #99 & #105)
 
 **Context:** Users wanted to track pre-existing savings when creating goals and see contribution history for each goal.

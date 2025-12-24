@@ -6,10 +6,12 @@
  */
 
 import { useState } from 'react'
+import CurrencySelector from './CurrencySelector'
 
 function AddIncomeModal({ onClose, onAdd }) {
   const [type, setType] = useState('Salary')
   const [amount, setAmount] = useState('')
+  const [currency, setCurrency] = useState('EUR')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,6 +28,7 @@ function AddIncomeModal({ onClose, onAdd }) {
       await onAdd({
         type,
         amount: amountInCents,
+        currency,
         date
       })
     } catch (err) {
@@ -78,16 +81,26 @@ function AddIncomeModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint dark:focus:ring-bloom-mint"
-              required
-            />
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount</label>
+            <div className="flex gap-2">
+              <CurrencySelector
+                value={currency}
+                onChange={setCurrency}
+                compact={true}
+                showLabel={false}
+                className="w-24 flex-shrink-0"
+              />
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint dark:focus:ring-bloom-mint"
+                required
+              />
+            </div>
           </div>
 
           <div>

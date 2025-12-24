@@ -34,6 +34,8 @@ class User(db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
     recurring_lookahead_days = db.Column(db.Integer, default=14, nullable=False)
+    # User's preferred base currency for display (ISO 4217 code)
+    default_currency = db.Column(db.String(3), default="EUR", nullable=False)
 
     budget_periods = db.relationship(
         "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
@@ -217,6 +219,10 @@ class Expense(db.Model):
     )
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
+    # Currency of the transaction (ISO 4217 code)
+    currency = db.Column(db.String(3), default="EUR", nullable=False)
+    # Original amount before conversion (in cents, same currency as 'currency' field)
+    original_amount = db.Column(db.Integer, nullable=True)
     category = db.Column(db.String(100), nullable=False, index=True)
     subcategory = db.Column(db.String(100), nullable=True)
     date = db.Column(db.Date, nullable=False, index=True)
@@ -252,6 +258,10 @@ class Income(db.Model):
     )
     type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
+    # Currency of the income (ISO 4217 code)
+    currency = db.Column(db.String(3), default="EUR", nullable=False)
+    # Original amount before conversion (in cents, same currency as 'currency' field)
+    original_amount = db.Column(db.Integer, nullable=True)
     scheduled_date = db.Column(db.Date, nullable=True, index=True)
     actual_date = db.Column(db.Date, nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -548,3 +558,31 @@ class Goal(db.Model):
             else 0,
             "remaining": max(0, self.target_amount - current_amount),
         }
+
+
+class ExchangeRate(db.Model):
+    """
+    Cached exchange rates from frankfurter.app API.
+
+    Rates are cached daily to minimize API calls and support offline functionality.
+    Historical rates are stored for accurate conversion of past transactions.
+    """
+
+    __tablename__ = "exchange_rates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    base_currency = db.Column(db.String(3), nullable=False, index=True)
+    target_currency = db.Column(db.String(3), nullable=False, index=True)
+    rate = db.Column(db.Float, nullable=False)  # 1 base = X target
+    rate_date = db.Column(db.Date, nullable=False, index=True)  # Date rate is valid for
+    fetched_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "base_currency", "target_currency", "rate_date", name="uq_exchange_rate"
+        ),
+        db.Index(
+            "idx_exchange_rate_lookup", "base_currency", "target_currency", "rate_date"
+        ),
+        db.CheckConstraint("rate > 0", name="check_exchange_rate_positive"),
+    )
