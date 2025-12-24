@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 458 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 549 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -35,6 +35,8 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | EditIncomeModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | AddRecurringExpenseModal.jsx |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | CreateGoalModal.jsx          |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditGoalModal.jsx            |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| EditDebtModal.jsx            |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 
 ---
 
@@ -47,6 +49,8 @@ _Note: Low overall coverage due to many untested page components (Dashboard, Goa
 | [EditIncomeModal.test.jsx](src/test/EditIncomeModal.test.jsx) | 29 | Edit income form | **High** |
 | [AddRecurringExpenseModal.test.jsx](src/test/AddRecurringExpenseModal.test.jsx) | 65 | Recurring expense form | **High** |
 | [CreateGoalModal.test.jsx](src/test/CreateGoalModal.test.jsx) | 52 | Goal creation form | **High** |
+| [EditGoalModal.test.jsx](src/test/EditGoalModal.test.jsx) | 53 | Goal editing form | **High** |
+| [EditDebtModal.test.jsx](src/test/EditDebtModal.test.jsx) | 38 | Debt editing form | **High** |
 | [EditExpenseModal.test.jsx](src/test/EditExpenseModal.test.jsx) | 21 | Edit expense form | Medium |
 | [AddIncomeModal.test.jsx](src/test/AddIncomeModal.test.jsx) | 29 | Add income form | Medium |
 | [TransactionCard.test.jsx](src/test/TransactionCard.test.jsx) | 32 | Transaction display | Medium |
@@ -418,6 +422,86 @@ Goal creation form with amount validation, date picking, and character limits.
 | Error Handling | 3 |
 | Validation | 9 |
 | Character Limits | 5 |
+
+---
+
+#### EditGoalModal (53 tests) - NEW
+
+Goal editing form with pre-filled data, progress tracking, and target reduction warnings.
+
+**Covered:**
+
+-   ✅ Modal title and form fields rendering
+-   ✅ Pre-filled data from goal object (name, target in euros, date, description)
+-   ✅ Current progress display with percentage
+-   ✅ Name input with character count (50 char max)
+-   ✅ Target amount editing with cents conversion
+-   ✅ Current amount display (read-only)
+-   ✅ Target date editing with min attribute (tomorrow)
+-   ✅ Description textarea with character count (200 char max)
+-   ✅ Warning when reducing target below current progress
+-   ✅ Modal close actions (Cancel, X button)
+-   ✅ Form submission with cents conversion
+-   ✅ Loading state during submission
+-   ✅ Error handling and dismissal
+-   ✅ Handles goals without target date
+-   ✅ Handles 0% and 100% progress scenarios
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 5 |
+| Pre-filled Values | 4 |
+| Form Interactions | 5 |
+| Character Counts | 4 |
+| Amount Handling | 3 |
+| Date Handling | 3 |
+| Target Reduction Warning | 3 |
+| Modal Actions | 2 |
+| Form Submission | 3 |
+| Loading State | 2 |
+| Error Handling | 4 |
+| Progress Display | 4 |
+| Edge Cases | 6 |
+| Decimal Handling | 5 |
+
+---
+
+#### EditDebtModal (38 tests) - NEW
+
+Debt editing form with pre-filled amounts, payment tracking, and balance management.
+
+**Covered:**
+
+-   ✅ Modal title and form fields rendering
+-   ✅ Pre-filled data from debt object (name, current balance, original amount, monthly payment)
+-   ✅ All amounts converted from cents to euros on display
+-   ✅ Current balance editing with helper text
+-   ✅ Original amount editing
+-   ✅ Monthly payment editing
+-   ✅ Input validation (required, min 0, step 0.01)
+-   ✅ Debt name max length (200 chars)
+-   ✅ Modal close actions (Cancel, X button)
+-   ✅ Form submission with cents conversion (Math.round)
+-   ✅ Loading state during submission
+-   ✅ Error handling and dismissal
+-   ✅ Handles zero monthly payment
+-   ✅ Handles paid-off debt (zero balance)
+-   ✅ Handles equal original and current balance
+
+**Test Categories:**
+| Category | Tests |
+|----------|:-----:|
+| Rendering | 5 |
+| Pre-filled Values | 4 |
+| Form Interactions | 4 |
+| Input Validation | 8 |
+| Modal Actions | 2 |
+| Form Submission | 4 |
+| Loading State | 2 |
+| Error Handling | 4 |
+| Decimal Amount Handling | 2 |
+| Different Debt Types | 3 |
 
 ---
 
