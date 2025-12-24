@@ -251,3 +251,89 @@ class TestSalaryPeriodCRUD:
             "/api/v1/salary-periods/current", headers=auth_headers
         )
         assert get_response.status_code == 200
+
+
+class TestDatesWithTransactions:
+    """Test expense dates listing for day-by-day navigation"""
+
+    def test_get_dates_with_no_expenses(self, client, auth_headers):
+        """Should return empty array when no expenses exist"""
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        assert "dates" in response.json
+        assert response.json["dates"] == []
+
+    def test_get_dates_with_expenses(self, client, auth_headers, salary_period):
+        """Should return sorted dates with expenses"""
+        # Create expenses on different dates
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Expense 1",
+                "amount": 1000,
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Expense 2",
+                "amount": 2000,
+                "category": "Flexible Expenses",
+                "subcategory": "Transport",
+                "payment_method": "Debit card",
+                "date": "2025-11-22",
+            },
+            headers=auth_headers,
+        )
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Expense 3",
+                "amount": 500,
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
+                "date": "2025-11-25",  # Same date as Expense 1
+            },
+            headers=auth_headers,
+        )
+
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        dates = response.json["dates"]
+        assert len(dates) == 2  # Only 2 unique dates
+        assert dates == ["2025-11-22", "2025-11-25"]  # Sorted chronologically
+
+    def test_dates_are_user_specific(self, client, auth_headers, salary_period, app):
+        """Should only return dates for current user's expenses"""
+        # Create expense for current user
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "User 1 Expense",
+                "amount": 1000,
+                "category": "Flexible Expenses",
+                "subcategory": "Food",
+                "payment_method": "Debit card",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        assert "2025-11-25" in response.json["dates"]

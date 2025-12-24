@@ -6,6 +6,28 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-24
 
+### Day-by-Day Transaction Navigation (Issue #92)
+
+**Context:** Users wanted quick navigation between dates with transactions instead of using the filter modal.
+
+**Solution:**
+
+-   Created new `DateNavigator` component with Previous/Today/Next buttons
+-   Added backend endpoint `GET /expenses/dates-with-transactions` returning sorted ISO dates
+-   Integrated with Dashboard's existing filter system - clicking a date sets start/end date filters
+-   Added clear button to return to period view
+
+**Design Decisions:**
+
+1. **Navigation skips empty dates** - Previous/Next jump to dates that have transactions, not sequential days
+2. **Works with existing filters** - Other filters (category, payment method, etc.) still apply
+3. **Null state = period view** - When no date selected, shows current period's transactions
+4. **Handles both SQLite and PostgreSQL** - Backend formats dates consistently regardless of DB driver
+
+**Impact:** Users can now browse transaction history with 1 click instead of 5. 24 frontend tests + 3 backend tests added.
+
+---
+
 ### System Subcategories Database Restoration (Issue #103)
 
 **Context:** User reported all subcategories disappeared from Settings, but old subcategories still showing in Add Expense modal.

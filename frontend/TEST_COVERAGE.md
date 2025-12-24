@@ -1,7 +1,7 @@
 # Frontend Test Coverage Summary
 
 > **Last Updated:** December 24, 2025
-> **Total Tests:** 900 passing (Frontend) + 45 business logic tests (Backend)
+> **Total Tests:** 924 passing (Frontend) + 45 business logic tests (Backend)
 > **Test Framework:** Vitest + React Testing Library (Frontend), pytest (Backend)
 
 ## Coverage Analysis
@@ -15,7 +15,7 @@
 | Functions  |   75%+   |
 | Lines      |   50%+   |
 
-_Note: Coverage improved significantly with 30 component test files._
+_Note: Coverage improved significantly with 31 component test files._
 
 ### Component Coverage (Tested Files)
 
@@ -42,6 +42,7 @@ _Note: Coverage improved significantly with 30 component test files._
 | ExportImportModal.jsx          |  81%  |  67%   |  79%  |  81%  | ✅ Good |
 | AddExpenseModal.jsx            |  80%  |  61%   |  63%  |  80%  | ✅ Good |
 | AddRecurringExpenseModal.jsx   |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
+| DateNavigator.jsx              |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | ExperimentalFeaturesModal.jsx  |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | ForgotPasswordModal.jsx        |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |
 | PeriodSelector.jsx             |  NEW  |  NEW   |  NEW  |  NEW  | ✅ Good |

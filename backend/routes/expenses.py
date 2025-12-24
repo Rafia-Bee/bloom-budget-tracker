@@ -368,3 +368,33 @@ def delete_expense(expense_id):
     db.session.commit()
 
     return jsonify({"message": "Expense deleted successfully"}), 200
+
+
+@expenses_bp.route("/dates-with-transactions", methods=["GET"])
+@jwt_required()
+def get_dates_with_transactions():
+    """
+    Get all dates that have expenses (for day-by-day navigation).
+    Returns sorted array of ISO date strings.
+    """
+    current_user_id = int(get_jwt_identity())
+
+    # Get distinct dates from expenses
+    expense_dates = (
+        db.session.query(db.func.distinct(Expense.date))
+        .filter(Expense.user_id == current_user_id)
+        .all()
+    )
+
+    # Extract dates and convert to ISO strings
+    # Handle both date objects (PostgreSQL) and strings (SQLite)
+    def format_date(d):
+        if d is None:
+            return None
+        if hasattr(d, "strftime"):
+            return d.strftime("%Y-%m-%d")
+        return str(d)
+
+    dates = sorted(set(format_date(d[0]) for d in expense_dates if d[0]))
+
+    return jsonify({"dates": dates}), 200

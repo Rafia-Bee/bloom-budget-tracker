@@ -25,6 +25,7 @@ import FilterTransactionsModal from '../components/FilterTransactionsModal'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
+import DateNavigator from '../components/DateNavigator'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -91,8 +92,13 @@ function Dashboard({ setIsAuthenticated }) {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
+  // Date navigation state
+  const [transactionDates, setTransactionDates] = useState([])
+  const [currentViewDate, setCurrentViewDate] = useState(null) // null = show period, ISO date = show specific day
+
   useEffect(() => {
     loadPeriodsAndCurrentWeek()
+    loadTransactionDates()
   }, [])
 
   useEffect(() => {
@@ -303,6 +309,15 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }, [activeFilters])
 
+  const loadTransactionDates = async () => {
+    try {
+      const response = await expenseAPI.getDatesWithTransactions()
+      setTransactionDates(response.data.dates || [])
+    } catch (error) {
+      console.error('Failed to load transaction dates:', error)
+    }
+  }
+
   const loadPeriodsAndCurrentWeek = async () => {
     try {
       const [allPeriodsRes, activeRes, salaryPeriodRes, salaryPeriodsListRes] = await Promise.all([
@@ -426,6 +441,27 @@ function Dashboard({ setIsAuthenticated }) {
 
   // Keep old loadPeriods method for other callers
   const loadPeriods = loadPeriodsAndCurrentWeek
+
+  // Handle date navigation change
+  const handleDateNavigate = (date) => {
+    if (date === null) {
+      // Clear date filter - return to period view
+      setCurrentViewDate(null)
+      setActiveFilters(prev => ({
+        ...prev,
+        startDate: '',
+        endDate: ''
+      }))
+    } else {
+      // Set specific date filter
+      setCurrentViewDate(date)
+      setActiveFilters(prev => ({
+        ...prev,
+        startDate: date,
+        endDate: date
+      }))
+    }
+  }
 
   const loadIncomeStats = async () => {
     if (!currentPeriod) return
@@ -573,6 +609,7 @@ function Dashboard({ setIsAuthenticated }) {
       })
       await loadExpenses()
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      loadTransactionDates() // Refresh date navigation
       setShowAddModal(false)
       setModalType(null)
     } catch (error) {
@@ -664,6 +701,7 @@ function Dashboard({ setIsAuthenticated }) {
       await expenseAPI.delete(id)
       await loadExpenses()
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      loadTransactionDates() // Refresh date navigation
     } catch (error) {
       console.error('Failed to delete expense:', error)
     }
@@ -674,6 +712,7 @@ function Dashboard({ setIsAuthenticated }) {
       await expenseAPI.update(id, expenseData)
       await loadExpenses()
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
+      loadTransactionDates() // Refresh date navigation
       setShowEditModal(false)
       setEditType(null)
       setSelectedTransaction(null)
@@ -1017,6 +1056,14 @@ function Dashboard({ setIsAuthenticated }) {
           {/* Transactions View */}
           {transactionView === 'transactions' && (
             <>
+                {/* Date Navigator */}
+                <DateNavigator
+                  transactionDates={transactionDates}
+                  currentViewDate={currentViewDate}
+                  onDateChange={handleDateNavigate}
+                  className="mb-4"
+                />
+
                 {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
                 <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
               {/* Advanced Filter Button */}
