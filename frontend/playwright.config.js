@@ -28,7 +28,9 @@ export default defineConfig({
         ["list"],
         ["html", { open: "never" }],
         // JSON reporter for CI integration
-        ...(process.env.CI ? [["json", { outputFile: "e2e-results.json" }]] : []),
+        ...(process.env.CI
+            ? [["json", { outputFile: "e2e-results.json" }]]
+            : []),
     ],
 
     // Shared settings for all tests

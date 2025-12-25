@@ -53,7 +53,9 @@ export async function loginAsTestUser(page) {
 export async function logout(page) {
     // Open settings/menu and click logout
     // Adjust selector based on actual UI
-    const menuButton = page.locator('[data-testid="menu-button"], button:has-text("Menu")');
+    const menuButton = page.locator(
+        '[data-testid="menu-button"], button:has-text("Menu")'
+    );
     if (await menuButton.isVisible()) {
         await menuButton.click();
     }
@@ -67,7 +69,10 @@ export async function logout(page) {
  * @param {string} urlPattern - URL pattern to wait for
  */
 export async function waitForAPI(page, urlPattern) {
-    return page.waitForResponse((response) => response.url().includes(urlPattern) && response.status() === 200);
+    return page.waitForResponse(
+        (response) =>
+            response.url().includes(urlPattern) && response.status() === 200
+    );
 }
 
 /**
