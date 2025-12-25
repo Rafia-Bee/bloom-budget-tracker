@@ -26,7 +26,7 @@ from backend.services.budget_service import (
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import and_, or_, func
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 salary_periods_bp = Blueprint("salary_periods", __name__)
 
@@ -543,7 +543,13 @@ def create_salary_period():
                     scheduled_date=start_date,
                     actual_date=start_date,
                 )
-                db.session.add(initial_income)
+                try:
+                    db.session.add(initial_income)
+                    db.session.flush()  # Check constraint before final commit
+                except IntegrityError:
+                    # Race condition: another request already created Initial Balance
+                    db.session.rollback()
+                    # Continue without creating duplicate - the other one will be used
 
             # Note: Pre-existing credit card debt is tracked via the credit_balance
             # in the salary period settings. Users manage payments via recurring expenses.
@@ -883,7 +889,13 @@ def update_salary_period_full(id):
                 scheduled_date=start_date,
                 actual_date=start_date,
             )
-            db.session.add(initial_income)
+            try:
+                db.session.add(initial_income)
+                db.session.flush()  # Check constraint before final commit
+            except IntegrityError:
+                # Race condition: another request already created Initial Balance
+                db.session.rollback()
+                # Continue - the existing one will be used
 
         # Update Pre-existing Credit Card Debt expense if credit changed
         pre_existing_debt = credit_limit - credit_balance

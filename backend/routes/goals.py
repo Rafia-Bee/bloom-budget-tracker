@@ -7,6 +7,7 @@ Goals are linked to subcategories in the 'Savings & Investments' category.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, Goal, Subcategory, Expense
 from datetime import datetime, date
 from backend.utils.validators import ALLOWED_CATEGORIES
@@ -125,6 +126,16 @@ def create_goal():
 
         return jsonify({"message": "Goal created successfully", "goal": goal_dict}), 201
 
+    except IntegrityError:
+        db.session.rollback()
+        return (
+            jsonify(
+                {
+                    "error": f"Subcategory '{subcategory_name}' already exists. Try again."
+                }
+            ),
+            409,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to create goal: {str(e)}"}), 500

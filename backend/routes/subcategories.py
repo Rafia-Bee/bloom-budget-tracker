@@ -12,6 +12,7 @@ Endpoints:
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, Subcategory, Expense
 from backend.utils.validators import ALLOWED_CATEGORIES
 
@@ -104,8 +105,15 @@ def create_subcategory():
         is_active=True,
     )
 
-    db.session.add(subcategory)
-    db.session.commit()
+    try:
+        db.session.add(subcategory)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return (
+            jsonify({"error": f"Subcategory '{name}' already exists in {category}"}),
+            409,
+        )
 
     return (
         jsonify(

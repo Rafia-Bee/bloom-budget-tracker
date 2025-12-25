@@ -22,6 +22,7 @@ from flask_jwt_extended import (
     set_access_cookies,
     set_refresh_cookies,
 )
+from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
@@ -53,8 +54,12 @@ def register():
     user = User(email=email)
     user.set_password(password)
 
-    db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Email already registered"}), 409
 
     defaults = UserDefaults(user_id=user.id)
     credit_settings = CreditCardSettings(user_id=user.id)

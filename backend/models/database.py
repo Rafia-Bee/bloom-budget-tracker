@@ -445,6 +445,11 @@ class PasswordResetToken(db.Model):
 
 class Subcategory(db.Model):
     __tablename__ = "subcategories"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id", "category", "name", name="uq_subcategory_user_category_name"
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
