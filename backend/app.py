@@ -56,10 +56,17 @@ def create_app(config_name="development"):
         "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000",
     ).split(",")
 
-    # For development, allow all local network IPs (192.168.x.x, 10.x.x.x)
+    # For development mobile testing, add specific local network IPs via env var
+    # Usage: set DEV_MOBILE_ORIGINS=http://192.168.1.100:3000,http://192.168.1.100:3001
+    # SECURITY: Removed wildcard (*) to prevent accidental production exposure
     if config_name == "development":
-        # Allow all origins in development for mobile testing
-        cors_origins.append("*")
+        dev_mobile = os.getenv("DEV_MOBILE_ORIGINS", "")
+        if dev_mobile:
+            for origin in dev_mobile.split(","):
+                origin = origin.strip()
+                # Only allow local network patterns (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+                if origin.startswith(("http://192.168.", "http://10.", "http://172.")):
+                    cors_origins.append(origin)
 
     CORS(app, origins=cors_origins, supports_credentials=True)
 

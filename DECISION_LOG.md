@@ -6,6 +6,38 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Remove CORS Wildcard in Development Mode (#85 Security)
+
+**Context:** Development mode used `cors_origins.append("*")` for mobile testing convenience, creating security risk if accidentally deployed to production.
+
+**Decision:** Replace wildcard with explicit `DEV_MOBILE_ORIGINS` environment variable that only accepts local network patterns (192.168.x.x, 10.x.x.x, 172.x.x.x).
+
+**Implementation:**
+
+```python
+# backend/app.py - Before
+if config_name == "development":
+    cors_origins.append("*")  # DANGEROUS
+
+# After
+if config_name == "development":
+    dev_mobile = os.getenv("DEV_MOBILE_ORIGINS", "")
+    if dev_mobile:
+        for origin in dev_mobile.split(","):
+            if origin.startswith(("http://192.168.", "http://10.", "http://172.")):
+                cors_origins.append(origin)
+```
+
+**Mobile Testing Setup:**
+
+```powershell
+$env:DEV_MOBILE_ORIGINS = "http://192.168.0.156:3000"
+```
+
+**Rationale:** Defense in depth - even if development config leaks to production, only validated local network origins are allowed rather than any origin.
+
+---
+
 ### Replace Console Logging with Secure Logger Utility (#80 Security)
 
 **Context:** Raw `console.error` and `console.warn` calls throughout frontend could expose sensitive error details (API responses, user data, stack traces) in production browser consoles.

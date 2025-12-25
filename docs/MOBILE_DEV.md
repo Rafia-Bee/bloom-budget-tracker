@@ -34,17 +34,25 @@ Look for an address like `192.168.x.x` or `10.x.x.x` (your local network IP).
 IPv4 Address. . . . . . . . . . . : 192.168.0.156
 ```
 
-### 2. Configure Backend CORS (Already Configured)
+### 2. Configure Backend CORS
 
-The backend is already configured to allow all origins in development mode:
+For security, development mode no longer uses wildcard CORS. Instead, specify your mobile testing IPs:
 
-```python
-# backend/app.py
-if config_name == "development":
-    cors_origins.append("*")  # Allow all origins in development
+```powershell
+# Set your computer's IP for mobile CORS (replace with YOUR IP)
+$env:DEV_MOBILE_ORIGINS = "http://192.168.0.156:3000,http://192.168.0.156:3001"
 ```
 
-No changes needed - development mode automatically allows mobile access.
+**Quick setup script:**
+
+```powershell
+# Auto-detect local IP and set CORS
+$localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*"}).IPAddress | Select-Object -First 1
+$env:DEV_MOBILE_ORIGINS = "http://$localIP`:3000,http://$localIP`:3001"
+Write-Host "Mobile CORS set for: $localIP"
+```
+
+This is more secure than the previous wildcard approach while still enabling mobile testing.
 
 ### 3. Configure Frontend API URL
 
