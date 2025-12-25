@@ -137,12 +137,10 @@ def update_goal(id):
     current_user_id = int(get_jwt_identity())
     data = request.get_json()
 
-    goal = Goal.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
-
-    if goal.user_id != current_user_id:
-        return jsonify({"error": "You don't have permission to edit this goal"}), 403
 
     try:
         # Update name and subcategory if changed
@@ -261,12 +259,10 @@ def delete_goal(id):
     current_user_id = int(get_jwt_identity())
     force = request.args.get("force", "false").lower() == "true"
 
-    goal = Goal.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
-
-    if goal.user_id != current_user_id:
-        return jsonify({"error": "You don't have permission to delete this goal"}), 403
 
     try:
         # Check for contributions (expenses in this goal's subcategory)
@@ -342,12 +338,10 @@ def get_goal_progress(id):
     """Get detailed progress information for a specific goal."""
     current_user_id = int(get_jwt_identity())
 
-    goal = Goal.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
-
-    if goal.user_id != current_user_id:
-        return jsonify({"error": "You don't have permission to view this goal"}), 403
 
     # Get all contributions for this goal
     contributions = (
@@ -388,12 +382,10 @@ def get_goal_transactions(id):
     """
     current_user_id = int(get_jwt_identity())
 
-    goal = Goal.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
-
-    if goal.user_id != current_user_id:
-        return jsonify({"error": "You don't have permission to view this goal"}), 403
 
     # Pagination parameters
     page = request.args.get("page", 1, type=int)

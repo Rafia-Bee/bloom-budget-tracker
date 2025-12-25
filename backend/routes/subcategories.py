@@ -125,19 +125,12 @@ def update_subcategory(id):
     current_user_id = int(get_jwt_identity())
     data = request.get_json()
 
-    subcategory = Subcategory.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    # Only user-owned subcategories can be edited (not system ones)
+    subcategory = Subcategory.query.filter_by(id=id, user_id=current_user_id).first()
 
     if not subcategory:
         return jsonify({"error": "Subcategory not found"}), 404
-
-    # Check ownership
-    if subcategory.user_id != current_user_id:
-        if subcategory.is_system:
-            return jsonify({"error": "Cannot edit system subcategories"}), 403
-        return (
-            jsonify({"error": "You don't have permission to edit this subcategory"}),
-            403,
-        )
 
     # Update name if provided
     if "name" in data:
@@ -200,19 +193,12 @@ def delete_subcategory(id):
     current_user_id = int(get_jwt_identity())
     force = request.args.get("force", "false").lower() == "true"
 
-    subcategory = Subcategory.query.get(id)
+    # Single query with user_id to prevent enumeration attacks
+    # Only user-owned subcategories can be deleted (not system ones)
+    subcategory = Subcategory.query.filter_by(id=id, user_id=current_user_id).first()
 
     if not subcategory:
         return jsonify({"error": "Subcategory not found"}), 404
-
-    # Check ownership
-    if subcategory.user_id != current_user_id:
-        if subcategory.is_system:
-            return jsonify({"error": "Cannot delete system subcategories"}), 403
-        return (
-            jsonify({"error": "You don't have permission to delete this subcategory"}),
-            403,
-        )
 
     # Check if subcategory is in use
     expense_count = Expense.query.filter_by(
