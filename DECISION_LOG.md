@@ -6,6 +6,56 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Full Currency Conversion for EUR-Stored Amounts (Issue #7)
+
+**Context:** After implementing dynamic currency symbols, stored EUR amounts still displayed with wrong values - only the symbol changed, not the actual amount. Needed actual currency conversion for all EUR-stored values (budgets, balances, debts, goals).
+
+**Decision:** Implement bidirectional conversion pattern across all components displaying stored values.
+
+**Pattern Adopted:**
+
+```jsx
+import { useCurrency } from "../contexts/CurrencyContext";
+import { formatCurrency } from "../utils/formatters";
+
+const { defaultCurrency, convertAmount } = useCurrency();
+
+// Convert EUR cents (from DB) to user's currency
+const fcEur = (cents) => {
+    const converted = convertAmount
+        ? convertAmount(cents, "EUR", defaultCurrency)
+        : cents;
+    return formatCurrency(converted, defaultCurrency);
+};
+
+// For user inputs: convert TO EUR before sending to backend
+const toEur = (userCents) => {
+    return convertAmount
+        ? convertAmount(userCents, defaultCurrency, "EUR")
+        : userCents;
+};
+```
+
+**Architecture:**
+
+-   **Transactions** (expenses/income): Store amount + original currency → no conversion needed
+-   **Budgets/periods/balances**: Always EUR internally → convert for display with `fcEur()`
+-   **User inputs**: Convert from user's currency to EUR before backend calls
+
+**Components Updated:**
+
+-   Dashboard: Balance cards, warnings, scheduled expenses
+-   WeeklyBudgetCard: Budget, spent, remaining, carryover
+-   Goals: Target, progress, contributions, running balance
+-   Debts: Total debt, balances, payments
+-   RecurringExpenses: All expense amounts
+-   SalaryPeriodWizard: Full bidirectional (edit displays EUR→user, submit converts user→EUR)
+-   LeftoverBudgetModal: Leftover amounts, debt/goal selection, user input conversion
+
+**Exchange Rates:** Enabled loading in CurrencyContext (was previously commented out).
+
+---
+
 ### Dynamic Currency Symbols Throughout UI (Issue #7)
 
 **Context:** Components had hardcoded € or $ symbols. After implementing multi-currency support with CurrencyContext and CurrencySelector, the display symbols needed to respect the user's default currency preference.
