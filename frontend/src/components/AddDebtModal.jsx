@@ -5,8 +5,12 @@
  */
 
 import { useState } from 'react'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function AddDebtModal({ onClose, onAdd }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [name, setName] = useState('')
   const [currentBalance, setCurrentBalance] = useState('')
   const [originalAmount, setOriginalAmount] = useState('')
@@ -84,7 +88,7 @@ function AddDebtModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Current Balance (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Current Balance ({currencySymbol})</label>
             <input
               type="number"
               step="0.01"
@@ -99,7 +103,7 @@ function AddDebtModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Original Amount (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Original Amount ({currencySymbol})</label>
             <input
               type="number"
               step="0.01"
@@ -113,7 +117,7 @@ function AddDebtModal({ onClose, onAdd }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Monthly Payment (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Monthly Payment ({currencySymbol})</label>
             <input
               type="number"
               step="0.01"

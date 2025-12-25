@@ -200,7 +200,7 @@ describe('CreateGoalModal', () => {
 
       await user.click(screen.getByRole('button', { name: 'Create Goal' }))
 
-      expect(screen.getByText('Target amount must be less than €1,000,000')).toBeInTheDocument()
+      expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
     })
 
     it('renders already saved (initial amount) field', () => {

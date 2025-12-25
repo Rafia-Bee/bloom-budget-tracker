@@ -92,8 +92,8 @@ describe('FilterTransactionsModal', () => {
       expect(screen.getByText('Category')).toBeInTheDocument()
       expect(screen.getByText('Subcategory')).toBeInTheDocument()
       expect(screen.getByText('Payment Method')).toBeInTheDocument()
-      expect(screen.getByText('Min Amount (€)')).toBeInTheDocument()
-      expect(screen.getByText('Max Amount (€)')).toBeInTheDocument()
+      expect(screen.getByText(/Min Amount/)).toBeInTheDocument()
+      expect(screen.getByText(/Max Amount/)).toBeInTheDocument()
     })
 
     it('renders Apply Filters and Clear All buttons', () => {

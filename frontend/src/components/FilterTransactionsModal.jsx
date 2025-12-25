@@ -13,8 +13,12 @@
 import { useState, useEffect } from 'react'
 import { subcategoryAPI, debtAPI } from '../api'
 import useDebounce from '../hooks/useDebounce'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 export default function FilterTransactionsModal({ isOpen, onClose, onApply, initialFilters }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [searchInput, setSearchInput] = useState('') // Immediate search input
   const debouncedSearch = useDebounce(searchInput, 500) // Debounced value
   const [subcategoriesData, setSubcategoriesData] = useState({})
@@ -271,7 +275,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
-                Min Amount (€)
+                Min Amount ({currencySymbol})
               </label>
               <input
                 type="number"
@@ -284,7 +288,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
-                Max Amount (€)
+                Max Amount ({currencySymbol})
               </label>
               <input
                 type="number"

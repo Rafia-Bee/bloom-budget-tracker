@@ -6,8 +6,12 @@
 
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types';
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function EditIncomeModal({ onClose, onEdit, income }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [type, setType] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState('')
@@ -107,7 +111,7 @@ function EditIncomeModal({ onClose, onEdit, income }) {
           </div>
 
           <div>
-            <label htmlFor="amount-input" className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
+            <label htmlFor="amount-input" className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount ({currencySymbol})</label>
             <input
               id="amount-input"
               type="number"

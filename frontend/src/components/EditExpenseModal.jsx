@@ -7,8 +7,12 @@
 import { useState, useEffect } from 'react'
 import { debtAPI, subcategoryAPI } from '../api'
 import PropTypes from 'prop-types';
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function EditExpenseModal({ onClose, onEdit, expense }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState('')
@@ -192,7 +196,7 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount ({currencySymbol})</label>
             <input
               type="number"
               step="0.01"

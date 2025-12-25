@@ -46,7 +46,7 @@ describe('EditIncomeModal', () => {
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       expect(screen.getByText('Type')).toBeInTheDocument()
-      expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+      expect(screen.getByText(/Amount \(/)).toBeInTheDocument()
       expect(screen.getByText('Date')).toBeInTheDocument()
     })
 

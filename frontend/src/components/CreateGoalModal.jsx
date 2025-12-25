@@ -5,8 +5,12 @@
  */
 
 import { useState } from 'react'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function CreateGoalModal({ onClose, onCreate }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -44,7 +48,7 @@ function CreateGoalModal({ onClose, onCreate }) {
     if (!formData.target_amount || parseFloat(formData.target_amount) <= 0) {
       newErrors.target_amount = 'Target amount must be greater than 0'
     } else if (parseFloat(formData.target_amount) > 1000000) {
-      newErrors.target_amount = 'Target amount must be less than €1,000,000'
+      newErrors.target_amount = 'Target amount must be less than 1,000,000'
     }
 
     if (formData.target_date) {
@@ -203,10 +207,10 @@ function CreateGoalModal({ onClose, onCreate }) {
             {/* Target Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Target Amount (€) *
+                Target Amount ({currencySymbol}) *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">€</span>
+                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">{currencySymbol}</span>
                 <input
                   type="text"
                   name="target_amount"
@@ -226,10 +230,10 @@ function CreateGoalModal({ onClose, onCreate }) {
             {/* Initial Amount (Pre-existing savings) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Already Saved (€)
+                Already Saved ({currencySymbol})
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">€</span>
+                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">{currencySymbol}</span>
                 <input
                   type="text"
                   name="initial_amount"

@@ -5,8 +5,12 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol, formatCurrency } from '../utils/formatters'
 
 function EditGoalModal({ goal, onClose, onUpdate }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -56,7 +60,7 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
     if (!formData.target_amount || parseFloat(formData.target_amount) <= 0) {
       newErrors.target_amount = 'Target amount must be greater than 0'
     } else if (parseFloat(formData.target_amount) > 1000000) {
-      newErrors.target_amount = 'Target amount must be less than €1,000,000'
+      newErrors.target_amount = 'Target amount must be less than 1,000,000'
     }
 
     if (formData.target_date) {
@@ -169,12 +173,8 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
     return today.toISOString().split('T')[0]
   }
 
-  const formatCurrency = (cents) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(cents / 100)
-  }
+  // Format currency using centralized utility
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
 
   if (!goal) return null
 
@@ -200,7 +200,7 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
           <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-4 mb-6">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Progress</h3>
             <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span>{formatCurrency(goal.progress?.current_amount || 0)} saved</span>
+              <span>{fc(goal.progress?.current_amount || 0)} saved</span>
               <span>{(goal.progress?.percentage || 0).toFixed(1)}%</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -243,10 +243,10 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
             {/* Target Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Target Amount (€) *
+                Target Amount ({currencySymbol}) *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">€</span>
+                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">{currencySymbol}</span>
                 <input
                   type="text"
                   name="target_amount"
@@ -266,10 +266,10 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
             {/* Initial Amount (Pre-existing savings) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Already Saved (€)
+                Already Saved ({currencySymbol})
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">€</span>
+                <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">{currencySymbol}</span>
                 <input
                   type="text"
                   name="initial_amount"

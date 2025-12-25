@@ -383,7 +383,7 @@ describe('EditGoalModal', () => {
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
       await user.click(submitButton)
 
-      expect(screen.getByText('Target amount must be less than €1,000,000')).toBeInTheDocument()
+      expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
     })
 
     it('clears amount error on input change', async () => {
