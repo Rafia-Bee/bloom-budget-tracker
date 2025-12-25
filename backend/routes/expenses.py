@@ -17,6 +17,7 @@ from datetime import datetime
 from sqlalchemy import and_
 from backend.models.database import db, Expense, ExpenseNameMapping, Debt, BudgetPeriod
 from backend.utils.validators import ALLOWED_CATEGORIES
+from backend.services.currency_service import get_exchange_rate
 
 expenses_bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 
@@ -171,8 +172,17 @@ def create_expense():
 
     # Get currency, default to EUR
     currency = data.get("currency", "EUR").upper()
-    # If foreign currency, store original amount
+    # If foreign currency, store original amount and the exchange rate used
     original_amount = data.get("original_amount") if currency != "EUR" else None
+    exchange_rate_used = None
+    if currency != "EUR" and original_amount:
+        # Get current exchange rate from currency to EUR and store it
+        # This allows accurate historical conversion later
+        try:
+            exchange_rate_used = get_exchange_rate(currency, "EUR")
+        except Exception:
+            # If rate fetch fails, we still create the expense without the rate
+            pass
 
     expense = Expense(
         user_id=current_user_id,
@@ -180,6 +190,7 @@ def create_expense():
         amount=data["amount"],
         currency=currency,
         original_amount=original_amount,
+        exchange_rate_used=exchange_rate_used,
         category=data["category"],
         subcategory=subcategory,
         date=date_obj,

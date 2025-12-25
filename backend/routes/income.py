@@ -8,6 +8,7 @@ Supports CRUD operations for income tracking.
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, Income
+from backend.services.currency_service import get_exchange_rate
 from datetime import datetime
 
 income_bp = Blueprint("income", __name__)
@@ -134,8 +135,14 @@ def create_income():
 
     # Get currency, default to EUR
     currency = data.get("currency", "EUR").upper()
-    # If foreign currency, store original amount
+    # If foreign currency, store original amount and exchange rate
     original_amount = data.get("original_amount") if currency != "EUR" else None
+    exchange_rate_used = None
+    if currency != "EUR" and original_amount:
+        try:
+            exchange_rate_used = get_exchange_rate(currency, "EUR")
+        except Exception:
+            pass
 
     # Create income entry
     income = Income(
@@ -144,6 +151,7 @@ def create_income():
         amount=amount,
         currency=currency,
         original_amount=original_amount,
+        exchange_rate_used=exchange_rate_used,
         actual_date=date,
         scheduled_date=date,
     )
