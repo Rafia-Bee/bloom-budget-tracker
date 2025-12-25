@@ -58,6 +58,12 @@ build/
 .env.test.local
 .env.production.local
 
+# Playwright E2E Testing
+playwright-report/
+e2e-results/
+test-results/
+*.e2e-results.json
+
 # Database
 *.db
 *.sqlite
