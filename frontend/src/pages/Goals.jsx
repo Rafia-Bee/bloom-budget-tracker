@@ -14,7 +14,7 @@ import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import { useCurrency } from '../contexts/CurrencyContext'
-import { formatCurrency } from '../utils/formatters'
+import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
 
 function Goals({ setIsAuthenticated }) {
   const [goals, setGoals] = useState([])
@@ -31,10 +31,13 @@ function Goals({ setIsAuthenticated }) {
   const [loadingTransactions, setLoadingTransactions] = useState(false)
 
   // Currency context for multi-currency support
-  const { defaultCurrency } = useCurrency()
+  const { defaultCurrency, convertAmount } = useCurrency()
 
-  // Helper function to format currency with user's default currency
-  const fc = (cents) => formatCurrency(cents, defaultCurrency)
+  // Helper function to format EUR amounts (stored in DB) converted to user's currency
+  const fcEur = (cents) => {
+    const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents
+    return formatCurrency(converted, defaultCurrency)
+  }
 
   // Modal states for Header functionality
   const [showExportModal, setShowExportModal] = useState(false)
@@ -289,7 +292,7 @@ function Goals({ setIsAuthenticated }) {
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        <span>{fc(goal.progress.current_amount)} saved</span>
+                        <span>{fcEur(goal.progress.current_amount)} saved</span>
                         <span>{goal.progress.percentage.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -305,13 +308,13 @@ function Goals({ setIsAuthenticated }) {
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Target:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {fc(goal.target_amount)}
+                          {fcEur(goal.target_amount)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Remaining:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {fc(goal.progress.remaining)}
+                          {fcEur(goal.progress.remaining)}
                         </span>
                       </div>
                       {goal.target_date && (
@@ -380,7 +383,7 @@ function Goals({ setIsAuthenticated }) {
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-700 dark:text-blue-300">Starting Amount:</span>
                                 <span className="font-semibold text-blue-700 dark:text-blue-300">
-                                  {fc(goal.initial_amount)}
+                                  {fcEur(goal.initial_amount)}
                                 </span>
                               </div>
                             </div>
@@ -388,7 +391,9 @@ function Goals({ setIsAuthenticated }) {
 
                           {goalTransactions[goal.id].transactions?.length > 0 ? (
                             <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {goalTransactions[goal.id].transactions.map(transaction => (
+                              {goalTransactions[goal.id].transactions.map(transaction => {
+                                const txAmount = formatTransactionAmount(transaction, defaultCurrency, convertAmount)
+                                return (
                                 <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-dark-surface rounded-lg">
                                   <div className="flex-1 min-w-0">
                                     <p className="font-medium text-gray-800 dark:text-white truncate">{transaction.name}</p>
@@ -396,21 +401,26 @@ function Goals({ setIsAuthenticated }) {
                                   </div>
                                   <div className="text-right ml-3">
                                     <p className="font-semibold text-green-600 dark:text-green-400">
-                                      +{fc(transaction.amount)}
+                                      +{txAmount.display}
                                     </p>
+                                    {txAmount.showDual && (
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        ≈ {txAmount.converted}
+                                      </p>
+                                    )}
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      Balance: {fc(transaction.running_balance)}
+                                      Balance: {fcEur(transaction.running_balance)}
                                     </p>
                                   </div>
                                 </div>
-                              ))}
+                              )})})
 
                               {/* Total Summary */}
                               <div className="mt-3 pt-3 border-t border-gray-300 dark:border-dark-border">
                                 <div className="flex justify-between items-center font-bold text-gray-800 dark:text-white">
                                   <span>Total Contributions:</span>
                                   <span className="text-green-600 dark:text-green-400">
-                                    {fc(goalTransactions[goal.id].summary?.total_contributions || 0)}
+                                    {fcEur(goalTransactions[goal.id].summary?.total_contributions || 0)}
                                   </span>
                                 </div>
                               </div>

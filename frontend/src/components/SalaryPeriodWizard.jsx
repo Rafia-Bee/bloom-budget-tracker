@@ -15,7 +15,7 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters'
 
 function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverData = null }) {
-  const { defaultCurrency } = useCurrency()
+  const { defaultCurrency, convertAmount } = useCurrency()
   const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -32,17 +32,18 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   // Pre-fill form when editing existing salary period OR rolling over
   useEffect(() => {
     if (editPeriod) {
-      setDebitBalance((editPeriod.initial_debit_balance / 100).toFixed(2))
-      setCreditAvailable((editPeriod.initial_credit_balance / 100).toFixed(2))
-      setCreditLimit((editPeriod.credit_limit / 100).toFixed(2))
-      setCreditAllowance(editPeriod.credit_budget_allowance || 0)
+      // Convert stored EUR values to user's currency for display/editing
+      setDebitBalance((fromEur(editPeriod.initial_debit_balance) / 100).toFixed(2))
+      setCreditAvailable((fromEur(editPeriod.initial_credit_balance) / 100).toFixed(2))
+      setCreditLimit((fromEur(editPeriod.credit_limit) / 100).toFixed(2))
+      setCreditAllowance(fromEur(editPeriod.credit_budget_allowance || 0))
       setStartDate(editPeriod.start_date)
     } else if (rolloverData) {
-      // Pre-fill with rollover balances
-      setDebitBalance((rolloverData.suggestedDebitBalance / 100).toFixed(2))
-      setCreditAvailable((rolloverData.suggestedCreditAvailable / 100).toFixed(2))
-      setCreditLimit((rolloverData.creditLimit / 100).toFixed(2))
-      setCreditAllowance(rolloverData.creditAllowance || 0)
+      // Pre-fill with rollover balances (already in EUR, convert to user's currency)
+      setDebitBalance((fromEur(rolloverData.suggestedDebitBalance) / 100).toFixed(2))
+      setCreditAvailable((fromEur(rolloverData.suggestedCreditAvailable) / 100).toFixed(2))
+      setCreditLimit((fromEur(rolloverData.creditLimit) / 100).toFixed(2))
+      setCreditAllowance(fromEur(rolloverData.creditAllowance || 0))
 
       // Set start date to day after previous period ended
       const nextDay = new Date(rolloverData.endDate)
@@ -53,6 +54,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
   const formatCurrency = (cents) => {
     return formatCurrencyUtil(cents, defaultCurrency)
+  }
+
+  // Convert EUR cents (from DB) to user's currency cents for display
+  const fromEur = (eurCents) => {
+    return convertAmount ? convertAmount(eurCents, 'EUR', defaultCurrency) : eurCents
+  }
+
+  // Convert user's currency cents to EUR cents for storage
+  const toEur = (userCents) => {
+    return convertAmount ? convertAmount(userCents, defaultCurrency, 'EUR') : userCents
   }
 
   const parseCurrency = (value) => {
@@ -76,11 +87,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     setLoading(true)
 
     try {
+      // Convert user's currency to EUR for backend storage
       const response = await api.post('/salary-periods/preview', {
-        debit_balance: debitCents,
-        credit_balance: creditAvailableCents,
-        credit_limit: parseCurrency(creditLimit),
-        credit_allowance: creditAllowance,
+        debit_balance: toEur(debitCents),
+        credit_balance: toEur(creditAvailableCents),
+        credit_limit: toEur(parseCurrency(creditLimit)),
+        credit_allowance: toEur(creditAllowance),
         start_date: startDate
       })
 
@@ -99,11 +111,13 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     setLoading(true)
 
     try {
+      // Convert user's currency to EUR for backend storage
+      // Fixed bills amounts are already in EUR from the backend
       const response = await api.post('/salary-periods/preview', {
-        debit_balance: parseCurrency(debitBalance),
-        credit_balance: parseCurrency(creditAvailable),
-        credit_limit: parseCurrency(creditLimit),
-        credit_allowance: creditAllowance,
+        debit_balance: toEur(parseCurrency(debitBalance)),
+        credit_balance: toEur(parseCurrency(creditAvailable)),
+        credit_limit: toEur(parseCurrency(creditLimit)),
+        credit_allowance: toEur(creditAllowance),
         start_date: startDate,
         fixed_bills: fixedBills
       })
@@ -122,11 +136,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     setLoading(true)
 
     try {
+      // Convert user's currency to EUR for backend storage
       const payload = {
-        debit_balance: parseCurrency(debitBalance),
-        credit_balance: parseCurrency(creditAvailable),
-        credit_limit: parseCurrency(creditLimit),
-        credit_allowance: creditAllowance,
+        debit_balance: toEur(parseCurrency(debitBalance)),
+        credit_balance: toEur(parseCurrency(creditAvailable)),
+        credit_limit: toEur(parseCurrency(creditLimit)),
+        credit_allowance: toEur(creditAllowance),
         start_date: startDate,
         fixed_bills: fixedBills
       }
@@ -149,7 +164,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
   const updateFixedBillAmount = (index, value) => {
     const newBills = [...fixedBills]
-    newBills[index].amount = parseCurrency(value)
+    // User edits in their currency, convert to EUR for storage
+    newBills[index].amount = toEur(parseCurrency(value))
     setFixedBills(newBills)
   }
 
@@ -337,7 +353,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currencySymbol}</span>
                         <input
                           type="text"
-                          value={(bill.amount / 100).toFixed(2)}
+                          value={(fromEur(bill.amount) / 100).toFixed(2)}
                           onChange={(e) => updateFixedBillAmount(index, e.target.value)}
                           className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded text-sm"
                         />
@@ -357,7 +373,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-medium text-gray-700">Total Fixed Bills</span>
                   <span className="text-lg font-bold text-bloom-pink">
-                    {formatCurrency(fixedBills.reduce((sum, bill) => sum + bill.amount, 0))}
+                    {formatCurrency(fromEur(fixedBills.reduce((sum, bill) => sum + bill.amount, 0)))}
                   </span>
                 </div>
               </div>
@@ -392,35 +408,35 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
               <div className="bg-gradient-to-br from-bloom-pink to-pink-600 text-white rounded-xl p-6 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="opacity-90">Debit Balance</span>
-                  <span className="text-2xl font-bold">{formatCurrency(preview.debit_balance)}</span>
+                  <span className="text-2xl font-bold">{formatCurrency(fromEur(preview.debit_balance))}</span>
                 </div>
                 {preview.credit_allowance > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="opacity-90">+ Credit Allowance</span>
-                    <span className="text-xl">+{formatCurrency(preview.credit_allowance)}</span>
+                    <span className="text-xl">+{formatCurrency(fromEur(preview.credit_allowance))}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="opacity-90">− Fixed Bills</span>
-                  <span className="text-xl">−{formatCurrency(preview.fixed_bills_total)}</span>
+                  <span className="text-xl">−{formatCurrency(fromEur(preview.fixed_bills_total))}</span>
                 </div>
                 <div className="border-t border-white/30 pt-3 flex justify-between items-center">
                   <span className="opacity-90">= Total Budget</span>
-                  <span className="text-2xl font-bold">{formatCurrency(preview.total_budget)}</span>
+                  <span className="text-2xl font-bold">{formatCurrency(fromEur(preview.total_budget))}</span>
                 </div>
                 <div className="border-t border-white/30 pt-3 flex justify-between items-center">
                   <span className="opacity-90">÷ 4 weeks</span>
-                  <span className="text-3xl font-bold">{formatCurrency(preview.weekly_budget)}</span>
+                  <span className="text-3xl font-bold">{formatCurrency(fromEur(preview.weekly_budget))}</span>
                 </div>
                 {preview.weekly_credit_budget > 0 && (
                   <div className="text-sm opacity-90 mt-2">
                     <div className="flex justify-between">
                       <span>Debit per week:</span>
-                      <span>{formatCurrency(preview.weekly_debit_budget)}</span>
+                      <span>{formatCurrency(fromEur(preview.weekly_debit_budget))}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Credit per week:</span>
-                      <span>{formatCurrency(preview.weekly_credit_budget)}</span>
+                      <span>{formatCurrency(fromEur(preview.weekly_credit_budget))}</span>
                     </div>
                   </div>
                 )}
@@ -445,7 +461,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         </div>
                       </div>
                       <div className="font-semibold text-bloom-pink">
-                        {formatCurrency(week.budget_amount)}
+                        {formatCurrency(fromEur(week.budget_amount))}
                       </div>
                     </div>
                   ))}

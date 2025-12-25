@@ -100,6 +100,45 @@ export const formatWithConversion = (
 };
 
 /**
+ * Format transaction amount with optional conversion display
+ * For use in transaction lists - shows dual currency when transaction currency differs
+ *
+ * @param {Object} transaction - Transaction object with amount, currency fields
+ * @param {string} userCurrency - User's default currency
+ * @param {function} convertFn - Currency conversion function from CurrencyContext
+ * @returns {Object} { display: string, converted: number|null }
+ */
+export const formatTransactionAmount = (
+    transaction,
+    userCurrency,
+    convertFn
+) => {
+    const amount = transaction.amount;
+    const txCurrency = transaction.currency || "EUR";
+
+    // Same currency - no conversion needed
+    if (txCurrency === userCurrency) {
+        return {
+            display: formatCurrency(amount, userCurrency),
+            converted: null,
+            showDual: false,
+        };
+    }
+
+    // Different currency - convert and show both
+    const convertedAmount = convertFn
+        ? convertFn(amount, txCurrency, userCurrency)
+        : amount;
+
+    return {
+        display: formatCurrency(amount, txCurrency),
+        converted: formatCurrency(convertedAmount, userCurrency),
+        showDual: true,
+        convertedCents: convertedAmount,
+    };
+};
+
+/**
  * Get currency symbol for a currency code
  *
  * @param {string} currency - ISO 4217 currency code

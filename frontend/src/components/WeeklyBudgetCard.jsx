@@ -17,10 +17,13 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
   const [error, setError] = useState(null)
 
   // Currency context for multi-currency support
-  const { defaultCurrency } = useCurrency()
+  const { defaultCurrency, convertAmount } = useCurrency()
 
-  // Helper function to format currency with user's default currency
-  const fc = (cents) => formatCurrency(cents, defaultCurrency)
+  // Helper function to format EUR amounts (stored in DB) converted to user's currency
+  const fcEur = (cents) => {
+    const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents
+    return formatCurrency(converted, defaultCurrency)
+  }
 
   useEffect(() => {
     loadWeeklyData()
@@ -182,25 +185,25 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
             <span className="opacity-90">
               {displayWeek.carryover < 0 ? '⚠️ Overspent from previous weeks' : '✨ Leftover from previous weeks'}
             </span>
-            <span className="font-semibold">{fc(Math.abs(displayWeek.carryover))}</span>
+            <span className="font-semibold">{fcEur(Math.abs(displayWeek.carryover))}</span>
           </div>
         )}
 
         <div className="flex justify-between items-baseline">
           <span className="text-sm opacity-90">Base Budget</span>
-          <span className="text-xl font-semibold">{fc(displayWeek?.budget_amount || 0)}</span>
+          <span className="text-xl font-semibold">{fcEur(displayWeek?.budget_amount || 0)}</span>
         </div>
 
         {displayWeek?.adjusted_budget !== displayWeek?.budget_amount && (
           <div className="flex justify-between items-baseline border-t border-white/20 pt-2">
             <span className="text-sm opacity-90 font-semibold">Adjusted Budget</span>
-            <span className="text-2xl font-bold">{fc(displayWeek?.adjusted_budget || 0)}</span>
+            <span className="text-2xl font-bold">{fcEur(displayWeek?.adjusted_budget || 0)}</span>
           </div>
         )}
 
         <div className="flex justify-between items-baseline">
           <span className="text-sm opacity-90">Spent</span>
-          <span className="text-xl font-semibold">{fc(displayWeek?.spent || 0)}</span>
+          <span className="text-xl font-semibold">{fcEur(displayWeek?.spent || 0)}</span>
         </div>
 
         <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
@@ -213,7 +216,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
         <div className="flex justify-between items-baseline pt-2">
           <span className="text-sm opacity-90">Remaining</span>
           <span className={`text-2xl font-bold ${displayWeek?.remaining < 0 ? 'text-red-200' : ''}`}>
-            {fc(displayWeek?.remaining || 0)}
+            {fcEur(displayWeek?.remaining || 0)}
           </span>
         </div>
       </div>
@@ -231,7 +234,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
           onClick={() => onAllocateClick(weeklyData.salary_period.id, displayWeek.week_number)}
           className="mt-4 w-full bg-white text-bloom-pink py-2 rounded-lg font-semibold hover:bg-opacity-90 transition text-sm"
         >
-          💰 Allocate Leftover ({fc(displayWeek.remaining)})
+          💰 Allocate Leftover ({fcEur(displayWeek.remaining)})
         </button>
       )}
     </div>

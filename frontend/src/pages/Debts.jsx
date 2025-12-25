@@ -15,7 +15,7 @@ import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import Header from '../components/Header'
 import { useCurrency } from '../contexts/CurrencyContext'
-import { formatCurrency } from '../utils/formatters'
+import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
 
 function Debts({ setIsAuthenticated }) {
   const [debts, setDebts] = useState([])
@@ -32,10 +32,13 @@ function Debts({ setIsAuthenticated }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   // Currency context for multi-currency support
-  const { defaultCurrency } = useCurrency()
+  const { defaultCurrency, convertAmount } = useCurrency()
 
-  // Helper function to format currency with user's default currency
-  const fc = (cents) => formatCurrency(cents, defaultCurrency)
+  // Helper function to format EUR amounts (stored in DB) converted to user's currency
+  const fcEur = (cents) => {
+    const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents
+    return formatCurrency(converted, defaultCurrency)
+  }
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
@@ -262,7 +265,7 @@ function Debts({ setIsAuthenticated }) {
               <div>
                 <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Total Debt</p>
                 <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
-                  {fc(getTotalDebt() * 100)}
+                  {fcEur(getTotalDebt() * 100)}
                 </h2>
               </div>
               <div className="bg-red-100 rounded-full p-3">
@@ -281,7 +284,7 @@ function Debts({ setIsAuthenticated }) {
               <div>
                 <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Monthly Payments</p>
                 <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
-                  {fc(getTotalMonthlyPayment() * 100)}
+                  {fcEur(getTotalMonthlyPayment() * 100)}
                 </h2>
               </div>
               <div className="bg-bloom-mint rounded-full p-3">
@@ -348,22 +351,22 @@ function Debts({ setIsAuthenticated }) {
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-sm">
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Debt</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(balance * 100)}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fcEur(balance * 100)}</p>
                           </div>
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">{debt.isVirtual ? 'Limit' : 'Original'}</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(original * 100)}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fcEur(original * 100)}</p>
                           </div>
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Monthly</p>
                             {monthly > 0 ? (
                               <>
-                                <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(monthly * 100)}</p>
+                                <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fcEur(monthly * 100)}</p>
                                 {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">50% of balance</p>}
                               </>
                             ) : (
                               <>
-                                <p className="font-semibold text-green-600 dark:text-dark-success text-sm sm:text-base">{fc(0)}</p>
+                                <p className="font-semibold text-green-600 dark:text-dark-success text-sm sm:text-base">{fcEur(0)}</p>
                                 {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Already paid 50%</p>}
                               </>
                             )}
@@ -463,7 +466,7 @@ function Debts({ setIsAuthenticated }) {
                     <div className="mt-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                         <span>Progress: {progress.toFixed(1)}% paid off</span>
-                        <span>{fc((original - balance) * 100)} / {fc(original * 100)}</span>
+                        <span>{fcEur((original - balance) * 100)} / {fcEur(original * 100)}</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-3">
                         <div
@@ -497,23 +500,30 @@ function Debts({ setIsAuthenticated }) {
                         <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-3">Payment History</h4>
                         {debtTransactions[debt.id] && debtTransactions[debt.id].length > 0 ? (
                           <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {debtTransactions[debt.id].map(transaction => (
+                            {debtTransactions[debt.id].map(transaction => {
+                              const txAmount = formatTransactionAmount(transaction, defaultCurrency, convertAmount)
+                              return (
                               <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg">
                                 <div className="flex-1">
                                   <p className="font-semibold text-gray-800 dark:text-dark-text">{transaction.name}</p>
                                   <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">{transaction.date}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-green-600 dark:text-dark-success">{fc(transaction.amount)}</p>
+                                  <p className="font-semibold text-green-600 dark:text-dark-success">{txAmount.display}</p>
+                                  {txAmount.showDual && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      ≈ {txAmount.converted}
+                                    </p>
+                                  )}
                                   <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{transaction.payment_method}</p>
                                 </div>
                               </div>
-                            ))}
+                            )})})
                             <div className="mt-3 pt-3 border-t border-gray-300 dark:border-dark-border">
                               <div className="flex justify-between items-center font-bold text-gray-800 dark:text-dark-text">
                                 <span>Total Paid:</span>
                                 <span className="text-green-600 dark:text-dark-success">
-                                  {fc(debtTransactions[debt.id].reduce((sum, t) => sum + t.amount, 0))}
+                                  {fcEur(debtTransactions[debt.id].reduce((sum, t) => sum + t.amount, 0))}
                                 </span>
                               </div>
                             </div>
@@ -577,7 +587,7 @@ function Debts({ setIsAuthenticated }) {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-gray-500 dark:text-dark-text-tertiary">Original Amount</p>
-                              <p className="font-semibold text-gray-800 dark:text-dark-text">{fc(original * 100)}</p>
+                              <p className="font-semibold text-gray-800 dark:text-dark-text">{fcEur(original * 100)}</p>
                             </div>
                             <div>
                               <p className="text-gray-500 dark:text-dark-text-tertiary">Paid On</p>
@@ -621,7 +631,7 @@ function Debts({ setIsAuthenticated }) {
                                     <p className="font-medium text-gray-800 dark:text-dark-text">{transaction.name}</p>
                                     <p className="text-gray-500 dark:text-dark-text-tertiary text-xs">{(() => { const d = new Date(transaction.date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}</p>
                                   </div>
-                                  <p className="font-semibold text-green-700 dark:text-dark-success">{fc(transaction.amount)}</p>
+                                  <p className="font-semibold text-green-700 dark:text-dark-success">{fcEur(transaction.amount)}</p>
                                 </div>
                               ))}
                             </div>

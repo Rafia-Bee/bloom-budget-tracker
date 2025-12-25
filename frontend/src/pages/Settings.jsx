@@ -393,6 +393,16 @@ function Settings({ setIsAuthenticated }) {
                   Set your preferred currency for displaying balances and totals.
                 </p>
 
+                {/* Warning about API delay */}
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                    <p className="text-amber-700 dark:text-amber-400 text-sm">
+                      Changing currency may take up to a minute while exchange rates are fetched. The app may appear unresponsive during this time.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-4">
                   <label htmlFor="default-currency" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     Currency:

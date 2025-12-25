@@ -21,13 +21,12 @@ export function CurrencyProvider({ children }) {
     loadDefaultCurrency()
   }, [])
 
-  // Exchange rates loading is disabled for now (display-only mode)
-  // Enable this when we implement actual currency conversion
-  // useEffect(() => {
-  //   if (defaultCurrency) {
-  //     loadExchangeRates(defaultCurrency)
-  //   }
-  // }, [defaultCurrency])
+  // Load exchange rates when default currency changes
+  useEffect(() => {
+    if (defaultCurrency) {
+      loadExchangeRates(defaultCurrency)
+    }
+  }, [defaultCurrency])
 
   const loadDefaultCurrency = async () => {
     try {
