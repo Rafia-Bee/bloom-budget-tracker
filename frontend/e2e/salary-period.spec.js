@@ -24,7 +24,9 @@ test.describe("Salary Period Wizard", () => {
             // If there's already a period, we might need to look for a different button
             // or the wizard might not be immediately visible
             const wizardTrigger = setupButton.or(
-                page.locator('button:has-text("Rollover"), button:has-text("Start Next")')
+                page.locator(
+                    'button:has-text("Rollover"), button:has-text("Start Next")'
+                )
             );
 
             // Check if wizard trigger is available
@@ -32,14 +34,18 @@ test.describe("Salary Period Wizard", () => {
                 await wizardTrigger.first().click();
 
                 // Wizard modal should appear
-                await expect(page.locator('text=/Setup|Weekly Budget|Enter.*Balance/i').first()).toBeVisible({
+                await expect(
+                    page
+                        .locator("text=/Setup|Weekly Budget|Enter.*Balance/i")
+                        .first()
+                ).toBeVisible({
                     timeout: 5000,
                 });
             } else {
                 // If no trigger visible, maybe there's already an active period
                 // Look for indicator that a period exists
                 await expect(
-                    page.locator('text=/Week|Budget|Balance/i').first()
+                    page.locator("text=/Week|Budget|Balance/i").first()
                 ).toBeVisible({ timeout: 5000 });
             }
         });
@@ -56,9 +62,17 @@ test.describe("Salary Period Wizard", () => {
                 await setupButton.first().click();
 
                 // Should see Step 1 content
-                await expect(page.locator('text=/Debit Balance|Bank Account/i').first()).toBeVisible();
-                await expect(page.locator('text=/Credit.*Available|Credit Card/i').first()).toBeVisible();
-                await expect(page.locator('input[type="text"]').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Debit Balance|Bank Account/i").first()
+                ).toBeVisible();
+                await expect(
+                    page
+                        .locator("text=/Credit.*Available|Credit Card/i")
+                        .first()
+                ).toBeVisible();
+                await expect(
+                    page.locator('input[type="text"]').first()
+                ).toBeVisible();
             }
         });
 
@@ -71,11 +85,15 @@ test.describe("Salary Period Wizard", () => {
                 await setupButton.first().click();
 
                 // Try to proceed without entering debit balance
-                const nextButton = page.locator('button:has-text("Next"), button:has-text("Continue")');
+                const nextButton = page.locator(
+                    'button:has-text("Next"), button:has-text("Continue")'
+                );
                 await nextButton.click();
 
                 // Should show validation error
-                await expect(page.locator('text=/debit balance|enter.*balance/i')).toBeVisible({
+                await expect(
+                    page.locator("text=/debit balance|enter.*balance/i")
+                ).toBeVisible({
                     timeout: 3000,
                 });
             }
@@ -83,7 +101,9 @@ test.describe("Salary Period Wizard", () => {
     });
 
     test.describe("Full Wizard Flow", () => {
-        test("can complete wizard to create salary period", async ({ page }) => {
+        test("can complete wizard to create salary period", async ({
+            page,
+        }) => {
             // This test creates a full salary period through the wizard
             // Note: May need adjustment based on whether a period already exists
 
@@ -100,15 +120,15 @@ test.describe("Salary Period Wizard", () => {
             await setupButton.first().click();
 
             // ===== STEP 1: Enter Balances =====
-            await expect(page.locator('text=/Balance/i').first()).toBeVisible();
+            await expect(page.locator("text=/Balance/i").first()).toBeVisible();
 
             // Fill in debit balance
-            const debitInput = page.locator('input').first();
+            const debitInput = page.locator("input").first();
             await debitInput.clear();
             await debitInput.fill("1500");
 
             // Fill in credit available (second input)
-            const creditInput = page.locator('input').nth(1);
+            const creditInput = page.locator("input").nth(1);
             if (await creditInput.isVisible()) {
                 await creditInput.clear();
                 await creditInput.fill("1000");
@@ -122,22 +142,32 @@ test.describe("Salary Period Wizard", () => {
             await page.waitForTimeout(1000);
 
             // Check if we're on step 2 (fixed bills review)
-            const step2Indicator = page.locator('text=/Fixed Bill|Recurring|Review/i');
+            const step2Indicator = page.locator(
+                "text=/Fixed Bill|Recurring|Review/i"
+            );
             if (await step2Indicator.first().isVisible({ timeout: 3000 })) {
                 // Step 2 exists, click Next
-                await page.locator('button:has-text("Next"), button:has-text("Continue")').click();
+                await page
+                    .locator(
+                        'button:has-text("Next"), button:has-text("Continue")'
+                    )
+                    .click();
             }
 
             // ===== STEP 3: Confirm Budget =====
             await page.waitForTimeout(1000);
 
             // Look for confirmation elements
-            const confirmIndicator = page.locator('text=/Confirm|Weekly Budget|Summary/i');
-            await expect(confirmIndicator.first()).toBeVisible({ timeout: 5000 });
+            const confirmIndicator = page.locator(
+                "text=/Confirm|Weekly Budget|Summary/i"
+            );
+            await expect(confirmIndicator.first()).toBeVisible({
+                timeout: 5000,
+            });
 
             // Should see calculated weekly budget
             await expect(
-                page.locator('text=/Week 1|Week 2|per week|weekly/i').first()
+                page.locator("text=/Week 1|Week 2|per week|weekly/i").first()
             ).toBeVisible();
 
             // Click Create/Confirm button
@@ -150,7 +180,9 @@ test.describe("Salary Period Wizard", () => {
             await page.waitForTimeout(2000);
 
             // Wizard should close (modal should not be visible)
-            await expect(page.locator('text=/Setup Weekly Budget/i')).not.toBeVisible({
+            await expect(
+                page.locator("text=/Setup Weekly Budget/i")
+            ).not.toBeVisible({
                 timeout: 5000,
             });
         });
@@ -167,10 +199,10 @@ test.describe("Salary Period Wizard", () => {
                 await editButton.first().click();
 
                 // Should open wizard in edit mode
-                await expect(page.locator('text=/Edit/i')).toBeVisible();
+                await expect(page.locator("text=/Edit/i")).toBeVisible();
 
                 // Fields should be pre-filled
-                const debitInput = page.locator('input').first();
+                const debitInput = page.locator("input").first();
                 const value = await debitInput.inputValue();
                 expect(value).not.toBe("");
             }
