@@ -32,6 +32,18 @@ Comprehensive documentation for the Bloom budget tracking application.
 -   Environment variable management
 -   Production security best practices
 
+### [ARCHITECTURE.md](ARCHITECTURE.md)
+
+**System architecture and data flow:**
+
+-   System overview with component diagrams
+-   Data model and entity relationships
+-   Period system (SalaryPeriod → BudgetPeriod)
+-   Balance calculations and carryover logic
+-   Authentication flow
+-   Frontend state management
+-   API communication patterns
+
 ## 🔧 Development Documentation
 
 ### [TESTING.md](TESTING.md)
