@@ -4,6 +4,33 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-25
+
+### Dynamic Currency Symbols Throughout UI (Issue #7)
+
+**Context:** Components had hardcoded € or $ symbols. After implementing multi-currency support with CurrencyContext and CurrencySelector, the display symbols needed to respect the user's default currency preference.
+
+**Decision:** Use `useCurrency` hook and `getCurrencySymbol()` utility instead of hardcoded symbols.
+
+**Pattern Adopted:**
+
+```jsx
+import { useCurrency } from "../contexts/CurrencyContext";
+import { formatCurrency, getCurrencySymbol } from "../utils/formatters";
+
+const { defaultCurrency } = useCurrency();
+const currencySymbol = getCurrencySymbol(defaultCurrency);
+const fc = (cents) => formatCurrency(cents, defaultCurrency);
+```
+
+**Components Updated:** AddRecurringExpenseModal, TransactionCard, ExpenseList, BankImportModal, SalaryPeriodWizard, SalaryPeriodRolloverPrompt, AddDebtPaymentModal, LeftoverBudgetModal
+
+**UI Consideration:** Input padding increased from `pl-8` to `pl-10` to accommodate 3-letter currency symbols (BDT, EGP, CHF).
+
+**Testing:** Added `useCurrency` mock to test setup.js to prevent CurrencyProvider errors.
+
+---
+
 ## 2025-12-24
 
 ### Multi-Currency API Switch to ExchangeRate-API (Issue #7)

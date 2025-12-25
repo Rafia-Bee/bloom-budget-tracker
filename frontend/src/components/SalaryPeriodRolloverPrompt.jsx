@@ -8,8 +8,12 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { salaryPeriodAPI } from '../api'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
+  const { defaultCurrency } = useCurrency()
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
   const [rolloverData, setRolloverData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -86,8 +90,8 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
           <div className={`text-sm mb-4 ${isOverdue ? 'text-red-600 dark:text-red-300' : 'text-yellow-600 dark:text-yellow-300'}`}>
             <p className="font-semibold mb-1">Calculated balances for next period:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>Debit: €{(suggestedDebitBalance / 100).toFixed(2)}</li>
-              <li>Credit Available: €{(suggestedCreditAvailable / 100).toFixed(2)} / €{(creditLimit / 100).toFixed(2)}</li>
+              <li>Debit: {fc(suggestedDebitBalance)}</li>
+              <li>Credit Available: {fc(suggestedCreditAvailable)} / {fc(creditLimit)}</li>
             </ul>
           </div>
 

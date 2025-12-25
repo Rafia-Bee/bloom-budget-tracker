@@ -70,7 +70,7 @@ describe('AddRecurringExpenseModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Name')).toBeInTheDocument()
       })
-      expect(screen.getByText('Amount ($)')).toBeInTheDocument()
+      expect(screen.getByText('Amount (€)')).toBeInTheDocument()
       expect(screen.getByText('Payment Method')).toBeInTheDocument()
       expect(screen.getByText('Category')).toBeInTheDocument()
       expect(screen.getByText('Subcategory')).toBeInTheDocument()

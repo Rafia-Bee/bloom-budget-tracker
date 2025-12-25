@@ -147,8 +147,8 @@ describe('SalaryPeriodRolloverPrompt', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText(/€1200\.00/)).toBeInTheDocument()
-        expect(screen.getByText(/€1500\.00/)).toBeInTheDocument()
+        expect(screen.getByText(/€1,200\.00/)).toBeInTheDocument()
+        expect(screen.getByText(/€1,500\.00/)).toBeInTheDocument()
       })
     })
 
@@ -379,9 +379,9 @@ describe('SalaryPeriodRolloverPrompt', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText(/€1234\.56/)).toBeInTheDocument()
+        expect(screen.getByText(/€1,234\.56/)).toBeInTheDocument()
         expect(screen.getByText(/€987\.65/)).toBeInTheDocument()
-        expect(screen.getByText(/€2000\.00/)).toBeInTheDocument()
+        expect(screen.getByText(/€2,000\.00/)).toBeInTheDocument()
       })
     })
 

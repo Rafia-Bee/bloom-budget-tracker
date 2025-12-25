@@ -9,6 +9,19 @@ import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
+// Mock the CurrencyContext to provide default values in tests
+vi.mock("../contexts/CurrencyContext", () => ({
+    useCurrency: () => ({
+        defaultCurrency: "EUR",
+        exchangeRates: {},
+        loading: false,
+        ratesLoading: false,
+        updateDefaultCurrency: vi.fn(),
+        convertCurrency: vi.fn((amount) => amount),
+    }),
+    CurrencyProvider: ({ children }) => children,
+}));
+
 // Mock the API module to prevent network requests in tests
 vi.mock("../api", () => ({
     default: {
@@ -97,6 +110,13 @@ vi.mock("../api", () => ({
             Promise.resolve({ data: { recurring_lookahead_days: 14 } })
         ),
         updateRecurringLookahead: vi.fn(() => Promise.resolve({ data: {} })),
+        getDefaultCurrency: vi.fn(() =>
+            Promise.resolve({ data: { default_currency: "EUR" } })
+        ),
+        setDefaultCurrency: vi.fn(() => Promise.resolve({ data: {} })),
+    },
+    currencyAPI: {
+        getRates: vi.fn(() => Promise.resolve({ data: { rates: {} } })),
     },
     authAPI: {
         register: vi.fn(() => Promise.resolve({ data: {} })),

@@ -39,13 +39,13 @@ describe('AddIncomeModal', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       expect(screen.getByText('Type')).toBeInTheDocument()
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
+      expect(screen.getAllByRole('combobox')[0]).toBeInTheDocument()
     })
 
     it('renders amount input field', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+      expect(screen.getByText('Amount')).toBeInTheDocument()
       expect(screen.getByRole('spinbutton')).toBeInTheDocument()
     })
 
@@ -75,7 +75,7 @@ describe('AddIncomeModal', () => {
     it('has Salary selected by default', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       expect(typeSelect).toHaveValue('Salary')
     })
 
@@ -99,7 +99,7 @@ describe('AddIncomeModal', () => {
     it('has all income type options', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       const options = typeSelect.querySelectorAll('option')
       const optionValues = Array.from(options).map(o => o.value)
 
@@ -113,7 +113,7 @@ describe('AddIncomeModal', () => {
       const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       await user.selectOptions(typeSelect, 'Bonus')
 
       expect(typeSelect).toHaveValue('Bonus')
@@ -147,7 +147,7 @@ describe('AddIncomeModal', () => {
       const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       await user.selectOptions(typeSelect, 'Freelance')
 
       expect(typeSelect).toHaveValue('Freelance')
@@ -157,7 +157,7 @@ describe('AddIncomeModal', () => {
       const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       await user.selectOptions(typeSelect, 'Other')
 
       expect(typeSelect).toHaveValue('Other')
@@ -225,7 +225,7 @@ describe('AddIncomeModal', () => {
       const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      const typeSelect = screen.getByRole('combobox')
+      const typeSelect = screen.getAllByRole('combobox')[0]
       await user.selectOptions(typeSelect, 'Bonus')
 
       const amountInput = screen.getByRole('spinbutton')

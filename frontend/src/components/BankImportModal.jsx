@@ -8,8 +8,12 @@
 import React, { useState } from 'react'
 import api from '../api'
 import PropTypes from 'prop-types';
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function BankImportModal({ onClose /* onImportComplete */ }) {
+  const { defaultCurrency } = useCurrency()
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
   const [transactionsText, setTransactionsText] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('Debit card')
   const [markAsFixedBills, setMarkAsFixedBills] = useState(false)
@@ -123,7 +127,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                     {result.created_expenses.map((exp, idx) => (
                       <div key={idx} className="flex justify-between">
                         <span>{exp.name}</span>
-                        <span className="font-medium">€{exp.amount.toFixed(2)}</span>
+                        <span className="font-medium">{fc(exp.amount * 100)}</span>
                       </div>
                     ))}
                   </div>
@@ -326,7 +330,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                 </span>
                               </td>
                               <td className="px-3 py-2 text-right font-semibold text-gray-800 dark:text-dark-text">
-                                €{txn.amount.toFixed(2)}
+                                {fc(txn.amount * 100)}
                               </td>
                             </tr>
                           ))}

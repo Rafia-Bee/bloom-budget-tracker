@@ -18,6 +18,13 @@ const getInputByLabel = (labelText) => {
   return container.querySelector('input, select')
 }
 
+// Helper to get the amount input (number input, not the currency selector)
+const getAmountInput = () => {
+  const label = screen.getByText('Amount')
+  const container = label.closest('div')
+  return container.querySelector('input[type="number"]')
+}
+
 describe('AddExpenseModal', () => {
   const mockOnClose = vi.fn()
   const mockOnAdd = vi.fn()
@@ -47,7 +54,7 @@ describe('AddExpenseModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Name')).toBeInTheDocument()
       })
-      expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+      expect(screen.getByText('Amount')).toBeInTheDocument()
       expect(screen.getByText('Date')).toBeInTheDocument()
       expect(screen.getByText('Category')).toBeInTheDocument()
       expect(screen.getByText('Subcategory')).toBeInTheDocument()
@@ -106,10 +113,10 @@ describe('AddExpenseModal', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+        expect(screen.getByText('Amount')).toBeInTheDocument()
       })
 
-      const amountInput = getInputByLabel('Amount (€)')
+      const amountInput = getAmountInput()
       await user.type(amountInput, '15.50')
 
       expect(amountInput).toHaveValue(15.50)
@@ -295,7 +302,7 @@ describe('AddExpenseModal', () => {
       await user.clear(nameInput)
       await user.type(nameInput, 'Groceries')
 
-      await user.type(getInputByLabel('Amount (€)'), '25.50')
+      await user.type(getAmountInput(), '25.50')
 
       // Submit
       await user.click(screen.getByRole('button', { name: /^add$/i }))
@@ -328,7 +335,7 @@ describe('AddExpenseModal', () => {
       const nameInput = getInputByLabel('Name')
       await user.clear(nameInput)
       await user.type(nameInput, 'Netflix')
-      await user.type(getInputByLabel('Amount (€)'), '12.99')
+      await user.type(getAmountInput(), '12.99')
 
       // Enable recurring
       await user.click(screen.getByRole('checkbox'))
@@ -364,11 +371,11 @@ describe('AddExpenseModal', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+        expect(screen.getByText('Amount')).toBeInTheDocument()
       })
 
       // Fill required fields
-      await user.type(getInputByLabel('Amount (€)'), '10')
+      await user.type(getAmountInput(), '10')
 
       // Submit
       await user.click(screen.getByRole('button', { name: /^add$/i }))
@@ -395,11 +402,11 @@ describe('AddExpenseModal', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('Amount (€)')).toBeInTheDocument()
+        expect(screen.getByText('Amount')).toBeInTheDocument()
       })
 
       // Fill required fields
-      await user.type(getInputByLabel('Amount (€)'), '10')
+      await user.type(getAmountInput(), '10')
 
       // Submit
       await user.click(screen.getByRole('button', { name: /^add$/i }))

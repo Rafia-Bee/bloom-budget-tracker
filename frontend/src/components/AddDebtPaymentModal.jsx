@@ -7,8 +7,12 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI } from '../api'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [selectedDebt, setSelectedDebt] = useState(preSelectedDebt || '')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -129,7 +133,7 @@ function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
           </div>
 
           <div>
-            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Payment Amount (€)</label>
+            <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Payment Amount ({currencySymbol})</label>
             <input
               type="number"
               step="0.01"

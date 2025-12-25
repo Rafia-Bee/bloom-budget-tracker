@@ -14,6 +14,8 @@ import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import Header from '../components/Header'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function Debts({ setIsAuthenticated }) {
   const [debts, setDebts] = useState([])
@@ -28,6 +30,12 @@ function Debts({ setIsAuthenticated }) {
   const [expandedDebtId, setExpandedDebtId] = useState(null)
   const [debtTransactions, setDebtTransactions] = useState({})
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+
+  // Currency context for multi-currency support
+  const { defaultCurrency } = useCurrency()
+
+  // Helper function to format currency with user's default currency
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
@@ -254,7 +262,7 @@ function Debts({ setIsAuthenticated }) {
               <div>
                 <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Total Debt</p>
                 <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
-                  €{getTotalDebt().toFixed(2)}
+                  {fc(getTotalDebt() * 100)}
                 </h2>
               </div>
               <div className="bg-red-100 rounded-full p-3">
@@ -273,7 +281,7 @@ function Debts({ setIsAuthenticated }) {
               <div>
                 <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Monthly Payments</p>
                 <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text">
-                  €{getTotalMonthlyPayment().toFixed(2)}
+                  {fc(getTotalMonthlyPayment() * 100)}
                 </h2>
               </div>
               <div className="bg-bloom-mint rounded-full p-3">
@@ -340,22 +348,22 @@ function Debts({ setIsAuthenticated }) {
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-sm">
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Debt</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{balance.toFixed(2)}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(balance * 100)}</p>
                           </div>
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">{debt.isVirtual ? 'Limit' : 'Original'}</p>
-                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{original.toFixed(2)}</p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(original * 100)}</p>
                           </div>
                           <div>
                             <p className="text-gray-500 dark:text-dark-text-tertiary text-xs mb-0.5">Monthly</p>
                             {monthly > 0 ? (
                               <>
-                                <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">€{monthly.toFixed(2)}</p>
+                                <p className="font-semibold text-gray-800 dark:text-dark-text text-sm sm:text-base">{fc(monthly * 100)}</p>
                                 {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">50% of balance</p>}
                               </>
                             ) : (
                               <>
-                                <p className="font-semibold text-green-600 dark:text-dark-success text-sm sm:text-base">€0 paid</p>
+                                <p className="font-semibold text-green-600 dark:text-dark-success text-sm sm:text-base">{fc(0)}</p>
                                 {debt.isVirtual && <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">Already paid 50%</p>}
                               </>
                             )}
@@ -455,7 +463,7 @@ function Debts({ setIsAuthenticated }) {
                     <div className="mt-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
                         <span>Progress: {progress.toFixed(1)}% paid off</span>
-                        <span>€{(original - balance).toFixed(2)} / €{original.toFixed(2)}</span>
+                        <span>{fc((original - balance) * 100)} / {fc(original * 100)}</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-3">
                         <div
@@ -496,7 +504,7 @@ function Debts({ setIsAuthenticated }) {
                                   <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">{transaction.date}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-green-600 dark:text-dark-success">€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="font-semibold text-green-600 dark:text-dark-success">{fc(transaction.amount)}</p>
                                   <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{transaction.payment_method}</p>
                                 </div>
                               </div>
@@ -505,7 +513,7 @@ function Debts({ setIsAuthenticated }) {
                               <div className="flex justify-between items-center font-bold text-gray-800 dark:text-dark-text">
                                 <span>Total Paid:</span>
                                 <span className="text-green-600 dark:text-dark-success">
-                                  €{debtTransactions[debt.id].reduce((sum, t) => sum + (t.amount / 100), 0).toFixed(2)}
+                                  {fc(debtTransactions[debt.id].reduce((sum, t) => sum + t.amount, 0))}
                                 </span>
                               </div>
                             </div>
@@ -569,7 +577,7 @@ function Debts({ setIsAuthenticated }) {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-gray-500 dark:text-dark-text-tertiary">Original Amount</p>
-                              <p className="font-semibold text-gray-800 dark:text-dark-text">€{original.toFixed(2)}</p>
+                              <p className="font-semibold text-gray-800 dark:text-dark-text">{fc(original * 100)}</p>
                             </div>
                             <div>
                               <p className="text-gray-500 dark:text-dark-text-tertiary">Paid On</p>
@@ -613,7 +621,7 @@ function Debts({ setIsAuthenticated }) {
                                     <p className="font-medium text-gray-800 dark:text-dark-text">{transaction.name}</p>
                                     <p className="text-gray-500 dark:text-dark-text-tertiary text-xs">{(() => { const d = new Date(transaction.date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}</p>
                                   </div>
-                                  <p className="font-semibold text-green-700 dark:text-dark-success">€{(transaction.amount / 100).toFixed(2)}</p>
+                                  <p className="font-semibold text-green-700 dark:text-dark-success">{fc(transaction.amount)}</p>
                                 </div>
                               ))}
                             </div>

@@ -7,8 +7,12 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters'
 
 function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [leftoverData, setLeftoverData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [allocating, setAllocating] = useState(false)
@@ -37,8 +41,8 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
   }
 
   const formatCurrency = (cents) => {
-    if (cents == null || isNaN(cents)) return '$0.00'
-    return `$${(cents / 100).toFixed(2)}`
+    if (cents == null || isNaN(cents)) return formatCurrencyUtil(0, defaultCurrency)
+    return formatCurrencyUtil(cents, defaultCurrency)
   }
 
   const parseCurrency = (value) => {
@@ -307,12 +311,12 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">Amount</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">{currencySymbol}</span>
               <input
                 type="text"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                 placeholder="0.00"
               />
             </div>

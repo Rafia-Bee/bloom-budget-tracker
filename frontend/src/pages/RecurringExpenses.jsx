@@ -13,6 +13,8 @@ import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import CatLoading from '../components/CatLoading'
 import Header from '../components/Header'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function RecurringExpenses({ setIsAuthenticated }) {
   const [recurringExpenses, setRecurringExpenses] = useState([])
@@ -30,6 +32,10 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [scheduledExpenses, setScheduledExpenses] = useState([])
   const [selectedScheduled, setSelectedScheduled] = useState([])
   const [selectionMode, setSelectionMode] = useState(false)
+
+  // Currency context for multi-currency support
+  const { defaultCurrency } = useCurrency()
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
 
   const handleExport = () => {
     setExportMode('export');
@@ -240,7 +246,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                   <ul className="mt-2 text-sm text-green-700 dark:text-dark-success space-y-1">
                     {generationResult.data.templates.map((template, idx) => (
                       <li key={idx}>
-                        • {template.name} - ${template.amount?.toFixed(2)} on {template.date}
+                        • {template.name} - {fc(template.amount * 100)} on {template.date}
                       </li>
                     ))}
                   </ul>
@@ -303,7 +309,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
                           {/* Amount - prominent on mobile */}
                           <div className="text-right flex-shrink-0">
-                            <p className="text-lg font-bold text-gray-800 dark:text-dark-text">${(expense.amount / 100).toFixed(2)}</p>
+                            <p className="text-lg font-bold text-gray-800 dark:text-dark-text">{fc(expense.amount)}</p>
                             <p className="text-xs text-gray-500 dark:text-dark-text-tertiary">{expense.payment_method}</p>
                           </div>
                         </div>
@@ -387,7 +393,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
                             <div>
                               <span className="text-gray-500 dark:text-dark-text-tertiary">Amount:</span>{' '}
-                              <span className="font-medium dark:text-dark-text">${(expense.amount / 100).toFixed(2)}</span>
+                              <span className="font-medium dark:text-dark-text">{fc(expense.amount)}</span>
                             </div>
                             <div>
                               <span className="text-gray-500 dark:text-dark-text-tertiary">Category:</span>{' '}
@@ -481,7 +487,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                           </div>
 
                           <div className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                            ${(expense.amount / 100).toFixed(2)} • {getFrequencyText(expense)}
+                            {fc(expense.amount)} • {getFrequencyText(expense)}
                           </div>
                         </div>
 
@@ -541,7 +547,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                               </span>
                             </div>
                             <div className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                              €{expense.amount.toFixed(2)} • {expense.category} {expense.subcategory && `• ${expense.subcategory}`}
+                              {fc(expense.amount * 100)} • {expense.category} {expense.subcategory && `• ${expense.subcategory}`}
                             </div>
                             <div className="text-xs text-gray-400 dark:text-dark-text-tertiary mt-1 capitalize">
                               {expense.frequency}

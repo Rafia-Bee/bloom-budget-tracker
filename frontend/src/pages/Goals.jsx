@@ -13,6 +13,8 @@ import EditGoalModal from '../components/EditGoalModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function Goals({ setIsAuthenticated }) {
   const [goals, setGoals] = useState([])
@@ -27,6 +29,12 @@ function Goals({ setIsAuthenticated }) {
   const [expandedGoalId, setExpandedGoalId] = useState(null)
   const [goalTransactions, setGoalTransactions] = useState({})
   const [loadingTransactions, setLoadingTransactions] = useState(false)
+
+  // Currency context for multi-currency support
+  const { defaultCurrency } = useCurrency()
+
+  // Helper function to format currency with user's default currency
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
 
   // Modal states for Header functionality
   const [showExportModal, setShowExportModal] = useState(false)
@@ -137,13 +145,6 @@ function Goals({ setIsAuthenticated }) {
         setLoadingTransactions(false)
       }
     }
-  }
-
-  const formatCurrency = (cents) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(cents / 100)
   }
 
   const formatDate = (dateString) => {
@@ -288,7 +289,7 @@ function Goals({ setIsAuthenticated }) {
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        <span>{formatCurrency(goal.progress.current_amount)} saved</span>
+                        <span>{fc(goal.progress.current_amount)} saved</span>
                         <span>{goal.progress.percentage.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -304,13 +305,13 @@ function Goals({ setIsAuthenticated }) {
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Target:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(goal.target_amount)}
+                          {fc(goal.target_amount)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Remaining:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(goal.progress.remaining)}
+                          {fc(goal.progress.remaining)}
                         </span>
                       </div>
                       {goal.target_date && (
@@ -379,7 +380,7 @@ function Goals({ setIsAuthenticated }) {
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-700 dark:text-blue-300">Starting Amount:</span>
                                 <span className="font-semibold text-blue-700 dark:text-blue-300">
-                                  {formatCurrency(goal.initial_amount)}
+                                  {fc(goal.initial_amount)}
                                 </span>
                               </div>
                             </div>
@@ -395,10 +396,10 @@ function Goals({ setIsAuthenticated }) {
                                   </div>
                                   <div className="text-right ml-3">
                                     <p className="font-semibold text-green-600 dark:text-green-400">
-                                      +{formatCurrency(transaction.amount)}
+                                      +{fc(transaction.amount)}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      Balance: {formatCurrency(transaction.running_balance)}
+                                      Balance: {fc(transaction.running_balance)}
                                     </p>
                                   </div>
                                 </div>
@@ -409,7 +410,7 @@ function Goals({ setIsAuthenticated }) {
                                 <div className="flex justify-between items-center font-bold text-gray-800 dark:text-white">
                                   <span>Total Contributions:</span>
                                   <span className="text-green-600 dark:text-green-400">
-                                    {formatCurrency(goalTransactions[goal.id].summary?.total_contributions || 0)}
+                                    {fc(goalTransactions[goal.id].summary?.total_contributions || 0)}
                                   </span>
                                 </div>
                               </div>

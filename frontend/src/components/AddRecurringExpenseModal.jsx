@@ -7,8 +7,12 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI, goalAPI, subcategoryAPI } from '../api'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { getCurrencySymbol } from '../utils/formatters'
 
 function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const isEditing = !!existingExpense
 
   const [name, setName] = useState(existingExpense?.name || 'Netflix')
@@ -204,7 +208,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
             {/* Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
-                Amount ($)
+                Amount ({currencySymbol})
               </label>
               <input
                 type="number"

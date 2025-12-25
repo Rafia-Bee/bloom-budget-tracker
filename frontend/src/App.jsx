@@ -21,6 +21,7 @@ import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback, authAPI } from './api'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -73,6 +74,7 @@ function App() {
   return (
     <ThemeProvider>
       <FeatureFlagProvider>
+        <CurrencyProvider>
         <OfflineIndicator />
         {apiLoading && (
           <div className="fixed inset-0 z-50">
@@ -120,6 +122,7 @@ function App() {
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
         </Routes>
       </Router>
+      </CurrencyProvider>
       </FeatureFlagProvider>
     </ThemeProvider>
   )

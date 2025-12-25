@@ -818,7 +818,7 @@ describe('WeeklyBudgetCard', () => {
       )
 
       await waitFor(() => {
-        const remainingElement = screen.getByText('€-25.00')
+        const remainingElement = screen.getByText('-€25.00')
         expect(remainingElement).toHaveClass('text-red-200')
       })
     })

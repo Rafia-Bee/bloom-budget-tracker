@@ -175,7 +175,7 @@ describe('LeftoverBudgetModal', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('$50.00')).toBeInTheDocument()
+        expect(screen.getByText('€50.00')).toBeInTheDocument()
       })
     })
 
@@ -190,7 +190,7 @@ describe('LeftoverBudgetModal', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('from $250.00 budget')).toBeInTheDocument()
+        expect(screen.getByText('from €250.00 budget')).toBeInTheDocument()
       })
     })
 
@@ -285,9 +285,9 @@ describe('LeftoverBudgetModal', () => {
       )
 
       await waitFor(() => {
-        // formatCurrency in component uses simple format without commas
-        expect(screen.getByText('Balance: $5000.00')).toBeInTheDocument()
-        expect(screen.getByText('Balance: $10000.00')).toBeInTheDocument()
+        // formatCurrency now uses Intl formatter with locale-specific separators
+        expect(screen.getByText(/Balance:.*€5,000\.00/)).toBeInTheDocument()
+        expect(screen.getByText(/Balance:.*€10,000\.00/)).toBeInTheDocument()
       })
     })
 

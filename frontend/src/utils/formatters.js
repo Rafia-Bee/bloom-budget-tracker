@@ -51,7 +51,9 @@ export const formatCurrency = (cents, currency = "EUR", options = {}) => {
     }
 
     const euros = cents / 100;
-    const locale = CURRENCY_INFO[currency]?.locale || DEFAULT_LOCALE;
+    // Always use English locale to keep numbers in Western format (0-9)
+    // Currency symbol will still be correct (৳, €, $, etc.)
+    const locale = DEFAULT_LOCALE;
 
     const formatOptions = {
         minimumFractionDigits: 2,

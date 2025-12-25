@@ -105,7 +105,7 @@ const TransactionCard = memo(function TransactionCard({
                 : 'text-gray-900 dark:text-dark-text'
             }`}
           >
-            {transaction.transactionType === 'income' ? '+' : '-'}€{formatCurrency(transaction.amount)}
+            {transaction.transactionType === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
           </p>
           {transaction.transactionType === 'expense' && (
             <p className="text-xs text-gray-500 dark:text-gray-400">{transaction.payment_method}</p>

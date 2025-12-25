@@ -8,6 +8,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI, recurringExpenseAPI } from '../api'
 import { useFeatureFlag } from '../contexts/FeatureFlagContext'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 import AddExpenseModal from '../components/AddExpenseModal'
 import AddIncomeModal from '../components/AddIncomeModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
@@ -71,6 +73,12 @@ function Dashboard({ setIsAuthenticated }) {
 
   // Feature flags for experimental features
   const { flags, toggleFlag } = useFeatureFlag()
+
+  // Currency context for multi-currency support
+  const { defaultCurrency, convertAmount } = useCurrency()
+
+  // Helper function to format currency with user's default currency
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
 
   // Filter and pagination state
   const [showFilterModal, setShowFilterModal] = useState(false)
@@ -924,10 +932,10 @@ function Dashboard({ setIsAuthenticated }) {
                 <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Debit Card</p>
                 <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
                 <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
-                  €{currentPeriodDebitSpent.toFixed(2)}
+                  {fc(currentPeriodDebitSpent * 100)}
                 </h2>
                 <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
-                  €{getDebitAvailable().toFixed(2)} <span className="text-sm text-gray-500 dark:text-dark-text-tertiary font-normal">available</span>
+                  {fc(getDebitAvailable() * 100)} <span className="text-sm text-gray-500 dark:text-dark-text-tertiary font-normal">available</span>
                 </p>
               </div>
               <div className="bg-bloom-mint rounded-full p-3">
@@ -938,11 +946,11 @@ function Dashboard({ setIsAuthenticated }) {
             </div>
             <div className="mt-4">
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
-                <span>Period income: €{currentPeriodIncome.toFixed(2)}</span>
-                <span>Total spent: €{debitBalance.toFixed(2)}</span>
+                <span>Period income: {fc(currentPeriodIncome * 100)}</span>
+                <span>Total spent: {fc(debitBalance * 100)}</span>
               </div>
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <span>All-time income: €{totalIncome.toFixed(2)}</span>
+                <span>All-time income: {fc(totalIncome * 100)}</span>
                 <span>{totalIncome > 0 ? ((debitBalance / totalIncome) * 100).toFixed(0) : 0}% of total</span>
               </div>
             </div>
@@ -956,10 +964,10 @@ function Dashboard({ setIsAuthenticated }) {
                   <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Credit Card</p>
                   <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
                   <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
-                    €{currentPeriodCreditSpent.toFixed(2)}
+                    {fc(currentPeriodCreditSpent * 100)}
                   </h2>
                   <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
-                    €{getCreditAvailable().toFixed(2)} <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">available</span>
+                    {fc(getCreditAvailable() * 100)} <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">available</span>
                   </p>
                 </div>
                 <div className="bg-bloom-pink rounded-full p-3">
@@ -970,11 +978,11 @@ function Dashboard({ setIsAuthenticated }) {
               </div>
               <div className="mt-4">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
-                  <span>Period spent: €{currentPeriodCreditSpent.toFixed(2)}</span>
-                  <span>Total debt: €{getCreditDebt().toFixed(2)}</span>
+                  <span>Period spent: {fc(currentPeriodCreditSpent * 100)}</span>
+                  <span>Total debt: {fc(getCreditDebt() * 100)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
-                  <span>Credit limit: €{creditLimit}</span>
+                  <span>Credit limit: {fc(creditLimit * 100)}</span>
                   <span>{((getCreditDebt() / creditLimit) * 100).toFixed(0)}% used</span>
                 </div>
               </div>
@@ -1243,7 +1251,7 @@ function Dashboard({ setIsAuthenticated }) {
                       <div className="text-left sm:text-right">
                         <p className={`font-bold ${transaction.transactionType === 'income' ? 'text-green-700 dark:text-dark-success' : 'text-gray-800 dark:text-dark-text'
                           }`}>
-                          {transaction.transactionType === 'income' ? '+' : ''}€{(transaction.amount / 100).toFixed(2)}
+                          {transaction.transactionType === 'income' ? '+' : ''}{fc(transaction.amount)}
                         </p>
                         {transaction.transactionType === 'expense' && (
                           <span className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${
@@ -1437,7 +1445,7 @@ function Dashboard({ setIsAuthenticated }) {
                               </p>
                             </div>
                             <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                              -€{expense.amount.toFixed(2)}
+                              -{fc(expense.amount * 100)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
@@ -1570,15 +1578,15 @@ function Dashboard({ setIsAuthenticated }) {
 
             {warningModal.type === 'debit' ? (
               <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
-                <p>You're trying to spend <strong>€{warningModal.expenseAmount.toFixed(2)}</strong> but only have <strong>€{warningModal.available.toFixed(2)}</strong> available in your debit account.</p>
-                <p className="text-red-600 dark:text-dark-danger font-semibold">This will result in a negative balance of €{(warningModal.available - warningModal.expenseAmount).toFixed(2)}.</p>
+                <p>You're trying to spend <strong>{fc(warningModal.expenseAmount * 100)}</strong> but only have <strong>{fc(warningModal.available * 100)}</strong> available in your debit account.</p>
+                <p className="text-red-600 dark:text-dark-danger font-semibold">This will result in a negative balance of {fc((warningModal.available - warningModal.expenseAmount) * 100)}.</p>
                 <p className="text-sm">Do you want to proceed anyway?</p>
               </div>
             ) : (
               <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
-                <p>You're trying to spend <strong>€{warningModal.expenseAmount.toFixed(2)}</strong> but only have <strong>€{warningModal.available.toFixed(2)}</strong> available credit.</p>
-                <p>Your credit limit is €{creditLimit.toFixed(2)} and you have €{creditAvailable.toFixed(2)} available.</p>
-                <p className="text-red-600 dark:text-dark-danger font-semibold">This will exceed your limit by €{(warningModal.expenseAmount - warningModal.available).toFixed(2)}.</p>
+                <p>You're trying to spend <strong>{fc(warningModal.expenseAmount * 100)}</strong> but only have <strong>{fc(warningModal.available * 100)}</strong> available credit.</p>
+                <p>Your credit limit is {fc(creditLimit * 100)} and you have {fc(creditAvailable * 100)} available.</p>
+                <p className="text-red-600 dark:text-dark-danger font-semibold">This will exceed your limit by {fc((warningModal.expenseAmount - warningModal.available) * 100)}.</p>
                 <p className="text-sm">Do you want to proceed anyway?</p>
               </div>
             )}
@@ -1683,7 +1691,7 @@ function Dashboard({ setIsAuthenticated }) {
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Amount</p>
               <p className="font-semibold text-gray-800 dark:text-gray-100">
-                €{(deleteConfirmation.transaction.amount / 100).toFixed(2)}
+                {fc(deleteConfirmation.transaction.amount)}
               </p>
             </div>
             <p className="text-sm text-red-600 dark:text-red-400 mb-6">
@@ -1735,7 +1743,7 @@ function Dashboard({ setIsAuthenticated }) {
                       {txn.type === 'income' ? transaction.type : transaction.name}
                     </span>
                     <span className="font-semibold text-gray-800 dark:text-dark-text">
-                      €{(transaction.amount / 100).toFixed(2)}
+                      {fc(transaction.amount)}
                     </span>
                   </div>
                 )

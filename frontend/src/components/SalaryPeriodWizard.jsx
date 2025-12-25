@@ -11,8 +11,12 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters'
 
 function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverData = null }) {
+  const { defaultCurrency } = useCurrency()
+  const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,7 +52,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   }, [editPeriod, rolloverData])
 
   const formatCurrency = (cents) => {
-    return `€${(cents / 100).toFixed(2)}`
+    return formatCurrencyUtil(cents, defaultCurrency)
   }
 
   const parseCurrency = (value) => {
@@ -200,12 +204,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Debit Balance (Current Bank Account)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">{currencySymbol}</span>
                   <input
                     type="text"
                     value={debitBalance}
                     onChange={(e) => setDebitBalance(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1500.00"
                     autoFocus
                   />
@@ -217,12 +221,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Credit Card Available (Remaining Limit)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">{currencySymbol}</span>
                   <input
                     type="text"
                     value={creditAvailable}
                     onChange={(e) => setCreditAvailable(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1000.00"
                   />
                 </div>
@@ -234,18 +238,18 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                   Credit Card Limit (Total)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">€</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-dark-text-secondary">{currencySymbol}</span>
                   <input
                     type="text"
                     value={creditLimit}
                     onChange={(e) => setCreditLimit(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                     placeholder="1500.00"
                   />
                 </div>
                 <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                   {parseCurrency(creditLimit) > parseCurrency(creditAvailable)
-                    ? `You currently owe €${((parseCurrency(creditLimit) - parseCurrency(creditAvailable)) / 100).toFixed(2)}`
+                    ? `You currently owe ${formatCurrency(parseCurrency(creditLimit) - parseCurrency(creditAvailable))}`
                     : 'No pre-existing debt'}
                 </p>
               </div>
@@ -268,7 +272,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
-                    <span>€0</span>
+                    <span>{formatCurrency(0)}</span>
                     <span className="font-semibold text-bloom-pink dark:text-dark-pink">{formatCurrency(creditAllowance)}</span>
                     <span>{formatCurrency(parseCurrency(creditAvailable))}</span>
                   </div>
@@ -330,7 +334,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         <div className="text-sm text-gray-500 dark:text-dark-text-secondary">{bill.category}</div>
                       </div>
                       <div className="relative w-32">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currencySymbol}</span>
                         <input
                           type="text"
                           value={(bill.amount / 100).toFixed(2)}

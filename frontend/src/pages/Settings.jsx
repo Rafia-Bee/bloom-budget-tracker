@@ -14,6 +14,7 @@ import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import CurrencySelector from '../components/CurrencySelector'
+import { useCurrency } from '../contexts/CurrencyContext'
 
 function Settings({ setIsAuthenticated }) {
   const [activeTab, setActiveTab] = useState('subcategories')
@@ -36,9 +37,12 @@ function Settings({ setIsAuthenticated }) {
   const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14)
   const [savingLookahead, setSavingLookahead] = useState(false)
   const [lookaheadSuccess, setLookaheadSuccess] = useState('')
-  const [defaultCurrency, setDefaultCurrency] = useState('EUR')
   const [savingCurrency, setSavingCurrency] = useState(false)
   const [currencySuccess, setCurrencySuccess] = useState('')
+
+  // Use CurrencyContext for global currency state
+  const { defaultCurrency, updateDefaultCurrency } = useCurrency()
+  const [localCurrency, setLocalCurrency] = useState(defaultCurrency)
 
   const categories = [
     'Fixed Expenses',
@@ -46,6 +50,11 @@ function Settings({ setIsAuthenticated }) {
     'Savings & Investments',
     'Debt Payments'
   ]
+
+  // Sync local currency state when context changes
+  useEffect(() => {
+    setLocalCurrency(defaultCurrency)
+  }, [defaultCurrency])
 
   useEffect(() => {
     loadSubcategories()
@@ -56,12 +65,11 @@ function Settings({ setIsAuthenticated }) {
 
   const loadPreferences = async () => {
     try {
-      const [lookaheadRes, currencyRes] = await Promise.all([
-        userAPI.getRecurringLookahead(),
-        userAPI.getDefaultCurrency()
+      const [lookaheadRes] = await Promise.all([
+        userAPI.getRecurringLookahead()
       ])
       setRecurringLookaheadDays(lookaheadRes.data.recurring_lookahead_days)
-      setDefaultCurrency(currencyRes.data.default_currency)
+      // Currency is already loaded from context
     } catch (err) {
       console.error('Failed to load preferences:', err)
     }
@@ -155,7 +163,7 @@ function Settings({ setIsAuthenticated }) {
     setCurrencySuccess('')
     setError('')
     try {
-      await userAPI.updateDefaultCurrency(defaultCurrency)
+      await updateDefaultCurrency(localCurrency)
       setCurrencySuccess('Default currency saved successfully!')
       setTimeout(() => setCurrencySuccess(''), 3000)
     } catch (err) {
@@ -390,8 +398,8 @@ function Settings({ setIsAuthenticated }) {
                     Currency:
                   </label>
                   <CurrencySelector
-                    value={defaultCurrency}
-                    onChange={setDefaultCurrency}
+                    value={localCurrency}
+                    onChange={setLocalCurrency}
                     showLabel={false}
                     className="flex-1 max-w-xs"
                   />
@@ -409,6 +417,18 @@ function Settings({ setIsAuthenticated }) {
                     <p className="text-green-700 dark:text-green-400 text-sm">{currencySuccess}</p>
                   </div>
                 )}
+
+                <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                  Rates by{' '}
+                  <a
+                    href="https://www.exchangerate-api.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-600 dark:hover:text-gray-400"
+                  >
+                    Exchange Rate API
+                  </a>
+                </p>
               </div>
             </div>
           </div>

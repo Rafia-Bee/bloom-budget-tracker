@@ -6,8 +6,12 @@
  */
 
 import { useState } from 'react'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { formatCurrency } from '../utils/formatters'
 
 function ExpenseList({ expenses, onDelete }) {
+  const { defaultCurrency } = useCurrency()
+  const fc = (cents) => formatCurrency(cents, defaultCurrency)
   const [filter, setFilter] = useState('all')
 
   const filteredExpenses = expenses.filter(expense => {
@@ -86,7 +90,7 @@ function ExpenseList({ expenses, onDelete }) {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="font-bold text-gray-800">
-                    €{(expense.amount / 100).toFixed(2)}
+                    {fc(expense.amount)}
                   </p>
                   <p className="text-sm text-gray-500">{expense.date}</p>
                 </div>
