@@ -13,7 +13,6 @@ import CreateGoalModal from '../components/CreateGoalModal'
 import EditGoalModal from '../components/EditGoalModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
-import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
 
@@ -44,7 +43,6 @@ function Goals({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
-  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
   useEffect(() => {
     loadGoals()
@@ -184,7 +182,6 @@ function Goals({ setIsAuthenticated }) {
         onExport={() => { setShowExportModal(true); setExportMode('export'); }}
         onImport={() => { setShowExportModal(true); setExportMode('import'); }}
         onBankImport={() => setShowBankImportModal(true)}
-        onShowExperimental={() => setShowExperimentalModal(true)}
       />
 
       <div className="container mx-auto px-6 py-8">
@@ -533,13 +530,6 @@ function Goals({ setIsAuthenticated }) {
           <BankImportModal
             isOpen={showBankImportModal}
             onClose={() => setShowBankImportModal(false)}
-          />
-        )}
-
-        {showExperimentalModal && (
-          <ExperimentalFeaturesModal
-            isOpen={showExperimentalModal}
-            onClose={() => setShowExperimentalModal(false)}
           />
         )}
       </div>

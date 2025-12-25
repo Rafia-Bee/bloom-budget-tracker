@@ -123,7 +123,9 @@ def generate_weekly_budget_breakdown(user_id):
         # Calculate period summary
         summary = {
             "total_budget_allocated": sum(w["base_budget"] for w in weeks_data),
-            "total_flexible_spent": sum(w["spent"]["flexible_expenses"] for w in weeks_data),
+            "total_flexible_spent": sum(
+                w["spent"]["flexible_expenses"] for w in weeks_data
+            ),
             "total_fixed_spent": sum(w["spent"]["fixed_expenses"] for w in weeks_data),
             "final_remaining": weeks_data[-1]["remaining"] if weeks_data else 0,
         }
@@ -241,10 +243,14 @@ def export_data():
                         ).all()
 
                         debit_spent = sum(
-                            e.amount for e in week_expenses if e.payment_method == "Debit card"
+                            e.amount
+                            for e in week_expenses
+                            if e.payment_method == "Debit card"
                         )
                         credit_spent = sum(
-                            e.amount for e in week_expenses if e.payment_method == "Credit card"
+                            e.amount
+                            for e in week_expenses
+                            if e.payment_method == "Credit card"
                         )
 
                         # Credit card payments to debit
@@ -322,9 +328,9 @@ def export_data():
 
         # Add Weekly Budget Breakdown if salary_periods are exported
         if "salary_periods" in export_types:
-            export_data["data"]["weekly_budget_breakdown"] = generate_weekly_budget_breakdown(
-                current_user_id
-            )
+            export_data["data"][
+                "weekly_budget_breakdown"
+            ] = generate_weekly_budget_breakdown(current_user_id)
 
         return jsonify(export_data), 200
 
@@ -399,12 +405,16 @@ def import_data():
             recurring_template_map = {}
 
             if "recurring_expenses" in data["data"]:
-                for idx, recurring_data in enumerate(data["data"]["recurring_expenses"]):
+                for idx, recurring_data in enumerate(
+                    data["data"]["recurring_expenses"]
+                ):
                     start_date = datetime.fromisoformat(
                         recurring_data["start_date"].replace("Z", "+00:00")
                     )
                     end_date = (
-                        datetime.fromisoformat(recurring_data["end_date"].replace("Z", "+00:00"))
+                        datetime.fromisoformat(
+                            recurring_data["end_date"].replace("Z", "+00:00")
+                        )
                         if recurring_data.get("end_date")
                         else None
                     )
@@ -476,7 +486,9 @@ def import_data():
                         # If start date is in the past, calculate the next occurrence after today
                         if next_due < today:
                             if recurring_data["frequency"] == "monthly":
-                                day_of_month = recurring_data.get("day_of_month", start_date.day)
+                                day_of_month = recurring_data.get(
+                                    "day_of_month", start_date.day
+                                )
                                 # Find next occurrence of this day
                                 if today.day < day_of_month:
                                     # This month
@@ -485,7 +497,9 @@ def import_data():
                                             today.year, today.month, day_of_month
                                         ).date()
                                     except ValueError:
-                                        next_due = datetime(today.year, today.month, 28).date()
+                                        next_due = datetime(
+                                            today.year, today.month, 28
+                                        ).date()
                                 else:
                                     # Next month
                                     next_month = today.month + 1
@@ -498,16 +512,22 @@ def import_data():
                                             next_year, next_month, day_of_month
                                         ).date()
                                     except ValueError:
-                                        next_due = datetime(next_year, next_month, 28).date()
+                                        next_due = datetime(
+                                            next_year, next_month, 28
+                                        ).date()
                             elif recurring_data["frequency"] == "weekly":
                                 # Calculate next weekly occurrence
                                 days_diff = (today - next_due).days
                                 weeks_passed = days_diff // 7
-                                next_due = next_due + timedelta(days=(weeks_passed + 1) * 7)
+                                next_due = next_due + timedelta(
+                                    days=(weeks_passed + 1) * 7
+                                )
                             elif recurring_data["frequency"] == "biweekly":
                                 days_diff = (today - next_due).days
                                 periods_passed = days_diff // 14
-                                next_due = next_due + timedelta(days=(periods_passed + 1) * 14)
+                                next_due = next_due + timedelta(
+                                    days=(periods_passed + 1) * 14
+                                )
                             elif recurring_data["frequency"] == "custom":
                                 days_diff = (today - next_due).days
                                 freq_value = recurring_data.get("frequency_value", 1)
@@ -623,7 +643,9 @@ def import_data():
                         db.session.add(initial_income)
 
                     # Create pre-existing credit debt expense (if any)
-                    pre_existing_debt = sp_data["credit_limit"] - sp_data["initial_credit_balance"]
+                    pre_existing_debt = (
+                        sp_data["credit_limit"] - sp_data["initial_credit_balance"]
+                    )
                     if pre_existing_debt > 0:
                         debt_date = start_date - timedelta(days=1)
                         debt_expense = Expense(
@@ -658,9 +680,7 @@ def import_data():
                     ).first()
 
                     if existing_expense:
-                        skipped_detail = (
-                            f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
-                        )
+                        skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
                         print(
                             f"[IMPORT] SKIPPED EXPENSE: '{exp_data['name']}' €{exp_data['amount']/100:.2f} on {expense_date} (already exists with ID {existing_expense.id})"
                         )
@@ -678,7 +698,9 @@ def import_data():
                             exp_data["category"],
                         )
                         if template_key in recurring_template_map:
-                            new_recurring_template_id = recurring_template_map[template_key].id
+                            new_recurring_template_id = recurring_template_map[
+                                template_key
+                            ].id
 
                     expense = Expense(
                         user_id=current_user_id,
@@ -767,7 +789,9 @@ def import_data():
 
                     target_date = None
                     if goal_data.get("target_date"):
-                        target_date = datetime.fromisoformat(goal_data["target_date"]).date()
+                        target_date = datetime.fromisoformat(
+                            goal_data["target_date"]
+                        ).date()
 
                     goal = Goal(
                         user_id=current_user_id,
@@ -810,20 +834,28 @@ def import_data():
                     f"{skipped_counts['recurring_expenses']} recurring expense(s)"
                 )
             if skipped_counts["salary_periods"] > 0:
-                skipped_details.append(f"{skipped_counts['salary_periods']} salary period(s)")
+                skipped_details.append(
+                    f"{skipped_counts['salary_periods']} salary period(s)"
+                )
             if skipped_counts["expenses"] > 0:
                 skipped_details.append(f"{skipped_counts['expenses']} expense(s)")
             if skipped_counts["income"] > 0:
                 skipped_details.append(f"{skipped_counts['income']} income(s)")
             if skipped_counts["goals"] > 0:
                 skipped_details.append(f"{skipped_counts['goals']} goal(s)")
-            message_parts.append(f"Skipped {', '.join(skipped_details)} (already exists)")
+            message_parts.append(
+                f"Skipped {', '.join(skipped_details)} (already exists)"
+            )
 
             # Add details of what was skipped
             if skipped_items["expenses"]:
-                message_parts.append(f"Skipped expenses: {', '.join(skipped_items['expenses'])}")
+                message_parts.append(
+                    f"Skipped expenses: {', '.join(skipped_items['expenses'])}"
+                )
             if skipped_items["income"]:
-                message_parts.append(f"Skipped income: {', '.join(skipped_items['income'])}")
+                message_parts.append(
+                    f"Skipped income: {', '.join(skipped_items['income'])}"
+                )
 
         return (
             jsonify(
@@ -864,15 +896,25 @@ def parse_bank_transactions(
         dict with parsed_transactions, errors, and skipped_count
     """
     # Parse the transaction text (split by newlines)
-    lines = [line.strip() for line in transactions_text.strip().split("\n") if line.strip()]
+    lines = [
+        line.strip() for line in transactions_text.strip().split("\n") if line.strip()
+    ]
 
     if len(lines) < 2:
-        raise ValueError("No transaction data found. Please paste at least one transaction.")
+        raise ValueError(
+            "No transaction data found. Please paste at least one transaction."
+        )
 
     # Skip header line
     header = lines[0].lower()
-    if "transaction date" not in header or "amount" not in header or "name" not in header:
-        raise ValueError("Invalid format. Expected columns: Transaction Date, Amount, Name")
+    if (
+        "transaction date" not in header
+        or "amount" not in header
+        or "name" not in header
+    ):
+        raise ValueError(
+            "Invalid format. Expected columns: Transaction Date, Amount, Name"
+        )
 
     transaction_lines = lines[1:]
 
@@ -943,19 +985,26 @@ def parse_bank_transactions(
                 merchant_lower = merchant_name.lower()
 
                 # Smart categorization based on merchant name patterns
-                if any(keyword in merchant_lower for keyword in ["uber", "bolt", "taxi"]):
+                if any(
+                    keyword in merchant_lower for keyword in ["uber", "bolt", "taxi"]
+                ):
                     category = "Flexible Expenses"
                     subcategory = "Transportation"
-                elif any(keyword in merchant_lower for keyword in ["wolt", "foodora", "uber eats"]):
+                elif any(
+                    keyword in merchant_lower
+                    for keyword in ["wolt", "foodora", "uber eats"]
+                ):
                     category = "Flexible Expenses"
                     subcategory = "Food"
                 elif any(
-                    keyword in merchant_lower for keyword in ["netflix", "spotify", "disney", "hbo"]
+                    keyword in merchant_lower
+                    for keyword in ["netflix", "spotify", "disney", "hbo"]
                 ):
                     category = "Fixed Expenses"
                     subcategory = "Subscriptions"
                 elif any(
-                    keyword in merchant_lower for keyword in ["paypal", "wise", "revolut", "nordea"]
+                    keyword in merchant_lower
+                    for keyword in ["paypal", "wise", "revolut", "nordea"]
                 ):
                     category = "Flexible Expenses"
                     subcategory = "Shopping"

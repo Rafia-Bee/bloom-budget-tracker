@@ -1035,13 +1035,19 @@ def seed_data():
 
         total_income = sum(i["amount"] for i in week3_incomes) / 100
         credit_expenses = (
-            sum(e["amount"] for e in week3_expenses if e["payment_method"] == "Credit card") / 100
+            sum(
+                e["amount"]
+                for e in week3_expenses
+                if e["payment_method"] == "Credit card"
+            )
+            / 100
         )
         debit_expenses = (
             sum(
                 e["amount"]
                 for e in week3_expenses
-                if e["payment_method"] == "Debit card" and e["category"] != "Debt Payments"
+                if e["payment_method"] == "Debit card"
+                and e["category"] != "Debt Payments"
             )
             / 100
         )

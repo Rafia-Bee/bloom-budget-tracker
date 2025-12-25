@@ -44,7 +44,9 @@ def migrate():
 
         # Migrate old data (if any)
         if existing_periods:
-            print("Note: Old salary periods were dropped. You'll need to create new ones.")
+            print(
+                "Note: Old salary periods were dropped. You'll need to create new ones."
+            )
 
         print("\n✅ Migration completed successfully!")
         print("\nNote: All old salary periods have been removed.")

@@ -27,7 +27,6 @@ import BankImportModal from '../components/BankImportModal'
 import FilterTransactionsModal from '../components/FilterTransactionsModal'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
-import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import DateNavigator from '../components/DateNavigator'
 
 function Dashboard({ setIsAuthenticated }) {
@@ -106,7 +105,6 @@ function Dashboard({ setIsAuthenticated }) {
   const [hasMoreExpenses, setHasMoreExpenses] = useState(false)
   const [hasMoreIncome, setHasMoreIncome] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
 
   // Date navigation state
   const [transactionDates, setTransactionDates] = useState([])
@@ -825,7 +823,6 @@ function Dashboard({ setIsAuthenticated }) {
         onExport={() => { setShowExportModal(true); setExportMode('export'); }}
         onImport={() => { setShowExportModal(true); setExportMode('import'); }}
         onBankImport={() => setShowBankImportModal(true)}
-        onShowExperimental={() => setShowExperimentalModal(true)}
       >
         <PeriodSelector
           currentPeriod={currentPeriod}
@@ -1809,13 +1806,6 @@ function Dashboard({ setIsAuthenticated }) {
             loadTransactionsAndBalances()
             setShowBankImportModal(false)
           }}
-        />
-      )}
-
-      {/* Experimental Features Modal */}
-      {showExperimentalModal && (
-        <ExperimentalFeaturesModal
-          onClose={() => setShowExperimentalModal(false)}
         />
       )}
 

@@ -35,7 +35,9 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(budget_periods_bp)
     v1_bp.register_blueprint(debts_bp)
     v1_bp.register_blueprint(recurring_expenses_bp, url_prefix="/recurring-expenses")
-    v1_bp.register_blueprint(recurring_generation_bp, url_prefix="/recurring-generation")
+    v1_bp.register_blueprint(
+        recurring_generation_bp, url_prefix="/recurring-generation"
+    )
     v1_bp.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
     v1_bp.register_blueprint(password_reset_bp, url_prefix="/auth")
     v1_bp.register_blueprint(export_import_bp)

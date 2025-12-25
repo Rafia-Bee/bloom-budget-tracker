@@ -37,7 +37,11 @@ def remove_duplicate_initial_balances():
 
         if current_user_id != 1 and not current_app.config.get("DEBUG"):
             return (
-                jsonify({"error": "Unauthorized. Use Neon SQL Editor for production cleanup."}),
+                jsonify(
+                    {
+                        "error": "Unauthorized. Use Neon SQL Editor for production cleanup."
+                    }
+                ),
                 403,
             )
 

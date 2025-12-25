@@ -129,7 +129,11 @@ def create_goal():
     except IntegrityError:
         db.session.rollback()
         return (
-            jsonify({"error": f"Subcategory '{subcategory_name}' already exists. Try again."}),
+            jsonify(
+                {
+                    "error": f"Subcategory '{subcategory_name}' already exists. Try again."
+                }
+            ),
             409,
         )
     except Exception as e:
@@ -162,7 +166,8 @@ def update_goal(id):
             while (
                 new_subcategory_name != old_subcategory_name
                 and Subcategory.query.filter(
-                    (Subcategory.user_id == current_user_id) | (Subcategory.user_id == None),
+                    (Subcategory.user_id == current_user_id)
+                    | (Subcategory.user_id == None),
                     Subcategory.category == "Savings & Investments",
                     db.func.lower(Subcategory.name) == new_subcategory_name.lower(),
                     Subcategory.is_active == True,
@@ -203,7 +208,9 @@ def update_goal(id):
 
         # Update initial amount (pre-existing savings)
         if "initial_amount" in data:
-            initial_amount = int(data["initial_amount"])  # Already in cents from frontend
+            initial_amount = int(
+                data["initial_amount"]
+            )  # Already in cents from frontend
             if initial_amount < 0:
                 return jsonify({"error": "Initial amount cannot be negative"}), 400
             # Check against the potentially updated target amount
@@ -219,7 +226,9 @@ def update_goal(id):
         if "target_date" in data:
             if data["target_date"]:
                 try:
-                    target_date = datetime.strptime(data["target_date"], "%Y-%m-%d").date()
+                    target_date = datetime.strptime(
+                        data["target_date"], "%Y-%m-%d"
+                    ).date()
                     if target_date <= date.today():
                         return (
                             jsonify({"error": "Target date must be in the future"}),
@@ -322,9 +331,7 @@ def delete_goal(id):
 
         message = "Goal deleted successfully"
         if force and contribution_count > 0:
-            message = (
-                f"Goal deleted. {contribution_count} contribution(s) moved to 'Other' subcategory"
-            )
+            message = f"Goal deleted. {contribution_count} contribution(s) moved to 'Other' subcategory"
 
         return (
             jsonify({"message": message, "contribution_count": contribution_count}),
@@ -404,7 +411,9 @@ def get_goal_transactions(id):
     ).order_by(Expense.date.desc())
 
     total_count = transactions_query.count()
-    transactions = transactions_query.offset((page - 1) * per_page).limit(per_page).all()
+    transactions = (
+        transactions_query.offset((page - 1) * per_page).limit(per_page).all()
+    )
 
     # Calculate running balance for each transaction
     # Get all transactions up to current page for running balance

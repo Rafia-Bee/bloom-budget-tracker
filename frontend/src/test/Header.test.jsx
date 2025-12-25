@@ -42,7 +42,6 @@ describe('Header', () => {
   const mockOnExport = vi.fn()
   const mockOnImport = vi.fn()
   const mockOnBankImport = vi.fn()
-  const mockOnShowExperimental = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -63,7 +62,6 @@ describe('Header', () => {
           onExport={mockOnExport}
           onImport={mockOnImport}
           onBankImport={mockOnBankImport}
-          onShowExperimental={mockOnShowExperimental}
           {...props}
         />
       </TestWrapper>

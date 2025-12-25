@@ -4,6 +4,60 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-26
+
+### Move Experimental Features Toggle to Settings Page (#114)
+
+**Context:** The experimental features toggle and "Delete All Data" were buried in the hamburger user menu. This made them hard to find and cluttered the menu with rarely-used options.
+
+**Decision:** Move all experimental feature controls to Settings page for better discoverability and cleaner menu organization.
+
+**Implementation:**
+
+1. **Settings Page → Preferences Tab**:
+
+    - Added "Experimental Features" section with warning banner
+    - Master toggle for enabling experimental features
+    - Multi-Currency sub-toggle (shown when master is enabled)
+
+2. **Settings Page → Account Tab**:
+
+    - Added "Danger Zone" section with Delete All Data functionality
+    - Export reminder tip before the delete button
+    - Full confirmation dialog with type-to-confirm safety
+
+3. **Header/User Menu**:
+
+    - Removed experimental features toggle
+    - Removed multi-currency toggle
+    - Removed Delete All Data button
+    - Removed `onShowExperimental` prop
+
+4. **Cleanup**:
+    - Removed `ExperimentalFeaturesModal` usage from Dashboard, Goals, Debts, RecurringExpenses
+    - Updated Header tests
+    - Updated FEATURE_FLAGS.md documentation
+
+**Files Changed:**
+
+-   `frontend/src/pages/Settings.jsx` - Added experimental toggles and danger zone
+-   `frontend/src/components/Header.jsx` - Removed feature flag controls
+-   `frontend/src/pages/Dashboard.jsx` - Removed modal import and state
+-   `frontend/src/pages/Goals.jsx` - Removed modal import and state
+-   `frontend/src/pages/Debts.jsx` - Removed modal import and state
+-   `frontend/src/pages/RecurringExpenses.jsx` - Removed modal import and state
+-   `frontend/src/test/Header.test.jsx` - Removed mock prop
+-   `docs/FEATURE_FLAGS.md` - Updated access instructions
+
+**Impact:**
+
+-   Cleaner hamburger menu (4 fewer items)
+-   Settings page is the single location for all app preferences
+-   Experimental features more discoverable via Settings → Preferences
+-   Delete All Data in a proper "Danger Zone" section with export reminder
+
+---
+
 ## 2025-12-25
 
 ### Multi-Currency Feature Flag Implementation (#113)

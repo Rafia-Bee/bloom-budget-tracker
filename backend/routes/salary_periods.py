@@ -97,9 +97,9 @@ def get_current_salary_period():
 
         if periods_to_activate:
             # Deactivate old active periods
-            SalaryPeriod.query.filter_by(user_id=current_user_id, is_active=True).update(
-                {"is_active": False}
-            )
+            SalaryPeriod.query.filter_by(
+                user_id=current_user_id, is_active=True
+            ).update({"is_active": False})
             # Activate the period that contains today (should only be one due to overlap check)
             for period in periods_to_activate:
                 period.is_active = True
@@ -238,8 +238,12 @@ def get_current_salary_period():
                         "initial_debit_balance": salary_period.initial_debit_balance,
                         "initial_credit_balance": salary_period.initial_credit_balance,
                         # Add real-time balances (in cents for consistency with other amounts)
-                        "display_debit_balance": int(real_balances["debit_balance"] * 100),
-                        "display_credit_available": int(real_balances["credit_available"] * 100),
+                        "display_debit_balance": int(
+                            real_balances["debit_balance"] * 100
+                        ),
+                        "display_credit_available": int(
+                            real_balances["credit_available"] * 100
+                        ),
                         # Add period-level spending by payment method (in cents)
                         "period_debit_spent": period_debit_spent,
                         "period_credit_spent": period_credit_spent,
@@ -250,14 +254,22 @@ def get_current_salary_period():
                     },
                     "current_week": {
                         "id": current_week.id if current_week else None,
-                        "week_number": current_week.week_number if current_week else None,
-                        "budget_amount": current_week.budget_amount if current_week else None,
+                        "week_number": current_week.week_number
+                        if current_week
+                        else None,
+                        "budget_amount": current_week.budget_amount
+                        if current_week
+                        else None,
                         "spent": week_spent,
                         "remaining": (current_week.budget_amount - week_spent)
                         if current_week
                         else 0,
-                        "start_date": current_week.start_date.isoformat() if current_week else None,
-                        "end_date": current_week.end_date.isoformat() if current_week else None,
+                        "start_date": current_week.start_date.isoformat()
+                        if current_week
+                        else None,
+                        "end_date": current_week.end_date.isoformat()
+                        if current_week
+                        else None,
                     },
                 }
             ),
@@ -467,9 +479,9 @@ def create_salary_period():
             is_active = False
         else:
             # Creating a current/past period - deactivate old active periods
-            SalaryPeriod.query.filter_by(user_id=current_user_id, is_active=True).update(
-                {"is_active": False}
-            )
+            SalaryPeriod.query.filter_by(
+                user_id=current_user_id, is_active=True
+            ).update({"is_active": False})
             is_active = True
 
         # Wrap all operations in a transaction
@@ -583,7 +595,9 @@ def get_week_leftover(id, week_number):
         today = datetime.now().date()
 
         # Get salary period
-        salary_period = SalaryPeriod.query.filter_by(id=id, user_id=current_user_id).first()
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
 
         if not salary_period:
             return jsonify({"error": "Salary period not found"}), 404
@@ -662,10 +676,14 @@ def get_week_leftover(id, week_number):
         # Get user's active debts for allocation suggestions
         from backend.models.database import Debt
 
-        active_debts = Debt.query.filter_by(user_id=current_user_id, archived=False).all()
+        active_debts = Debt.query.filter_by(
+            user_id=current_user_id, archived=False
+        ).all()
 
         # Get user's active goals for allocation suggestions
-        active_goals = Goal.query.filter_by(user_id=current_user_id, is_active=True).all()
+        active_goals = Goal.query.filter_by(
+            user_id=current_user_id, is_active=True
+        ).all()
 
         return (
             jsonify(
@@ -717,7 +735,9 @@ def update_salary_period_full(id):
     try:
         current_user_id = int(get_jwt_identity())
 
-        salary_period = SalaryPeriod.query.filter_by(id=id, user_id=current_user_id).first()
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
 
         if not salary_period:
             return jsonify({"error": "Salary period not found"}), 404
@@ -935,7 +955,9 @@ def update_salary_period_partial(id):
     try:
         current_user_id = int(get_jwt_identity())
 
-        salary_period = SalaryPeriod.query.filter_by(id=id, user_id=current_user_id).first()
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
 
         if not salary_period:
             return jsonify({"error": "Salary period not found"}), 404
@@ -960,7 +982,9 @@ def delete_salary_period(id):
     try:
         current_user_id = int(get_jwt_identity())
 
-        salary_period = SalaryPeriod.query.filter_by(id=id, user_id=current_user_id).first()
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
 
         if not salary_period:
             return jsonify({"error": "Salary period not found"}), 404

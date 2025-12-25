@@ -181,7 +181,9 @@ class TestDebtArchiving:
         assert debt_id not in debt_ids
 
         # Should appear in archived list
-        archived_response = client.get("/api/v1/debts?archived=true", headers=auth_headers)
+        archived_response = client.get(
+            "/api/v1/debts?archived=true", headers=auth_headers
+        )
         archived_ids = [d["id"] for d in archived_response.json]
         assert debt_id in archived_ids
 

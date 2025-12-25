@@ -61,7 +61,9 @@ def migrate():
                 print("✓ salary_periods table already exists")
 
             # Check and add columns to budget_periods
-            budget_period_columns = [col["name"] for col in inspector.get_columns("budget_periods")]
+            budget_period_columns = [
+                col["name"] for col in inspector.get_columns("budget_periods")
+            ]
 
             if "salary_period_id" not in budget_period_columns:
                 print("Adding salary_period_id to budget_periods...")
@@ -127,7 +129,9 @@ def migrate():
                 print("✓ is_fixed_bill column already exists")
 
             # Check and add column to recurring_expenses
-            recurring_columns = [col["name"] for col in inspector.get_columns("recurring_expenses")]
+            recurring_columns = [
+                col["name"] for col in inspector.get_columns("recurring_expenses")
+            ]
 
             if "is_fixed_bill" not in recurring_columns:
                 print("Adding is_fixed_bill to recurring_expenses...")

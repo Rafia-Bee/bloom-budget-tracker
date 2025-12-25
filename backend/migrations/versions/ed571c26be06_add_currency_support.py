@@ -54,13 +54,17 @@ def upgrade():
 
     with op.batch_alter_table("expenses", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("currency", sa.String(length=3), nullable=False, server_default="EUR")
+            sa.Column(
+                "currency", sa.String(length=3), nullable=False, server_default="EUR"
+            )
         )
         batch_op.add_column(sa.Column("original_amount", sa.Integer(), nullable=True))
 
     with op.batch_alter_table("income", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("currency", sa.String(length=3), nullable=False, server_default="EUR")
+            sa.Column(
+                "currency", sa.String(length=3), nullable=False, server_default="EUR"
+            )
         )
         batch_op.add_column(sa.Column("original_amount", sa.Integer(), nullable=True))
 

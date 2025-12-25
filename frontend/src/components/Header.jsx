@@ -10,20 +10,17 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { logError } from '../utils/logger';
 import ThemeToggle from './ThemeToggle';
 import { authAPI } from '../api';
-import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Header({
   setIsAuthenticated,
   onExport,
   onImport,
   onBankImport,
-  onShowExperimental,
   children,
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [expandedSubmenu, setExpandedSubmenu] = useState(null); // 'import-export' | null
-  const { flags, toggleFlag } = useFeatureFlag();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -236,78 +233,6 @@ function Header({
             </button>
           </SubmenuButton>
 
-          {/* Experimental Features Toggle */}
-          {onShowExperimental && (
-            <>
-              <div className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-dark-elevated transition">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-yellow-500 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">Experimental Features</span>
-                  </div>
-                  <button
-                    onClick={() => toggleFlag('experimentalFeaturesEnabled')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      flags.experimentalFeaturesEnabled
-                        ? 'bg-bloom-pink dark:bg-dark-pink'
-                        : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        flags.experimentalFeaturesEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* Delete All Data - only show when experimental is ON */}
-              {flags.experimentalFeaturesEnabled && (
-                <>
-                  {/* Multi-Currency Toggle */}
-                  <div className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-dark-elevated transition ml-4 border-l-2 border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-purple-500 dark:text-purple-400">💱</span>
-                        <span className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">Multi-Currency</span>
-                      </div>
-                      <button
-                        onClick={() => toggleFlag('multiCurrencyEnabled')}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          flags.multiCurrencyEnabled
-                            ? 'bg-purple-500 dark:bg-purple-600'
-                            : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            flags.multiCurrencyEnabled ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      onShowExperimental();
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition flex items-center gap-2 ml-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete All Data
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
           {/* Settings */}
           <button
             onClick={() => {
@@ -428,22 +353,6 @@ function Header({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                     Import Bank Transactions
                 </button>
-                {onShowExperimental && (
-                    <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowMobileMenu(false);
-                          if (onShowExperimental) onShowExperimental();
-                        }}
-                        className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
-                    >
-                        <svg className="w-5 h-5 text-yellow-500 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        Experimental
-                    </button>
-                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();

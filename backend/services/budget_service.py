@@ -145,7 +145,9 @@ def calculate_carryover(remaining: int, is_week_past: bool) -> int:
     return 0
 
 
-def calculate_weeks_with_carryover(weeks: List[WeekData], today: date) -> List[WeekBudget]:
+def calculate_weeks_with_carryover(
+    weeks: List[WeekData], today: date
+) -> List[WeekBudget]:
     """
     Calculate all week budgets with cumulative carryover applied.
 
@@ -179,7 +181,9 @@ def calculate_weeks_with_carryover(weeks: List[WeekData], today: date) -> List[W
     cumulative_carryover = 0
 
     for week in weeks:
-        adjusted_budget = calculate_adjusted_budget(week.budget_amount, cumulative_carryover)
+        adjusted_budget = calculate_adjusted_budget(
+            week.budget_amount, cumulative_carryover
+        )
         remaining = calculate_remaining(adjusted_budget, week.spent)
         is_past = week.end_date < today
 

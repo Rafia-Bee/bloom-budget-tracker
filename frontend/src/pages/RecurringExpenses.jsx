@@ -11,7 +11,6 @@ import { logError } from '../utils/logger'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
-import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import CatLoading from '../components/CatLoading'
 import Header from '../components/Header'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -28,7 +27,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
-  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
   const [view, setView] = useState('active') // 'active' or 'upcoming'
   const [scheduledExpenses, setScheduledExpenses] = useState([])
   const [selectedScheduled, setSelectedScheduled] = useState([])
@@ -172,7 +170,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
         onExport={handleExport}
         onImport={handleImport}
         onBankImport={handleBankImport}
-        onShowExperimental={() => setShowExperimentalModal(true)}
       />
 
       {/* Main Content */}
@@ -628,13 +625,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
             setShowBankImportModal(false);
             loadRecurringExpenses();
           }}
-        />
-      )}
-
-      {/* Experimental Features Modal */}
-      {showExperimentalModal && (
-        <ExperimentalFeaturesModal
-          onClose={() => setShowExperimentalModal(false)}
         />
       )}
     </div>

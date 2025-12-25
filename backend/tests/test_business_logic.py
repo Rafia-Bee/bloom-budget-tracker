@@ -57,7 +57,9 @@ class TestCarryoverLogic:
     def test_carryover_with_overspend(self, client, auth_headers, salary_period):
         """Week with overspending should reduce next week's budget"""
         # Get weekly budget amount and week dates
-        period_response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
         assert period_response.status_code == 200
         weekly_budget = period_response.json["salary_period"]["weekly_budget"]
         weeks = period_response.json["salary_period"]["weeks"]
@@ -82,7 +84,11 @@ class TestCarryoverLogic:
 
         response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
         week1 = next(
-            (w for w in response.json["salary_period"]["weeks"] if w["week_number"] == 1),
+            (
+                w
+                for w in response.json["salary_period"]["weeks"]
+                if w["week_number"] == 1
+            ),
             None,
         )
 
@@ -127,7 +133,9 @@ class TestRecurringExpenseGeneration:
         )
 
         # Check if recurring expenses endpoint works
-        recurring_response = client.get("/api/v1/recurring-expenses", headers=auth_headers)
+        recurring_response = client.get(
+            "/api/v1/recurring-expenses", headers=auth_headers
+        )
 
         # Verify endpoint exists and returns data
         assert recurring_response.status_code in [200, 201]
@@ -180,10 +188,14 @@ class TestDebtAutoArchiving:
 class TestExpenseDateAssignment:
     """Test expense assignment to correct budget period based on date"""
 
-    def test_future_expense_assigned_to_future_week(self, client, auth_headers, salary_period):
+    def test_future_expense_assigned_to_future_week(
+        self, client, auth_headers, salary_period
+    ):
         """Expense with future date should be assigned to future week"""
         # Get salary period weeks to find Week 3 dates
-        period_response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
         assert period_response.status_code == 200
         weeks = period_response.json["salary_period"]["weeks"]
         week3 = next((w for w in weeks if w["week_number"] == 3), None)
@@ -207,13 +219,17 @@ class TestExpenseDateAssignment:
         expense_id = response.json["expense"]["id"]
 
         # Get expense details
-        expense_response = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        expense_response = client.get(
+            f"/api/v1/expenses/{expense_id}", headers=auth_headers
+        )
         assert expense_response.status_code == 200
         budget_period_id = expense_response.json.get("budget_period_id")
 
         if budget_period_id:
             # Find which week this expense belongs to
-            assigned_week = next((w for w in weeks if w["id"] == budget_period_id), None)
+            assigned_week = next(
+                (w for w in weeks if w["id"] == budget_period_id), None
+            )
 
             # Should be assigned to Week 3
             assert assigned_week is not None
@@ -222,10 +238,14 @@ class TestExpenseDateAssignment:
             # If no budget_period_id, date assignment may not be implemented
             pass
 
-    def test_past_expense_assigned_to_past_week(self, client, auth_headers, salary_period):
+    def test_past_expense_assigned_to_past_week(
+        self, client, auth_headers, salary_period
+    ):
         """Expense with past date should be assigned to past week"""
         # Get salary period weeks to find Week 1 dates
-        period_response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
         assert period_response.status_code == 200
         weeks = period_response.json["salary_period"]["weeks"]
         week1 = next((w for w in weeks if w["week_number"] == 1), None)
@@ -253,17 +273,23 @@ class TestExpenseDateAssignment:
         expense_id = response.json["expense"]["id"]
 
         # Get expense details
-        expense_response = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        expense_response = client.get(
+            f"/api/v1/expenses/{expense_id}", headers=auth_headers
+        )
         assert expense_response.status_code == 200
         budget_period_id = expense_response.json.get("budget_period_id")
 
         # Get salary period weeks
-        period_response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
         weeks = period_response.json["salary_period"]["weeks"]
 
         if budget_period_id:
             # Find which week this expense belongs to
-            assigned_week = next((w for w in weeks if w["id"] == budget_period_id), None)
+            assigned_week = next(
+                (w for w in weeks if w["id"] == budget_period_id), None
+            )
 
             # Should be assigned to Week 1
             assert assigned_week is not None
@@ -294,7 +320,9 @@ class TestExpenseDateAssignment:
         expense_id = response.json["expense"]["id"]
 
         # Get expense details
-        expense_response = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        expense_response = client.get(
+            f"/api/v1/expenses/{expense_id}", headers=auth_headers
+        )
 
         # Should have no budget_period_id
         assert expense_response.status_code == 200

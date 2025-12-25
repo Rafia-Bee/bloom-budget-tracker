@@ -60,4 +60,6 @@ def downgrade():
     op.execute("DROP INDEX IF EXISTS uq_income_initial_balance_per_user")
 
     # Remove subcategory constraint
-    op.drop_constraint("uq_subcategory_user_category_name", "subcategories", type_="unique")
+    op.drop_constraint(
+        "uq_subcategory_user_category_name", "subcategories", type_="unique"
+    )

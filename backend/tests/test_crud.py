@@ -30,7 +30,9 @@ class TestExpenseCRUD:
         assert response.json["expense"]["name"] == "Groceries"
         assert response.json["expense"]["amount"] == 5000
 
-    def test_create_expense_auto_assigns_period(self, client, auth_headers, salary_period):
+    def test_create_expense_auto_assigns_period(
+        self, client, auth_headers, salary_period
+    ):
         """Should auto-assign budget period based on expense date"""
         # Expense in first week (Nov 20-26)
         response = client.post(
@@ -50,7 +52,9 @@ class TestExpenseCRUD:
 
         # Verify it's assigned to correct week
         expense_id = response.json["expense"]["id"]
-        expense_response = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        expense_response = client.get(
+            f"/api/v1/expenses/{expense_id}", headers=auth_headers
+        )
 
         # Should have budget_period_id set
         assert expense_response.status_code == 200
@@ -149,7 +153,9 @@ class TestExpenseCRUD:
         assert response.status_code == 200
 
         # Verify deleted
-        get_response = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        get_response = client.get(
+            f"/api/v1/expenses/{expense_id}", headers=auth_headers
+        )
         assert get_response.status_code == 404
 
 
@@ -215,7 +221,8 @@ class TestSalaryPeriodCRUD:
         assert response.status_code == 201
         assert "message" in response.json
         assert (
-            response.json["message"] == "Salary period created successfully with 4 weekly budgets"
+            response.json["message"]
+            == "Salary period created successfully with 4 weekly budgets"
         )
         assert "id" in response.json
 
@@ -232,13 +239,17 @@ class TestSalaryPeriodCRUD:
         period_id = salary_period  # salary_period fixture now returns just the ID
 
         # Salary period has Initial Balance income, so deletion should be prevented
-        response = client.delete(f"/api/v1/salary-periods/{period_id}", headers=auth_headers)
+        response = client.delete(
+            f"/api/v1/salary-periods/{period_id}", headers=auth_headers
+        )
 
         assert response.status_code == 400
         assert "Cannot delete" in response.json["error"]
 
         # Verify period still exists
-        get_response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        get_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
         assert get_response.status_code == 200
 
 
@@ -247,7 +258,9 @@ class TestDatesWithTransactions:
 
     def test_get_dates_with_no_expenses(self, client, auth_headers):
         """Should return empty array when no expenses exist"""
-        response = client.get("/api/v1/expenses/dates-with-transactions", headers=auth_headers)
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
 
         assert response.status_code == 200
         assert "dates" in response.json
@@ -293,7 +306,9 @@ class TestDatesWithTransactions:
             headers=auth_headers,
         )
 
-        response = client.get("/api/v1/expenses/dates-with-transactions", headers=auth_headers)
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
 
         assert response.status_code == 200
         dates = response.json["dates"]
@@ -316,7 +331,9 @@ class TestDatesWithTransactions:
             headers=auth_headers,
         )
 
-        response = client.get("/api/v1/expenses/dates-with-transactions", headers=auth_headers)
+        response = client.get(
+            "/api/v1/expenses/dates-with-transactions", headers=auth_headers
+        )
 
         assert response.status_code == 200
         assert "2025-11-25" in response.json["dates"]

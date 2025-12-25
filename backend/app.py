@@ -74,7 +74,9 @@ def create_app(config_name="development"):
 
     # Configure JWT for httpOnly cookies (#80)
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-    app.config["JWT_COOKIE_SECURE"] = not app.config.get("DEBUG", False)  # HTTPS only in production
+    app.config["JWT_COOKIE_SECURE"] = not app.config.get(
+        "DEBUG", False
+    )  # HTTPS only in production
     app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
     app.config["JWT_REFRESH_COOKIE_PATH"] = "/auth/refresh"
     # Disable for now (can enable later)
@@ -135,7 +137,9 @@ def create_app(config_name="development"):
         # Frontend (Cloudflare Pages) should set its own CSP if needed
 
         if config_name == "production":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers[
+                "Strict-Transport-Security"
+            ] = "max-age=31536000; includeSubDomains"
         return response
 
     @app.route("/")

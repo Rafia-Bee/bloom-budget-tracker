@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { subcategoryAPI, userAPI } from '../api'
 import { logError } from '../utils/logger'
 import Header from '../components/Header'
@@ -13,11 +14,12 @@ import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
 import EditSubcategoryModal from '../components/EditSubcategoryModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
-import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import CurrencySelector from '../components/CurrencySelector'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 
 function Settings({ setIsAuthenticated }) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('subcategories')
   const [subcategoriesData, setSubcategoriesData] = useState({})
   const [loading, setLoading] = useState(false)
@@ -32,7 +34,15 @@ function Settings({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
-  const [showExperimentalModal, setShowExperimentalModal] = useState(false)
+
+  // Danger Zone state
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false)
+
+  // Feature flags
+  const { flags, toggleFlag } = useFeatureFlag()
 
   // Preferences state
   const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14)
@@ -173,6 +183,33 @@ function Settings({ setIsAuthenticated }) {
       setSavingCurrency(false)
     }
   }
+
+  const handleDeleteAllData = async () => {
+    if (deleteConfirmText !== 'Delete everything') {
+      setDeleteError('You must type exactly: Delete everything')
+      return
+    }
+
+    setIsDeleting(true)
+    setDeleteError('')
+
+    try {
+      const response = await userAPI.deleteAllData(deleteConfirmText)
+
+      if (response.data.success) {
+        alert(`Successfully deleted ${response.data.deleted_records.total} records`)
+        setShowDeleteConfirmDialog(false)
+        setDeleteConfirmText('')
+        navigate('/dashboard')
+        window.location.reload()
+      }
+    } catch (error) {
+      setDeleteError(error.response?.data?.error || 'Failed to delete data')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const openEditModal = (subcategory) => {
     setEditingSubcategory(subcategory)
     setShowEditModal(true)
@@ -196,7 +233,6 @@ function Settings({ setIsAuthenticated }) {
         onExport={() => { setShowExportModal(true); setExportMode('export'); }}
         onImport={() => { setShowExportModal(true); setExportMode('import'); }}
         onBankImport={() => setShowBankImportModal(true)}
-        onShowExperimental={() => setShowExperimentalModal(true)}
       />
 
       <div className="container mx-auto px-6 py-8">
@@ -443,22 +479,244 @@ function Settings({ setIsAuthenticated }) {
                   </p>
                 </div>
               )}
+
+              {/* Experimental Features Section */}
+              <div className="pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Experimental Features
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Enable features that are under active development. These may be unstable or change without notice.
+                </p>
+
+                {/* Warning Banner */}
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex gap-3">
+                    <span className="text-xl">⚠️</span>
+                    <div>
+                      <p className="text-sm text-amber-800 dark:text-amber-300">
+                        Experimental features may have bugs, change without notice, or affect your data in unexpected ways. Use at your own risk!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Master Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">Enable Experimental Features</span>
+                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">
+                          BETA
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Turn on to access all experimental features below
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleFlag('experimentalFeaturesEnabled')}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        flags.experimentalFeaturesEnabled
+                          ? 'bg-bloom-pink dark:bg-dark-pink'
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          flags.experimentalFeaturesEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Multi-Currency Toggle - only shown when experimental is enabled */}
+                  {flags.experimentalFeaturesEnabled && (
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-purple-500">💱</span>
+                          <span className="font-medium text-gray-900 dark:text-white">Multi-Currency Support</span>
+                          <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded">
+                            NEW
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          Enable currency selection for expenses and income
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => toggleFlag('multiCurrencyEnabled')}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          flags.multiCurrencyEnabled
+                            ? 'bg-purple-500 dark:bg-purple-600'
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            flags.multiCurrencyEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Account Tab */}
         {activeTab === 'account' && (
-          <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account</h2>
-            <div className="space-y-6">
-              <div className="text-gray-600 dark:text-gray-300">
-                <p>Account settings coming soon...</p>
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account</h2>
+              <div className="space-y-6">
+                <div className="text-gray-600 dark:text-gray-300">
+                  <p>Account settings coming soon...</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="border-2 border-red-300 dark:border-red-800 rounded-2xl p-6 bg-red-50 dark:bg-red-950/20">
+              <div className="flex items-start gap-3 mb-4">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="font-bold text-red-900 dark:text-red-400 text-xl">⚠️ Danger Zone</h3>
+                  <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+                    Irreversible actions that will permanently affect your data
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-dark-elevated rounded-lg p-4 border border-red-200 dark:border-red-800">
+                {/* Export reminder */}
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-500 text-lg flex-shrink-0">💡</span>
+                    <p className="text-amber-800 dark:text-amber-300 text-sm">
+                      <strong>Tip:</strong> Before deleting, export your data using the <strong>Export Financial Data</strong> option in the user menu (top-right corner).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Delete All Financial Data</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Permanently delete all expenses, income, periods, debts, and recurring expenses. Your account will remain.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteConfirmDialog(true)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete All Data
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Delete All Data Confirmation Modal */}
+      {showDeleteConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <div>
+                <h3 className="font-bold text-red-900 dark:text-red-400 text-lg">Delete All Financial Data</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800 mb-4">
+              <p className="text-sm text-red-900 dark:text-red-300 font-semibold mb-2">
+                This will permanently delete:
+              </p>
+              <ul className="text-xs text-red-800 dark:text-red-400 space-y-1 ml-4 list-disc">
+                <li>All expenses</li>
+                <li>All income entries</li>
+                <li>All salary periods & weekly budgets</li>
+                <li>All debts</li>
+                <li>All recurring expenses</li>
+                <li>All goals</li>
+              </ul>
+              <p className="text-xs text-red-900 dark:text-red-300 font-bold mt-3">
+                ⚠️ Your login will remain but all financial data will be gone forever!
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Type <span className="font-mono bg-red-100 dark:bg-red-900/50 px-1.5 py-0.5 rounded">Delete everything</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => {
+                  setDeleteConfirmText(e.target.value)
+                  setDeleteError('')
+                }}
+                disabled={isDeleting}
+                placeholder="Delete everything"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-dark-surface text-gray-900 dark:text-white disabled:opacity-50"
+              />
+              {deleteError && (
+                <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                  {deleteError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmDialog(false)
+                  setDeleteConfirmText('')
+                  setDeleteError('')
+                }}
+                disabled={isDeleting}
+                className="flex-1 bg-gray-200 dark:bg-dark-surface hover:bg-gray-300 dark:hover:bg-dark-border text-gray-900 dark:text-white py-2.5 rounded-lg transition-colors font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAllData}
+                disabled={isDeleting || deleteConfirmText !== 'Delete everything'}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  'Confirm Delete All'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
@@ -552,13 +810,6 @@ function Settings({ setIsAuthenticated }) {
         <BankImportModal
           isOpen={showBankImportModal}
           onClose={() => setShowBankImportModal(false)}
-        />
-      )}
-
-      {showExperimentalModal && (
-        <ExperimentalFeaturesModal
-          isOpen={showExperimentalModal}
-          onClose={() => setShowExperimentalModal(false)}
         />
       )}
     </div>

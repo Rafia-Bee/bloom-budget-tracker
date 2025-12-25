@@ -76,7 +76,9 @@ def create_subcategory():
     if category not in ALLOWED_CATEGORIES:
         return (
             jsonify(
-                {"error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"}
+                {
+                    "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
+                }
             ),
             400,
         )
@@ -154,7 +156,9 @@ def update_subcategory(id):
         if existing:
             return (
                 jsonify(
-                    {"error": f"Subcategory '{new_name}' already exists in {subcategory.category}"}
+                    {
+                        "error": f"Subcategory '{new_name}' already exists in {subcategory.category}"
+                    }
                 ),
                 409,
             )
