@@ -108,7 +108,7 @@ def test_get_rates_with_auth(client, auth_headers):
 def test_cache_rate_concurrent_access(app):
     """
     Test that concurrent rate caching doesn't cause duplicate key violations.
-    
+
     This test simulates the race condition that occurs when multiple Gunicorn
     workers try to cache the same exchange rate simultaneously.
     """
@@ -126,7 +126,7 @@ def test_cache_rate_concurrent_access(app):
         db.session.commit()
 
         test_date = date(2099, 12, 25)  # Future date to avoid conflicts
-        
+
         def cache_same_rate(worker_id):
             """Simulate multiple workers caching the same rate"""
             with app.app_context():

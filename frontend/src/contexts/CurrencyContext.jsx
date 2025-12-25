@@ -3,6 +3,7 @@
  *
  * Provides the user's default currency and exchange rates to all components.
  * Components can use this to format amounts in the user's preferred currency.
+ * Only fetches user settings when authenticated to prevent 401 spam.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
@@ -11,16 +12,22 @@ import { logError, logWarn } from '../utils/logger'
 
 const CurrencyContext = createContext()
 
-export function CurrencyProvider({ children }) {
+export function CurrencyProvider({ children, isAuthenticated = false }) {
   const [defaultCurrency, setDefaultCurrency] = useState('EUR')
   const [exchangeRates, setExchangeRates] = useState({})
   const [loading, setLoading] = useState(true)
   const [ratesLoading, setRatesLoading] = useState(false)
 
-  // Load user's default currency on mount
+  // Load user's default currency only when authenticated
   useEffect(() => {
-    loadDefaultCurrency()
-  }, [])
+    if (isAuthenticated) {
+      loadDefaultCurrency()
+    } else {
+      // Use EUR default for unauthenticated users
+      setDefaultCurrency('EUR')
+      setLoading(false)
+    }
+  }, [isAuthenticated])
 
   // Load exchange rates when default currency changes
   useEffect(() => {

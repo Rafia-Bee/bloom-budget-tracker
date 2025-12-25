@@ -74,7 +74,7 @@ function App() {
   return (
     <ThemeProvider>
       <FeatureFlagProvider>
-        <CurrencyProvider>
+        <CurrencyProvider isAuthenticated={isAuthenticated}>
         <OfflineIndicator />
         {apiLoading && (
           <div className="fixed inset-0 z-50">
