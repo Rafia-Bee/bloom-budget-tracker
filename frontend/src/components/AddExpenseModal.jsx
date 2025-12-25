@@ -22,7 +22,7 @@ function AddExpenseModal({ onClose, onAdd }) {
   const [paymentMethod, setPaymentMethod] = useState('Debit card')
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState('monthly')
-  const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [dayOfMonth, setDayOfMonth] = useState(new Date().getDate())
   const [dayOfWeek, setDayOfWeek] = useState(0)
   const [frequencyValue, setFrequencyValue] = useState(30)
   const [loading, setLoading] = useState(false)

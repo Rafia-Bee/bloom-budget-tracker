@@ -23,7 +23,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
   const [paymentMethod, setPaymentMethod] = useState(existingExpense?.payment_method || 'Credit card')
   const [frequency, setFrequency] = useState(existingExpense?.frequency || 'monthly')
   const [frequencyValue, setFrequencyValue] = useState(existingExpense?.frequency_value || 30)
-  const [dayOfMonth, setDayOfMonth] = useState(existingExpense?.day_of_month || 1)
+  const [dayOfMonth, setDayOfMonth] = useState(existingExpense?.day_of_month || new Date().getDate())
   const [dayOfWeek, setDayOfWeek] = useState(existingExpense?.day_of_week || 0)
   const [startDate, setStartDate] = useState(
     existingExpense?.start_date || new Date().toISOString().split('T')[0]
