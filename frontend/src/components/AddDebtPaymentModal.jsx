@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI } from '../api'
+import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol } from '../utils/formatters'
 
@@ -43,7 +44,7 @@ function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
         setAmount((firstDebt.monthly_payment / 100).toFixed(2))
       }
     } catch (error) {
-      console.error('Failed to load debts:', error)
+      logError('loadDebts', error)
       setError('Failed to load debts')
     }
   }

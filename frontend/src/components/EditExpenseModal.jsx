@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI, subcategoryAPI } from '../api'
+import { logError } from '../utils/logger'
 import PropTypes from 'prop-types';
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol } from '../utils/formatters'
@@ -35,7 +36,7 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
       const response = await debtAPI.getAll()
       setDebts(response.data)
     } catch (error) {
-      console.error('Failed to load debts:', error)
+      logError('loadDebts', error)
     }
   }
 
@@ -44,7 +45,7 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
       const response = await subcategoryAPI.getAll()
       setSubcategoriesData(response.data.subcategories || {})
     } catch (error) {
-      console.error('Failed to load subcategories:', error)
+      logError('loadSubcategories', error)
       setSubcategoriesData({})
     }
   }

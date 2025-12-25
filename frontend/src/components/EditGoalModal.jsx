@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol, formatCurrency } from '../utils/formatters'
 
@@ -113,7 +114,7 @@ function EditGoalModal({ goal, onClose, onUpdate }) {
 
       await onUpdate(goalData)
     } catch (error) {
-      console.error('Error updating goal:', error)
+      logError('updateGoal', error)
     } finally {
       setIsSubmitting(false)
     }

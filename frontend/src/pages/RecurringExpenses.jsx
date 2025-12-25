@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { recurringExpenseAPI } from '../api'
+import { logError } from '../utils/logger'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
@@ -73,7 +74,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
       const response = await recurringExpenseAPI.getAll()
       setRecurringExpenses(response.data)
     } catch (error) {
-      console.error('Failed to load recurring expenses:', error)
+      logError('loadRecurringExpenses', error)
     } finally {
       setLoading(false)
     }
@@ -84,7 +85,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
       const response = await recurringExpenseAPI.previewUpcoming()
       setScheduledExpenses(response.data.upcoming || [])
     } catch (error) {
-      console.error('Failed to load scheduled expenses:', error)
+      logError('loadScheduledExpenses', error)
     }
   }
 
@@ -105,7 +106,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
       await recurringExpenseAPI.toggleActive(id)
       await loadRecurringExpenses()
     } catch (error) {
-      console.error('Failed to toggle recurring expense:', error)
+      logError('toggleRecurringExpense', error)
     }
   }
 
@@ -114,7 +115,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
       await recurringExpenseAPI.toggleFixedBill(id, !currentStatus)
       await loadRecurringExpenses()
     } catch (error) {
-      console.error('Failed to toggle fixed bill status:', error)
+      logError('toggleFixedBillStatus', error)
     }
   }
 
@@ -130,7 +131,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
       await recurringExpenseAPI.delete(id)
       await loadRecurringExpenses()
     } catch (error) {
-      console.error('Failed to delete recurring expense:', error)
+      logError('deleteRecurringExpense', error)
     }
   }
 
@@ -222,7 +223,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                     setGenerationResult(result.data)
                     loadScheduledExpenses() // Reload to show updated list
                   } catch (error) {
-                    console.error('Failed to confirm scheduled expenses:', error)
+                    logError('confirmScheduledExpenses', error)
                   } finally {
                     setGenerating(false)
                   }

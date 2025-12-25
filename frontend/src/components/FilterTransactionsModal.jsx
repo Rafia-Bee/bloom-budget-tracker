@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { subcategoryAPI, debtAPI } from '../api'
+import { logError } from '../utils/logger'
 import useDebounce from '../hooks/useDebounce'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol } from '../utils/formatters'
@@ -47,7 +48,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
       const response = await debtAPI.getAll()
       setDebts(response.data)
     } catch (error) {
-      console.error('Failed to load debts:', error)
+      logError('loadDebts', error)
     }
   }
 
@@ -56,7 +57,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
       const response = await subcategoryAPI.getAll()
       setSubcategoriesData(response.data.subcategories || {})
     } catch (error) {
-      console.error('Failed to load subcategories:', error)
+      logError('loadSubcategories', error)
       setSubcategoriesData({})
     }
   }

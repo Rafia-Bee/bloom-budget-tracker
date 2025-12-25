@@ -7,6 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { logError } from '../utils/logger';
 import ThemeToggle from './ThemeToggle';
 import { authAPI } from '../api';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
@@ -42,7 +43,7 @@ function Header({
     try {
       await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
     } catch (error) {
-      console.error('Logout error:', error);
+      logError('logout', error);
     }
 
     localStorage.removeItem('user_email'); // Only email is stored locally now

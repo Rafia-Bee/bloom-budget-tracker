@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { userAPI, currencyAPI } from '../api'
+import { logError, logWarn } from '../utils/logger'
 
 const CurrencyContext = createContext()
 
@@ -33,7 +34,7 @@ export function CurrencyProvider({ children }) {
       const response = await userAPI.getDefaultCurrency()
       setDefaultCurrency(response.data.default_currency || 'EUR')
     } catch (err) {
-      console.warn('Failed to load default currency, using EUR:', err)
+      logWarn('Failed to load default currency, using EUR', err)
       setDefaultCurrency('EUR')
     } finally {
       setLoading(false)
@@ -46,7 +47,7 @@ export function CurrencyProvider({ children }) {
       const response = await currencyAPI.getRates(baseCurrency)
       setExchangeRates(response.data.rates || {})
     } catch (err) {
-      console.warn('Failed to load exchange rates:', err)
+      logWarn('Failed to load exchange rates', err)
       setExchangeRates({})
     } finally {
       setRatesLoading(false)
@@ -63,7 +64,7 @@ export function CurrencyProvider({ children }) {
       setDefaultCurrency(newCurrency)
       return true
     } catch (err) {
-      console.error('Failed to update default currency:', err)
+      logError('updateDefaultCurrency', err)
       throw err
     }
   }, [])

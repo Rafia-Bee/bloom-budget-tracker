@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react'
+import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol } from '../utils/formatters'
 
@@ -101,7 +102,7 @@ function CreateGoalModal({ onClose, onCreate }) {
 
       await onCreate(goalData)
     } catch (error) {
-      console.error('Error creating goal:', error)
+      logError('createGoal', error)
     } finally {
       setIsSubmitting(false)
     }

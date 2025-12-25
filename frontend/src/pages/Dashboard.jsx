@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI, recurringExpenseAPI } from '../api'
+import { logError } from '../utils/logger'
 import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
@@ -162,7 +163,7 @@ function Dashboard({ setIsAuthenticated }) {
       await Promise.all(promises)
       // calculateCumulativeBalances is called within loadExpenses/loadIncome
     } catch (error) {
-      console.error('Failed to load transactions and balances:', error)
+      logError('loadTransactionsAndBalances', error)
     }
   }
 
@@ -171,7 +172,7 @@ function Dashboard({ setIsAuthenticated }) {
       const response = await recurringExpenseAPI.previewUpcoming()
       setScheduledExpenses(response.data.upcoming || [])
     } catch (error) {
-      console.error('Failed to load scheduled expenses:', error)
+      logError('loadScheduledExpenses', error)
     }
   }
 
@@ -231,7 +232,7 @@ function Dashboard({ setIsAuthenticated }) {
       // Refresh weekly budget card to update spent amount
       weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
-      console.error('Failed to load expenses:', error)
+      logError('loadExpenses', error)
     }
   }
 
@@ -286,7 +287,7 @@ function Dashboard({ setIsAuthenticated }) {
       // Refresh weekly budget card to update balances
       weeklyBudgetCardRef.current?.refresh()
     } catch (error) {
-      console.error('Failed to load income:', error)
+      logError('loadIncome', error)
     }
   }
 
@@ -329,7 +330,7 @@ function Dashboard({ setIsAuthenticated }) {
       const response = await expenseAPI.getDatesWithTransactions()
       setTransactionDates(response.data.dates || [])
     } catch (error) {
-      console.error('Failed to load transaction dates:', error)
+      logError('loadTransactionDates', error)
     }
   }
 
@@ -447,7 +448,7 @@ function Dashboard({ setIsAuthenticated }) {
     } catch (error) {
       // Suppress 401 errors - the API interceptor handles auth redirects
       if (error.response?.status !== 401) {
-        console.error('Failed to load periods:', error)
+        logError('loadPeriods', error)
       }
     } finally {
       setIsInitialLoading(false)
@@ -486,7 +487,7 @@ function Dashboard({ setIsAuthenticated }) {
       setTotalIncome(response.data.total_income / 100)  // Convert cents to euros
       setCurrentPeriodIncome(response.data.period_income / 100)  // Convert cents to euros
     } catch (error) {
-      console.error('Failed to load income stats:', error)
+      logError('loadIncomeStats', error)
     }
   }
 
@@ -535,7 +536,7 @@ function Dashboard({ setIsAuthenticated }) {
         }
       }
     } catch (error) {
-      console.error('Failed to delete period:', error)
+      logError('deletePeriod', error)
       const errorMessage = error.response?.data?.error || 'Failed to delete period. It may contain transactions.'
       alert(errorMessage)
     }
@@ -560,7 +561,7 @@ function Dashboard({ setIsAuthenticated }) {
     try {
       await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
     } catch (error) {
-      console.error('Logout error:', error);
+      logError('logout', error);
     }
 
     localStorage.removeItem('user_email'); // Only email is stored locally now
@@ -628,7 +629,7 @@ function Dashboard({ setIsAuthenticated }) {
       setShowAddModal(false)
       setModalType(null)
     } catch (error) {
-      console.error('Failed to add expense:', error)
+      logError('addExpense', error)
       throw error
     }
   }
@@ -695,7 +696,7 @@ function Dashboard({ setIsAuthenticated }) {
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
       await loadIncomeStats() // Update income stats
     } catch (error) {
-      console.error('Failed to add income:', error)
+      logError('addIncome', error)
       throw error
     }
   }
@@ -707,7 +708,7 @@ function Dashboard({ setIsAuthenticated }) {
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
       await loadIncomeStats() // Update income stats
     } catch (error) {
-      console.error('Failed to delete income:', error)
+      logError('deleteIncome', error)
     }
   }
 
@@ -718,7 +719,7 @@ function Dashboard({ setIsAuthenticated }) {
       await loadPeriodsAndCurrentWeek() // Reload salary period to update card balances
       loadTransactionDates() // Refresh date navigation
     } catch (error) {
-      console.error('Failed to delete expense:', error)
+      logError('deleteExpense', error)
     }
   }
 
@@ -732,7 +733,7 @@ function Dashboard({ setIsAuthenticated }) {
       setEditType(null)
       setSelectedTransaction(null)
     } catch (error) {
-      console.error('Failed to update expense:', error)
+      logError('updateExpense', error)
       throw error
     }
   }
@@ -747,7 +748,7 @@ function Dashboard({ setIsAuthenticated }) {
       setEditType(null)
       setSelectedTransaction(null)
     } catch (error) {
-      console.error('Failed to update income:', error)
+      logError('updateIncome', error)
       throw error
     }
   }
@@ -809,7 +810,7 @@ function Dashboard({ setIsAuthenticated }) {
       setShowBulkDeleteConfirm(false)
       setSelectionMode(false)
     } catch (error) {
-      console.error('Failed to delete transactions:', error)
+      logError('deleteTransactions', error)
     }
   };
 
@@ -859,7 +860,7 @@ function Dashboard({ setIsAuthenticated }) {
                       setEditSalaryPeriod(activePeriod)
                     }
                   } catch (err) {
-                    console.error('Failed to check for active period:', err)
+                    logError('checkActivePeriod', err)
                   }
                   setShowSalaryWizard(true)
                 }}
@@ -918,7 +919,7 @@ function Dashboard({ setIsAuthenticated }) {
                   setEditSalaryPeriod(activePeriod)
                 }
               } catch (err) {
-                console.error('Failed to check for active period:', err)
+                logError('checkActivePeriod', err)
               }
               setShowSalaryWizard(true)
             }}
@@ -1372,7 +1373,7 @@ function Dashboard({ setIsAuthenticated }) {
                               setSelectedScheduled([])
                               setSelectionMode(false)
                             } catch (error) {
-                              console.error('Failed to delete scheduled expenses:', error)
+                              logError('deleteScheduledExpenses', error)
                             }
                           }}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
@@ -1400,7 +1401,7 @@ function Dashboard({ setIsAuthenticated }) {
                         loadTransactionsAndBalances()
                         setTransactionView('transactions')
                       } catch (error) {
-                        console.error('Failed to confirm scheduled expenses:', error)
+                        logError('confirmScheduledExpenses', error)
                       }
                     }}
                     className="px-4 py-2 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition font-semibold flex items-center gap-2"
@@ -1635,7 +1636,7 @@ function Dashboard({ setIsAuthenticated }) {
                     setModalType(null)
                     resolve()
                   } catch (error) {
-                    console.error('Failed to add expense:', error)
+                    logError('addExpense', error)
                     throw error
                   }
                 }}

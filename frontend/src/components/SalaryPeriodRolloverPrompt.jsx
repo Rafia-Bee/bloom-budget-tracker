@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { salaryPeriodAPI } from '../api'
+import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency } from '../utils/formatters'
 
@@ -55,7 +56,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 
       setLoading(false)
     } catch (err) {
-      console.error('Failed to check rollover status:', err)
+      logError('checkRolloverStatus', err)
       setError(err)
       setLoading(false)
     }

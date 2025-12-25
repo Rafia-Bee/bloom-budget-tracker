@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI, expenseAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api'
+import { logError } from '../utils/logger'
 import AddDebtModal from '../components/AddDebtModal'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 import EditDebtModal from '../components/EditDebtModal'
@@ -78,7 +79,7 @@ function Debts({ setIsAuthenticated }) {
         setCurrentPeriod(periodsRes.data[0])
       }
     } catch (error) {
-      console.error('Failed to load periods:', error)
+      logError('loadPeriods', error)
     }
   }
 
@@ -87,7 +88,7 @@ function Debts({ setIsAuthenticated }) {
       const response = await debtAPI.getAll()
       setDebts(response.data)
     } catch (error) {
-      console.error('Failed to load debts:', error)
+      logError('loadDebts', error)
     }
   }
 
@@ -96,7 +97,7 @@ function Debts({ setIsAuthenticated }) {
       const response = await debtAPI.getAll({ archived: true })
       setArchivedDebts(response.data)
     } catch (error) {
-      console.error('Failed to load archived debts:', error)
+      logError('loadArchivedDebts', error)
     }
   }
 
@@ -134,7 +135,7 @@ function Debts({ setIsAuthenticated }) {
         setCreditCardDebt(null)
       }
     } catch (error) {
-      console.error('Failed to load credit card debt:', error)
+      logError('loadCreditCardDebt', error)
     }
   }
 
@@ -144,7 +145,7 @@ function Debts({ setIsAuthenticated }) {
       loadDebts()
       setShowAddModal(false)
     } catch (error) {
-      console.error('Failed to add debt:', error)
+      logError('addDebt', error)
       throw error
     }
   }
@@ -156,7 +157,7 @@ function Debts({ setIsAuthenticated }) {
       setShowEditModal(false)
       setSelectedDebt(null)
     } catch (error) {
-      console.error('Failed to update debt:', error)
+      logError('updateDebt', error)
       throw error
     }
   }
@@ -173,7 +174,7 @@ function Debts({ setIsAuthenticated }) {
       await debtAPI.delete(id)
       loadDebts()
     } catch (error) {
-      console.error('Failed to delete debt:', error)
+      logError('deleteDebt', error)
     }
   }
 
@@ -218,7 +219,7 @@ function Debts({ setIsAuthenticated }) {
         [debtId]: realizedPayments
       }))
     } catch (error) {
-      console.error('Failed to load debt transactions:', error)
+      logError('loadDebtTransactions', error)
     }
   }
 
@@ -708,7 +709,7 @@ function Debts({ setIsAuthenticated }) {
               setShowPaymentModal(false)
               setSelectedDebt(null)
             } catch (error) {
-              console.error('Failed to create debt payment:', error)
+              logError('createDebtPayment', error)
               throw error // Re-throw so modal can handle the error
             }
           }}

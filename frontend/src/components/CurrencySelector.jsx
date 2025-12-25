@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { currencyAPI } from "../api";
+import { logWarn } from "../utils/logger";
 import { CURRENCY_INFO, getCurrencyName } from "../utils/formatters";
 
 function CurrencySelector({
@@ -31,7 +32,7 @@ function CurrencySelector({
             setCurrencies(response.data.currencies || []);
         } catch (err) {
             // Fallback to local currency info if API fails
-            console.warn("Failed to load currencies from API, using fallback");
+            logWarn("Failed to load currencies from API, using fallback", err);
             setCurrencies(
                 Object.keys(CURRENCY_INFO).map((code) => ({
                     code,

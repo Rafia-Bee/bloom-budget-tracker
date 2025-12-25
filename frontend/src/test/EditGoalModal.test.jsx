@@ -629,7 +629,8 @@ describe('EditGoalModal', () => {
       await user.click(submitButton)
 
       await waitFor(() => {
-        expect(consoleError).toHaveBeenCalledWith('Error updating goal:', expect.any(Error))
+        // Logger uses format: [operation] Error:
+        expect(consoleError).toHaveBeenCalledWith('[updateGoal] Error:', expect.any(Error))
       })
 
       consoleError.mockRestore()

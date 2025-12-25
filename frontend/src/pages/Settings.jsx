@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { subcategoryAPI, userAPI } from '../api'
+import { logError } from '../utils/logger'
 import Header from '../components/Header'
 import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
 import EditSubcategoryModal from '../components/EditSubcategoryModal'
@@ -71,7 +72,7 @@ function Settings({ setIsAuthenticated }) {
       setRecurringLookaheadDays(lookaheadRes.data.recurring_lookahead_days)
       // Currency is already loaded from context
     } catch (err) {
-      console.error('Failed to load preferences:', err)
+      logError('loadPreferences', err)
     }
   }
 
@@ -83,7 +84,7 @@ function Settings({ setIsAuthenticated }) {
       setSubcategoriesData(response.data.subcategories || {})
     } catch (err) {
       setError('Failed to load subcategories')
-      console.error(err)
+      logError('loadSubcategories', err)
     } finally {
       setLoading(false)
     }

@@ -6,6 +6,42 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Replace Console Logging with Secure Logger Utility (#80 Security)
+
+**Context:** Raw `console.error` and `console.warn` calls throughout frontend could expose sensitive error details (API responses, user data, stack traces) in production browser consoles.
+
+**Decision:** Create centralized secure logger utility and replace all direct console calls.
+
+**Implementation:**
+
+```jsx
+// frontend/src/utils/logger.js
+import { logError, logWarn, logInfo, logDebug } from "../utils/logger";
+
+// Development: Full error details for debugging
+// Production: Sanitized messages only (no sensitive data)
+
+logError("operationName", error); // replaces console.error('message', error)
+logWarn("message", data); // replaces console.warn('message', data)
+```
+
+**Files Updated:** 16 files across pages, contexts, and components
+
+-   Dashboard, Debts, Goals, RecurringExpenses, Settings pages
+-   CurrencyContext
+-   AddExpenseModal, EditExpenseModal, AddRecurringExpenseModal, etc.
+
+**Benefits:**
+
+-   Prevents sensitive data leakage in production
+-   Consistent error format for monitoring
+-   Development debugging unchanged
+-   Easy to add remote error reporting later
+
+**Rationale:** Security best practice - error details should never be exposed to end users. The logger sanitizes error objects in production while preserving full debugging capability in development.
+
+---
+
 ### Full Currency Conversion for EUR-Stored Amounts (Issue #7)
 
 **Context:** After implementing dynamic currency symbols, stored EUR amounts still displayed with wrong values - only the symbol changed, not the actual amount. Needed actual currency conversion for all EUR-stored values (budgets, balances, debts, goals).

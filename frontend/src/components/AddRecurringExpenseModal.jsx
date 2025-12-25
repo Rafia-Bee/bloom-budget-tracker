@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { debtAPI, goalAPI, subcategoryAPI } from '../api'
+import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { getCurrencySymbol } from '../utils/formatters'
 
@@ -47,7 +48,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
       const response = await debtAPI.getAll()
       setDebts(response.data)
     } catch (error) {
-      console.error('Failed to load debts:', error)
+      logError('loadDebts', error)
     }
   }
 
@@ -56,7 +57,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
       const response = await goalAPI.getAll()
       setGoals(response.data.goals || [])
     } catch (error) {
-      console.error('Failed to load goals:', error)
+      logError('loadGoals', error)
     }
   }
 
@@ -65,7 +66,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
       const response = await subcategoryAPI.getAll()
       setSubcategoriesData(response.data.subcategories || {})
     } catch (error) {
-      console.error('Failed to load subcategories:', error)
+      logError('loadSubcategories', error)
       // Fallback to empty object if API fails
       setSubcategoriesData({})
     }

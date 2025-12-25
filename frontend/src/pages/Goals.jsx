@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { goalAPI } from '../api'
+import { logError } from '../utils/logger'
 import Header from '../components/Header'
 import CreateGoalModal from '../components/CreateGoalModal'
 import EditGoalModal from '../components/EditGoalModal'
@@ -57,7 +58,7 @@ function Goals({ setIsAuthenticated }) {
       setGoals(response.data.goals || [])
     } catch (err) {
       setError('Failed to load goals')
-      console.error(err)
+      logError('loadGoals', err)
     } finally {
       setLoading(false)
     }
@@ -143,7 +144,7 @@ function Goals({ setIsAuthenticated }) {
           [goalId]: response.data
         }))
       } catch (err) {
-        console.error('Failed to load transactions:', err)
+        logError('loadGoalTransactions', err)
       } finally {
         setLoadingTransactions(false)
       }
