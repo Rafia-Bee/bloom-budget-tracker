@@ -516,25 +516,56 @@ def _get_cached_rate(base: str, target: str, rate_date: date) -> Optional[float]
 def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
     """
     Store rate in cache, updating if exists.
+    Uses upsert pattern to handle concurrent requests safely.
     """
-    existing = ExchangeRate.query.filter_by(
-        base_currency=base, target_currency=target, rate_date=rate_date
-    ).first()
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-    if existing:
-        existing.rate = rate
-        existing.fetched_at = datetime.utcnow()
-    else:
-        new_rate = ExchangeRate(
+    try:
+        # Try PostgreSQL upsert first (production)
+        stmt = pg_insert(ExchangeRate).values(
             base_currency=base,
             target_currency=target,
             rate=rate,
             rate_date=rate_date,
             fetched_at=datetime.utcnow(),
         )
-        db.session.add(new_rate)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["base_currency", "target_currency", "rate_date"],
+            set_={"rate": rate, "fetched_at": datetime.utcnow()},
+        )
+        db.session.execute(stmt)
+        db.session.commit()
+    except Exception:
+        # Fallback for SQLite (development) - use traditional check-then-insert
+        db.session.rollback()
+        existing = ExchangeRate.query.filter_by(
+            base_currency=base, target_currency=target, rate_date=rate_date
+        ).first()
 
-    db.session.commit()
+        if existing:
+            existing.rate = rate
+            existing.fetched_at = datetime.utcnow()
+        else:
+            try:
+                new_rate = ExchangeRate(
+                    base_currency=base,
+                    target_currency=target,
+                    rate=rate,
+                    rate_date=rate_date,
+                    fetched_at=datetime.utcnow(),
+                )
+                db.session.add(new_rate)
+                db.session.commit()
+            except Exception:
+                # Race condition hit - another request inserted, just update
+                db.session.rollback()
+                existing = ExchangeRate.query.filter_by(
+                    base_currency=base, target_currency=target, rate_date=rate_date
+                ).first()
+                if existing:
+                    existing.rate = rate
+                    existing.fetched_at = datetime.utcnow()
+                    db.session.commit()
 
 
 def _fetch_rate_from_api(base: str, target: str, rate_date: date) -> Optional[float]:
