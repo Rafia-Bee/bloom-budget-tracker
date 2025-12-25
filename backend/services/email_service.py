@@ -33,15 +33,11 @@ class EmailService:
             from_email: Sender email address (defaults to SENDGRID_FROM_EMAIL env var)
         """
         self.api_key = api_key or os.getenv("SENDGRID_API_KEY")
-        self.from_email = from_email or os.getenv(
-            "SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com"
-        )
+        self.from_email = from_email or os.getenv("SENDGRID_FROM_EMAIL", "noreply@bloom-budget.com")
         self.enabled = bool(self.api_key)
 
         if not self.enabled:
-            logger.warning(
-                "SendGrid API key not configured. Email sending is disabled."
-            )
+            logger.warning("SendGrid API key not configured. Email sending is disabled.")
         else:
             logger.info("Email service initialized with SendGrid")
 
@@ -68,9 +64,7 @@ class EmailService:
             Exception: If email sending fails and error handling is needed by caller
         """
         if not self.enabled:
-            logger.warning(
-                f"Email sending disabled. Would have sent to {to_email}: {subject}"
-            )
+            logger.warning(f"Email sending disabled. Would have sent to {to_email}: {subject}")
             return {"success": False, "error": "Email service is not configured"}
 
         try:
@@ -94,9 +88,7 @@ class EmailService:
             sg = SendGridAPIClient(self.api_key)
             response = sg.send(message)
 
-            logger.info(
-                f"Email sent successfully to {to_email}. Status: {response.status_code}"
-            )
+            logger.info(f"Email sent successfully to {to_email}. Status: {response.status_code}")
 
             return {
                 "success": True,
@@ -491,9 +483,7 @@ class EmailService:
             plain_text_content=plain_text_content,
         )
 
-    def send_account_lockout_email(
-        self, to_email: str, lockout_minutes: int
-    ) -> Dict[str, Any]:
+    def send_account_lockout_email(self, to_email: str, lockout_minutes: int) -> Dict[str, Any]:
         """
         Send an email notification when account is locked due to failed login attempts.
 

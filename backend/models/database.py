@@ -43,21 +43,13 @@ class User(db.Model):
     salary_periods = db.relationship(
         "SalaryPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
     )
-    expenses = db.relationship(
-        "Expense", backref="user", lazy=True, cascade="all, delete-orphan"
-    )
-    income = db.relationship(
-        "Income", backref="user", lazy=True, cascade="all, delete-orphan"
-    )
-    debts = db.relationship(
-        "Debt", backref="user", lazy=True, cascade="all, delete-orphan"
-    )
+    expenses = db.relationship("Expense", backref="user", lazy=True, cascade="all, delete-orphan")
+    income = db.relationship("Income", backref="user", lazy=True, cascade="all, delete-orphan")
+    debts = db.relationship("Debt", backref="user", lazy=True, cascade="all, delete-orphan")
 
     __table_args__ = (
         db.CheckConstraint("email LIKE '%@%'", name="check_user_email_format"),
-        db.CheckConstraint(
-            "failed_login_attempts >= 0", name="check_user_failed_attempts"
-        ),
+        db.CheckConstraint("failed_login_attempts >= 0", name="check_user_failed_attempts"),
         db.CheckConstraint(
             "recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90",
             name="check_user_lookahead_range",
@@ -86,9 +78,7 @@ class SalaryPeriod(db.Model):
     __tablename__ = "salary_periods"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Balance-based budgeting fields
     # Starting debit balance in cents
@@ -128,36 +118,18 @@ class SalaryPeriod(db.Model):
     )
 
     __table_args__ = (
-        db.CheckConstraint(
-            "start_date < end_date", name="check_salary_period_date_range"
-        ),
-        db.CheckConstraint(
-            "weekly_budget > 0", name="check_salary_period_positive_weekly_budget"
-        ),
-        db.CheckConstraint(
-            "initial_debit_balance >= 0", name="check_salary_period_debit_balance"
-        ),
-        db.CheckConstraint(
-            "credit_limit > 0", name="check_salary_period_positive_credit_limit"
-        ),
+        db.CheckConstraint("start_date < end_date", name="check_salary_period_date_range"),
+        db.CheckConstraint("weekly_budget > 0", name="check_salary_period_positive_weekly_budget"),
+        db.CheckConstraint("initial_debit_balance >= 0", name="check_salary_period_debit_balance"),
+        db.CheckConstraint("credit_limit > 0", name="check_salary_period_positive_credit_limit"),
         db.CheckConstraint(
             "credit_budget_allowance >= 0", name="check_salary_period_credit_allowance"
         ),
-        db.CheckConstraint(
-            "total_budget_amount >= 0", name="check_salary_period_total_budget"
-        ),
-        db.CheckConstraint(
-            "fixed_bills_total >= 0", name="check_salary_period_fixed_bills"
-        ),
-        db.CheckConstraint(
-            "remaining_amount >= 0", name="check_salary_period_remaining"
-        ),
-        db.CheckConstraint(
-            "weekly_debit_budget >= 0", name="check_salary_period_weekly_debit"
-        ),
-        db.CheckConstraint(
-            "weekly_credit_budget >= 0", name="check_salary_period_weekly_credit"
-        ),
+        db.CheckConstraint("total_budget_amount >= 0", name="check_salary_period_total_budget"),
+        db.CheckConstraint("fixed_bills_total >= 0", name="check_salary_period_fixed_bills"),
+        db.CheckConstraint("remaining_amount >= 0", name="check_salary_period_remaining"),
+        db.CheckConstraint("weekly_debit_budget >= 0", name="check_salary_period_weekly_debit"),
+        db.CheckConstraint("weekly_credit_budget >= 0", name="check_salary_period_weekly_credit"),
     )
 
 
@@ -188,9 +160,7 @@ class BudgetPeriod(db.Model):
     # Composite index for active period queries
     __table_args__ = (
         db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
-        db.CheckConstraint(
-            "start_date < end_date", name="check_budget_period_date_range"
-        ),
+        db.CheckConstraint("start_date < end_date", name="check_budget_period_date_range"),
         db.CheckConstraint(
             "week_number IS NULL OR (week_number BETWEEN 1 AND 4)",
             name="check_budget_period_week_number",
@@ -231,9 +201,7 @@ class Expense(db.Model):
     subcategory = db.Column(db.String(100), nullable=True)
     date = db.Column(db.Date, nullable=False, index=True)
     due_date = db.Column(db.String(50), nullable=True, default="N/A")
-    payment_method = db.Column(
-        db.String(20), nullable=False, default="credit", index=True
-    )
+    payment_method = db.Column(db.String(20), nullable=False, default="credit", index=True)
     notes = db.Column(db.Text, nullable=True)
     receipt_url = db.Column(db.String(500), nullable=True)
     # True for fixed bills that don't count against weekly budget
@@ -284,27 +252,21 @@ class Debt(db.Model):
     __tablename__ = "debts"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     original_amount = db.Column(db.Integer, nullable=False)
     current_balance = db.Column(db.Integer, nullable=False)
     monthly_payment = db.Column(db.Integer, nullable=False)
     archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class RecurringExpense(db.Model):
     __tablename__ = "recurring_expenses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(100), nullable=False)
@@ -325,9 +287,7 @@ class RecurringExpense(db.Model):
     is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship to generated expenses
     generated_expenses = db.relationship(
@@ -338,9 +298,7 @@ class RecurringExpense(db.Model):
     )
 
     __table_args__ = (
-        db.CheckConstraint(
-            "amount > 0", name="check_recurring_expense_positive_amount"
-        ),
+        db.CheckConstraint("amount > 0", name="check_recurring_expense_positive_amount"),
         db.CheckConstraint(
             "end_date IS NULL OR start_date < end_date",
             name="check_recurring_expense_date_range",
@@ -367,9 +325,7 @@ class ExpenseNameMapping(db.Model):
     expense_name = db.Column(db.String(200), unique=True, nullable=False)
     subcategory = db.Column(db.String(100), nullable=False)
     confidence = db.Column(db.Float, default=1.0)
-    last_updated = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class UserDefaults(db.Model):
@@ -400,9 +356,7 @@ class CreditCardSettings(db.Model):
     )
     credit_limit = db.Column(db.Integer, default=150000)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         db.CheckConstraint("credit_limit > 0", name="check_credit_card_positive_limit"),
@@ -413,18 +367,14 @@ class PeriodSuggestion(db.Model):
     __tablename__ = "period_suggestions"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     suggestion_type = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (
-        db.CheckConstraint(
-            "amount > 0", name="check_period_suggestion_positive_amount"
-        ),
+        db.CheckConstraint("amount > 0", name="check_period_suggestion_positive_amount"),
     )
 
 
@@ -432,9 +382,7 @@ class PasswordResetToken(db.Model):
     __tablename__ = "password_reset_tokens"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token = db.Column(db.String(255), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False, nullable=False)
@@ -463,9 +411,7 @@ class Subcategory(db.Model):
     is_system = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship("User", backref="subcategories")
 
@@ -508,9 +454,7 @@ class Goal(db.Model):
     subcategory_name = db.Column(db.String(100), nullable=False)  # Links to subcategory
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     user = db.relationship("User", backref="goals")
@@ -592,8 +536,6 @@ class ExchangeRate(db.Model):
         db.UniqueConstraint(
             "base_currency", "target_currency", "rate_date", name="uq_exchange_rate"
         ),
-        db.Index(
-            "idx_exchange_rate_lookup", "base_currency", "target_currency", "rate_date"
-        ),
+        db.Index("idx_exchange_rate_lookup", "base_currency", "target_currency", "rate_date"),
         db.CheckConstraint("rate > 0", name="check_exchange_rate_positive"),
     )

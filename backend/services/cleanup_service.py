@@ -108,17 +108,15 @@ class CleanupService:
             ] = CleanupService.cleanup_expired_password_reset_tokens(hours_old=24)
 
             # Cleanup used tokens (older than 7 days)
-            results[
-                "used_tokens_deleted"
-            ] = CleanupService.cleanup_used_password_reset_tokens(days_old=7)
+            results["used_tokens_deleted"] = CleanupService.cleanup_used_password_reset_tokens(
+                days_old=7
+            )
 
             results["total_deleted"] = (
                 results["expired_tokens_deleted"] + results["used_tokens_deleted"]
             )
 
-            logger.info(
-                f"Total cleanup completed: {results['total_deleted']} tokens deleted"
-            )
+            logger.info(f"Total cleanup completed: {results['total_deleted']} tokens deleted")
 
             return results
 

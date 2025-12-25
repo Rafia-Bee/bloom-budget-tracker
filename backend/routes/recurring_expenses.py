@@ -212,9 +212,7 @@ def update_recurring_expense(id):
             re.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
         if "end_date" in data:
             re.end_date = (
-                datetime.strptime(data["end_date"], "%Y-%m-%d").date()
-                if data["end_date"]
-                else None
+                datetime.strptime(data["end_date"], "%Y-%m-%d").date() if data["end_date"] else None
             )
         if "is_active" in data:
             re.is_active = data["is_active"]
@@ -224,10 +222,7 @@ def update_recurring_expense(id):
             re.notes = data["notes"]
 
         # Recalculate next_due_date if frequency-related fields changed
-        if any(
-            key in data
-            for key in ["day_of_month", "day_of_week", "frequency", "start_date"]
-        ):
+        if any(key in data for key in ["day_of_month", "day_of_week", "frequency", "start_date"]):
             today = datetime.now().date()
             start_date = re.start_date
 
@@ -410,11 +405,7 @@ def import_recurring_expenses():
 
         db.session.commit()
         return (
-            jsonify(
-                {
-                    "message": f"Successfully imported {imported_count} recurring expenses"
-                }
-            ),
+            jsonify({"message": f"Successfully imported {imported_count} recurring expenses"}),
             201,
         )
 

@@ -121,9 +121,7 @@ def login():
 
     # Check if account is locked
     if user.is_locked():
-        lockout_time = (
-            user.locked_until.strftime("%H:%M") if user.locked_until else "unknown"
-        )
+        lockout_time = user.locked_until.strftime("%H:%M") if user.locked_until else "unknown"
         return (
             jsonify(
                 {
@@ -152,9 +150,7 @@ def login():
                     to_email=user.email, lockout_minutes=LOCKOUT_MINUTES
                 )
             except Exception as e:
-                current_app.logger.error(
-                    f"Failed to send lockout email to {user.email}: {str(e)}"
-                )
+                current_app.logger.error(f"Failed to send lockout email to {user.email}: {str(e)}")
 
             return (
                 jsonify(

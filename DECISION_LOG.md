@@ -6,6 +6,40 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Multi-Currency Feature Flag Implementation (#113)
+
+**Context:** Multi-currency support adds complexity for users who only need EUR. Put the feature behind a flag so it can be disabled for simplicity.
+
+**Decision:** Add `multiCurrencyEnabled` feature flag to control currency-related UI and functionality.
+
+**Implementation:**
+
+1. **FeatureFlagContext** - Added `multiCurrencyEnabled: false` to default flags
+2. **CurrencyContext** - Added flag check:
+    - When disabled: Always returns EUR, skips exchange rate fetching, `convertAmount()` returns original value
+    - When enabled: Full multi-currency functionality
+3. **UI Conditional Rendering**:
+    - Settings page: Currency preference section hidden when flag off
+    - AddExpenseModal/AddIncomeModal: Currency selector hidden when flag off
+4. **ExperimentalFeaturesModal** - Added toggle for multi-currency (requires experimental features enabled first)
+
+**Files Changed:**
+
+-   `frontend/src/contexts/FeatureFlagContext.jsx` - New flag
+-   `frontend/src/contexts/CurrencyContext.jsx` - Flag logic + expose `multiCurrencyEnabled`
+-   `frontend/src/pages/Settings.jsx` - Conditional currency section
+-   `frontend/src/components/AddExpenseModal.jsx` - Conditional currency selector
+-   `frontend/src/components/AddIncomeModal.jsx` - Conditional currency selector
+-   `frontend/src/components/ExperimentalFeaturesModal.jsx` - Toggle UI
+
+**Impact:**
+
+-   Default experience simplified (EUR only, no currency dropdowns)
+-   Power users can enable multi-currency via Experimental Features
+-   No backend changes required
+
+---
+
 ### Race Condition Fix: PostgreSQL Upsert for Exchange Rate Caching
 
 **Context:** Production workers crashed with `UniqueViolation: duplicate key value violates unique constraint` when multiple Gunicorn workers tried to cache the same exchange rate simultaneously.

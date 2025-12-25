@@ -7,8 +7,10 @@
 
 import { useState } from 'react'
 import CurrencySelector from './CurrencySelector'
+import { useCurrency } from '../contexts/CurrencyContext'
 
 function AddIncomeModal({ onClose, onAdd }) {
+  const { multiCurrencyEnabled } = useCurrency()
   const [type, setType] = useState('Salary')
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('EUR')
@@ -83,13 +85,15 @@ function AddIncomeModal({ onClose, onAdd }) {
           <div>
             <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">Amount</label>
             <div className="flex gap-2">
-              <CurrencySelector
-                value={currency}
-                onChange={setCurrency}
-                compact={true}
-                showLabel={false}
-                className="w-24 flex-shrink-0"
-              />
+              {multiCurrencyEnabled && (
+                <CurrencySelector
+                  value={currency}
+                  onChange={setCurrency}
+                  compact={true}
+                  showLabel={false}
+                  className="w-24 flex-shrink-0"
+                />
+              )}
               <input
                 type="number"
                 step="0.01"

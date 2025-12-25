@@ -84,21 +84,15 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("income", schema=None) as batch_op:
-        batch_op.create_index(
-            "idx_income_user_actual", ["user_id", "actual_date"], unique=False
-        )
+        batch_op.create_index("idx_income_user_actual", ["user_id", "actual_date"], unique=False)
         batch_op.create_index(
             "idx_income_user_scheduled", ["user_id", "scheduled_date"], unique=False
         )
-        batch_op.create_index(
-            batch_op.f("ix_income_actual_date"), ["actual_date"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_income_actual_date"), ["actual_date"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_income_scheduled_date"), ["scheduled_date"], unique=False
         )
-        batch_op.create_index(
-            batch_op.f("ix_income_user_id"), ["user_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_income_user_id"), ["user_id"], unique=False)
 
     op.create_table(
         "password_reset_tokens",
@@ -223,15 +217,11 @@ def upgrade():
             ["user_id", "start_date", "end_date"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_budget_periods_end_date"), ["end_date"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_budget_periods_end_date"), ["end_date"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_budget_periods_start_date"), ["start_date"], unique=False
         )
-        batch_op.create_index(
-            batch_op.f("ix_budget_periods_user_id"), ["user_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_budget_periods_user_id"), ["user_id"], unique=False)
 
     op.create_table(
         "expenses",
@@ -260,25 +250,17 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("expenses", schema=None) as batch_op:
-        batch_op.create_index(
-            "idx_expense_user_category", ["user_id", "category"], unique=False
-        )
-        batch_op.create_index(
-            "idx_expense_user_date", ["user_id", "date"], unique=False
-        )
+        batch_op.create_index("idx_expense_user_category", ["user_id", "category"], unique=False)
+        batch_op.create_index("idx_expense_user_date", ["user_id", "date"], unique=False)
         batch_op.create_index(
             "idx_expense_user_payment", ["user_id", "payment_method"], unique=False
         )
-        batch_op.create_index(
-            batch_op.f("ix_expenses_category"), ["category"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_expenses_category"), ["category"], unique=False)
         batch_op.create_index(batch_op.f("ix_expenses_date"), ["date"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_expenses_payment_method"), ["payment_method"], unique=False
         )
-        batch_op.create_index(
-            batch_op.f("ix_expenses_user_id"), ["user_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_expenses_user_id"), ["user_id"], unique=False)
 
     # ### end Alembic commands ###
 

@@ -20,9 +20,7 @@ def upgrade():
     # Add account lockout columns with safe defaults for existing rows
     op.add_column(
         "users",
-        sa.Column(
-            "failed_login_attempts", sa.Integer(), nullable=False, server_default="0"
-        ),
+        sa.Column("failed_login_attempts", sa.Integer(), nullable=False, server_default="0"),
     )
     op.add_column("users", sa.Column("locked_until", sa.DateTime(), nullable=True))
 

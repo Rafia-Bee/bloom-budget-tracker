@@ -286,14 +286,10 @@ class TestGoalProgress:
 
         # Get the subcategory name
         subcat_response = client.get("/api/v1/subcategories", headers=auth_headers)
-        savings_subcats = subcat_response.json["subcategories"].get(
-            "Savings & Investments", []
-        )
+        savings_subcats = subcat_response.json["subcategories"].get("Savings & Investments", [])
 
         # Find our goal's subcategory
-        goal_subcat = next(
-            (s for s in savings_subcats if s["id"] == subcategory_id), None
-        )
+        goal_subcat = next((s for s in savings_subcats if s["id"] == subcategory_id), None)
 
         if goal_subcat:
             # Add contribution to goal
@@ -329,9 +325,7 @@ class TestGoalProgress:
         goal = create_response.json["goal"]
 
         # Initial progress should be 0 - check via progress endpoint
-        response = client.get(
-            f"/api/v1/goals/{goal['id']}/progress", headers=auth_headers
-        )
+        response = client.get(f"/api/v1/goals/{goal['id']}/progress", headers=auth_headers)
         progress = response.json["progress"]
 
         assert progress["current_amount"] == 0
@@ -353,9 +347,7 @@ class TestGoalProgress:
         goal = create_response.json["goal"]
 
         # Check progress includes initial amount
-        response = client.get(
-            f"/api/v1/goals/{goal['id']}/progress", headers=auth_headers
-        )
+        response = client.get(f"/api/v1/goals/{goal['id']}/progress", headers=auth_headers)
         progress = response.json["progress"]
 
         assert progress["initial_amount"] == 3000
@@ -378,9 +370,7 @@ class TestGoalTransactions:
         goal_id = create_response.json["goal"]["id"]
 
         # Get transactions
-        response = client.get(
-            f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers
-        )
+        response = client.get(f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers)
 
         assert response.status_code == 200
         assert response.json["transactions"] == []
@@ -402,9 +392,7 @@ class TestGoalTransactions:
         goal_id = create_response.json["goal"]["id"]
 
         # Get transactions
-        response = client.get(
-            f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers
-        )
+        response = client.get(f"/api/v1/goals/{goal_id}/transactions", headers=auth_headers)
 
         assert response.status_code == 200
         assert response.json["summary"]["initial_amount"] == 2500

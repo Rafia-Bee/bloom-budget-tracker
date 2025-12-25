@@ -43,9 +43,7 @@ def rate_limit(endpoint_name=None):
 
             # Get rate limit for this endpoint
             limit_key = endpoint_name or "default"
-            max_requests, window_seconds = RATE_LIMITS.get(
-                limit_key, RATE_LIMITS["default"]
-            )
+            max_requests, window_seconds = RATE_LIMITS.get(limit_key, RATE_LIMITS["default"])
 
             # Clean up old entries
             now = datetime.utcnow()
@@ -55,9 +53,7 @@ def rate_limit(endpoint_name=None):
             ]
 
             # Count requests for this endpoint in the time window
-            endpoint_requests = [
-                ts for ts, ep in _request_history[client_ip] if ep == limit_key
-            ]
+            endpoint_requests = [ts for ts, ep in _request_history[client_ip] if ep == limit_key]
 
             # Check if limit exceeded
             if len(endpoint_requests) >= max_requests:

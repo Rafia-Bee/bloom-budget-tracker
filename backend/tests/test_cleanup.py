@@ -52,26 +52,17 @@ class TestPasswordResetTokenCleanup:
             db.session.commit()
 
             # Run cleanup (default: 24 hours)
-            deleted_count = cleanup_service.cleanup_expired_password_reset_tokens(
-                hours_old=24
-            )
+            deleted_count = cleanup_service.cleanup_expired_password_reset_tokens(hours_old=24)
 
             # Should delete only the old expired token
             assert deleted_count == 1
 
             # Verify tokens
+            assert PasswordResetToken.query.filter_by(token="old_expired_token").first() is None
             assert (
-                PasswordResetToken.query.filter_by(token="old_expired_token").first()
-                is None
+                PasswordResetToken.query.filter_by(token="recent_expired_token").first() is not None
             )
-            assert (
-                PasswordResetToken.query.filter_by(token="recent_expired_token").first()
-                is not None
-            )
-            assert (
-                PasswordResetToken.query.filter_by(token="valid_token").first()
-                is not None
-            )
+            assert PasswordResetToken.query.filter_by(token="valid_token").first() is not None
 
     def test_cleanup_used_tokens(self, client, app):
         """Cleanup should remove used tokens older than specified days"""
@@ -114,26 +105,15 @@ class TestPasswordResetTokenCleanup:
             db.session.commit()
 
             # Run cleanup (default: 7 days)
-            deleted_count = cleanup_service.cleanup_used_password_reset_tokens(
-                days_old=7
-            )
+            deleted_count = cleanup_service.cleanup_used_password_reset_tokens(days_old=7)
 
             # Should delete only the old used token
             assert deleted_count == 1
 
             # Verify tokens
-            assert (
-                PasswordResetToken.query.filter_by(token="old_used_token").first()
-                is None
-            )
-            assert (
-                PasswordResetToken.query.filter_by(token="recent_used_token").first()
-                is not None
-            )
-            assert (
-                PasswordResetToken.query.filter_by(token="unused_token").first()
-                is not None
-            )
+            assert PasswordResetToken.query.filter_by(token="old_used_token").first() is None
+            assert PasswordResetToken.query.filter_by(token="recent_used_token").first() is not None
+            assert PasswordResetToken.query.filter_by(token="unused_token").first() is not None
 
     def test_cleanup_all_tokens(self, client, app):
         """Cleanup all should remove both expired and used tokens"""
@@ -183,9 +163,7 @@ class TestPasswordResetTokenCleanup:
             assert results["total_deleted"] == 2
 
             # Verify tokens
-            assert (
-                PasswordResetToken.query.filter_by(token="old_expired").first() is None
-            )
+            assert PasswordResetToken.query.filter_by(token="old_expired").first() is None
             assert PasswordResetToken.query.filter_by(token="old_used").first() is None
             assert PasswordResetToken.query.filter_by(token="valid").first() is not None
 

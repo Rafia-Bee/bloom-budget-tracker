@@ -65,9 +65,7 @@ def calculate_next_due_date(recurring_expense):
             # If day is still invalid, use last day of month
             if next_month == 2:
                 # February
-                is_leap = (next_year % 4 == 0 and next_year % 100 != 0) or (
-                    next_year % 400 == 0
-                )
+                is_leap = (next_year % 4 == 0 and next_year % 100 != 0) or (next_year % 400 == 0)
                 day = 29 if is_leap else 28
             elif next_month in [4, 6, 9, 11]:
                 day = 30
@@ -128,9 +126,7 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
             if existing:
                 # Already generated, just update next_due_date
                 if not dry_run:
-                    recurring_expense.next_due_date = calculate_next_due_date(
-                        recurring_expense
-                    )
+                    recurring_expense.next_due_date = calculate_next_due_date(recurring_expense)
                     recurring_expense.updated_at = datetime.utcnow()
                 updated_templates.append(
                     {
@@ -180,9 +176,7 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                     continue
 
                 # Update next_due_date
-                recurring_expense.next_due_date = calculate_next_due_date(
-                    recurring_expense
-                )
+                recurring_expense.next_due_date = calculate_next_due_date(recurring_expense)
                 recurring_expense.updated_at = datetime.utcnow()
 
                 # Check if we should deactivate (past end_date)
@@ -240,9 +234,7 @@ def get_upcoming_recurring_expenses(user_id, days=30):
     today = datetime.now().date()
     end_date = today + timedelta(days=days)
 
-    recurring_expenses = RecurringExpense.query.filter_by(
-        user_id=user_id, is_active=True
-    ).all()
+    recurring_expenses = RecurringExpense.query.filter_by(user_id=user_id, is_active=True).all()
 
     upcoming = []
 

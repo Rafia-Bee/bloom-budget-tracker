@@ -207,9 +207,7 @@ class TestSubcategoryUsage:
         assert response.status_code == 201
         assert response.json["expense"]["subcategory"] == "Gaming"
 
-    def test_cannot_delete_subcategory_with_expenses(
-        self, client, auth_headers, salary_period
-    ):
+    def test_cannot_delete_subcategory_with_expenses(self, client, auth_headers, salary_period):
         """Should handle deletion of subcategory with linked expenses"""
         # Create custom subcategory
         create_response = client.post(

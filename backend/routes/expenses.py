@@ -78,12 +78,7 @@ def get_expenses():
     total = query.count()
 
     # Apply pagination
-    expenses = (
-        query.order_by(Expense.date.desc())
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .all()
-    )
+    expenses = query.order_by(Expense.date.desc()).limit(limit).offset((page - 1) * limit).all()
 
     return (
         jsonify(
@@ -127,21 +122,14 @@ def create_expense():
     current_user_id = int(get_jwt_identity())
     data = request.get_json()
 
-    if (
-        not data
-        or not data.get("name")
-        or not data.get("amount")
-        or not data.get("category")
-    ):
+    if not data or not data.get("name") or not data.get("amount") or not data.get("category"):
         return jsonify({"error": "Name, amount, and category required"}), 400
 
     # Validate category
     if data["category"] not in ALLOWED_CATEGORIES:
         return (
             jsonify(
-                {
-                    "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
-                }
+                {"error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"}
             ),
             400,
         )
@@ -162,9 +150,7 @@ def create_expense():
 
     subcategory = data.get("subcategory")
     if not subcategory:
-        mapping = ExpenseNameMapping.query.filter_by(
-            expense_name=data["name"].lower()
-        ).first()
+        mapping = ExpenseNameMapping.query.filter_by(expense_name=data["name"].lower()).first()
         if mapping:
             subcategory = mapping.subcategory
 
@@ -203,11 +189,7 @@ def create_expense():
     db.session.add(expense)
 
     # If this is a debt payment, update the debt balance
-    if (
-        data["category"] == "Debt Payments"
-        and subcategory
-        and subcategory != "Credit Card"
-    ):
+    if data["category"] == "Debt Payments" and subcategory and subcategory != "Credit Card":
         debt = Debt.query.filter_by(user_id=current_user_id, name=subcategory).first()
         if debt:
             # Reduce the debt balance by the payment amount
@@ -286,9 +268,7 @@ def update_expense(expense_id):
     if "category" in data and data["category"] not in ALLOWED_CATEGORIES:
         return (
             jsonify(
-                {
-                    "error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"
-                }
+                {"error": f"Invalid category. Must be one of: {', '.join(ALLOWED_CATEGORIES)}"}
             ),
             400,
         )
@@ -342,9 +322,7 @@ def update_expense(expense_id):
 
     # If this was a debt payment before, reverse the old payment
     if old_was_debt_payment:
-        old_debt = Debt.query.filter_by(
-            user_id=current_user_id, name=old_subcategory
-        ).first()
+        old_debt = Debt.query.filter_by(user_id=current_user_id, name=old_subcategory).first()
         if old_debt:
             old_debt.current_balance += old_amount
             # Unarchive if balance increases from 0
@@ -353,9 +331,7 @@ def update_expense(expense_id):
 
     # If this is now a debt payment, apply the new payment
     if new_is_debt_payment:
-        new_debt = Debt.query.filter_by(
-            user_id=current_user_id, name=expense.subcategory
-        ).first()
+        new_debt = Debt.query.filter_by(user_id=current_user_id, name=expense.subcategory).first()
         if new_debt:
             new_debt.current_balance = max(0, new_debt.current_balance - expense.amount)
             # Auto-archive if fully paid
@@ -382,9 +358,7 @@ def delete_expense(expense_id):
         and expense.subcategory
         and expense.subcategory != "Credit Card"
     ):
-        debt = Debt.query.filter_by(
-            user_id=current_user_id, name=expense.subcategory
-        ).first()
+        debt = Debt.query.filter_by(user_id=current_user_id, name=expense.subcategory).first()
         if debt:
             # Add the payment back to the debt balance
             debt.current_balance += expense.amount

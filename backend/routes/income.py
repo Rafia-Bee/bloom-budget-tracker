@@ -64,10 +64,7 @@ def get_income():
 
     # Apply pagination
     income_entries = (
-        query.order_by(Income.actual_date.desc())
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .all()
+        query.order_by(Income.actual_date.desc()).limit(limit).offset((page - 1) * limit).all()
     )
 
     return (
@@ -257,9 +254,7 @@ def get_income_stats():
     )
 
     # Start with the first Initial Balance as the starting money
-    starting_balance = (
-        earliest_initial_balance.amount if earliest_initial_balance else 0
-    )
+    starting_balance = earliest_initial_balance.amount if earliest_initial_balance else 0
 
     # Sum all other income (excluding ALL Initial Balance entries)
     other_income = (
@@ -273,9 +268,7 @@ def get_income_stats():
     total_income = starting_balance + other_income
 
     # Period income (current salary period) - excludes all Initial Balance entries
-    current_period = SalaryPeriod.query.filter_by(
-        user_id=user_id, is_active=True
-    ).first()
+    current_period = SalaryPeriod.query.filter_by(user_id=user_id, is_active=True).first()
 
     period_income = 0
     if current_period:

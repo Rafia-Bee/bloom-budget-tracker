@@ -88,9 +88,7 @@ def app(isolate_environment):
     # Patch the email service at the routes level to prevent ANY emails
     with patch("backend.routes.auth.email_service") as mock_auth_email, patch(
         "backend.routes.password_reset.email_service"
-    ) as mock_pwd_email, patch(
-        "backend.services.email_service.email_service"
-    ) as mock_service:
+    ) as mock_pwd_email, patch("backend.services.email_service.email_service") as mock_service:
         # Configure all mocks to return success without sending emails
         for mock in [mock_auth_email, mock_pwd_email, mock_service]:
             mock.enabled = False
@@ -212,9 +210,7 @@ def salary_period(client, auth_headers):
     )
 
     if response.status_code != 201:
-        raise Exception(
-            f"Failed to create salary period: {response.status_code} - {response.json}"
-        )
+        raise Exception(f"Failed to create salary period: {response.status_code} - {response.json}")
 
     # Return the created period ID
     return response.json["id"]

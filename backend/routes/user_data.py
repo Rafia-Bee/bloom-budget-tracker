@@ -52,9 +52,7 @@ def delete_all_user_data():
         if confirmation != "Delete everything":
             return (
                 jsonify(
-                    {
-                        "error": "Invalid confirmation text. You must type exactly: Delete everything"
-                    }
+                    {"error": "Invalid confirmation text. You must type exactly: Delete everything"}
                 ),
                 400,
             )
@@ -62,16 +60,10 @@ def delete_all_user_data():
         # Count records before deletion (for confirmation message)
         expense_count = Expense.query.filter_by(user_id=current_user_id).count()
         income_count = Income.query.filter_by(user_id=current_user_id).count()
-        budget_period_count = BudgetPeriod.query.filter_by(
-            user_id=current_user_id
-        ).count()
-        salary_period_count = SalaryPeriod.query.filter_by(
-            user_id=current_user_id
-        ).count()
+        budget_period_count = BudgetPeriod.query.filter_by(user_id=current_user_id).count()
+        salary_period_count = SalaryPeriod.query.filter_by(user_id=current_user_id).count()
         debt_count = Debt.query.filter_by(user_id=current_user_id).count()
-        recurring_count = RecurringExpense.query.filter_by(
-            user_id=current_user_id
-        ).count()
+        recurring_count = RecurringExpense.query.filter_by(user_id=current_user_id).count()
         goal_count = Goal.query.filter_by(user_id=current_user_id).count()
         subcategory_count = Subcategory.query.filter_by(user_id=current_user_id).count()
 
@@ -179,9 +171,7 @@ def update_recurring_lookahead():
 
         if days < 7 or days > 90:
             return (
-                jsonify(
-                    {"error": "recurring_lookahead_days must be between 7 and 90 days"}
-                ),
+                jsonify({"error": "recurring_lookahead_days must be between 7 and 90 days"}),
                 400,
             )
 
@@ -256,9 +246,7 @@ def update_default_currency():
         if currency not in SUPPORTED_CURRENCIES:
             return (
                 jsonify(
-                    {
-                        "error": f"Invalid currency. Supported: {', '.join(SUPPORTED_CURRENCIES)}"
-                    }
+                    {"error": f"Invalid currency. Supported: {', '.join(SUPPORTED_CURRENCIES)}"}
                 ),
                 400,
             )

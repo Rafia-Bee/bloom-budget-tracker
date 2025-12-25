@@ -13,7 +13,8 @@ export function FeatureFlagProvider({ children }) {
   const [flags, setFlags] = useState(() => {
     const stored = localStorage.getItem('feature_flags')
     return stored ? JSON.parse(stored) : {
-      experimentalFeaturesEnabled: false
+      experimentalFeaturesEnabled: false,
+      multiCurrencyEnabled: false
     }
   })
 

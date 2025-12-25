@@ -155,9 +155,7 @@ class TestCalculateCarryover:
 class TestCalculateWeeksWithCarryover:
     """Test full carryover calculation across multiple weeks."""
 
-    def create_week(
-        self, week_num: int, budget: int, spent: int, start_offset: int
-    ) -> WeekData:
+    def create_week(self, week_num: int, budget: int, spent: int, start_offset: int) -> WeekData:
         """Helper to create WeekData with calculated dates."""
         base_date = date(2025, 1, 6)  # Monday
         start = base_date + timedelta(days=start_offset)
@@ -356,9 +354,7 @@ class TestWeeksToDict:
 class TestRealWorldScenarios:
     """Test realistic budget scenarios based on app usage patterns."""
 
-    def create_week(
-        self, week_num: int, budget: int, spent: int, start_offset: int
-    ) -> WeekData:
+    def create_week(self, week_num: int, budget: int, spent: int, start_offset: int) -> WeekData:
         """Helper to create WeekData."""
         base_date = date(2025, 1, 6)
         start = base_date + timedelta(days=start_offset)
@@ -460,9 +456,7 @@ class TestRealWorldScenarios:
 class TestEdgeCases:
     """Edge case tests for boundary conditions and unusual inputs."""
 
-    def create_week(
-        self, week_num: int, budget: int, spent: int, start_offset: int
-    ) -> WeekData:
+    def create_week(self, week_num: int, budget: int, spent: int, start_offset: int) -> WeekData:
         """Helper to create WeekData."""
         base_date = date(2025, 1, 6)
         start = base_date + timedelta(days=start_offset)

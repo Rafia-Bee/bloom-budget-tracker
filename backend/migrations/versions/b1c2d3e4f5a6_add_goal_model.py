@@ -31,18 +31,14 @@ def upgrade():
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], name="fk_goal_user", ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_goal_user", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.CheckConstraint("target_amount > 0", name="check_goal_positive_amount"),
     )
 
     # Create indexes for performance
     op.create_index("idx_goal_user_active", "goals", ["user_id", "is_active"])
-    op.create_index(
-        "idx_goal_user_subcategory", "goals", ["user_id", "subcategory_name"]
-    )
+    op.create_index("idx_goal_user_subcategory", "goals", ["user_id", "subcategory_name"])
 
 
 def downgrade():

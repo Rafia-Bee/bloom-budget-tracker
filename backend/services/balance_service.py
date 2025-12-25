@@ -52,9 +52,7 @@ def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float
         .order_by(BudgetPeriod.end_date.desc())
         .first()
     )
-    period_end = (
-        last_budget_period.end_date if last_budget_period else salary_period.start_date
-    )
+    period_end = last_budget_period.end_date if last_budget_period else salary_period.start_date
 
     # Calculate real debit balance
     debit_balance = _calculate_debit_balance(user_id)
@@ -129,8 +127,7 @@ def _calculate_debit_balance(user_id: int) -> float:
         .filter(
             and_(
                 Income.user_id == user_id,
-                Income.type
-                != "Initial Balance",  # Exclude all initial balance snapshots
+                Income.type != "Initial Balance",  # Exclude all initial balance snapshots
                 Income.actual_date >= start_from_date,
                 Income.actual_date <= today,
             )
@@ -238,9 +235,7 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
     )
 
     # Available = Starting + Payments - Expenses
-    balance_cents = (
-        starting_available_cents + total_credit_payments - total_credit_expenses
-    )
+    balance_cents = starting_available_cents + total_credit_payments - total_credit_expenses
     return balance_cents / 100  # Convert cents to euros
 
 

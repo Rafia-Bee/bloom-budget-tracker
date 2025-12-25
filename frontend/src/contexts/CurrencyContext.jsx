@@ -4,11 +4,13 @@
  * Provides the user's default currency and exchange rates to all components.
  * Components can use this to format amounts in the user's preferred currency.
  * Only fetches user settings when authenticated to prevent 401 spam.
+ * Respects the multiCurrencyEnabled feature flag - defaults to EUR when disabled.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { userAPI, currencyAPI } from '../api'
 import { logError, logWarn } from '../utils/logger'
+import { useFeatureFlag } from './FeatureFlagContext'
 
 const CurrencyContext = createContext()
 
@@ -17,9 +19,18 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
   const [exchangeRates, setExchangeRates] = useState({})
   const [loading, setLoading] = useState(true)
   const [ratesLoading, setRatesLoading] = useState(false)
+  const { isEnabled } = useFeatureFlag()
+  const multiCurrencyEnabled = isEnabled('multiCurrencyEnabled')
 
-  // Load user's default currency only when authenticated
+  // Load user's default currency only when authenticated and multi-currency is enabled
   useEffect(() => {
+    if (!multiCurrencyEnabled) {
+      // Feature flag disabled - always use EUR
+      setDefaultCurrency('EUR')
+      setLoading(false)
+      return
+    }
+
     if (isAuthenticated) {
       loadDefaultCurrency()
     } else {
@@ -27,14 +38,14 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
       setDefaultCurrency('EUR')
       setLoading(false)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, multiCurrencyEnabled])
 
-  // Load exchange rates when default currency changes
+  // Load exchange rates when default currency changes (only if multi-currency enabled)
   useEffect(() => {
-    if (defaultCurrency) {
+    if (defaultCurrency && multiCurrencyEnabled) {
       loadExchangeRates(defaultCurrency)
     }
-  }, [defaultCurrency])
+  }, [defaultCurrency, multiCurrencyEnabled])
 
   const loadDefaultCurrency = async () => {
     try {
@@ -78,12 +89,18 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
 
   /**
    * Convert amount from one currency to another
+   * If multi-currency is disabled, always returns the original amount (no conversion).
    * @param {number} amountCents - Amount in cents
    * @param {string} fromCurrency - Source currency code
    * @param {string} toCurrency - Target currency code (defaults to defaultCurrency)
    * @returns {number} Converted amount in cents
    */
   const convertAmount = useCallback((amountCents, fromCurrency, toCurrency = defaultCurrency) => {
+    // If multi-currency is disabled, skip conversion entirely
+    if (!multiCurrencyEnabled) {
+      return amountCents
+    }
+
     if (!amountCents || fromCurrency === toCurrency) {
       return amountCents
     }
@@ -114,14 +131,16 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
 
     // Fallback: return original amount if conversion not possible
     return amountCents
-  }, [defaultCurrency, exchangeRates])
+  }, [defaultCurrency, exchangeRates, multiCurrencyEnabled])
 
   /**
    * Refresh exchange rates (useful after being offline)
    */
   const refreshRates = useCallback(async () => {
-    await loadExchangeRates(defaultCurrency)
-  }, [defaultCurrency])
+    if (multiCurrencyEnabled) {
+      await loadExchangeRates(defaultCurrency)
+    }
+  }, [defaultCurrency, multiCurrencyEnabled])
 
   const value = {
     defaultCurrency,
@@ -131,6 +150,7 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
     updateDefaultCurrency,
     convertAmount,
     refreshRates,
+    multiCurrencyEnabled,
   }
 
   return (

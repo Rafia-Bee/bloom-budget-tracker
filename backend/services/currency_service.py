@@ -373,9 +373,7 @@ def get_supported_currencies() -> List[Dict]:
     ]
 
 
-def get_exchange_rate(
-    base: str, target: str, rate_date: Optional[date] = None
-) -> Optional[float]:
+def get_exchange_rate(base: str, target: str, rate_date: Optional[date] = None) -> Optional[float]:
     """
     Get exchange rate between two currencies.
 

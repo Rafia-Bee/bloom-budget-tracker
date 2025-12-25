@@ -42,9 +42,7 @@ def forgot_password():
             )
 
         # Deactivate any existing reset tokens for this user
-        PasswordResetToken.query.filter_by(user_id=user.id, is_used=False).update(
-            {"is_used": True}
-        )
+        PasswordResetToken.query.filter_by(user_id=user.id, is_used=False).update({"is_used": True})
 
         # Generate a secure random token
         token = secrets.token_urlsafe(32)
@@ -80,9 +78,7 @@ def forgot_password():
         # Development testing should use proper email service or check server logs
         if current_app.config.get("DEBUG"):
             # Log without exposing token value
-            current_app.logger.info(
-                f"Development mode: Password reset email sent to {user.email}"
-            )
+            current_app.logger.info(f"Development mode: Password reset email sent to {user.email}")
 
         return jsonify(response_data), 200
 
@@ -123,9 +119,7 @@ def reset_password():
             )
 
         # Find valid, unused token
-        reset_token = PasswordResetToken.query.filter_by(
-            token=token, is_used=False
-        ).first()
+        reset_token = PasswordResetToken.query.filter_by(token=token, is_used=False).first()
 
         if not reset_token:
             return jsonify({"error": "Invalid or expired reset token"}), 400
@@ -142,11 +136,7 @@ def reset_password():
         # Check if new password is the same as current password
         if user.check_password(new_password):
             return (
-                jsonify(
-                    {
-                        "error": "New password must be different from your current password"
-                    }
-                ),
+                jsonify({"error": "New password must be different from your current password"}),
                 400,
             )
 
@@ -179,9 +169,7 @@ def validate_reset_token():
             return jsonify({"error": "Token is required"}), 400
 
         # Find valid, unused token
-        reset_token = PasswordResetToken.query.filter_by(
-            token=token, is_used=False
-        ).first()
+        reset_token = PasswordResetToken.query.filter_by(token=token, is_used=False).first()
 
         if not reset_token:
             return jsonify({"valid": False, "error": "Invalid token"}), 200

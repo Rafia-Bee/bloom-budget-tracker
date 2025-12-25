@@ -42,7 +42,7 @@ function Settings({ setIsAuthenticated }) {
   const [currencySuccess, setCurrencySuccess] = useState('')
 
   // Use CurrencyContext for global currency state
-  const { defaultCurrency, updateDefaultCurrency } = useCurrency()
+  const { defaultCurrency, updateDefaultCurrency, multiCurrencyEnabled } = useCurrency()
   const [localCurrency, setLocalCurrency] = useState(defaultCurrency)
 
   const categories = [
@@ -385,62 +385,64 @@ function Settings({ setIsAuthenticated }) {
                 )}
               </div>
 
-              {/* Default Currency Setting */}
-              <div className="border-b dark:border-gray-700 pb-4">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Default Currency
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Set your preferred currency for displaying balances and totals.
-                </p>
+              {/* Default Currency Setting - only shown when multi-currency is enabled */}
+              {multiCurrencyEnabled && (
+                <div className="border-b dark:border-gray-700 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Default Currency
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Set your preferred currency for displaying balances and totals.
+                  </p>
 
-                {/* Warning about API delay */}
-                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
-                    <p className="text-amber-700 dark:text-amber-400 text-sm">
-                      Changing currency may take up to a minute while exchange rates are fetched. The app may appear unresponsive during this time.
-                    </p>
+                  {/* Warning about API delay */}
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                      <p className="text-amber-700 dark:text-amber-400 text-sm">
+                        Changing currency may take up to a minute while exchange rates are fetched. The app may appear unresponsive during this time.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-4">
-                  <label htmlFor="default-currency" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                    Currency:
-                  </label>
-                  <CurrencySelector
-                    value={localCurrency}
-                    onChange={setLocalCurrency}
-                    showLabel={false}
-                    className="flex-1 max-w-xs"
-                  />
-                  <button
-                    onClick={handleSaveCurrency}
-                    disabled={savingCurrency}
-                    className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {savingCurrency ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-
-                {currencySuccess && (
-                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <p className="text-green-700 dark:text-green-400 text-sm">{currencySuccess}</p>
+                  <div className="flex items-center gap-4">
+                    <label htmlFor="default-currency" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      Currency:
+                    </label>
+                    <CurrencySelector
+                      value={localCurrency}
+                      onChange={setLocalCurrency}
+                      showLabel={false}
+                      className="flex-1 max-w-xs"
+                    />
+                    <button
+                      onClick={handleSaveCurrency}
+                      disabled={savingCurrency}
+                      className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {savingCurrency ? 'Saving...' : 'Save'}
+                    </button>
                   </div>
-                )}
 
-                <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                  Rates by{' '}
-                  <a
-                    href="https://www.exchangerate-api.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-gray-600 dark:hover:text-gray-400"
-                  >
-                    Exchange Rate API
-                  </a>
-                </p>
-              </div>
+                  {currencySuccess && (
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <p className="text-green-700 dark:text-green-400 text-sm">{currencySuccess}</p>
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                    Rates by{' '}
+                    <a
+                      href="https://www.exchangerate-api.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-gray-600 dark:hover:text-gray-400"
+                    >
+                      Exchange Rate API
+                    </a>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
