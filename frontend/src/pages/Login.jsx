@@ -107,6 +107,7 @@ function Login({ setIsAuthenticated }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
+              autoComplete="email"
               className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
               pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
               required
@@ -129,6 +130,7 @@ function Login({ setIsAuthenticated }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              autoComplete="current-password"
               className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
               minLength={6}
               required

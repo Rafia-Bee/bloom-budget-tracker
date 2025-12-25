@@ -43,12 +43,20 @@ Start-Sleep -Seconds 1
 $BloomDir = $PSScriptRoot
 $VenvPath = Join-Path $BloomDir ".venv"
 
+# Auto-detect local IP for mobile testing
+$localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*" } | Select-Object -First 1).IPAddress
+$devMobileOrigins = ""
+if ($localIP) {
+    $devMobileOrigins = "http://${localIP}:3000,http://${localIP}:3001"
+    Write-Host "🌐 Auto-detected LAN IP: $localIP" -ForegroundColor Yellow
+}
+
 # Start Flask Backend
 Write-Host "`n🔧 Starting Flask Backend (Port 5000, Network Accessible)..." -ForegroundColor Cyan
 $backendJob = Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; python run.py --host=0.0.0.0"
+    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; `$env:DEV_MOBILE_ORIGINS='$devMobileOrigins'; python run.py --host=0.0.0.0"
 ) -PassThru -WindowStyle Normal
 
 Start-Sleep -Seconds 2
