@@ -103,3 +103,59 @@ def test_get_rates_with_auth(client, auth_headers):
     data = json.loads(response.data)
     assert "base" in data
     assert "rates" in data
+
+
+def test_cache_rate_concurrent_access(app):
+    """
+    Test that concurrent rate caching doesn't cause duplicate key violations.
+    
+    This test simulates the race condition that occurs when multiple Gunicorn
+    workers try to cache the same exchange rate simultaneously.
+    """
+    import concurrent.futures
+    from backend.services.currency_service import _cache_rate
+    from backend.models.database import db, ExchangeRate
+    from datetime import date
+
+    with app.app_context():
+        # Clean up any existing test data
+        ExchangeRate.query.filter_by(
+            base_currency="TEST",
+            target_currency="XXX",
+        ).delete()
+        db.session.commit()
+
+        test_date = date(2099, 12, 25)  # Future date to avoid conflicts
+        
+        def cache_same_rate(worker_id):
+            """Simulate multiple workers caching the same rate"""
+            with app.app_context():
+                try:
+                    _cache_rate("TEST", "XXX", test_date, 1.5 + (worker_id * 0.001))
+                    return "success"
+                except Exception as e:
+                    return f"error: {str(e)}"
+
+        # Run 5 concurrent "workers" trying to cache the same rate
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(cache_same_rate, i) for i in range(5)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        # All should succeed (no duplicate key errors)
+        assert all(r == "success" for r in results), f"Some workers failed: {results}"
+
+        # Verify only one rate exists (not duplicates)
+        with app.app_context():
+            count = ExchangeRate.query.filter_by(
+                base_currency="TEST",
+                target_currency="XXX",
+                rate_date=test_date,
+            ).count()
+            assert count == 1, f"Expected 1 rate, found {count}"
+
+            # Clean up
+            ExchangeRate.query.filter_by(
+                base_currency="TEST",
+                target_currency="XXX",
+            ).delete()
+            db.session.commit()
