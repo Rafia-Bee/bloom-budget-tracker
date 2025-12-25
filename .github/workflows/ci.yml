@@ -155,15 +155,14 @@ jobs:
           echo ""
           echo "⚛️  Frontend Coverage:"
           if [ -f "./frontend-coverage/coverage-summary.json" ]; then
-            cat ./frontend-coverage/coverage-summary.json | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-total = data.get('total', {})
-print(f\"   Lines: {total.get('lines', {}).get('pct', 'N/A')}%\")
-print(f\"   Statements: {total.get('statements', {}).get('pct', 'N/A')}%\")
-print(f\"   Functions: {total.get('functions', {}).get('pct', 'N/A')}%\")
-print(f\"   Branches: {total.get('branches', {}).get('pct', 'N/A')}%\")
-"
+            LINES=$(cat ./frontend-coverage/coverage-summary.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',{}).get('lines',{}).get('pct','N/A'))")
+            STMTS=$(cat ./frontend-coverage/coverage-summary.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',{}).get('statements',{}).get('pct','N/A'))")
+            FUNCS=$(cat ./frontend-coverage/coverage-summary.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',{}).get('functions',{}).get('pct','N/A'))")
+            BRANCHES=$(cat ./frontend-coverage/coverage-summary.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',{}).get('branches',{}).get('pct','N/A'))")
+            echo "   Lines: ${LINES}%"
+            echo "   Statements: ${STMTS}%"
+            echo "   Functions: ${FUNCS}%"
+            echo "   Branches: ${BRANCHES}%"
           else
             echo "   Coverage data not found"
           fi
