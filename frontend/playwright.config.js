@@ -74,7 +74,11 @@ export default defineConfig({
     webServer: [
         {
             // Backend Flask server
-            command: "cd .. && python run.py",
+            // On Windows, use .venv; on CI (Linux), python is in PATH
+            command:
+                process.platform === "win32"
+                    ? "cd .. && .venv\\Scripts\\python run.py"
+                    : "cd .. && python run.py",
             url: "http://localhost:5000/api/v1/currencies",
             reuseExistingServer: !process.env.CI,
             timeout: 60000,
@@ -88,6 +92,10 @@ export default defineConfig({
             url: "http://localhost:3000",
             reuseExistingServer: !process.env.CI,
             timeout: 60000,
+            env: {
+                // Override any .env.local settings to ensure localhost for tests
+                VITE_API_URL: "http://localhost:5000/api/v1",
+            },
         },
     ],
 

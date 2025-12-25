@@ -12,7 +12,7 @@ import { test as base, expect } from "@playwright/test";
  */
 export const TEST_USER = {
     email: "test@test.com",
-    password: "test",
+    password: "test123",
 };
 
 /**
@@ -38,12 +38,26 @@ export const test = base.extend({
  */
 export async function loginAsTestUser(page) {
     await page.goto("/login");
-    await page.fill('input[name="email"]', TEST_USER.email);
-    await page.fill('input[name="password"]', TEST_USER.password);
-    await page.click('button[type="submit"]');
 
-    // Wait for redirect to dashboard
-    await expect(page).toHaveURL("/", { timeout: 10000 });
+    // Wait for form to be ready
+    await page.waitForSelector('input[type="email"]', { state: "visible" });
+
+    // Clear and fill email
+    await page.locator('input[type="email"]').clear();
+    await page.locator('input[type="email"]').fill(TEST_USER.email);
+
+    // Clear and fill password
+    await page.locator('input[type="password"]').clear();
+    await page.locator('input[type="password"]').fill(TEST_USER.password);
+
+    // Wait a moment for React state to update
+    await page.waitForTimeout(100);
+
+    // Click submit and wait for navigation
+    await Promise.all([
+        page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 }),
+        page.click('button[type="submit"]'),
+    ]);
 }
 
 /**

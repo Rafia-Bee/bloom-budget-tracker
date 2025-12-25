@@ -32,8 +32,9 @@ test.describe("Smoke Tests", () => {
         await page.goto("/login");
 
         // Check essential form elements exist
-        await expect(page.locator('input[name="email"]')).toBeVisible();
-        await expect(page.locator('input[name="password"]')).toBeVisible();
+        // Use type selectors since the form doesn't use name attributes
+        await expect(page.locator('input[type="email"]')).toBeVisible();
+        await expect(page.locator('input[type="password"]')).toBeVisible();
         await expect(page.locator('button[type="submit"]')).toBeVisible();
 
         // Check for link to register
@@ -44,8 +45,10 @@ test.describe("Smoke Tests", () => {
         await page.goto("/register");
 
         // Check essential form elements exist
-        await expect(page.locator('input[name="email"]')).toBeVisible();
-        await expect(page.locator('input[name="password"]')).toBeVisible();
+        await expect(page.locator('input[type="email"]')).toBeVisible();
+        await expect(
+            page.locator('input[type="password"]').first()
+        ).toBeVisible();
         await expect(page.locator('button[type="submit"]')).toBeVisible();
 
         // Check for link to login

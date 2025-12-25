@@ -12,15 +12,15 @@ test.describe("Authentication Flow", () => {
         test("user can log in with valid credentials", async ({ page }) => {
             await page.goto("/login");
 
-            // Fill in credentials
-            await page.fill('input[name="email"]', TEST_USER.email);
-            await page.fill('input[name="password"]', TEST_USER.password);
+            // Fill in credentials (use type selectors - no name attributes)
+            await page.fill('input[type="email"]', TEST_USER.email);
+            await page.fill('input[type="password"]', TEST_USER.password);
 
             // Submit form
             await page.click('button[type="submit"]');
 
-            // Should redirect to dashboard (root path)
-            await expect(page).toHaveURL("/", { timeout: 15000 });
+            // Should redirect to dashboard
+            await expect(page).toHaveURL(/\/(dashboard)?$/, { timeout: 15000 });
 
             // Dashboard should show user is logged in (has navigation or user elements)
             // Look for any of these indicators that we're on the dashboard
@@ -48,19 +48,13 @@ test.describe("Authentication Flow", () => {
             // Login first
             await loginAsTestUser(page);
 
-            // Look for logout button in navigation/menu
-            // The app might have a hamburger menu or direct logout button
-            const menuButton = page.locator(
-                'button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]'
-            );
-            if (await menuButton.isVisible()) {
-                await menuButton.click();
-            }
+            // Click the user menu button (circular button with user's initial)
+            const userMenuButton = page.locator('button[title="User menu"]');
+            await userMenuButton.click();
 
-            // Click logout
-            const logoutButton = page.locator(
-                'button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")'
-            );
+            // Wait for menu to appear and click logout
+            const logoutButton = page.locator('button:has-text("Logout")');
+            await expect(logoutButton).toBeVisible();
             await logoutButton.click();
 
             // Should redirect to login
@@ -73,17 +67,13 @@ test.describe("Authentication Flow", () => {
             // Login first
             await loginAsTestUser(page);
 
-            // Find and click logout
-            const menuButton = page.locator(
-                'button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]'
-            );
-            if (await menuButton.isVisible()) {
-                await menuButton.click();
-            }
+            // Click the user menu button (circular button with user's initial)
+            const userMenuButton = page.locator('button[title="User menu"]');
+            await userMenuButton.click();
 
-            const logoutButton = page.locator(
-                'button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")'
-            );
+            // Wait for menu to appear and click logout
+            const logoutButton = page.locator('button:has-text("Logout")');
+            await expect(logoutButton).toBeVisible();
             await logoutButton.click();
 
             // Wait for redirect to login
