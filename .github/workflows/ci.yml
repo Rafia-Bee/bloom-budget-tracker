@@ -33,7 +33,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 black pytest pytest-flask
+          pip install flake8 black pytest pytest-flask pytest-cov
 
       - name: Run flake8 linting
         run: |
@@ -46,14 +46,21 @@ jobs:
           echo "🎨 Checking code formatting..."
           black --check backend/
 
-      - name: Run backend tests
+      - name: Run backend tests with coverage
         run: |
-          echo "🧪 Running backend tests..."
+          echo "🧪 Running backend tests with coverage..."
           cd backend
-          python -m pytest tests/ -v --tb=short --color=yes
+          python -m pytest tests/ -v --tb=short --color=yes --cov=. --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=20
         env:
           SENDGRID_API_KEY: ""
           DATABASE_URL: ""
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.json
+          retention-days: 1
 
   frontend-checks:
     name: Frontend - Build, Test & Lint
@@ -78,7 +85,14 @@ jobs:
         working-directory: ./frontend
         run: |
           echo "🧪 Running frontend tests with coverage..."
-          npm test -- --run --coverage
+          npm test -- --run --coverage --coverage.reporter=json-summary
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/coverage-summary.json
+          retention-days: 1
 
       - name: Check for console.log statements
         run: |
@@ -108,47 +122,58 @@ jobs:
             exit 1
           fi
 
-  coverage:
-    name: Coverage - Backend Coverage Analysis
+  coverage-report:
+    name: Coverage Report
     runs-on: ubuntu-latest
     needs: [backend-checks, frontend-checks]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
         with:
-          python-version: '3.11'
+          name: backend-coverage
+          path: ./backend-coverage
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          name: frontend-coverage
+          path: ./frontend-coverage
 
-      - name: Install Python dependencies
+      - name: Display coverage summary
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-flask pytest-cov
-
-      - name: Backend coverage
-        run: |
-          echo "📊 Running backend coverage analysis..."
-          cd backend
-          python -m pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-fail-under=20
-        env:
-          SENDGRID_API_KEY: ""
-          DATABASE_URL: ""
+          echo "📊 Coverage Summary"
+          echo "===================="
+          echo ""
+          echo "🐍 Backend Coverage:"
+          if [ -f "./backend-coverage/coverage.json" ]; then
+            BACKEND_PCT=$(cat ./backend-coverage/coverage.json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['totals']['percent_covered']:.1f}%\")")
+            echo "   Total: $BACKEND_PCT"
+          else
+            echo "   Coverage data not found"
+          fi
+          echo ""
+          echo "⚛️  Frontend Coverage:"
+          if [ -f "./frontend-coverage/coverage-summary.json" ]; then
+            cat ./frontend-coverage/coverage-summary.json | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+total = data.get('total', {})
+print(f\"   Lines: {total.get('lines', {}).get('pct', 'N/A')}%\")
+print(f\"   Statements: {total.get('statements', {}).get('pct', 'N/A')}%\")
+print(f\"   Functions: {total.get('functions', {}).get('pct', 'N/A')}%\")
+print(f\"   Branches: {total.get('branches', {}).get('pct', 'N/A')}%\")
+"
+          else
+            echo "   Coverage data not found"
+          fi
+          echo ""
+          echo "===================="
 
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [backend-checks, frontend-checks, coverage]
+    needs: [backend-checks, frontend-checks, coverage-report]
     if: always()
 
     steps:
@@ -157,9 +182,9 @@ jobs:
           echo "📊 CI Pipeline Summary"
           echo "Backend checks: ${{ needs.backend-checks.result }}"
           echo "Frontend checks: ${{ needs.frontend-checks.result }}"
-          echo "Coverage: ${{ needs.coverage.result }}"
+          echo "Coverage report: ${{ needs.coverage-report.result }}"
 
-          if [ "${{ needs.backend-checks.result }}" == "failure" ] || [ "${{ needs.frontend-checks.result }}" == "failure" ] || [ "${{ needs.coverage.result }}" == "failure" ]; then
+          if [ "${{ needs.backend-checks.result }}" == "failure" ] || [ "${{ needs.frontend-checks.result }}" == "failure" ]; then
             echo "❌ CI pipeline failed"
             exit 1
           else
