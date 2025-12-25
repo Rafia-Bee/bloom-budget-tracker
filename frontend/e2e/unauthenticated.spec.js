@@ -10,7 +10,9 @@ import { test, expect } from "./fixtures.js";
 
 test.describe("Unauthenticated User Flow", () => {
     test.describe("App Loading", () => {
-        test("app loads without JavaScript errors for new visitors", async ({ page }) => {
+        test("app loads without JavaScript errors for new visitors", async ({
+            page,
+        }) => {
             const jsErrors = [];
             page.on("pageerror", (error) => jsErrors.push(error.message));
 
@@ -23,7 +25,9 @@ test.describe("Unauthenticated User Flow", () => {
             expect(jsErrors).toHaveLength(0);
         });
 
-        test("unauthenticated user is redirected to login", async ({ page }) => {
+        test("unauthenticated user is redirected to login", async ({
+            page,
+        }) => {
             await page.goto("/dashboard");
 
             // Should redirect to login
@@ -31,7 +35,13 @@ test.describe("Unauthenticated User Flow", () => {
         });
 
         test("protected routes redirect to login", async ({ page }) => {
-            const protectedRoutes = ["/dashboard", "/debts", "/goals", "/settings", "/recurring"];
+            const protectedRoutes = [
+                "/dashboard",
+                "/debts",
+                "/goals",
+                "/settings",
+                "/recurring",
+            ];
 
             for (const route of protectedRoutes) {
                 await page.goto(route);
@@ -41,9 +51,14 @@ test.describe("Unauthenticated User Flow", () => {
     });
 
     test.describe("Public API Endpoints", () => {
-        test("currencies endpoint returns data without auth", async ({ page, request }) => {
+        test("currencies endpoint returns data without auth", async ({
+            page,
+            request,
+        }) => {
             // Direct API call to public endpoint
-            const response = await request.get("http://localhost:5000/api/v1/currencies");
+            const response = await request.get(
+                "http://localhost:5000/api/v1/currencies"
+            );
 
             expect(response.status()).toBe(200);
 
@@ -59,8 +74,13 @@ test.describe("Unauthenticated User Flow", () => {
             expect(euro.symbol).toBe("€");
         });
 
-        test("exchange rates endpoint returns data without auth", async ({ page, request }) => {
-            const response = await request.get("http://localhost:5000/api/v1/currencies/rates?base=EUR");
+        test("exchange rates endpoint returns data without auth", async ({
+            page,
+            request,
+        }) => {
+            const response = await request.get(
+                "http://localhost:5000/api/v1/currencies/rates?base=EUR"
+            );
 
             expect(response.status()).toBe(200);
 
@@ -70,14 +90,20 @@ test.describe("Unauthenticated User Flow", () => {
             expect(typeof data.rates.USD).toBe("number");
         });
 
-        test("currency convert endpoint works without auth", async ({ page, request }) => {
-            const response = await request.post("http://localhost:5000/api/v1/currencies/convert", {
-                data: {
-                    amount: 10000, // 100 EUR in cents
-                    from_currency: "EUR",
-                    to_currency: "USD",
-                },
-            });
+        test("currency convert endpoint works without auth", async ({
+            page,
+            request,
+        }) => {
+            const response = await request.post(
+                "http://localhost:5000/api/v1/currencies/convert",
+                {
+                    data: {
+                        amount: 10000, // 100 EUR in cents
+                        from_currency: "EUR",
+                        to_currency: "USD",
+                    },
+                }
+            );
 
             expect(response.status()).toBe(200);
 
@@ -103,10 +129,16 @@ test.describe("Unauthenticated User Flow", () => {
             await expect(page.locator('a[href="/register"]')).toBeVisible();
 
             // Theme toggle should be accessible (contains "Dark Mode" or "Light Mode")
-            await expect(page.locator("button").filter({ hasText: /Dark Mode|Light Mode/i })).toBeVisible();
+            await expect(
+                page
+                    .locator("button")
+                    .filter({ hasText: /Dark Mode|Light Mode/i })
+            ).toBeVisible();
         });
 
-        test("login form shows validation errors for invalid email", async ({ page }) => {
+        test("login form shows validation errors for invalid email", async ({
+            page,
+        }) => {
             await page.goto("/login");
 
             await page.fill('input[name="email"]', "invalid-email");
@@ -114,10 +146,14 @@ test.describe("Unauthenticated User Flow", () => {
             await page.click('button[type="submit"]');
 
             // Should show validation error
-            await expect(page.locator("text=valid email")).toBeVisible({ timeout: 5000 });
+            await expect(page.locator("text=valid email")).toBeVisible({
+                timeout: 5000,
+            });
         });
 
-        test("login form shows validation errors for short password", async ({ page }) => {
+        test("login form shows validation errors for short password", async ({
+            page,
+        }) => {
             await page.goto("/login");
 
             await page.fill('input[name="email"]', "test@test.com");
@@ -125,10 +161,14 @@ test.describe("Unauthenticated User Flow", () => {
             await page.click('button[type="submit"]');
 
             // Should show validation error
-            await expect(page.locator("text=6 characters")).toBeVisible({ timeout: 5000 });
+            await expect(page.locator("text=6 characters")).toBeVisible({
+                timeout: 5000,
+            });
         });
 
-        test("login form shows error for invalid credentials", async ({ page }) => {
+        test("login form shows error for invalid credentials", async ({
+            page,
+        }) => {
             await page.goto("/login");
 
             await page.fill('input[name="email"]', "wrong@email.com");
@@ -136,7 +176,9 @@ test.describe("Unauthenticated User Flow", () => {
             await page.click('button[type="submit"]');
 
             // Should show error message
-            await expect(page.locator("text=/invalid|incorrect|failed/i")).toBeVisible({ timeout: 10000 });
+            await expect(
+                page.locator("text=/invalid|incorrect|failed/i")
+            ).toBeVisible({ timeout: 10000 });
         });
 
         test("can navigate from login to register", async ({ page }) => {
@@ -149,7 +191,9 @@ test.describe("Unauthenticated User Flow", () => {
     });
 
     test.describe("Register Page", () => {
-        test("register page renders all required elements", async ({ page }) => {
+        test("register page renders all required elements", async ({
+            page,
+        }) => {
             await page.goto("/register");
 
             // Form elements
@@ -176,14 +220,20 @@ test.describe("Unauthenticated User Flow", () => {
 
             // Get initial state (check html element for dark class)
             const html = page.locator("html");
-            const initialIsDark = await html.evaluate((el) => el.classList.contains("dark"));
+            const initialIsDark = await html.evaluate((el) =>
+                el.classList.contains("dark")
+            );
 
             // Click theme toggle (contains "Dark Mode" or "Light Mode" text)
-            const themeToggle = page.locator("button").filter({ hasText: /Dark Mode|Light Mode/i });
+            const themeToggle = page
+                .locator("button")
+                .filter({ hasText: /Dark Mode|Light Mode/i });
             await themeToggle.first().click();
 
             // Theme should have changed
-            const newIsDark = await html.evaluate((el) => el.classList.contains("dark"));
+            const newIsDark = await html.evaluate((el) =>
+                el.classList.contains("dark")
+            );
             expect(newIsDark).not.toBe(initialIsDark);
         });
     });
