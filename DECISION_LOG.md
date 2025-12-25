@@ -6,6 +6,117 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Make Currency Endpoints Public (Production 401 Storm Fix)
+
+**Context:** Production experienced 401 storm - currency endpoints (`/currencies`, `/currencies/rates`) required `@jwt_required()` but were called by `CurrencyContext` during app initialization before user login. This caused thousands of failed requests in Render logs.
+
+**Root Cause:** Currency data is not user-specific and is needed for UI rendering before authentication. Requiring JWT for public reference data created a dependency cycle.
+
+**Decision:** Remove `@jwt_required()` decorator from currency list and rates endpoints. Keep auth on `/convert` endpoint (user-specific action).
+
+**Implementation:**
+
+```python
+# backend/routes/currency.py
+
+# PUBLIC (no auth required) - reference data
+@currency_bp.route("/currencies", methods=["GET"])
+def list_currencies():
+    """List supported currencies (public)"""
+
+@currency_bp.route("/currencies/rates", methods=["GET"])
+def get_rates():
+    """Get exchange rates (public)"""
+
+# PROTECTED (auth required) - user action
+@currency_bp.route("/currencies/convert", methods=["POST"])
+@jwt_required()
+def convert():
+    """Convert amount between currencies (requires auth)"""
+```
+
+**Testing Strategy:** Created comprehensive test suite to prevent regression:
+
+1. **Backend Tests** (`test_currency_routes.py`):
+
+    - Verify public endpoints return 200 without auth
+    - Verify /convert returns 401 without auth
+    - Verify all endpoints work with auth
+
+2. **Frontend Tests** (`UnauthenticatedFlow.test.jsx`):
+
+    - Test app loads without auth
+    - Validate currency API calls succeed
+    - Verify no Authorization headers on public endpoints
+
+3. **Future E2E Tests** (Issue #107):
+    - Playwright tests for complete unauthenticated user journey
+    - CI integration with preview deployments
+
+**Rationale:**
+
+-   Currency exchange rates are public data (not user-specific)
+-   UI needs currency info for rendering before login
+-   Principle of least privilege: only protect user-specific endpoints
+-   Comprehensive testing prevents similar issues
+
+**Impact:**
+
+-   Eliminates production 401 errors
+-   Improves app initialization performance
+-   Better separation of public vs authenticated endpoints
+-   Test coverage ensures no regression
+
+---
+
+### Store Historical Exchange Rates at Transaction Creation (#7)
+
+**Context:** Multi-currency support needed historical exchange rate tracking for accurate reporting. Two options: (1) store rate at creation, or (2) query historical API later.
+
+**Decision:** Store `exchange_rate_used` (Float, nullable) in Expense and Income models at transaction creation time.
+
+**Implementation:**
+
+```python
+# backend/models/database.py
+class Expense:
+    exchange_rate_used = db.Column(db.Float, nullable=True)
+    # Rate from transaction currency TO EUR
+
+class Income:
+    exchange_rate_used = db.Column(db.Float, nullable=True)
+```
+
+```python
+# backend/routes/expenses.py
+if currency != "EUR":
+    try:
+        exchange_rate_used = get_exchange_rate(currency, "EUR")
+    except Exception:
+        exchange_rate_used = None  # Graceful degradation
+```
+
+**Migration Strategy:**
+
+-   Development: Alembic auto-migration
+-   Production: Manual SQL on Neon (free tier limitations)
+
+**Rationale:**
+
+-   API reliability: Store rate once vs. repeated API calls
+-   Accuracy: Exact rate used at transaction time, not approximation
+-   Performance: No API calls for historical reports
+-   Simplicity: No historical API integration needed
+
+**Alternative Rejected:** Querying historical API later requires:
+
+-   Additional API integration (complexity)
+-   Risk of rate unavailability (service downtime)
+-   Performance overhead for reports
+-   Potential cost for premium historical data
+
+---
+
 ### Remove CORS Wildcard in Development Mode (#85 Security)
 
 **Context:** Development mode used `cors_origins.append("*")` for mobile testing convenience, creating security risk if accidentally deployed to production.
