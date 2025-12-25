@@ -25,7 +25,9 @@ test.describe("Authentication Flow", () => {
             // Dashboard should show user is logged in (has navigation or user elements)
             // Look for any of these indicators that we're on the dashboard
             await expect(
-                page.locator("text=/Dashboard|Budget|Balance|Salary Period/i").first()
+                page
+                    .locator("text=/Dashboard|Budget|Balance|Salary Period/i")
+                    .first()
             ).toBeVisible({ timeout: 10000 });
         });
 
@@ -48,30 +50,40 @@ test.describe("Authentication Flow", () => {
 
             // Look for logout button in navigation/menu
             // The app might have a hamburger menu or direct logout button
-            const menuButton = page.locator('button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]');
+            const menuButton = page.locator(
+                'button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]'
+            );
             if (await menuButton.isVisible()) {
                 await menuButton.click();
             }
 
             // Click logout
-            const logoutButton = page.locator('button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")');
+            const logoutButton = page.locator(
+                'button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")'
+            );
             await logoutButton.click();
 
             // Should redirect to login
             await expect(page).toHaveURL("/login", { timeout: 10000 });
         });
 
-        test("after logout, protected routes redirect to login", async ({ page }) => {
+        test("after logout, protected routes redirect to login", async ({
+            page,
+        }) => {
             // Login first
             await loginAsTestUser(page);
 
             // Find and click logout
-            const menuButton = page.locator('button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]');
+            const menuButton = page.locator(
+                'button[aria-label*="menu"], button:has-text("Menu"), [data-testid="menu-button"]'
+            );
             if (await menuButton.isVisible()) {
                 await menuButton.click();
             }
 
-            const logoutButton = page.locator('button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")');
+            const logoutButton = page.locator(
+                'button:has-text("Logout"), a:has-text("Logout"), button:has-text("Sign Out")'
+            );
             await logoutButton.click();
 
             // Wait for redirect to login
@@ -86,7 +98,9 @@ test.describe("Authentication Flow", () => {
     });
 
     test.describe("Session Management", () => {
-        test("authenticated user can access protected routes", async ({ page }) => {
+        test("authenticated user can access protected routes", async ({
+            page,
+        }) => {
             await loginAsTestUser(page);
 
             // Navigate to various protected routes
@@ -99,15 +113,24 @@ test.describe("Authentication Flow", () => {
             for (const route of protectedRoutes) {
                 await page.goto(route.path);
                 await expect(page).toHaveURL(route.path);
-                await expect(page.locator(`text=${route.indicator}`).first()).toBeVisible({ timeout: 5000 });
+                await expect(
+                    page.locator(`text=${route.indicator}`).first()
+                ).toBeVisible({ timeout: 5000 });
             }
         });
 
-        test("api requests include auth cookies automatically", async ({ page, context }) => {
+        test("api requests include auth cookies automatically", async ({
+            page,
+            context,
+        }) => {
             await loginAsTestUser(page);
 
             // Make an API call that requires auth
-            const responsePromise = page.waitForResponse((response) => response.url().includes("/api/v1/salary-periods") && response.status() < 400);
+            const responsePromise = page.waitForResponse(
+                (response) =>
+                    response.url().includes("/api/v1/salary-periods") &&
+                    response.status() < 400
+            );
 
             // Navigate to dashboard which triggers salary periods fetch
             await page.goto("/");
