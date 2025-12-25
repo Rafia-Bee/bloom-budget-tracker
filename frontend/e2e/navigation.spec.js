@@ -26,22 +26,33 @@ test.describe("Navigation and State Management", () => {
 
         test("can navigate between weeks", async ({ page }) => {
             // Find week navigation buttons
-            const nextWeekButton = page.locator(
-                'button:has-text("Next"), button[aria-label*="next" i], [data-testid="next-week"], button:has(svg)'
-            ).filter({ hasText: /next|›|→/i }).or(page.locator('button:has-text(">")')).first();
+            const nextWeekButton = page
+                .locator(
+                    'button:has-text("Next"), button[aria-label*="next" i], [data-testid="next-week"], button:has(svg)'
+                )
+                .filter({ hasText: /next|›|→/i })
+                .or(page.locator('button:has-text(">")'))
+                .first();
 
-            const prevWeekButton = page.locator(
-                'button:has-text("Previous"), button:has-text("Prev"), button[aria-label*="prev" i], [data-testid="prev-week"]'
-            ).filter({ hasText: /prev|‹|←/i }).or(page.locator('button:has-text("<")')).first();
+            const prevWeekButton = page
+                .locator(
+                    'button:has-text("Previous"), button:has-text("Prev"), button[aria-label*="prev" i], [data-testid="prev-week"]'
+                )
+                .filter({ hasText: /prev|‹|←/i })
+                .or(page.locator('button:has-text("<")'))
+                .first();
 
             // Get current week indicator
-            const weekIndicator = page.locator('text=/Week [1-4]/i').first();
+            const weekIndicator = page.locator("text=/Week [1-4]/i").first();
 
             if (await weekIndicator.isVisible({ timeout: 3000 })) {
                 const initialWeek = await weekIndicator.textContent();
 
                 // Try navigating forward
-                if (await nextWeekButton.isVisible() && await nextWeekButton.isEnabled()) {
+                if (
+                    (await nextWeekButton.isVisible()) &&
+                    (await nextWeekButton.isEnabled())
+                ) {
                     await nextWeekButton.click();
                     await page.waitForTimeout(500);
 
@@ -52,7 +63,10 @@ test.describe("Navigation and State Management", () => {
                 }
 
                 // Try navigating backward
-                if (await prevWeekButton.isVisible() && await prevWeekButton.isEnabled()) {
+                if (
+                    (await prevWeekButton.isVisible()) &&
+                    (await prevWeekButton.isEnabled())
+                ) {
                     await prevWeekButton.click();
                     await page.waitForTimeout(500);
 
@@ -65,7 +79,7 @@ test.describe("Navigation and State Management", () => {
         test("week displays budget information", async ({ page }) => {
             // Each week should show budget-related info
             const budgetInfo = page.locator(
-                'text=/Budget|Spent|Remaining|Available|Leftover|Carryover/i'
+                "text=/Budget|Spent|Remaining|Available|Leftover|Carryover/i"
             );
 
             await expect(budgetInfo.first()).toBeVisible({ timeout: 5000 });
@@ -73,9 +87,13 @@ test.describe("Navigation and State Management", () => {
     });
 
     test.describe("Carryover Display", () => {
-        test("carryover information is displayed when applicable", async ({ page }) => {
+        test("carryover information is displayed when applicable", async ({
+            page,
+        }) => {
             // Navigate to week 2, 3, or 4 where carryover might exist
-            const weekNav = page.locator('button:has-text("Next"), button:has-text(">")').first();
+            const weekNav = page
+                .locator('button:has-text("Next"), button:has-text(">")')
+                .first();
 
             // Try to navigate to a later week
             if (await weekNav.isVisible()) {
@@ -83,11 +101,15 @@ test.describe("Navigation and State Management", () => {
                 await page.waitForTimeout(500);
 
                 // Look for carryover indicator
-                const carryoverInfo = page.locator('text=/Carryover|Leftover|from Week|carry/i');
+                const carryoverInfo = page.locator(
+                    "text=/Carryover|Leftover|from Week|carry/i"
+                );
 
                 // Carryover might not always be visible (depends on data)
                 // Just verify the page loads without error
-                await expect(page.locator('text=/Week/i').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Week/i").first()
+                ).toBeVisible();
             }
         });
     });
@@ -102,13 +124,19 @@ test.describe("Navigation and State Management", () => {
             if (await debtsLink.first().isVisible({ timeout: 3000 })) {
                 await debtsLink.first().click();
                 await expect(page).toHaveURL("/debts");
-                await expect(page.locator('text=/Debt/i').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Debt/i").first()
+                ).toBeVisible();
             } else {
                 // Try hamburger menu first
-                const menuButton = page.locator('button[aria-label*="menu" i], [data-testid="menu-button"]');
+                const menuButton = page.locator(
+                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
+                );
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator('a[href="/debts"], button:has-text("Debts")').click();
+                    await page
+                        .locator('a[href="/debts"], button:has-text("Debts")')
+                        .click();
                     await expect(page).toHaveURL("/debts");
                 }
             }
@@ -122,12 +150,18 @@ test.describe("Navigation and State Management", () => {
             if (await goalsLink.first().isVisible({ timeout: 3000 })) {
                 await goalsLink.first().click();
                 await expect(page).toHaveURL("/goals");
-                await expect(page.locator('text=/Goal/i').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Goal/i").first()
+                ).toBeVisible();
             } else {
-                const menuButton = page.locator('button[aria-label*="menu" i], [data-testid="menu-button"]');
+                const menuButton = page.locator(
+                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
+                );
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator('a[href="/goals"], button:has-text("Goals")').click();
+                    await page
+                        .locator('a[href="/goals"], button:has-text("Goals")')
+                        .click();
                     await expect(page).toHaveURL("/goals");
                 }
             }
@@ -141,12 +175,20 @@ test.describe("Navigation and State Management", () => {
             if (await settingsLink.first().isVisible({ timeout: 3000 })) {
                 await settingsLink.first().click();
                 await expect(page).toHaveURL("/settings");
-                await expect(page.locator('text=/Settings|Preferences/i').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Settings|Preferences/i").first()
+                ).toBeVisible();
             } else {
-                const menuButton = page.locator('button[aria-label*="menu" i], [data-testid="menu-button"]');
+                const menuButton = page.locator(
+                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
+                );
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator('a[href="/settings"], button:has-text("Settings")').click();
+                    await page
+                        .locator(
+                            'a[href="/settings"], button:has-text("Settings")'
+                        )
+                        .click();
                     await expect(page).toHaveURL("/settings");
                 }
             }
@@ -161,10 +203,16 @@ test.describe("Navigation and State Management", () => {
                 await recurringLink.first().click();
                 await expect(page).toHaveURL("/recurring");
             } else {
-                const menuButton = page.locator('button[aria-label*="menu" i], [data-testid="menu-button"]');
+                const menuButton = page.locator(
+                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
+                );
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator('a[href="/recurring"], button:has-text("Recurring")').click();
+                    await page
+                        .locator(
+                            'a[href="/recurring"], button:has-text("Recurring")'
+                        )
+                        .click();
                     await expect(page).toHaveURL("/recurring");
                 }
             }
@@ -183,10 +231,17 @@ test.describe("Navigation and State Management", () => {
             if (await dashboardLink.first().isVisible({ timeout: 3000 })) {
                 await dashboardLink.first().click();
             } else {
-                const menuButton = page.locator('button[aria-label*="menu" i], [data-testid="menu-button"]');
+                const menuButton = page.locator(
+                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
+                );
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator('a[href="/"], a[href="/dashboard"], button:has-text("Dashboard")').first().click();
+                    await page
+                        .locator(
+                            'a[href="/"], a[href="/dashboard"], button:has-text("Dashboard")'
+                        )
+                        .first()
+                        .click();
                 }
             }
 
@@ -212,7 +267,9 @@ test.describe("Navigation and State Management", () => {
 
                 // Menu should open with navigation links
                 await expect(
-                    page.locator('text=/Dashboard|Debts|Goals|Settings/i').first()
+                    page
+                        .locator("text=/Dashboard|Debts|Goals|Settings/i")
+                        .first()
                 ).toBeVisible({ timeout: 3000 });
             }
         });
@@ -221,7 +278,9 @@ test.describe("Navigation and State Management", () => {
     test.describe("State Persistence", () => {
         test("selected week persists after page reload", async ({ page }) => {
             // Navigate to a specific week
-            const nextWeekButton = page.locator('button:has-text("Next"), button:has-text(">")').first();
+            const nextWeekButton = page
+                .locator('button:has-text("Next"), button:has-text(">")')
+                .first();
 
             if (await nextWeekButton.isVisible({ timeout: 3000 })) {
                 // Click next to change week
@@ -229,7 +288,9 @@ test.describe("Navigation and State Management", () => {
                 await page.waitForTimeout(500);
 
                 // Get current week
-                const weekIndicator = page.locator('text=/Week [1-4]/i').first();
+                const weekIndicator = page
+                    .locator("text=/Week [1-4]/i")
+                    .first();
                 const weekBefore = await weekIndicator.textContent();
 
                 // Reload page
@@ -237,7 +298,9 @@ test.describe("Navigation and State Management", () => {
                 await page.waitForLoadState("networkidle");
 
                 // Week should be remembered (or reset to current - both are valid behaviors)
-                await expect(page.locator('text=/Week/i').first()).toBeVisible();
+                await expect(
+                    page.locator("text=/Week/i").first()
+                ).toBeVisible();
             }
         });
     });
