@@ -6,6 +6,83 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-25
 
+### Race Condition Fix: PostgreSQL Upsert for Exchange Rate Caching
+
+**Context:** Production workers crashed with `UniqueViolation: duplicate key value violates unique constraint` when multiple Gunicorn workers tried to cache the same exchange rate simultaneously.
+
+**Root Cause:** The `_cache_rate()` function used a check-then-insert pattern that's not thread-safe:
+
+```python
+# BEFORE (race condition)
+existing = ExchangeRate.query.filter_by(...).first()
+if existing:
+    existing.rate = rate
+else:
+    db.session.add(ExchangeRate(...))  # Two workers could both reach here
+db.session.commit()
+```
+
+**Decision:** Use PostgreSQL's `ON CONFLICT DO UPDATE` (upsert) for atomic insert-or-update.
+
+**Implementation:**
+
+```python
+# AFTER (thread-safe)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+stmt = pg_insert(ExchangeRate).values(...)
+stmt = stmt.on_conflict_do_update(
+    index_elements=["base_currency", "target_currency", "rate_date"],
+    set_={"rate": rate, "fetched_at": datetime.utcnow()},
+)
+db.session.execute(stmt)
+db.session.commit()
+```
+
+**Testing:** Added `test_cache_rate_concurrent_access` that runs 5 concurrent threads to verify no duplicate key errors.
+
+**Impact:**
+
+-   Eliminated worker crashes from concurrent rate caching
+-   Works with both PostgreSQL (production) and SQLite (development)
+-   Identified 4 other check-then-insert patterns for future fixes (Issues #108-#112)
+
+---
+
+### Frontend Auth Check Before User-Specific API Calls
+
+**Context:** Even after making currency endpoints public, production logs showed repeated 401 errors for `/user-data/settings/default-currency` and `/auth/me` endpoints when users weren't logged in.
+
+**Root Cause:** `CurrencyContext` called `loadDefaultCurrency()` on mount unconditionally, even wrapping the login page.
+
+**Decision:** Pass `isAuthenticated` prop to `CurrencyProvider` and only fetch user settings when authenticated.
+
+**Implementation:**
+
+```jsx
+// CurrencyContext.jsx
+export function CurrencyProvider({ children, isAuthenticated = false }) {
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadDefaultCurrency()  // Only when logged in
+    } else {
+      setDefaultCurrency('EUR')  // Default for guests
+    }
+  }, [isAuthenticated])
+}
+
+// App.jsx
+<CurrencyProvider isAuthenticated={isAuthenticated}>
+```
+
+**Impact:**
+
+-   Eliminates 401 spam in production logs
+-   Faster app initialization for unauthenticated users
+-   Pattern to follow for other user-specific contexts
+
+---
+
 ### Make Currency Endpoints Public (Production 401 Storm Fix)
 
 **Context:** Production experienced 401 storm - currency endpoints (`/currencies`, `/currencies/rates`) required `@jwt_required()` but were called by `CurrencyContext` during app initialization before user login. This caused thousands of failed requests in Render logs.
