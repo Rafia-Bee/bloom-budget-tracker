@@ -22,10 +22,12 @@ currency_bp = Blueprint("currency", __name__)
 
 
 @currency_bp.route("/currencies", methods=["GET"])
-@jwt_required()
 def list_currencies():
     """
     Get list of supported currencies with metadata.
+
+    This endpoint is public (no auth required) since the currency list
+    is needed for the currency selector before login.
 
     Returns:
         JSON array of currency objects with code, name, symbol (no flags)
@@ -35,10 +37,12 @@ def list_currencies():
 
 
 @currency_bp.route("/currencies/rates", methods=["GET"])
-@jwt_required()
 def get_rates():
     """
     Get exchange rates for a base currency.
+
+    This endpoint is public (no auth required) since exchange rates
+    are not user-specific and are needed before login.
 
     Query params:
         base: Base currency code (default: EUR)
