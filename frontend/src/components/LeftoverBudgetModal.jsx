@@ -11,7 +11,7 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters'
 
 function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }) {
-  const { defaultCurrency } = useCurrency()
+  const { defaultCurrency, convertAmount } = useCurrency()
   const currencySymbol = getCurrencySymbol(defaultCurrency)
   const [leftoverData, setLeftoverData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -31,7 +31,11 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
       const response = await api.get(`/salary-periods/${salaryPeriodId}/week/${weekNumber}/leftover`)
       setLeftoverData(response.data)
       if (response.data.leftover > 0) {
-        setCustomAmount((response.data.leftover / 100).toFixed(2))
+        // Convert EUR leftover to user's currency for display
+        const leftoverInUserCurrency = convertAmount
+          ? convertAmount(response.data.leftover, 'EUR', defaultCurrency)
+          : response.data.leftover
+        setCustomAmount((leftoverInUserCurrency / 100).toFixed(2))
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load leftover data')
@@ -45,6 +49,21 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
     return formatCurrencyUtil(cents, defaultCurrency)
   }
 
+  // Convert EUR cents (from DB) to user's currency cents
+  const fromEur = (eurCents) => {
+    return convertAmount ? convertAmount(eurCents, 'EUR', defaultCurrency) : eurCents
+  }
+
+  // Format EUR amounts converted to user's currency
+  const fcEur = (cents) => {
+    return formatCurrency(fromEur(cents))
+  }
+
+  // Convert user's currency cents to EUR cents for storage
+  const toEur = (userCents) => {
+    return convertAmount ? convertAmount(userCents, defaultCurrency, 'EUR') : userCents
+  }
+
   const parseCurrency = (value) => {
     const cleaned = value.replace(/[^0-9.]/g, '')
     const dollars = parseFloat(cleaned) || 0
@@ -52,15 +71,16 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
   }
 
   const handleAllocate = async () => {
-    const amount = parseCurrency(customAmount)
+    const amountInUserCurrency = parseCurrency(customAmount)
+    const leftoverInUserCurrency = fromEur(leftoverData.leftover)
 
-    if (amount <= 0) {
+    if (amountInUserCurrency <= 0) {
       setError('Please enter a valid amount')
       return
     }
 
-    if (amount > leftoverData.leftover) {
-      setError(`Amount cannot exceed leftover budget of ${formatCurrency(leftoverData.leftover)}`)
+    if (amountInUserCurrency > leftoverInUserCurrency) {
+      setError(`Amount cannot exceed leftover budget of ${fcEur(leftoverData.leftover)}`)
       return
     }
 
@@ -80,11 +100,13 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
     try {
       // Use the week's end date for allocation (not today's date)
       const allocationDate = leftoverData.end_date
+      // Convert user's currency input to EUR for backend storage
+      const amountInEur = toEur(amountInUserCurrency)
 
       if (allocationType === 'debts') {
         await api.post('/debts/pay', {
           debt_id: selectedDebt,
-          amount: amount,
+          amount: amountInEur,
           date: allocationDate
         })
       } else if (allocationType === 'goals') {
@@ -94,7 +116,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
         // Create an expense with the goal's subcategory
         await api.post('/expenses', {
           name: `${goal.name} Contribution`,
-          amount: amount,
+          amount: amountInEur,
           date: allocationDate,
           category: 'Savings & Investments',
           subcategory: goal.subcategory_name,
@@ -169,9 +191,9 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
 
           <div className="bg-green-50 dark:bg-green-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl p-6 text-center">
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-2">Leftover Budget</p>
-            <p className="text-4xl font-bold text-green-600 dark:text-green-400">{formatCurrency(leftoverData.leftover)}</p>
+            <p className="text-4xl font-bold text-green-600 dark:text-green-400">{fcEur(leftoverData.leftover)}</p>
             <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-2">
-              from {formatCurrency(leftoverData.budget_amount)} budget
+              from {fcEur(leftoverData.budget_amount)} budget
             </p>
           </div>
 
@@ -248,11 +270,11 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                         <div>
                           <div className="font-semibold text-gray-800 dark:text-dark-text">{debt.name}</div>
                           <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                            Balance: {formatCurrency(debt.current_balance)}
+                            Balance: {fcEur(debt.current_balance)}
                           </div>
                         </div>
                         <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                          Min: {formatCurrency(debt.monthly_payment)}
+                          Min: {fcEur(debt.monthly_payment)}
                         </div>
                       </div>
                     </button>
@@ -297,7 +319,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                             />
                           </div>
                           <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                            {formatCurrency(progress)} / {formatCurrency(targetAmount)}
+                            {fcEur(progress)} / {fcEur(targetAmount)}
                           </div>
                         </div>
                       </button>
@@ -321,10 +343,10 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
               />
             </div>
             <button
-              onClick={() => setCustomAmount((leftoverData.leftover / 100).toFixed(2))}
+              onClick={() => setCustomAmount((fromEur(leftoverData.leftover) / 100).toFixed(2))}
               className="text-sm text-bloom-pink dark:text-dark-pink hover:underline mt-1"
             >
-              Use full amount ({formatCurrency(leftoverData.leftover)})
+              Use full amount ({fcEur(leftoverData.leftover)})
             </button>
           </div>
 

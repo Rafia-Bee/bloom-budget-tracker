@@ -1463,7 +1463,7 @@ function Dashboard({ setIsAuthenticated }) {
                               </p>
                             </div>
                             <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                              -{fc(expense.amount * 100)}
+                              -{fcEur(expense.amount * 100)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
