@@ -25,10 +25,10 @@ function Goals({ setIsAuthenticated }) {
   const [editingGoal, setEditingGoal] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
-  // Transaction history state
-  const [expandedGoalId, setExpandedGoalId] = useState(null)
+  // Transaction history state - track which goals are expanded
+  const [expandedGoalIds, setExpandedGoalIds] = useState(new Set())
   const [goalTransactions, setGoalTransactions] = useState({})
-  const [loadingTransactions, setLoadingTransactions] = useState(false)
+  const [loadingGoalIds, setLoadingGoalIds] = useState(new Set())
 
   // Currency context for multi-currency support
   const { defaultCurrency, convertAmount } = useCurrency()
@@ -125,16 +125,20 @@ function Goals({ setIsAuthenticated }) {
   }
 
   const toggleGoalExpansion = async (goalId) => {
-    if (expandedGoalId === goalId) {
-      setExpandedGoalId(null)
+    const newExpanded = new Set(expandedGoalIds)
+
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId)
+      setExpandedGoalIds(newExpanded)
       return
     }
 
-    setExpandedGoalId(goalId)
+    newExpanded.add(goalId)
+    setExpandedGoalIds(newExpanded)
 
     // Fetch transactions if not already loaded
     if (!goalTransactions[goalId]) {
-      setLoadingTransactions(true)
+      setLoadingGoalIds(prev => new Set(prev).add(goalId))
       try {
         const response = await goalAPI.getTransactions(goalId)
         setGoalTransactions(prev => ({
@@ -144,7 +148,11 @@ function Goals({ setIsAuthenticated }) {
       } catch (err) {
         logError('loadGoalTransactions', err)
       } finally {
-        setLoadingTransactions(false)
+        setLoadingGoalIds(prev => {
+          const next = new Set(prev)
+          next.delete(goalId)
+          return next
+        })
       }
     }
   }
@@ -202,21 +210,23 @@ function Goals({ setIsAuthenticated }) {
             </button>
           </div>
 
-          {/* Help hint for new users */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex items-start space-x-3">
-              <div className="text-blue-600 dark:text-blue-400 mt-0.5">
-                🎯
-              </div>
-              <div>
-                <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-1">How Goals Work</h3>
-                <p className="text-blue-700 dark:text-blue-300 text-sm">
-                  Create a goal with a target amount and deadline. When you add expenses in "Savings & Investments" →
-                  your goal's subcategory, they automatically count toward your progress. Track multiple goals simultaneously!
-                </p>
+          {/* Help hint for new users - only shown when no goals exist */}
+          {goals.length === 0 && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <div className="text-blue-600 dark:text-blue-400 mt-0.5">
+                  🎯
+                </div>
+                <div>
+                  <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-1">How Goals Work</h3>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    Create a goal with a target amount and deadline. When you add expenses in "Savings & Investments" →
+                    your goal's subcategory, they automatically count toward your progress. Track multiple goals simultaneously!
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {error && (
@@ -231,7 +241,7 @@ function Goals({ setIsAuthenticated }) {
             <p className="text-gray-600 dark:text-gray-300 mt-4">Loading your goals...</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-start">
             {goals.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <div className="text-gray-400 dark:text-gray-500 mb-4">
@@ -315,23 +325,31 @@ function Goals({ setIsAuthenticated }) {
                           {fcEur(goal.progress.remaining)}
                         </span>
                       </div>
-                      {goal.target_date && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-500 dark:text-gray-400">Due:</span>
-                          <span className={`font-medium ${
-                            getDaysUntilTarget(goal.target_date) < 30
-                              ? 'text-orange-600 dark:text-orange-400'
-                              : 'text-gray-900 dark:text-white'
-                          }`}>
-                            {formatDate(goal.target_date)}
-                            {getDaysUntilTarget(goal.target_date) !== null && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                                ({getDaysUntilTarget(goal.target_date)} days)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      )}
+                      {/* Always reserve space for due date row to maintain alignment */}
+                      <div className="flex justify-between min-h-[1.5rem]">
+                        {goal.target_date ? (
+                          <>
+                            <span className="text-gray-500 dark:text-gray-400">Due:</span>
+                            <span className={`font-medium ${
+                              getDaysUntilTarget(goal.target_date) < 30
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {formatDate(goal.target_date)}
+                              {getDaysUntilTarget(goal.target_date) !== null && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                  ({getDaysUntilTarget(goal.target_date)} days)
+                                </span>
+                              )}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-gray-500 dark:text-gray-400">Due:</span>
+                            <span className="text-gray-400 dark:text-gray-500 italic">No deadline</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -354,21 +372,21 @@ function Goals({ setIsAuthenticated }) {
                       className="flex items-center gap-2 text-bloom-pink dark:text-dark-pink hover:text-bloom-pink/80 dark:hover:text-dark-pink-hover transition font-semibold text-sm w-full"
                     >
                       <svg
-                        className={`w-4 h-4 transition-transform ${expandedGoalId === goal.id ? 'rotate-180' : ''}`}
+                        className={`w-4 h-4 transition-transform ${expandedGoalIds.has(goal.id) ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
-                      {expandedGoalId === goal.id ? 'Hide' : 'View'} Contribution History
+                      {expandedGoalIds.has(goal.id) ? 'Hide' : 'View'} Contribution History
                     </button>
                   </div>
 
                   {/* Transactions List (Expanded) */}
-                  {expandedGoalId === goal.id && (
+                  {expandedGoalIds.has(goal.id) && (
                     <div className="px-6 pb-6 border-t border-gray-200 dark:border-dark-border">
-                      {loadingTransactions ? (
+                      {loadingGoalIds.has(goal.id) ? (
                         <div className="flex items-center justify-center py-8">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-bloom-pink"></div>
                           <span className="ml-2 text-gray-500 dark:text-gray-400 text-sm">Loading...</span>
