@@ -4,78 +4,52 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
-## 2025-12-26
-
-### Budget Wizard Quick Add Fixed Bills (#116)
-
-**Context:** New users typically start the app by clicking "Get Started" on the wizard immediately after registration. If they create a budget period without setting up recurring expenses first, their weekly budget won't account for fixed bills (rent, utilities, subscriptions). Example: User starts with €2000 balance → €500/week budget. But then adds €1000 rent payment → actual balance is €1000, but budget still shows €500/week × 4 = €2000.
-
-**Decision:** Implement "Option D" - Hybrid approach with warning message + inline Quick Add form in Step 2.
-
-**Changes:**
-
-1. **Warning Message**: When no fixed bills exist, display prominent amber warning explaining importance of setting up fixed bills before finalizing budget
-2. **Preset Buttons**: Quick-select common fixed bills (Rent, Electricity, Internet, Phone, Insurance, Netflix, Spotify)
-3. **Inline Quick Add Form**: Name, Amount, Payment Method fields to create recurring expense with `is_fixed_bill=true` directly in wizard
-4. **"Add Another" Button**: When fixed bills exist, show dashed button to add more without leaving wizard
-5. **Tests**: Added 4 new tests for quick add functionality
-
-**User Flow:**
-
--   Step 2 shows warning if no fixed bills detected
--   User can click preset (e.g., "+ Rent") → form opens with name pre-filled
--   User enters amount → clicks "Add Fixed Bill" → expense created, appears in list
--   Can continue adding more or proceed to Step 3
-
-**Future Enhancement (Option C):** Documented in issue #116 comment - post-creation budget recalculation when fixed bills are added/modified after budget creation.
-
-**Files Changed:**
-
--   `frontend/src/components/SalaryPeriodWizard.jsx` - Added quick add state, presets, form, handlers
--   `frontend/src/test/SalaryPeriodWizard.test.jsx` - Updated test for new warning text, added 4 new tests
-
-**Impact:** Better onboarding UX, accurate budgets for new users, prevents budget miscalculation scenario.
-
----
-
-### CI Pipeline Path-Based Job Skipping
-
-**Context:** CI pipeline was taking ~9 minutes per run regardless of what files changed. This wastes GitHub Actions minutes when only docs or one side of the codebase is modified.
-
-**Decision:** Implement smart path detection using `dorny/paths-filter@v3` to skip irrelevant test jobs.
-
-**Changes:**
-
-1. **New `changes` job**: Detects which folders (`backend/**`, `frontend/**`) were modified
-2. **Conditional `backend-checks`**: Only runs if backend files changed
-3. **Conditional `frontend-checks`**: Only runs if frontend files changed
-4. **Smart `e2e-tests`**: Only runs if any code changed (and both check jobs pass/skip)
-5. **Adaptive `coverage-report`**: Only downloads artifacts from jobs that ran
-
-**Path Detection Rules:**
-
--   `backend/**`, `requirements.txt`, `run.py`, `pytest.ini` → Backend tests
--   `frontend/**` (excluding `e2e/`) → Frontend tests
--   Any code → E2E tests
--   Docs/config only → Skip all tests
-
-**Expected Time Savings:**
-| Scenario | Before | After |
-|----------|--------|-------|
-| Full stack | ~9 min | ~9 min |
-| Backend only | ~9 min | ~5 min |
-| Frontend only | ~9 min | ~6 min |
-| Docs only | ~9 min | ~1 min |
-
-**Files Changed:**
-
--   `.github/workflows/ci.yml` - Added `changes` job, conditional job execution
-
-**Impact:** Reduces CI time by 40-80% for partial changes, conserves GitHub Actions quota.
-
----
-
 ## 2025-12-27
+
+### Post-Creation Budget Recalculation - Option C (#116)
+
+**Context:** Issue #116 identified that users who add fixed bills AFTER creating their budget period would have inaccurate weekly budgets. Option D (quick add in wizard) helps new users, but Option C addresses users who modify fixed bills post-setup.
+
+**Decision:** Implement "Option C" - Post-Creation Budget Recalculation under experimental feature flag.
+
+**Architecture:**
+
+1. **Backend Endpoints:**
+
+    - `POST /salary-periods/{id}/recalculate` - Recalculates weekly budget based on current fixed bills, updates remaining weeks
+    - `GET /salary-periods/{id}/budget-impact` - Preview projected changes without applying them
+
+2. **Budget Impact Detection:**
+
+    - Helper function `calculate_budget_impact()` in `recurring_expenses.py`
+    - Detects changes when: fixed bill created, updated (amount/status), toggled active, or deleted
+    - Returns impact data in API response when active salary period exists
+
+3. **Frontend Modal (Feature-Flagged):**
+    - `BudgetRecalculationModal.jsx` - Shows current vs projected budget
+    - Only triggers when `experimentalFeaturesEnabled` is true
+    - User can "Recalculate" or "Skip"
+
+**Key Design Decisions:**
+
+-   **Preserve history**: Only updates remaining weeks (end_date >= today), past weeks unchanged
+-   **Feature flagged**: Experimental flag prevents affecting stable users
+-   **Non-intrusive**: API always returns `budget_impact`, frontend decides whether to show modal
+-   **Carryover-aware**: Uses same calculation logic as wizard (debit + credit_allowance - fixed_bills / 4)
+
+**Files Changed:**
+
+-   `backend/routes/salary_periods.py` - Added recalculate & budget-impact endpoints
+-   `backend/routes/recurring_expenses.py` - Added `calculate_budget_impact()`, modified CRUD to return budget_impact
+-   `frontend/src/components/BudgetRecalculationModal.jsx` - New component
+-   `frontend/src/pages/RecurringExpenses.jsx` - Integrated modal with feature flag
+-   `frontend/src/api.js` - Added `recalculate` and `getBudgetImpact` methods
+-   `backend/tests/test_salary_periods.py` - Added 6 new tests
+-   `backend/tests/test_recurring_expense_routes.py` - Added 4 budget_impact tests
+
+**Impact:** Users with experimental features enabled can recalculate their budget when fixed bills change, preventing budget inaccuracy throughout the salary period.
+
+---
 
 ### E2E Test Patterns & HttpOnly Cookie Auth Fix (#107)
 

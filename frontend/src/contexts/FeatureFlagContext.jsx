@@ -14,7 +14,8 @@ export function FeatureFlagProvider({ children }) {
     const stored = localStorage.getItem('feature_flags')
     return stored ? JSON.parse(stored) : {
       experimentalFeaturesEnabled: false,
-      multiCurrencyEnabled: false
+      multiCurrencyEnabled: false,
+      budgetRecalculationEnabled: false
     }
   })
 

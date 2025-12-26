@@ -804,3 +804,211 @@ class TestAutoActivation:
         with client.application.app_context():
             period = SalaryPeriod.query.get(period_id)
             assert period.is_active is True
+
+
+class TestBudgetRecalculation:
+    """Tests for POST /salary-periods/{id}/recalculate - budget recalculation"""
+
+    def test_recalculate_updates_weekly_budget_when_fixed_bills_added(
+        self, client, auth_headers
+    ):
+        """Recalculation should update weekly budget when fixed bills increase"""
+        today = date.today()
+
+        # Create salary period with no fixed bills
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,  # €4000
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "credit_allowance": 0,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Verify initial weekly budget: 4000 / 4 = €1000
+        with client.application.app_context():
+            period = SalaryPeriod.query.get(period_id)
+            assert period.weekly_budget == 100000  # €1000
+
+        # Create a fixed bill recurring expense
+        client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Rent",
+                "amount": 80000,  # €800
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 1,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": True,
+            },
+            headers=auth_headers,
+        )
+
+        # Recalculate budget
+        response = client.post(
+            f"/api/v1/salary-periods/{period_id}/recalculate",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+
+        # Verify response contains old and new values
+        assert data["old_values"]["weekly_budget"] == 100000  # €1000
+        # New budget: (4000 - 800) / 4 = €800
+        assert data["new_values"]["weekly_budget"] == 80000  # €800
+        assert data["new_values"]["fixed_bills_total"] == 80000
+
+    def test_recalculate_updates_remaining_weeks_only(self, client, auth_headers):
+        """Recalculation should update only future weeks, not past ones"""
+        today = date.today()
+        start_date = today - timedelta(days=14)  # Start 2 weeks ago
+
+        # Create salary period starting 2 weeks ago
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Create a fixed bill
+        client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Insurance",
+                "amount": 40000,  # €400
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 15,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": True,
+            },
+            headers=auth_headers,
+        )
+
+        # Recalculate
+        response = client.post(
+            f"/api/v1/salary-periods/{period_id}/recalculate",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        # Should report how many weeks were updated (at least 2 since we're 2 weeks in)
+        assert response.json["weeks_updated"] >= 2
+
+    def test_recalculate_not_found_returns_404(self, client, auth_headers):
+        """Recalculating non-existent period should return 404"""
+        response = client.post(
+            "/api/v1/salary-periods/99999/recalculate",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+
+class TestBudgetImpact:
+    """Tests for GET /salary-periods/{id}/budget-impact - impact preview"""
+
+    def test_budget_impact_shows_difference(self, client, auth_headers):
+        """Budget impact endpoint should show projected changes"""
+        today = date.today()
+
+        # Create salary period with fixed bills
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,  # €4000
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [{"name": "Rent", "amount": 80000}],  # €800
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Create an additional fixed bill recurring expense
+        client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Utilities",
+                "amount": 20000,  # €200
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 5,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": True,
+            },
+            headers=auth_headers,
+        )
+
+        # Get budget impact preview
+        response = client.get(
+            f"/api/v1/salary-periods/{period_id}/budget-impact",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+
+        assert data["needs_recalculation"] is True
+        # Current stored: €800, Projected: €200 (only from recurring, not initial fixed_bills list)
+        assert data["projected"]["fixed_bills_total"] == 20000  # Only recurring expense
+        assert data["difference"]["fixed_bills_total"] != 0
+
+    def test_budget_impact_no_change_needed(self, client, auth_headers):
+        """Should indicate no recalculation needed when nothing changed"""
+        today = date.today()
+
+        # Create salary period with no fixed bills
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Get budget impact without adding any recurring fixed bills
+        response = client.get(
+            f"/api/v1/salary-periods/{period_id}/budget-impact",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+
+        assert data["needs_recalculation"] is False
+        assert data["difference"]["fixed_bills_total"] == 0
+
+    def test_budget_impact_not_found_returns_404(self, client, auth_headers):
+        """Getting impact for non-existent period should return 404"""
+        response = client.get(
+            "/api/v1/salary-periods/99999/budget-impact",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404

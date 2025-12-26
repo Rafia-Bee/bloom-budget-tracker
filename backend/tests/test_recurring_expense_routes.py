@@ -585,3 +585,171 @@ class TestRecurringExpenseAuthentication:
         """POST /recurring-expenses/import requires authentication"""
         response = client.post("/api/v1/recurring-expenses/import", json={})
         assert response.status_code == 401
+
+
+class TestBudgetImpactInResponses:
+    """Tests for budget_impact in recurring expense API responses"""
+
+    def test_create_fixed_bill_returns_budget_impact(self, client, auth_headers):
+        """Creating a fixed bill should return budget_impact when active period exists"""
+        from datetime import date
+
+        today = date.today()
+
+        # First create a salary period
+        client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,  # €4000
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        # Create a fixed bill recurring expense
+        response = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Rent",
+                "amount": 80000,
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 1,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": True,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        data = response.json
+        assert "budget_impact" in data
+        assert data["budget_impact"]["new_fixed_bills_total"] == 80000
+        assert data["budget_impact"]["salary_period_id"] is not None
+
+    def test_create_non_fixed_bill_no_budget_impact(self, client, auth_headers):
+        """Creating a non-fixed-bill expense should not return budget_impact"""
+        from datetime import date
+
+        today = date.today()
+
+        response = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Coffee",
+                "amount": 500,
+                "category": "Flexible Expenses",
+                "payment_method": "Debit card",
+                "frequency": "weekly",
+                "day_of_week": 1,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": False,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        data = response.json
+        assert "budget_impact" not in data
+
+    def test_toggle_fixed_bill_returns_budget_impact(self, client, auth_headers):
+        """Toggling fixed bill status should return budget_impact"""
+        from datetime import date
+
+        today = date.today()
+
+        # Create salary period
+        client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        # Create non-fixed recurring expense
+        create_resp = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Gym",
+                "amount": 5000,
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 1,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": False,
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["id"]
+
+        # Toggle to fixed bill
+        response = client.patch(
+            f"/api/v1/recurring-expenses/{expense_id}/fixed-bill",
+            json={"is_fixed_bill": True},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        assert "budget_impact" in data
+        assert data["budget_impact"]["new_fixed_bills_total"] == 5000
+
+    def test_delete_fixed_bill_returns_budget_impact(self, client, auth_headers):
+        """Deleting a fixed bill should return budget_impact when it changes the total"""
+        from datetime import date
+
+        today = date.today()
+
+        # First create a fixed bill recurring expense (before salary period)
+        create_resp = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Insurance",
+                "amount": 15000,
+                "category": "Fixed Expenses",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 5,
+                "start_date": today.isoformat(),
+                "is_fixed_bill": True,
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["id"]
+
+        # Create salary period - it will auto-detect the fixed bill
+        # stored fixed_bills_total will be 15000
+        client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": today.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+            },
+            headers=auth_headers,
+        )
+
+        # Delete the fixed bill
+        response = client.delete(
+            f"/api/v1/recurring-expenses/{expense_id}",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        # After deletion, current fixed bills = 0, but stored was 15000
+        # So there should be a budget_impact
+        assert "budget_impact" in data
+        assert data["budget_impact"]["new_fixed_bills_total"] == 0
+        assert data["budget_impact"]["current_fixed_bills_total"] == 15000

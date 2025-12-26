@@ -8,12 +8,64 @@ Also includes export/import for testing purposes.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, RecurringExpense
+from backend.models.database import db, RecurringExpense, SalaryPeriod
 from datetime import datetime, timedelta
 from sqlalchemy import and_
 import json
 
 recurring_expenses_bp = Blueprint("recurring_expenses", __name__)
+
+
+def calculate_budget_impact(user_id):
+    """
+    Calculate the budget impact of current fixed bills on the active salary period.
+    Returns None if no active salary period exists.
+    """
+    # Find active salary period
+    today = datetime.now().date()
+    salary_period = SalaryPeriod.query.filter(
+        and_(
+            SalaryPeriod.user_id == user_id,
+            SalaryPeriod.is_active == True,
+            SalaryPeriod.start_date <= today,
+            SalaryPeriod.end_date >= today,
+        )
+    ).first()
+
+    if not salary_period:
+        return None
+
+    # Calculate current fixed bills total
+    fixed_bills = RecurringExpense.query.filter_by(
+        user_id=user_id, is_active=True, is_fixed_bill=True
+    ).all()
+    current_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
+
+    # Check if there's a difference
+    stored_fixed_bills_total = salary_period.fixed_bills_total or 0
+    difference = current_fixed_bills_total - stored_fixed_bills_total
+
+    if difference == 0:
+        return None
+
+    # Calculate projected weekly budget
+    projected_total_budget = (
+        salary_period.initial_debit_balance
+        + salary_period.credit_budget_allowance
+        - current_fixed_bills_total
+    )
+    projected_weekly_budget = projected_total_budget // 4
+    weekly_budget_difference = projected_weekly_budget - salary_period.weekly_budget
+
+    return {
+        "salary_period_id": salary_period.id,
+        "current_fixed_bills_total": stored_fixed_bills_total,
+        "new_fixed_bills_total": current_fixed_bills_total,
+        "fixed_bills_difference": difference,
+        "current_weekly_budget": salary_period.weekly_budget,
+        "suggested_weekly_budget": projected_weekly_budget,
+        "weekly_budget_difference": weekly_budget_difference,
+    }
 
 
 @recurring_expenses_bp.route("", methods=["GET"])
@@ -171,15 +223,18 @@ def create_recurring_expense():
         db.session.add(recurring_expense)
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "id": recurring_expense.id,
-                    "message": "Recurring expense created successfully",
-                }
-            ),
-            201,
-        )
+        # Calculate budget impact if this is a fixed bill
+        response_data = {
+            "id": recurring_expense.id,
+            "message": "Recurring expense created successfully",
+        }
+
+        if recurring_expense.is_fixed_bill:
+            budget_impact = calculate_budget_impact(current_user_id)
+            if budget_impact:
+                response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -197,6 +252,10 @@ def update_recurring_expense(id):
             return jsonify({"error": "Recurring expense not found"}), 404
 
         data = request.get_json()
+
+        # Track if fixed bill status or amount changed (for budget impact)
+        old_is_fixed_bill = re.is_fixed_bill
+        old_amount = re.amount
 
         re.name = data.get("name", re.name)
         re.amount = data.get("amount", re.amount)
@@ -258,7 +317,18 @@ def update_recurring_expense(id):
 
         db.session.commit()
 
-        return jsonify({"message": "Recurring expense updated successfully"}), 200
+        # Calculate budget impact if fixed bill status or amount changed
+        response_data = {"message": "Recurring expense updated successfully"}
+
+        fixed_bill_changed = old_is_fixed_bill != re.is_fixed_bill or (
+            re.is_fixed_bill and old_amount != re.amount
+        )
+        if fixed_bill_changed:
+            budget_impact = calculate_budget_impact(current_user_id)
+            if budget_impact:
+                response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -275,10 +345,21 @@ def delete_recurring_expense(id):
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
 
+        # Track if this was a fixed bill before deletion
+        was_fixed_bill = re.is_fixed_bill
+
         db.session.delete(re)
         db.session.commit()
 
-        return jsonify({"message": "Recurring expense deleted successfully"}), 200
+        # Calculate budget impact if deleted expense was a fixed bill
+        response_data = {"message": "Recurring expense deleted successfully"}
+
+        if was_fixed_bill:
+            budget_impact = calculate_budget_impact(current_user_id)
+            if budget_impact:
+                response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -298,15 +379,18 @@ def toggle_recurring_expense(id):
         re.is_active = not re.is_active
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "message": "Recurring expense toggled successfully",
-                    "is_active": re.is_active,
-                }
-            ),
-            200,
-        )
+        # Calculate budget impact if toggling a fixed bill
+        response_data = {
+            "message": "Recurring expense toggled successfully",
+            "is_active": re.is_active,
+        }
+
+        if re.is_fixed_bill:
+            budget_impact = calculate_budget_impact(current_user_id)
+            if budget_impact:
+                response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -327,15 +411,17 @@ def toggle_fixed_bill(id):
         re.is_fixed_bill = data.get("is_fixed_bill", not re.is_fixed_bill)
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "message": "Fixed bill status updated successfully",
-                    "is_fixed_bill": re.is_fixed_bill,
-                }
-            ),
-            200,
-        )
+        # Always calculate budget impact when changing fixed bill status
+        response_data = {
+            "message": "Fixed bill status updated successfully",
+            "is_fixed_bill": re.is_fixed_bill,
+        }
+
+        budget_impact = calculate_budget_impact(current_user_id)
+        if budget_impact:
+            response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500

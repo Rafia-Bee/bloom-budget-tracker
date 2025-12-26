@@ -11,9 +11,11 @@ import { logError } from '../utils/logger'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import ExportImportModal from '../components/ExportImportModal'
 import BankImportModal from '../components/BankImportModal'
+import BudgetRecalculationModal from '../components/BudgetRecalculationModal'
 import CatLoading from '../components/CatLoading'
 import Header from '../components/Header'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 import { formatCurrency } from '../utils/formatters'
 
 function RecurringExpenses({ setIsAuthenticated }) {
@@ -31,9 +33,21 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [scheduledExpenses, setScheduledExpenses] = useState([])
   const [selectedScheduled, setSelectedScheduled] = useState([])
   const [selectionMode, setSelectionMode] = useState(false)
+  const [budgetImpact, setBudgetImpact] = useState(null)
 
   // Currency context for multi-currency support
   const { defaultCurrency, convertAmount } = useCurrency()
+
+  // Feature flag for budget recalculation
+  const { isEnabled } = useFeatureFlag()
+  const budgetRecalculationEnabled = isEnabled('budgetRecalculationEnabled')
+
+  // Helper to check for budget impact in API response
+  const checkBudgetImpact = (response) => {
+    if (budgetRecalculationEnabled && response?.data?.budget_impact) {
+      setBudgetImpact(response.data.budget_impact)
+    }
+  }
 
   // Helper function to format EUR amounts (stored in DB) converted to user's currency
   const fcEur = (cents) => {
@@ -88,21 +102,24 @@ function RecurringExpenses({ setIsAuthenticated }) {
   }
 
   const handleAdd = async (data) => {
-    await recurringExpenseAPI.create(data)
+    const response = await recurringExpenseAPI.create(data)
     await loadRecurringExpenses()
     setShowAddModal(false)
+    checkBudgetImpact(response)
   }
 
   const handleEdit = async (data) => {
-    await recurringExpenseAPI.update(editingExpense.id, data)
+    const response = await recurringExpenseAPI.update(editingExpense.id, data)
     await loadRecurringExpenses()
     setEditingExpense(null)
+    checkBudgetImpact(response)
   }
 
   const handleToggle = async (id) => {
     try {
-      await recurringExpenseAPI.toggleActive(id)
+      const response = await recurringExpenseAPI.toggleActive(id)
       await loadRecurringExpenses()
+      checkBudgetImpact(response)
     } catch (error) {
       logError('toggleRecurringExpense', error)
     }
@@ -110,8 +127,9 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
   const handleToggleFixedBill = async (id, currentStatus) => {
     try {
-      await recurringExpenseAPI.toggleFixedBill(id, !currentStatus)
+      const response = await recurringExpenseAPI.toggleFixedBill(id, !currentStatus)
       await loadRecurringExpenses()
+      checkBudgetImpact(response)
     } catch (error) {
       logError('toggleFixedBillStatus', error)
     }
@@ -126,8 +144,9 @@ function RecurringExpenses({ setIsAuthenticated }) {
     setDeleteConfirm(null)
 
     try {
-      await recurringExpenseAPI.delete(id)
+      const response = await recurringExpenseAPI.delete(id)
       await loadRecurringExpenses()
+      checkBudgetImpact(response)
     } catch (error) {
       logError('deleteRecurringExpense', error)
     }
@@ -624,6 +643,19 @@ function RecurringExpenses({ setIsAuthenticated }) {
           onImported={() => {
             setShowBankImportModal(false);
             loadRecurringExpenses();
+          }}
+        />
+      )}
+
+      {/* Budget Recalculation Modal (Experimental Feature) */}
+      {budgetImpact && (
+        <BudgetRecalculationModal
+          budgetImpact={budgetImpact}
+          onClose={() => setBudgetImpact(null)}
+          onRecalculated={() => {
+            setBudgetImpact(null)
+            // Optionally refresh data
+            loadRecurringExpenses()
           }}
         />
       )}

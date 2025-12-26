@@ -948,6 +948,170 @@ def update_salary_period_full(id):
         return jsonify({"error": str(e)}), 500
 
 
+@salary_periods_bp.route("/<int:id>/recalculate", methods=["POST"])
+@jwt_required()
+def recalculate_salary_period(id):
+    """
+    Recalculate weekly budget after fixed bills change.
+    Only affects remaining weeks - preserves spending history.
+    Returns updated salary period with new weekly budget amounts.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        today = datetime.now().date()
+
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
+
+        if not salary_period:
+            return jsonify({"error": "Salary period not found"}), 404
+
+        # Calculate new fixed bills total from active recurring expenses
+        fixed_bills = RecurringExpense.query.filter_by(
+            user_id=current_user_id, is_active=True, is_fixed_bill=True
+        ).all()
+        new_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
+
+        # Calculate new budget values
+        total_budget = (
+            salary_period.initial_debit_balance
+            + salary_period.credit_budget_allowance
+            - new_fixed_bills_total
+        )
+        remaining_amount = total_budget
+        new_weekly_budget = remaining_amount // 4
+
+        # Calculate debit vs credit portions
+        debit_after_bills = salary_period.initial_debit_balance - new_fixed_bills_total
+        if debit_after_bills >= new_weekly_budget * 4:
+            new_weekly_debit_budget = new_weekly_budget
+            new_weekly_credit_budget = 0
+        else:
+            new_weekly_debit_budget = max(0, debit_after_bills // 4)
+            new_weekly_credit_budget = new_weekly_budget - new_weekly_debit_budget
+
+        # Store old values for response
+        old_weekly_budget = salary_period.weekly_budget
+        old_fixed_bills_total = salary_period.fixed_bills_total
+
+        # Update salary period
+        salary_period.fixed_bills_total = new_fixed_bills_total
+        salary_period.total_budget_amount = total_budget
+        salary_period.remaining_amount = remaining_amount
+        salary_period.weekly_budget = new_weekly_budget
+        salary_period.weekly_debit_budget = new_weekly_debit_budget
+        salary_period.weekly_credit_budget = new_weekly_credit_budget
+
+        # Update remaining budget periods (weeks that haven't ended yet)
+        updated_weeks = 0
+        for budget_period in salary_period.budget_periods:
+            if budget_period.end_date >= today:
+                budget_period.budget_amount = new_weekly_budget
+                updated_weeks += 1
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Budget recalculated successfully",
+                    "salary_period_id": salary_period.id,
+                    "old_values": {
+                        "weekly_budget": old_weekly_budget,
+                        "fixed_bills_total": old_fixed_bills_total,
+                    },
+                    "new_values": {
+                        "weekly_budget": new_weekly_budget,
+                        "fixed_bills_total": new_fixed_bills_total,
+                        "weekly_debit_budget": new_weekly_debit_budget,
+                        "weekly_credit_budget": new_weekly_credit_budget,
+                    },
+                    "weeks_updated": updated_weeks,
+                    "fixed_bills": [
+                        {"id": bill.id, "name": bill.name, "amount": bill.amount}
+                        for bill in fixed_bills
+                    ],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@salary_periods_bp.route("/<int:id>/budget-impact", methods=["GET"])
+@jwt_required()
+def get_budget_impact(id):
+    """
+    Calculate the budget impact if fixed bills were recalculated now.
+    Does not modify anything - just returns the projected impact.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
+
+        if not salary_period:
+            return jsonify({"error": "Salary period not found"}), 404
+
+        # Calculate current fixed bills total
+        fixed_bills = RecurringExpense.query.filter_by(
+            user_id=current_user_id, is_active=True, is_fixed_bill=True
+        ).all()
+        projected_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
+
+        # Calculate projected budget values
+        projected_total_budget = (
+            salary_period.initial_debit_balance
+            + salary_period.credit_budget_allowance
+            - projected_fixed_bills_total
+        )
+        projected_weekly_budget = projected_total_budget // 4
+
+        # Calculate difference
+        fixed_bills_difference = (
+            projected_fixed_bills_total - salary_period.fixed_bills_total
+        )
+        weekly_budget_difference = projected_weekly_budget - salary_period.weekly_budget
+
+        # Determine if recalculation is needed
+        needs_recalculation = fixed_bills_difference != 0
+
+        return (
+            jsonify(
+                {
+                    "salary_period_id": salary_period.id,
+                    "needs_recalculation": needs_recalculation,
+                    "current": {
+                        "fixed_bills_total": salary_period.fixed_bills_total,
+                        "weekly_budget": salary_period.weekly_budget,
+                    },
+                    "projected": {
+                        "fixed_bills_total": projected_fixed_bills_total,
+                        "weekly_budget": projected_weekly_budget,
+                    },
+                    "difference": {
+                        "fixed_bills_total": fixed_bills_difference,
+                        "weekly_budget": weekly_budget_difference,
+                    },
+                    "fixed_bills": [
+                        {"id": bill.id, "name": bill.name, "amount": bill.amount}
+                        for bill in fixed_bills
+                    ],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @salary_periods_bp.route("/<int:id>", methods=["PATCH"])
 @jwt_required()
 def update_salary_period_partial(id):

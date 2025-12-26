@@ -145,6 +145,8 @@ export const salaryPeriodAPI = {
     getCurrent: () => api.get("/salary-periods/current"),
     getAll: () => api.get("/salary-periods"),
     delete: (id) => api.delete(`/salary-periods/${id}`),
+    recalculate: (id) => api.post(`/salary-periods/${id}/recalculate`),
+    getBudgetImpact: (id) => api.get(`/salary-periods/${id}/budget-impact`),
 };
 
 export const userAPI = {
