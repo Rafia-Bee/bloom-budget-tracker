@@ -3,9 +3,13 @@
  *
  * Verifies the app loads correctly and basic functionality works.
  * These are the first tests that run to ensure the app is operational.
+ *
+ * NOTE: This file imports directly from @playwright/test (not fixtures.js)
+ * to avoid the automatic cookie restoration. Smoke tests check
+ * unauthenticated behavior specifically.
  */
 
-import { test, expect } from "./fixtures.js";
+import { test, expect } from "@playwright/test";
 
 // These tests check unauthenticated behavior - clear the auth state
 test.use({ storageState: { cookies: [], origins: [] } });

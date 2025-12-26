@@ -8,40 +8,30 @@
  * - Data export/import
  * - Account settings
  *
- * Uses global auth state from global-setup.js - no login needed per test.
- *
- * CI Optimization: Tests are grouped efficiently to minimize page navigations.
- * Note: Since HttpOnly cookies can't be stored in storageState, tests use
- * lenient assertions that handle both authenticated and login page states.
+ * Authentication is handled automatically by fixtures.js which restores
+ * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect } from "./fixtures.js";
-
-/**
- * Helper to check if we're authenticated (not on login page)
- * Due to HttpOnly cookies, auth state may not persist in storageState
- */
-const skipIfNotAuthenticated = (page, testInstance) => {
-    if (page.url().includes("/login")) {
-        testInstance.skip();
-        return true;
-    }
-    return false;
-};
+import { test, expect, loginAsTestUser } from "./fixtures.js";
 
 test.describe("Settings Page", () => {
     test.beforeEach(async ({ page }) => {
-        // Navigate to settings page
-        // Note: Auth may not work due to HttpOnly cookies limitation
-        // Tests use lenient assertions that work on both authenticated and login pages
+        // Navigate to settings page (cookies are auto-restored by fixture)
         await page.goto("/settings");
         await page.waitForLoadState("networkidle");
+
+        // If redirected to login, perform manual login
+        if (page.url().includes("/login")) {
+            await loginAsTestUser(page);
+            await page.goto("/settings");
+            await page.waitForLoadState("networkidle");
+        }
     });
 
     test.describe("Navigation", () => {
         test("can access Settings page", async ({ page }) => {
-            // Page should load - either settings page or redirect to login
-            // Either outcome is valid for this test
+            // Should be on settings page (not login)
+            expect(page.url()).toContain("/settings");
             const hasPageContent = await page
                 .locator("h1, h2, button")
                 .first()
@@ -73,8 +63,6 @@ test.describe("Settings Page", () => {
 
     test.describe("Subcategories Tab", () => {
         test("subcategories tab is default view", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Should show subcategory content by default
             await expect(
                 page
@@ -84,8 +72,6 @@ test.describe("Settings Page", () => {
         });
 
         test("shows category selector", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Should have category buttons or dropdown
             const categorySelector = page.locator(
                 'button:has-text("Fixed Expenses"), button:has-text("Flexible"), select:has(option:has-text("Fixed"))'
@@ -96,8 +82,6 @@ test.describe("Settings Page", () => {
         });
 
         test("can open Create Subcategory modal", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for add subcategory button
             const addButton = page.locator(
                 'button:has-text("Add Subcategory"), button:has-text("Add"), button:has-text("Create")'
@@ -118,8 +102,6 @@ test.describe("Settings Page", () => {
         test("Create Subcategory modal has required fields", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Open create modal
             const addButton = page.locator(
                 'button:has-text("Add Subcategory"), button:has-text("Add")'
@@ -139,8 +121,6 @@ test.describe("Settings Page", () => {
         });
 
         test("can create a new subcategory", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Open create modal
             const addButton = page.locator(
                 'button:has-text("Add Subcategory"), button:has-text("Add")'
@@ -173,8 +153,6 @@ test.describe("Settings Page", () => {
         });
 
         test("can edit existing subcategory", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for edit button on a subcategory
             const editButton = page.locator(
                 'button:has-text("Edit"), button[aria-label*="edit" i], [data-testid*="edit"]'
@@ -195,8 +173,6 @@ test.describe("Settings Page", () => {
         });
 
         test("delete subcategory shows confirmation", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for delete button
             const deleteButton = page.locator(
                 'button:has-text("Delete"), button[aria-label*="delete" i], [data-testid*="delete"]'
@@ -227,8 +203,6 @@ test.describe("Settings Page", () => {
         });
 
         test("can switch between category tabs", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Click different category buttons
             const categoryButtons = page.locator(
                 'button:has-text("Fixed Expenses"), button:has-text("Flexible"), button:has-text("Savings"), button:has-text("Debt")'
@@ -245,8 +219,6 @@ test.describe("Settings Page", () => {
 
     test.describe("Preferences Tab", () => {
         test("can switch to Preferences tab", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             const preferencesTab = page.locator(
                 "button:has-text('Preferences')"
             );
@@ -260,8 +232,6 @@ test.describe("Settings Page", () => {
         });
 
         test("shows recurring lookahead setting", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
@@ -276,8 +246,6 @@ test.describe("Settings Page", () => {
         });
 
         test("can change recurring lookahead days", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
@@ -315,8 +283,6 @@ test.describe("Settings Page", () => {
         test("shows currency setting when multi-currency enabled", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
@@ -336,8 +302,6 @@ test.describe("Settings Page", () => {
 
     test.describe("Account Tab", () => {
         test("can switch to Account tab", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             const accountTab = page.locator("button:has-text('Account')");
             await accountTab.click();
             await page.waitForTimeout(500);
@@ -349,8 +313,6 @@ test.describe("Settings Page", () => {
         });
 
         test("shows danger zone with delete option", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Account tab
             await page.locator("button:has-text('Account')").click();
             await page.waitForTimeout(500);
@@ -361,8 +323,6 @@ test.describe("Settings Page", () => {
         });
 
         test("delete all data requires confirmation text", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Account tab
             await page.locator("button:has-text('Account')").click();
             await page.waitForTimeout(500);
@@ -397,8 +357,6 @@ test.describe("Settings Page", () => {
 
     test.describe("Data Export/Import", () => {
         test("export option is accessible from header", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Export might be in header menu
             const exportButton = page.locator(
                 'button:has-text("Export"), [aria-label*="export" i], [data-testid*="export"]'
@@ -428,8 +386,6 @@ test.describe("Settings Page", () => {
         });
 
         test("import option is accessible from header", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Import might be in header menu
             const importButton = page.locator(
                 'button:has-text("Import"), [aria-label*="import" i], [data-testid*="import"]'
@@ -457,8 +413,6 @@ test.describe("Settings Page", () => {
         });
 
         test("export modal shows format options", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Try to open export
             const menuButton = page.locator(
                 'button[aria-label*="menu" i], button:has-text("⋮")'
@@ -499,8 +453,6 @@ test.describe("Settings Page", () => {
         test("feature flags section visible in preferences", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);

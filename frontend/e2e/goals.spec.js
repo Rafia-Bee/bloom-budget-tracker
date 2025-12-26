@@ -9,16 +9,22 @@
  * - Deleting goals
  * - Progress bar verification
  *
- * Uses global auth state from global-setup.js - no login needed per test.
+ * Authentication is handled automatically by fixtures.js which restores
+ * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect } from "./fixtures.js";
+import { test, expect, loginAsTestUser } from "./fixtures.js";
 
 test.describe("Goals & Savings", () => {
     test.beforeEach(async ({ page }) => {
-        // Navigate to dashboard first (auth cookies from global setup)
+        // Navigate to dashboard first (cookies are auto-restored by fixture)
         await page.goto("/dashboard");
         await page.waitForLoadState("networkidle");
+
+        // If redirected to login, perform manual login
+        if (page.url().includes("/login")) {
+            await loginAsTestUser(page);
+        }
     });
 
     test.describe("Navigation", () => {

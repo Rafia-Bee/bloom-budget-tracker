@@ -63,20 +63,19 @@ export default defineConfig({
 
     // Configure projects for different browsers
     projects: [
-        // Tests that don't need authentication
+        // Tests that don't need authentication (runs first)
         {
             name: "setup",
             testMatch: /unauthenticated\.spec\.js/,
             use: { ...devices["Desktop Chrome"] },
         },
-        // Main test suite with shared auth state
+        // Main test suite - auth cookies restored via fixtures.js
+        // (storageState removed - doesn't support HttpOnly cookies)
         {
             name: "chromium",
             testIgnore: /unauthenticated\.spec\.js/,
             use: {
                 ...devices["Desktop Chrome"],
-                // Use saved authentication state
-                storageState: "e2e/.auth/user.json",
             },
             dependencies: ["setup"],
         },
@@ -89,7 +88,6 @@ export default defineConfig({
                       testIgnore: /unauthenticated\.spec\.js/,
                       use: {
                           ...devices["iPhone 13"],
-                          storageState: "e2e/.auth/user.json",
                       },
                       dependencies: ["setup"],
                   },

@@ -4,15 +4,22 @@
  * Tests for the 3-step salary period creation wizard.
  * Verifies the complete flow from entering balances to confirming the budget.
  *
- * Note: Uses global auth state from global-setup.js - no login needed per test.
+ * Authentication is handled automatically by fixtures.js which restores
+ * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect } from "./fixtures.js";
+import { test, expect, loginAsTestUser } from "./fixtures.js";
 
 test.describe("Salary Period Wizard", () => {
-    // Navigate to dashboard before each test (auth cookies from global setup)
+    // Navigate to dashboard before each test (cookies are auto-restored by fixture)
     test.beforeEach(async ({ page }) => {
         await page.goto("/dashboard");
+        await page.waitForLoadState("networkidle");
+
+        // If redirected to login, perform manual login
+        if (page.url().includes("/login")) {
+            await loginAsTestUser(page);
+        }
     });
 
     test.describe("Wizard Access", () => {

@@ -4,11 +4,15 @@
  * Provides reusable test fixtures, helper functions, and page objects
  * for consistent E2E testing across all test files.
  *
- * Note: Most tests use global auth state from global-setup.js.
- * The loginAsTestUser function is kept for tests that need fresh login.
+ * IMPORTANT: HttpOnly cookies (JWT auth) require special handling.
+ * The global-setup.js saves cookies to cookies.json using context.cookies().
+ * Tests must restore these cookies via context.addCookies() before navigating.
  */
 
 import { test as base, expect } from "@playwright/test";
+import fs from "fs";
+
+const COOKIES_PATH = "e2e/.auth/cookies.json";
 
 /**
  * Test credentials for the test account
@@ -19,26 +23,67 @@ export const TEST_USER = {
 };
 
 /**
- * Extended test fixture with common utilities
+ * Load saved cookies from global setup (includes HttpOnly cookies)
+ * @returns {Array} Array of cookie objects
+ */
+function loadSavedCookies() {
+    try {
+        if (fs.existsSync(COOKIES_PATH)) {
+            const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, "utf-8"));
+            return cookies;
+        }
+    } catch (error) {
+        console.warn("Could not load saved cookies:", error.message);
+    }
+    return [];
+}
+
+/**
+ * Extended test fixture with automatic HttpOnly cookie restoration
+ *
+ * This fixture solves the HttpOnly cookie problem by:
+ * 1. Reading cookies saved by global-setup.js (which uses context.cookies())
+ * 2. Adding them to the browser context via context.addCookies()
+ * 3. This works because addCookies CAN set HttpOnly cookies
  */
 export const test = base.extend({
     /**
-     * Auto-fixture that ensures we're on dashboard before each test
-     * Works with both global auth state and fresh login
+     * Auto-fixture that restores HttpOnly cookies before each test
+     * This runs automatically for all tests using this fixture
+     */
+    page: async ({ page, context }, use) => {
+        // Load and restore cookies (including HttpOnly JWT)
+        const savedCookies = loadSavedCookies();
+        if (savedCookies.length > 0) {
+            await context.addCookies(savedCookies);
+        }
+
+        await use(page);
+    },
+
+    /**
+     * Fixture that ensures we're authenticated on dashboard
+     * Use this when you need guaranteed authenticated state
      */
     authenticatedPage: [
-        async ({ page }, use) => {
-            // Try to navigate to dashboard
+        async ({ page, context }, use) => {
+            // Load and restore cookies
+            const savedCookies = loadSavedCookies();
+            if (savedCookies.length > 0) {
+                await context.addCookies(savedCookies);
+            }
+
+            // Navigate to dashboard
             await page.goto("/dashboard");
 
-            // Check if we're authenticated (global auth state should work)
+            // Check if we're authenticated
             const isAuthenticated = await page
                 .waitForURL(/\/(dashboard)?$/, { timeout: 5000 })
                 .then(() => true)
                 .catch(() => false);
 
             if (!isAuthenticated) {
-                // Fall back to manual login if global auth didn't work
+                // Fall back to manual login if cookies didn't work
                 await loginAsTestUser(page);
             }
 
@@ -77,17 +122,36 @@ export async function loginAsTestUser(page) {
 }
 
 /**
+ * Helper to ensure page is authenticated, logging in if needed
+ * Use this in beforeEach hooks for tests that require auth
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {import('@playwright/test').BrowserContext} context - Browser context
+ */
+export async function ensureAuthenticated(page, context) {
+    // Restore cookies
+    const savedCookies = loadSavedCookies();
+    if (savedCookies.length > 0) {
+        await context.addCookies(savedCookies);
+    }
+
+    // Navigate and check auth
+    await page.goto("/dashboard");
+
+    // If redirected to login, do manual login
+    if (page.url().includes("/login")) {
+        await loginAsTestUser(page);
+    }
+}
+
+/**
  * Helper to log out current user
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function logout(page) {
-    // Open settings/menu and click logout
-    // Adjust selector based on actual UI
-    const menuButton = page.locator(
-        '[data-testid="menu-button"], button:has-text("Menu")'
-    );
-    if (await menuButton.isVisible()) {
-        await menuButton.click();
+    // Open user menu and click logout
+    const userMenuButton = page.locator('button[title="User menu"]');
+    if (await userMenuButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await userMenuButton.click();
     }
     await page.click('button:has-text("Logout"), a:has-text("Logout")');
     await expect(page).toHaveURL("/login");

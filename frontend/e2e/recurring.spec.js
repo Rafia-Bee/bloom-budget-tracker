@@ -9,40 +9,30 @@
  * - Toggling active/inactive status
  * - Deleting recurring templates
  *
- * Uses global auth state from global-setup.js - no login needed per test.
- *
- * CI Optimization: Tests are grouped efficiently to minimize page navigations.
- * Note: Since HttpOnly cookies can't be stored in storageState, tests use
- * lenient assertions that handle both authenticated and login page states.
+ * Authentication is handled automatically by fixtures.js which restores
+ * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect } from "./fixtures.js";
-
-/**
- * Helper to check if we're authenticated (not on login page)
- * Due to HttpOnly cookies, auth state may not persist in storageState
- */
-const skipIfNotAuthenticated = (page, testInstance) => {
-    if (page.url().includes("/login")) {
-        testInstance.skip();
-        return true;
-    }
-    return false;
-};
+import { test, expect, loginAsTestUser } from "./fixtures.js";
 
 test.describe("Recurring Expenses", () => {
     test.beforeEach(async ({ page }) => {
-        // Navigate to recurring-expenses page
-        // Note: Auth may not work due to HttpOnly cookies limitation
-        // Tests use lenient assertions that work on both authenticated and login pages
+        // Navigate to recurring-expenses page (cookies are auto-restored by fixture)
         await page.goto("/recurring-expenses");
         await page.waitForLoadState("networkidle");
+
+        // If redirected to login, perform manual login
+        if (page.url().includes("/login")) {
+            await loginAsTestUser(page);
+            await page.goto("/recurring-expenses");
+            await page.waitForLoadState("networkidle");
+        }
     });
 
     test.describe("Navigation", () => {
         test("can access Recurring Expenses page", async ({ page }) => {
-            // Page should load - either recurring page or redirect to login
-            // Either outcome is valid for this test
+            // Should be on recurring page (not login)
+            expect(page.url()).toContain("/recurring");
             const hasPageContent = await page
                 .locator("h1, h2, button")
                 .first()
@@ -53,12 +43,6 @@ test.describe("Recurring Expenses", () => {
         test("Recurring page shows Active/Upcoming tabs when authenticated", async ({
             page,
         }) => {
-            // Check if we're on the recurring page (not redirected)
-            if (page.url().includes("/login")) {
-                test.skip();
-                return;
-            }
-
             // Should have Active and Upcoming toggle buttons
             const activeTab = page.locator("button:has-text('Active')");
             const upcomingTab = page.locator("button:has-text('Upcoming')");
@@ -70,8 +54,6 @@ test.describe("Recurring Expenses", () => {
 
     test.describe("Create Recurring Template", () => {
         test("can open Add Recurring Expense modal", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for add button
             const addButton = page.locator(
                 'button:has-text("Add"), button:has-text("New"), button:has-text("Create"), [aria-label*="add" i]'
@@ -95,8 +77,6 @@ test.describe("Recurring Expenses", () => {
         });
 
         test("Add Recurring modal has required fields", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Open add modal
             const addButton = page.locator(
                 'button:has-text("Add"), button:has-text("New"), button:has-text("Create")'
@@ -132,8 +112,6 @@ test.describe("Recurring Expenses", () => {
         test("can create a new recurring expense template", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Open add modal
             const addButton = page.locator(
                 'button:has-text("Add"), button:has-text("New"), button:has-text("Create")'
@@ -185,8 +163,6 @@ test.describe("Recurring Expenses", () => {
 
     test.describe("Toggle Active Status", () => {
         test("can toggle recurring expense active status", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for existing recurring expense with toggle
             const toggleButton = page.locator(
                 'button:has-text("Pause"), button:has-text("Activate"), button[aria-label*="toggle" i], [data-testid*="toggle"]'
@@ -209,8 +185,6 @@ test.describe("Recurring Expenses", () => {
         });
 
         test("can toggle fixed bill status", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for fixed bill toggle (checkbox or button)
             const fixedBillToggle = page.locator(
                 'input[type="checkbox"][name*="fixed" i], button:has-text("Fixed"), [data-testid*="fixed-bill"]'
@@ -229,8 +203,6 @@ test.describe("Recurring Expenses", () => {
 
     test.describe("Preview & Generate", () => {
         test("can switch to Upcoming view", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Click Upcoming tab
             const upcomingTab = page.locator("button:has-text('Upcoming')");
             await upcomingTab.click();
@@ -244,7 +216,6 @@ test.describe("Recurring Expenses", () => {
         test("Upcoming view shows scheduled expenses when templates exist", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
             await page.waitForLoadState("networkidle");
 
             // Click Upcoming tab
@@ -265,8 +236,6 @@ test.describe("Recurring Expenses", () => {
         });
 
         test("can generate expenses from scheduled items", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Switch to Upcoming view
             await page.locator("button:has-text('Upcoming')").click();
             await page.waitForTimeout(500);
@@ -303,8 +272,6 @@ test.describe("Recurring Expenses", () => {
 
     test.describe("Edit Recurring Template", () => {
         test("can access edit mode for existing template", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for edit button on a recurring expense item
             const editButton = page.locator(
                 'button:has-text("Edit"), button[aria-label*="edit" i], [data-testid*="edit"]'
@@ -325,8 +292,6 @@ test.describe("Recurring Expenses", () => {
         });
 
         test("edit modal pre-fills existing values", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             const editButton = page.locator(
                 'button:has-text("Edit"), button[aria-label*="edit" i]'
             );
@@ -357,8 +322,6 @@ test.describe("Recurring Expenses", () => {
 
     test.describe("Delete Recurring Template", () => {
         test("delete shows confirmation dialog", async ({ page }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Look for delete button
             const deleteButton = page.locator(
                 'button:has-text("Delete"), button[aria-label*="delete" i], [data-testid*="delete"]'
@@ -394,8 +357,6 @@ test.describe("Recurring Expenses", () => {
         test("frequency options include weekly, monthly, custom", async ({
             page,
         }) => {
-            if (skipIfNotAuthenticated(page, test)) return;
-
             // Open add modal
             const addButton = page.locator(
                 'button:has-text("Add"), button:has-text("New"), button:has-text("Create")'

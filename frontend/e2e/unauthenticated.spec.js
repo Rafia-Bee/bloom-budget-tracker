@@ -4,9 +4,13 @@
  * Tests for users who are not logged in - ensures public endpoints work,
  * login/register pages render correctly, and the app handles unauthenticated
  * state gracefully (this was the 401 storm issue).
+ *
+ * NOTE: This file imports directly from @playwright/test (not fixtures.js)
+ * to avoid the automatic cookie restoration that fixtures.js provides.
+ * These tests specifically need to run WITHOUT authentication.
  */
 
-import { test, expect } from "./fixtures.js";
+import { test, expect } from "@playwright/test";
 
 test.describe("Unauthenticated User Flow", () => {
     test.describe("App Loading", () => {

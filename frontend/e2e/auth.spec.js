@@ -3,9 +3,13 @@
  *
  * Tests for login, logout, and session management.
  * Uses the test account (test@test.com / test) for authenticated flows.
+ *
+ * NOTE: This file imports test from @playwright/test but helpers from fixtures.js.
+ * This allows testing login/logout without automatic cookie restoration.
  */
 
-import { test, expect, TEST_USER, loginAsTestUser } from "./fixtures.js";
+import { test, expect } from "@playwright/test";
+import { TEST_USER, loginAsTestUser } from "./fixtures.js";
 
 // These tests check login/logout behavior - start without auth state
 test.use({ storageState: { cookies: [], origins: [] } });

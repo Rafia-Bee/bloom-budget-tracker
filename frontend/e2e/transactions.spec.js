@@ -6,17 +6,24 @@
  *
  * Note: These tests require an active salary period to be present.
  * The FAB (floating action button) only shows when a period exists.
- * Uses global auth state from global-setup.js - no login needed per test.
+ * Tests that require a period use test.skip() when none exists.
+ *
+ * Authentication is handled automatically by fixtures.js which restores
+ * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect } from "./fixtures.js";
+import { test, expect, loginAsTestUser } from "./fixtures.js";
 
 test.describe("Transaction Management", () => {
     test.beforeEach(async ({ page }) => {
-        // Navigate to dashboard (auth cookies from global setup)
+        // Navigate to dashboard (cookies are auto-restored by fixture)
         await page.goto("/dashboard");
-        // Wait for dashboard to load
         await page.waitForLoadState("networkidle");
+
+        // If redirected to login, perform manual login
+        if (page.url().includes("/login")) {
+            await loginAsTestUser(page);
+        }
     });
 
     test.describe("Add Expense", () => {
