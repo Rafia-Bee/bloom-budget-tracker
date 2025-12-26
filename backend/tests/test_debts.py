@@ -214,15 +214,8 @@ class TestDebtArchiving:
 
 
 class TestDebtPayment:
-    """Test debt payment functionality
+    """Test debt payment functionality"""
 
-    Note: Some payment tests are marked to skip because the /pay endpoint
-    has a bug - it tries to set budget_period_id on Expense model but that
-    column doesn't exist. Tests that don't require salary_period still work
-    for validation logic.
-    """
-
-    @pytest.mark.skip(reason="Bug in debts.py: Expense model has no budget_period_id")
     def test_make_payment_reduces_balance(self, client, auth_headers, salary_period):
         """Making a payment should reduce the debt balance"""
         # Create debt
@@ -244,7 +237,6 @@ class TestDebtPayment:
         data = response.json
         assert data["new_balance"] == 80000
 
-    @pytest.mark.skip(reason="Bug in debts.py: Expense model has no budget_period_id")
     def test_payment_creates_expense(self, client, auth_headers, salary_period):
         """Making a payment should create a Debt Payments expense"""
         create_response = client.post(
@@ -310,7 +302,6 @@ class TestDebtPayment:
         assert response.status_code == 400
         assert "must be positive" in response.json["error"]
 
-    @pytest.mark.skip(reason="Bug in debts.py: Expense model has no budget_period_id")
     def test_payment_rejects_amount_exceeding_balance(
         self, client, auth_headers, salary_period
     ):

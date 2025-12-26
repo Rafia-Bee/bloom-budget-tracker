@@ -15,7 +15,7 @@ Endpoints:
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import db, Debt, SalaryPeriod, BudgetPeriod, Expense
+from backend.models.database import db, Debt, Expense
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 import json
@@ -243,25 +243,8 @@ def pay_debt():
         if amount > debt.current_balance:
             return jsonify({"error": "Payment amount exceeds current balance"}), 400
 
-        # Find the active salary period
-        salary_period = SalaryPeriod.query.filter_by(
-            user_id=current_user_id, is_active=True
-        ).first()
-        budget_period_id = None
-
         # Convert payment_date string to date object
         payment_date_obj = datetime.strptime(payment_date, "%Y-%m-%d").date()
-
-        if salary_period:
-            # Find the budget period (week) that contains this payment date
-            budget_period = BudgetPeriod.query.filter(
-                BudgetPeriod.salary_period_id == salary_period.id,
-                BudgetPeriod.start_date <= payment_date_obj,
-                BudgetPeriod.end_date >= payment_date_obj,
-            ).first()
-
-            if budget_period:
-                budget_period_id = budget_period.id
 
         # Wrap debt payment operations in a transaction
         try:
@@ -274,7 +257,6 @@ def pay_debt():
                 subcategory=debt.name,
                 payment_method="Debit card",
                 date=payment_date_obj,
-                budget_period_id=budget_period_id,
             )
 
             # Update debt balance
