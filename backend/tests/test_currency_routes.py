@@ -3,10 +3,54 @@ Tests for Currency Routes - Public Endpoint Access
 
 Tests that currency-related endpoints work correctly for both
 authenticated and unauthenticated users.
+
+Uses mocked API responses to avoid slow network calls and rate limiting.
 """
 
 import pytest
 from flask import json
+from unittest.mock import patch, MagicMock
+
+
+# Mock responses for exchange rate API
+MOCK_RATES_EUR = {
+    "result": "success",
+    "base_code": "EUR",
+    "rates": {
+        "EUR": 1.0,
+        "USD": 1.08,
+        "GBP": 0.86,
+        "AED": 3.97,
+    },
+}
+
+MOCK_RATES_USD = {
+    "result": "success",
+    "base_code": "USD",
+    "rates": {
+        "EUR": 0.93,
+        "USD": 1.0,
+        "GBP": 0.80,
+    },
+}
+
+
+@pytest.fixture(autouse=True)
+def mock_currency_api():
+    """Mock all external currency API calls to speed up tests"""
+    with patch("backend.services.currency_service.requests.get") as mock_get:
+
+        def mock_response(url, **kwargs):
+            response = MagicMock()
+            response.status_code = 200
+            if "USD" in url:
+                response.json.return_value = MOCK_RATES_USD
+            else:
+                response.json.return_value = MOCK_RATES_EUR
+            return response
+
+        mock_get.side_effect = mock_response
+        yield mock_get
 
 
 def test_list_currencies_public(client):
