@@ -4,6 +4,45 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-26
+
+### CI Pipeline Path-Based Job Skipping
+
+**Context:** CI pipeline was taking ~9 minutes per run regardless of what files changed. This wastes GitHub Actions minutes when only docs or one side of the codebase is modified.
+
+**Decision:** Implement smart path detection using `dorny/paths-filter@v3` to skip irrelevant test jobs.
+
+**Changes:**
+
+1. **New `changes` job**: Detects which folders (`backend/**`, `frontend/**`) were modified
+2. **Conditional `backend-checks`**: Only runs if backend files changed
+3. **Conditional `frontend-checks`**: Only runs if frontend files changed
+4. **Smart `e2e-tests`**: Only runs if any code changed (and both check jobs pass/skip)
+5. **Adaptive `coverage-report`**: Only downloads artifacts from jobs that ran
+
+**Path Detection Rules:**
+
+-   `backend/**`, `requirements.txt`, `run.py`, `pytest.ini` → Backend tests
+-   `frontend/**` (excluding `e2e/`) → Frontend tests
+-   Any code → E2E tests
+-   Docs/config only → Skip all tests
+
+**Expected Time Savings:**
+| Scenario | Before | After |
+|----------|--------|-------|
+| Full stack | ~9 min | ~9 min |
+| Backend only | ~9 min | ~5 min |
+| Frontend only | ~9 min | ~6 min |
+| Docs only | ~9 min | ~1 min |
+
+**Files Changed:**
+
+-   `.github/workflows/ci.yml` - Added `changes` job, conditional job execution
+
+**Impact:** Reduces CI time by 40-80% for partial changes, conserves GitHub Actions quota.
+
+---
+
 ## 2025-12-27
 
 ### E2E Test Patterns & HttpOnly Cookie Auth Fix (#107)

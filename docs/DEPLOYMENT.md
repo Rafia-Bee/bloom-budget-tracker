@@ -518,46 +518,47 @@ No environment variables needed - API URL configured in frontend code.
 
 ---
 
-## CI/CD (Future Enhancement)
+## CI/CD Pipeline
 
-### GitHub Actions (Planned)
+### GitHub Actions (Implemented)
 
-**Automated checks on PR:**
+The CI/CD pipeline runs automatically on pushes and pull requests to `main`.
 
--   Run tests
--   Lint code
--   Check for security vulnerabilities
+**Workflow:** `.github/workflows/ci.yml`
 
-**Automated deployment:**
+**Jobs:**
 
--   Already handled by Cloudflare Pages/Render
--   Could add pre-deployment checks
+| Job               | Purpose                             | Trigger               |
+| ----------------- | ----------------------------------- | --------------------- |
+| `changes`         | Detect which folders changed        | Always                |
+| `backend-checks`  | Flake8, Black, pytest with coverage | `backend/**` changed  |
+| `frontend-checks` | Build, vitest, console.log check    | `frontend/**` changed |
+| `e2e-tests`       | Playwright E2E tests                | Any code changed      |
+| `coverage-report` | Coverage summary                    | After tests pass      |
+| `summary`         | Final status                        | Always                |
 
-**Example workflow** (to implement):
+**Smart Path Detection:**
 
-```yaml
-name: CI/CD Pipeline
-on:
-    pull_request:
-        branches: [main]
-    push:
-        branches: [main]
+The pipeline uses `dorny/paths-filter` to detect file changes and skip unnecessary jobs:
 
-jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - name: Run backend tests
-              run: |
-                  pip install -r backend/requirements.txt
-                  pytest
-            - name: Run frontend tests
-              run: |
-                  cd frontend
-                  npm install
-                  npm test
 ```
+backend/**      → Run backend tests only
+frontend/**     → Run frontend tests only
+Both changed    → Run all tests
+Docs/config     → Skip tests
+```
+
+**Skip Options:**
+
+-   Add `[skip e2e]` to commit message to skip E2E tests
+-   Add `[docs only]` to skip E2E tests
+
+**Approximate Run Times:**
+
+-   Full pipeline: ~8-9 minutes
+-   Backend only: ~5 minutes
+-   Frontend only: ~6 minutes
+-   Docs only: ~1 minute
 
 ---
 
