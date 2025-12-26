@@ -164,6 +164,35 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install chromium --with-deps
 
+      - name: Initialize test database
+        run: |
+          echo "🗄️ Creating test database and test user..."
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from backend.app import create_app
+          from backend.models.database import db, User
+
+          app = create_app('development')
+          with app.app_context():
+              db.create_all()
+              print('✅ Database tables created')
+
+              # Create test user for E2E tests
+              test_user = User.query.filter_by(email='test@test.com').first()
+              if not test_user:
+                  test_user = User(email='test@test.com')
+                  test_user.set_password('test123')
+                  db.session.add(test_user)
+                  db.session.commit()
+                  print('✅ Test user created: test@test.com')
+              else:
+                  print('✅ Test user already exists')
+          "
+        env:
+          FLASK_ENV: development
+          DATABASE_URL: ""
+
       - name: Run E2E tests
         working-directory: ./frontend
         run: |
