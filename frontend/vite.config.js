@@ -87,13 +87,13 @@ export default defineConfig({
                 "**/*.spec.jsx",
                 "**/*.test.jsx",
             ],
-            // Enforce minimum coverage (low thresholds due to many untested pages)
+            // Enforce minimum coverage (raised to match actual coverage)
             // Individual file thresholds not supported well in vitest - using global only
             thresholds: {
-                lines: 5,
-                statements: 5,
-                branches: 5,
-                functions: 5,
+                lines: 40,
+                statements: 40,
+                branches: 40,
+                functions: 40,
             },
         },
     },

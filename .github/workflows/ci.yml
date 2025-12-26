@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "🧪 Running backend tests with coverage..."
           cd backend
-          python -m pytest tests/ -v --tb=short --color=yes --cov=. --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=20
+          python -m pytest tests/ -v --tb=short --color=yes --cov=. --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=50
         env:
           SENDGRID_API_KEY: ""
           DATABASE_URL: ""

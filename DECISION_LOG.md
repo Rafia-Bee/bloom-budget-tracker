@@ -6,6 +6,39 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-26
 
+### CI Optimization & Coverage Thresholds (#115)
+
+**Context:** CI pipeline was taking ~6 minutes per run, concerning given the 2000 minutes/month GitHub Actions quota. Coverage thresholds (20% backend, 5% frontend) were far below actual coverage (60% backend, 50.76% frontend), providing false confidence.
+
+**Decision:** Optimize CI runtime and raise coverage thresholds to match actual coverage.
+
+**Changes:**
+
+1. **Coverage Thresholds Raised:**
+
+    - Backend: 20% → **50%** (actual: 60%)
+    - Frontend: 5% → **40%** (actual: 50.76%)
+
+2. **CI Optimizations:**
+    - Skip mobile viewport E2E tests in CI (saves ~1-1.5 min)
+    - Cache Playwright browsers between runs (saves ~30-45s after first run)
+    - Added `[skip e2e]` commit message option for docs-only changes
+
+**Files Changed:**
+
+-   `pytest.ini` - Backend coverage threshold
+-   `frontend/vite.config.js` - Frontend coverage thresholds
+-   `.github/workflows/ci.yml` - Playwright caching, E2E skip option
+-   `frontend/playwright.config.js` - Conditional mobile tests
+
+**Impact:**
+
+-   CI runtime: ~6 min → ~4-4.5 min (25-33% reduction)
+-   Coverage thresholds now meaningful guards against regressions
+-   ~75-90 minutes saved per month at typical push frequency
+
+---
+
 ### E2E Test Infrastructure: Global Auth State (#107)
 
 **Context:** E2E tests were hitting rate limiting issues in CI because each test file was logging in separately, causing multiple auth requests. Tests were also slow and occasionally flaky.
