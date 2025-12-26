@@ -397,7 +397,130 @@ describe('SalaryPeriodWizard', () => {
       await user.click(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
-        expect(screen.getByText(/no fixed bills detected/i)).toBeInTheDocument()
+        expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
+      })
+    })
+
+    it('shows quick add presets when no fixed bills', async () => {
+      api.post.mockResolvedValue({ data: mockPreviewResponse })
+      const user = userEvent.setup()
+
+      render(
+        <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
+      })
+
+      const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
+      await user.type(debitInput, '1500.00')
+      await user.click(screen.getByText(/next: review fixed bills/i))
+
+      await waitFor(() => {
+        expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
+      })
+
+      // Check for preset buttons
+      expect(screen.getByRole('button', { name: /\+ rent/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /\+ electricity/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /\+ netflix/i })).toBeInTheDocument()
+    })
+
+    it('opens quick add form when clicking preset', async () => {
+      api.post.mockResolvedValue({ data: mockPreviewResponse })
+      const user = userEvent.setup()
+
+      render(
+        <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
+      })
+
+      const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
+      await user.type(debitInput, '1500.00')
+      await user.click(screen.getByText(/next: review fixed bills/i))
+
+      await waitFor(() => {
+        expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
+      })
+
+      // Click a preset
+      await user.click(screen.getByRole('button', { name: /\+ rent/i }))
+
+      // Quick add form should appear with pre-filled name
+      await waitFor(() => {
+        const nameInput = screen.getByPlaceholderText(/e\.g\., rent/i)
+        expect(nameInput).toHaveValue('Rent')
+      })
+    })
+
+    it('shows add another button when fixed bills exist', async () => {
+      const responseWithBills = {
+        ...mockPreviewResponse,
+        fixed_bills: [
+          { name: 'Rent', amount: 100000, category: 'Fixed Expenses' }
+        ]
+      }
+      api.post.mockResolvedValue({ data: responseWithBills })
+      const user = userEvent.setup()
+
+      render(
+        <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
+      })
+
+      const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
+      await user.type(debitInput, '1500.00')
+      await user.click(screen.getByText(/next: review fixed bills/i))
+
+      await waitFor(() => {
+        expect(screen.getByText('Rent')).toBeInTheDocument()
+      })
+
+      // Should show "Add another" button
+      expect(screen.getByRole('button', { name: /add another fixed bill/i })).toBeInTheDocument()
+    })
+
+    it('shows remaining presets in add another form', async () => {
+      const responseWithBills = {
+        ...mockPreviewResponse,
+        fixed_bills: [
+          { name: 'Rent', amount: 100000, category: 'Fixed Expenses' }
+        ]
+      }
+      api.post.mockResolvedValue({ data: responseWithBills })
+      const user = userEvent.setup()
+
+      render(
+        <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
+      })
+
+      const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
+      await user.type(debitInput, '1500.00')
+      await user.click(screen.getByText(/next: review fixed bills/i))
+
+      await waitFor(() => {
+        expect(screen.getByText('Rent')).toBeInTheDocument()
+      })
+
+      // Click "Add another" button
+      await user.click(screen.getByRole('button', { name: /add another fixed bill/i }))
+
+      // Should show remaining presets (not Rent since it exists)
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: /\+ rent/i })).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /\+ electricity/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /\+ netflix/i })).toBeInTheDocument()
       })
     })
 

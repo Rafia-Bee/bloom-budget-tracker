@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import api from '../api'
+import api, { recurringExpenseAPI } from '../api'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters'
 
@@ -28,6 +28,27 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [preview, setPreview] = useState(null)
   const [fixedBills, setFixedBills] = useState([])
+
+  // Quick add fixed bill state
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [quickAddName, setQuickAddName] = useState('')
+  const [quickAddAmount, setQuickAddAmount] = useState('')
+  const [quickAddCategory, setQuickAddCategory] = useState('Fixed Expenses')
+  const [quickAddSubcategory, setQuickAddSubcategory] = useState('Subscriptions')
+  const [quickAddPaymentMethod, setQuickAddPaymentMethod] = useState('Debit card')
+  const [quickAddLoading, setQuickAddLoading] = useState(false)
+  const [quickAddError, setQuickAddError] = useState('')
+
+  // Common fixed bill presets for quick selection
+  const fixedBillPresets = [
+    { name: 'Rent', category: 'Fixed Expenses', subcategory: 'Rent' },
+    { name: 'Electricity', category: 'Fixed Expenses', subcategory: 'Utilities' },
+    { name: 'Internet', category: 'Fixed Expenses', subcategory: 'Utilities' },
+    { name: 'Phone', category: 'Fixed Expenses', subcategory: 'Utilities' },
+    { name: 'Insurance', category: 'Fixed Expenses', subcategory: 'Insurance' },
+    { name: 'Netflix', category: 'Fixed Expenses', subcategory: 'Subscriptions' },
+    { name: 'Spotify', category: 'Fixed Expenses', subcategory: 'Subscriptions' },
+  ]
 
   // Pre-fill form when editing existing salary period OR rolling over
   useEffect(() => {
@@ -70,6 +91,62 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const cleaned = value.replace(/[^0-9.]/g, '')
     const dollars = parseFloat(cleaned) || 0
     return Math.round(dollars * 100)
+  }
+
+  // Handle quick add fixed bill
+  const handleQuickAddSubmit = async () => {
+    if (!quickAddName.trim() || !quickAddAmount) {
+      setQuickAddError('Please enter name and amount')
+      return
+    }
+
+    setQuickAddError('')
+    setQuickAddLoading(true)
+
+    try {
+      const amountInCents = toEur(parseCurrency(quickAddAmount))
+
+      // Create recurring expense with is_fixed_bill = true
+      await recurringExpenseAPI.create({
+        name: quickAddName,
+        amount: amountInCents,
+        category: quickAddCategory,
+        subcategory: quickAddSubcategory,
+        payment_method: quickAddPaymentMethod,
+        frequency: 'monthly',
+        day_of_month: new Date().getDate(),
+        start_date: new Date().toISOString().split('T')[0],
+        is_active: true,
+        is_fixed_bill: true
+      })
+
+      // Add to local fixed bills list immediately
+      setFixedBills([...fixedBills, {
+        name: quickAddName,
+        amount: amountInCents,
+        category: quickAddCategory
+      }])
+
+      // Reset form
+      setQuickAddName('')
+      setQuickAddAmount('')
+      setQuickAddCategory('Fixed Expenses')
+      setQuickAddSubcategory('Subscriptions')
+      setQuickAddPaymentMethod('Debit card')
+      setShowQuickAdd(false)
+    } catch (err) {
+      setQuickAddError(err.response?.data?.error || 'Failed to add fixed bill')
+    } finally {
+      setQuickAddLoading(false)
+    }
+  }
+
+  // Select a preset and populate the quick add form
+  const selectPreset = (preset) => {
+    setQuickAddName(preset.name)
+    setQuickAddCategory(preset.category)
+    setQuickAddSubcategory(preset.subcategory)
+    setShowQuickAdd(true)
   }
 
   const handleStep1Next = async () => {
@@ -176,7 +253,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 rounded-t-2xl">
+        <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 rounded-t-2xl z-10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">
               {editPeriod ? 'Edit' : 'Setup'} Weekly Budget
@@ -209,7 +286,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Enter Your Current Balances</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">Enter Your Current Balances</h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   We'll help you create a 4-week budget based on your available funds.
                 </p>
@@ -328,17 +405,137 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
           {step === 2 && preview && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Review Fixed Bills</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">Review Fixed Bills</h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   These recurring expenses won't count against your weekly budget. Adjust or remove as needed.
                 </p>
               </div>
 
               {fixedBills.length === 0 ? (
-                <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-6 text-center">
-                  <p className="text-gray-600 dark:text-dark-text mb-2">No fixed bills detected</p>
-                  <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                    Mark recurring expenses as "Fixed Bill" in the Recurring Expenses page first.
+                <div className="space-y-4">
+                  {/* Warning Message */}
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <div className="flex gap-3">
+                      <span className="text-2xl">⚠️</span>
+                      <div>
+                        <p className="font-medium text-amber-800 dark:text-amber-400 mb-1">
+                          No fixed bills set up yet
+                        </p>
+                        <p className="text-sm text-amber-700 dark:text-amber-500">
+                          Do you have regular expenses like <strong>rent, utilities, or subscriptions</strong>?
+                          Adding them now ensures your weekly budget is accurate. Fixed bills are deducted
+                          from your total budget <em>before</em> calculating your weekly allowance.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Add Section */}
+                  <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-4">
+                    <p className="font-medium text-gray-700 dark:text-dark-text mb-3">
+                      Quick add common fixed bills:
+                    </p>
+
+                    {/* Preset Buttons */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {fixedBillPresets.map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => selectPreset(preset)}
+                          className="px-3 py-1.5 text-sm bg-white dark:bg-dark-surface text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border rounded-full hover:border-bloom-pink dark:hover:border-dark-pink hover:text-bloom-pink dark:hover:text-dark-pink transition-colors"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Quick Add Form */}
+                    {showQuickAdd && (
+                      <div className="border-t border-gray-200 dark:border-dark-border pt-4 mt-2 space-y-3">
+                        {quickAddError && (
+                          <div className="p-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-dark-danger rounded text-sm">
+                            {quickAddError}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Name</label>
+                            <input
+                              type="text"
+                              value={quickAddName}
+                              onChange={(e) => setQuickAddName(e.target.value)}
+                              placeholder="e.g., Rent"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Amount</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currencySymbol}</span>
+                              <input
+                                type="text"
+                                value={quickAddAmount}
+                                onChange={(e) => setQuickAddAmount(e.target.value)}
+                                placeholder="500.00"
+                                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Payment Method</label>
+                          <select
+                            value={quickAddPaymentMethod}
+                            onChange={(e) => setQuickAddPaymentMethod(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                          >
+                            <option value="Debit card">Debit Card</option>
+                            <option value="Credit card">Credit Card</option>
+                          </select>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowQuickAdd(false)
+                              setQuickAddName('')
+                              setQuickAddAmount('')
+                              setQuickAddSubcategory('Subscriptions')
+                              setQuickAddError('')
+                            }}
+                            className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-border text-gray-600 dark:text-dark-text rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleQuickAddSubmit}
+                            disabled={quickAddLoading}
+                            className="flex-1 px-3 py-2 text-sm bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink/80 disabled:opacity-50"
+                          >
+                            {quickAddLoading ? 'Adding...' : 'Add Fixed Bill'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!showQuickAdd && (
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAdd(true)}
+                        className="w-full mt-2 px-4 py-2 text-sm border-2 border-dashed border-gray-300 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary rounded-lg hover:border-bloom-pink dark:hover:border-dark-pink hover:text-bloom-pink dark:hover:text-dark-pink transition-colors"
+                      >
+                        + Add custom fixed bill
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary text-center">
+                    Don't have any fixed bills? No problem — just click "Next" to continue.
                   </p>
                 </div>
               ) : (
@@ -366,13 +563,104 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                       </button>
                     </div>
                   ))}
+
+                  {/* Quick Add Button for existing bills */}
+                  {!showQuickAdd ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAdd(true)}
+                      className="w-full px-4 py-2 text-sm border-2 border-dashed border-gray-300 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary rounded-lg hover:border-bloom-pink dark:hover:border-dark-pink hover:text-bloom-pink dark:hover:text-dark-pink transition-colors"
+                    >
+                      + Add another fixed bill
+                    </button>
+                  ) : (
+                    <div className="border border-gray-200 dark:border-dark-border rounded-lg p-3 space-y-3 bg-white dark:bg-dark-surface">
+                      {quickAddError && (
+                        <div className="p-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-dark-danger rounded text-sm">
+                          {quickAddError}
+                        </div>
+                      )}
+
+                      {/* Show remaining presets that haven't been added */}
+                      {(() => {
+                        const existingNames = fixedBills.map(b => b.name.toLowerCase())
+                        const remainingPresets = fixedBillPresets.filter(
+                          p => !existingNames.includes(p.name.toLowerCase())
+                        )
+                        return remainingPresets.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-dark-border">
+                            {remainingPresets.map((preset) => (
+                              <button
+                                key={preset.name}
+                                type="button"
+                                onClick={() => selectPreset(preset)}
+                                className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-dark-elevated text-gray-700 dark:text-dark-text border border-gray-300 dark:border-dark-border rounded-full hover:border-bloom-pink dark:hover:border-dark-pink hover:text-bloom-pink dark:hover:text-dark-pink transition-colors"
+                              >
+                                + {preset.name}
+                              </button>
+                            ))}
+                          </div>
+                        )
+                      })()}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={quickAddName}
+                            onChange={(e) => setQuickAddName(e.target.value)}
+                            placeholder="e.g., Rent"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-dark-text-secondary mb-1">Amount</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">{currencySymbol}</span>
+                            <input
+                              type="text"
+                              value={quickAddAmount}
+                              onChange={(e) => setQuickAddAmount(e.target.value)}
+                              placeholder="500.00"
+                              className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowQuickAdd(false)
+                            setQuickAddName('')
+                            setQuickAddAmount('')
+                            setQuickAddSubcategory('Subscriptions')
+                            setQuickAddError('')
+                          }}
+                          className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-dark-border text-gray-600 dark:text-dark-text rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleQuickAddSubmit}
+                          disabled={quickAddLoading}
+                          className="flex-1 px-3 py-2 text-sm bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink/80 disabled:opacity-50"
+                        >
+                          {quickAddLoading ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-700">Total Fixed Bills</span>
-                  <span className="text-lg font-bold text-bloom-pink">
+                  <span className="font-medium text-gray-700 dark:text-dark-text">Total Fixed Bills</span>
+                  <span className="text-lg font-bold text-bloom-pink dark:text-dark-pink">
                     {formatCurrency(fromEur(fixedBills.reduce((sum, bill) => sum + bill.amount, 0)))}
                   </span>
                 </div>
@@ -399,7 +687,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
           {step === 3 && preview && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Confirm Your Weekly Budget</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">Confirm Your Weekly Budget</h3>
                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                   Review the breakdown and create your 4-week budget plan.
                 </p>
@@ -444,7 +732,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-semibold">4-Week Schedule</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-dark-text">4-Week Schedule</h4>
                   <span className="text-sm text-gray-500">
                     {(() => { const d = new Date(preview.start_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()} - {(() => { const d = new Date(preview.end_date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}
                   </span>

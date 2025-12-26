@@ -6,6 +6,38 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-26
 
+### Budget Wizard Quick Add Fixed Bills (#116)
+
+**Context:** New users typically start the app by clicking "Get Started" on the wizard immediately after registration. If they create a budget period without setting up recurring expenses first, their weekly budget won't account for fixed bills (rent, utilities, subscriptions). Example: User starts with €2000 balance → €500/week budget. But then adds €1000 rent payment → actual balance is €1000, but budget still shows €500/week × 4 = €2000.
+
+**Decision:** Implement "Option D" - Hybrid approach with warning message + inline Quick Add form in Step 2.
+
+**Changes:**
+
+1. **Warning Message**: When no fixed bills exist, display prominent amber warning explaining importance of setting up fixed bills before finalizing budget
+2. **Preset Buttons**: Quick-select common fixed bills (Rent, Electricity, Internet, Phone, Insurance, Netflix, Spotify)
+3. **Inline Quick Add Form**: Name, Amount, Payment Method fields to create recurring expense with `is_fixed_bill=true` directly in wizard
+4. **"Add Another" Button**: When fixed bills exist, show dashed button to add more without leaving wizard
+5. **Tests**: Added 4 new tests for quick add functionality
+
+**User Flow:**
+
+-   Step 2 shows warning if no fixed bills detected
+-   User can click preset (e.g., "+ Rent") → form opens with name pre-filled
+-   User enters amount → clicks "Add Fixed Bill" → expense created, appears in list
+-   Can continue adding more or proceed to Step 3
+
+**Future Enhancement (Option C):** Documented in issue #116 comment - post-creation budget recalculation when fixed bills are added/modified after budget creation.
+
+**Files Changed:**
+
+-   `frontend/src/components/SalaryPeriodWizard.jsx` - Added quick add state, presets, form, handlers
+-   `frontend/src/test/SalaryPeriodWizard.test.jsx` - Updated test for new warning text, added 4 new tests
+
+**Impact:** Better onboarding UX, accurate budgets for new users, prevents budget miscalculation scenario.
+
+---
+
 ### CI Pipeline Path-Based Job Skipping
 
 **Context:** CI pipeline was taking ~9 minutes per run regardless of what files changed. This wastes GitHub Actions minutes when only docs or one side of the codebase is modified.
