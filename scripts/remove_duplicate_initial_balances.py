@@ -36,7 +36,9 @@ def remove_duplicate_initial_balances():
             print("✓ No duplicate Initial Balance entries found")
             return
 
-        print(f"Found {len(users_with_duplicates)} users with duplicate Initial Balance entries\n")
+        print(
+            f"Found {len(users_with_duplicates)} users with duplicate Initial Balance entries\n"
+        )
 
         total_deleted = 0
 
@@ -53,10 +55,14 @@ def remove_duplicate_initial_balances():
             delete_entries = entries[1:]
 
             print(f"User {user_id}: Found {len(entries)} Initial Balance entries")
-            print(f"  ✓ Keeping: ID={keep_entry.id}, Amount=€{keep_entry.amount/100:.2f}, Date={keep_entry.actual_date}")
+            print(
+                f"  ✓ Keeping: ID={keep_entry.id}, Amount=€{keep_entry.amount/100:.2f}, Date={keep_entry.actual_date}"
+            )
 
             for entry in delete_entries:
-                print(f"  ✗ Deleting: ID={entry.id}, Amount=€{entry.amount/100:.2f}, Date={entry.actual_date}")
+                print(
+                    f"  ✗ Deleting: ID={entry.id}, Amount=€{entry.amount/100:.2f}, Date={entry.actual_date}"
+                )
                 db.session.delete(entry)
                 total_deleted += 1
 

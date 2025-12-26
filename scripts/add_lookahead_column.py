@@ -16,18 +16,21 @@ if __name__ == "__main__":
 
         # Check if column exists
         from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        columns = [col['name'] for col in inspector.get_columns('users')]
 
-        if 'recurring_lookahead_days' in columns:
+        inspector = inspect(db.engine)
+        columns = [col["name"] for col in inspector.get_columns("users")]
+
+        if "recurring_lookahead_days" in columns:
             print("✓ Column already exists!")
         else:
             # Add the column using raw SQL
             with db.engine.connect() as conn:
                 # For SQLite, we need to handle this differently
-                conn.execute(db.text(
-                    "ALTER TABLE users ADD COLUMN recurring_lookahead_days INTEGER NOT NULL DEFAULT 14"
-                ))
+                conn.execute(
+                    db.text(
+                        "ALTER TABLE users ADD COLUMN recurring_lookahead_days INTEGER NOT NULL DEFAULT 14"
+                    )
+                )
                 conn.commit()
                 print("✓ Column added successfully!")
 
