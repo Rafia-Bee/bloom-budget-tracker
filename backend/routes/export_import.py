@@ -1144,7 +1144,6 @@ def import_bank_transactions():
         for txn in result["parsed_transactions"]:
             expense = Expense(
                 user_id=current_user_id,
-                budget_period_id=txn["budget_period_id"],
                 name=txn["name"],
                 amount=txn["amount_cents"],
                 category=txn["category"],
