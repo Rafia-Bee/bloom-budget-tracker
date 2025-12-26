@@ -80,16 +80,20 @@ export default defineConfig({
             },
             dependencies: ["setup"],
         },
-        // Mobile viewport for responsive testing
-        {
-            name: "mobile",
-            testIgnore: /unauthenticated\.spec\.js/,
-            use: {
-                ...devices["iPhone 13"],
-                storageState: "e2e/.auth/user.json",
-            },
-            dependencies: ["setup"],
-        },
+        // Mobile viewport for responsive testing (skip in CI to save time)
+        ...(process.env.CI
+            ? []
+            : [
+                  {
+                      name: "mobile",
+                      testIgnore: /unauthenticated\.spec\.js/,
+                      use: {
+                          ...devices["iPhone 13"],
+                          storageState: "e2e/.auth/user.json",
+                      },
+                      dependencies: ["setup"],
+                  },
+              ]),
     ],
 
     // Web server configuration - starts both frontend and backend
