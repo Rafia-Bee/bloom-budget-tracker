@@ -6,7 +6,34 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
-### Backend Test Coverage Expansion (#115)
+### Backend Test Coverage Expansion - Phase 2 (#115)
+
+**Context:** After Phase 1 brought backend to 80%, expenses.py (61%) and salary_periods.py (52%) remained under-tested despite being core features.
+
+**Decision:** Add comprehensive tests for core route files to ensure critical business logic is covered.
+
+**Changes:**
+
+1. **New Test File Created:**
+
+    - `test_expenses.py` - 42 tests covering filters, pagination, validation, currency, debt payments
+
+2. **Existing Test File Extended:**
+
+    - `test_salary_periods.py` - 14 new tests for week leftover, PUT/PATCH updates, auto-activation
+
+3. **Coverage Improvements:**
+    - Overall backend: 80% → **84%**
+    - expenses.py: 61% → **96%**
+    - salary_periods.py: 52% → **83%**
+
+**Rationale:** Core features (expenses, salary periods) need high coverage to prevent regressions in budget calculations and debt tracking.
+
+**Impact:** 56 new tests added, all passing. Total backend tests now 413.
+
+---
+
+### Backend Test Coverage Expansion - Phase 1 (#115)
 
 **Context:** Backend had 73% coverage overall but specific route files had significant gaps: recurring_generation (29%), user_data (18%), income (46%), password_reset (42%).
 

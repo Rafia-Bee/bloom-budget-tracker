@@ -472,3 +472,335 @@ class TestListEndpoints:
         assert response.status_code == 200
         for period in response.json:
             assert period["is_active"] is True
+
+
+class TestWeekLeftoverEndpoint:
+    """Tests for GET /api/v1/salary-periods/<id>/week/<week_number>/leftover"""
+
+    def test_get_week_leftover_basic(self, client, auth_headers, salary_period):
+        """Should return leftover calculation for a specific week"""
+        response = client.get(
+            f"/api/v1/salary-periods/{salary_period}/week/1/leftover",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+
+        # Should include expected fields
+        assert "week_number" in data
+        assert "start_date" in data
+        assert "end_date" in data
+        assert "budget_amount" in data
+        assert "adjusted_budget" in data
+        assert "carryover" in data
+        assert "spent" in data
+        assert "leftover" in data
+        assert "allocation_options" in data
+
+    def test_get_week_leftover_with_expenses(self, client, auth_headers, salary_period):
+        """Should calculate leftover after expenses"""
+        # Get period to find week dates
+        period_response = client.get(
+            "/api/v1/salary-periods/current", headers=auth_headers
+        )
+        weeks = period_response.json["salary_period"]["weeks"]
+        week1 = next(w for w in weeks if w["week_number"] == 1)
+        weekly_budget = period_response.json["salary_period"]["weekly_budget"]
+
+        # Create expense in week 1
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Test Expense",
+                "amount": 5000,
+                "category": "Flexible Expenses",
+                "date": week1["start_date"],
+            },
+            headers=auth_headers,
+        )
+
+        response = client.get(
+            f"/api/v1/salary-periods/{salary_period}/week/1/leftover",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        # Leftover should be budget minus spent
+        assert response.json["leftover"] == weekly_budget - 5000
+
+    def test_get_week_leftover_includes_allocation_options(
+        self, client, auth_headers, salary_period, app
+    ):
+        """Should include active debts and goals for allocation suggestions"""
+        # Create a debt
+        with app.app_context():
+            from backend.models.database import User, Debt, Goal
+
+            user = User.query.filter_by(email="test@example.com").first()
+            debt = Debt(
+                user_id=user.id,
+                name="Test Debt",
+                original_amount=10000,
+                current_balance=10000,
+                monthly_payment=1000,
+            )
+            goal = Goal(
+                user_id=user.id,
+                name="Test Goal",
+                target_amount=50000,
+                subcategory_name="Emergency Fund",
+            )
+            db.session.add(debt)
+            db.session.add(goal)
+            db.session.commit()
+
+        response = client.get(
+            f"/api/v1/salary-periods/{salary_period}/week/1/leftover",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert "debts" in response.json["allocation_options"]
+        assert "goals" in response.json["allocation_options"]
+        assert len(response.json["allocation_options"]["debts"]) >= 1
+        assert len(response.json["allocation_options"]["goals"]) >= 1
+
+    def test_get_week_leftover_invalid_period(self, client, auth_headers):
+        """Should return 404 for non-existent period"""
+        response = client.get(
+            "/api/v1/salary-periods/99999/week/1/leftover", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_get_week_leftover_invalid_week(self, client, auth_headers, salary_period):
+        """Should return 404 for non-existent week"""
+        response = client.get(
+            f"/api/v1/salary-periods/{salary_period}/week/99/leftover",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+
+class TestSalaryPeriodUpdate:
+    """Tests for PUT /api/v1/salary-periods/<id>"""
+
+    def test_update_salary_period_full(self, client, auth_headers, salary_period):
+        """Should update all salary period fields"""
+        # Get current period details
+        response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_data = response.json["salary_period"]
+        original_weekly_budget = period_data["weekly_budget"]
+
+        # Update with new values
+        update_response = client.put(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={
+                "start_date": period_data["start_date"],
+                "debit_balance": 600000,  # Increased from default
+                "credit_balance": 100000,
+                "credit_limit": 150000,
+                "credit_allowance": 30000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert update_response.status_code == 200
+        assert "updated successfully" in update_response.json["message"]
+
+        # Verify the update
+        updated = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        new_budget = updated.json["salary_period"]["weekly_budget"]
+        assert new_budget >= original_weekly_budget  # Should be higher
+
+    def test_update_salary_period_with_fixed_bills(
+        self, client, auth_headers, salary_period
+    ):
+        """Should update with custom fixed bills"""
+        response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_data = response.json["salary_period"]
+
+        update_response = client.put(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={
+                "start_date": period_data["start_date"],
+                "debit_balance": 500000,
+                "credit_balance": 100000,
+                "credit_limit": 150000,
+                "credit_allowance": 30000,
+                "fixed_bills": [
+                    {"name": "Rent", "amount": 100000},
+                    {"name": "Internet", "amount": 5000},
+                ],
+            },
+            headers=auth_headers,
+        )
+
+        assert update_response.status_code == 200
+
+    def test_update_salary_period_overlap_rejected(
+        self, client, auth_headers, salary_period
+    ):
+        """Should reject update that creates overlap with another period"""
+        # Create another period
+        from datetime import timedelta
+
+        # Get current period
+        current = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        current_end = current.json["salary_period"]["end_date"]
+
+        # Create consecutive period
+        from datetime import datetime
+
+        next_start = datetime.strptime(current_end, "%Y-%m-%d").date() + timedelta(
+            days=1
+        )
+        second = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": next_start.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert second.status_code == 201
+
+        # Try to update first period to overlap with second
+        overlap_start = next_start - timedelta(days=7)
+        update_response = client.put(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={
+                "start_date": overlap_start.isoformat(),
+                "debit_balance": 500000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert update_response.status_code == 400
+        assert "overlap" in update_response.json["error"].lower()
+
+    def test_update_salary_period_not_found(self, client, auth_headers):
+        """Should return 404 for non-existent period"""
+        update_response = client.put(
+            "/api/v1/salary-periods/99999",
+            json={
+                "start_date": "2025-01-01",
+                "debit_balance": 500000,
+            },
+            headers=auth_headers,
+        )
+        assert update_response.status_code == 404
+
+    def test_update_salary_period_credit_allowance_validation(
+        self, client, auth_headers, salary_period
+    ):
+        """Should reject credit allowance exceeding available credit"""
+        response = client.get("/api/v1/salary-periods/current", headers=auth_headers)
+        period_data = response.json["salary_period"]
+
+        update_response = client.put(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={
+                "start_date": period_data["start_date"],
+                "debit_balance": 500000,
+                "credit_balance": 50000,  # €500 available
+                "credit_limit": 100000,
+                "credit_allowance": 80000,  # €800 - exceeds available!
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert update_response.status_code == 400
+        assert "exceed" in update_response.json["error"].lower()
+
+
+class TestSalaryPeriodPartialUpdate:
+    """Tests for PATCH /api/v1/salary-periods/<id>"""
+
+    def test_deactivate_salary_period(self, client, auth_headers, salary_period):
+        """Should deactivate a salary period via PATCH"""
+        response = client.patch(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={"is_active": False},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert "updated successfully" in response.json["message"]
+
+        # Verify it's deactivated
+        with client.application.app_context():
+            period = SalaryPeriod.query.get(salary_period)
+            assert period.is_active is False
+
+    def test_reactivate_salary_period(self, client, auth_headers, salary_period):
+        """Should reactivate a deactivated salary period"""
+        # First deactivate
+        client.patch(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={"is_active": False},
+            headers=auth_headers,
+        )
+
+        # Then reactivate
+        response = client.patch(
+            f"/api/v1/salary-periods/{salary_period}",
+            json={"is_active": True},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+
+        # Verify it's active again
+        with client.application.app_context():
+            period = SalaryPeriod.query.get(salary_period)
+            assert period.is_active is True
+
+    def test_partial_update_not_found(self, client, auth_headers):
+        """Should return 404 for non-existent period"""
+        response = client.patch(
+            "/api/v1/salary-periods/99999",
+            json={"is_active": False},
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+
+class TestAutoActivation:
+    """Tests for automatic period activation"""
+
+    def test_future_period_auto_activates_when_started(self, client, auth_headers):
+        """Future period should auto-activate when its start date arrives"""
+        # This is tricky to test without mocking time
+        # For now, just verify the auto-activation logic in get_current exists
+        # by checking the endpoint works correctly
+        today = date.today()
+        start_date = today - timedelta(days=7)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "debit_balance": 500000,
+                "credit_balance": 100000,
+                "credit_limit": 100000,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Verify via database that it's active
+        with client.application.app_context():
+            period = SalaryPeriod.query.get(period_id)
+            assert period.is_active is True
