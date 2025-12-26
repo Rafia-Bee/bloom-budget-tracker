@@ -7,6 +7,9 @@
 
 import { test, expect, TEST_USER, loginAsTestUser } from "./fixtures.js";
 
+// These tests check login/logout behavior - start without auth state
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Authentication Flow", () => {
     test.describe("Login", () => {
         test("user can log in with valid credentials", async ({ page }) => {

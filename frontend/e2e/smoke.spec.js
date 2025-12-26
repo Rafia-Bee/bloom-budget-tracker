@@ -7,6 +7,9 @@
 
 import { test, expect } from "./fixtures.js";
 
+// These tests check unauthenticated behavior - clear the auth state
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Smoke Tests", () => {
     test("app loads without errors", async ({ page }) => {
         // Navigate to the app

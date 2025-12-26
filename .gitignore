@@ -63,6 +63,7 @@ playwright-report/
 e2e-results/
 test-results/
 *.e2e-results.json
+frontend/e2e/.auth/
 
 # Database
 *.db

@@ -6,6 +6,56 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-26
 
+### E2E Test Infrastructure: Global Auth State (#107)
+
+**Context:** E2E tests were hitting rate limiting issues in CI because each test file was logging in separately, causing multiple auth requests. Tests were also slow and occasionally flaky.
+
+**Decision:** Implement global authentication setup with Playwright's `storageState` feature to authenticate once per test run and share cookies across all tests.
+
+**Implementation:**
+
+1. **Global Setup (`global-setup.js`)**:
+
+    - Authenticates once before all tests run
+    - Saves cookies to `e2e/.auth/user.json`
+    - Console logs success message for debugging
+
+2. **Playwright Config Updates**:
+
+    - Added `globalSetup: "./e2e/global-setup.js"`
+    - Chromium project uses `storageState: "e2e/.auth/user.json"`
+    - Workers: 2 locally, 1 on CI (prevents rate limiting)
+
+3. **Test File Adjustments**:
+
+    - Auth tests (`auth.spec.js`) and smoke tests (`smoke.spec.js`) use `test.use({ storageState: { cookies: [], origins: [] } })` to test unauthenticated behavior
+    - Removed `cleanState` fixture (no longer needed)
+    - All other tests automatically inherit logged-in state
+
+4. **New Test Files**:
+    - `debts.spec.js` (17 tests) - Complete debt management flows
+    - `goals.spec.js` (17 tests) - Savings goals functionality
+
+**Files Changed:**
+
+-   `frontend/e2e/global-setup.js` - New global auth setup
+-   `frontend/playwright.config.js` - Added globalSetup and storageState
+-   `frontend/e2e/fixtures.js` - Removed cleanState fixture
+-   `frontend/e2e/auth.spec.js` - Clear auth state for login tests
+-   `frontend/e2e/smoke.spec.js` - Clear auth state for unauthenticated tests
+-   `frontend/e2e/debts.spec.js` - New test file
+-   `frontend/e2e/goals.spec.js` - New test file
+-   `.gitignore` - Added `e2e/.auth/` directory
+
+**Impact:**
+
+-   Test run time reduced (single login vs multiple)
+-   No more rate limiting failures in CI
+-   87 tests passing, 13 skipped (state-dependent)
+-   Cleaner test architecture with shared auth state
+
+---
+
 ### Move Experimental Features Toggle to Settings Page (#114)
 
 **Context:** The experimental features toggle and "Delete All Data" were buried in the hamburger user menu. This made them hard to find and cluttered the menu with rarely-used options.

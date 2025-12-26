@@ -3,6 +3,9 @@
  *
  * Provides reusable test fixtures, helper functions, and page objects
  * for consistent E2E testing across all test files.
+ *
+ * Note: Most tests use global auth state from global-setup.js.
+ * The loginAsTestUser function is kept for tests that need fresh login.
  */
 
 import { test as base, expect } from "@playwright/test";
@@ -20,20 +23,33 @@ export const TEST_USER = {
  */
 export const test = base.extend({
     /**
-     * Auto-fixture that clears cookies before each test
-     * Ensures clean state for authentication tests
+     * Auto-fixture that ensures we're on dashboard before each test
+     * Works with both global auth state and fresh login
      */
-    cleanState: [
-        async ({ context }, use) => {
-            await context.clearCookies();
-            await use();
+    authenticatedPage: [
+        async ({ page }, use) => {
+            // Try to navigate to dashboard
+            await page.goto("/dashboard");
+
+            // Check if we're authenticated (global auth state should work)
+            const isAuthenticated = await page
+                .waitForURL(/\/(dashboard)?$/, { timeout: 5000 })
+                .then(() => true)
+                .catch(() => false);
+
+            if (!isAuthenticated) {
+                // Fall back to manual login if global auth didn't work
+                await loginAsTestUser(page);
+            }
+
+            await use(page);
         },
-        { auto: true },
+        { auto: false },
     ],
 });
 
 /**
- * Helper to log in as test user
+ * Helper to log in as test user (for tests that need fresh login)
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function loginAsTestUser(page) {

@@ -3,13 +3,16 @@
  *
  * Tests for navigating between weeks, viewing carryover calculations,
  * and general app navigation.
+ *
+ * Uses global auth state from global-setup.js - no login needed per test.
  */
 
-import { test, expect, loginAsTestUser } from "./fixtures.js";
+import { test, expect } from "./fixtures.js";
 
 test.describe("Navigation and State Management", () => {
     test.beforeEach(async ({ page }) => {
-        await loginAsTestUser(page);
+        // Navigate to dashboard (auth cookies from global setup)
+        await page.goto("/dashboard");
         await page.waitForLoadState("networkidle");
     });
 

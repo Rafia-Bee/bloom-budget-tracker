@@ -11,7 +11,7 @@ export default defineConfig({
     // Directory containing test files
     testDir: "./e2e",
 
-    // Run tests in parallel for speed
+    // Run tests in parallel for speed (but be careful with rate limits)
     fullyParallel: true,
 
     // Fail the build on CI if you accidentally left test.only in the source code
@@ -20,8 +20,12 @@ export default defineConfig({
     // Retry failed tests on CI only
     retries: process.env.CI ? 2 : 0,
 
-    // Limit parallel workers on CI to avoid resource issues
-    workers: process.env.CI ? 1 : undefined,
+    // Limit parallel workers to avoid rate limiting on auth endpoints
+    // CI uses 1 worker; local uses 2 workers for balance of speed and stability
+    workers: process.env.CI ? 1 : 2,
+
+    // Global setup - authenticates once and saves state for all tests
+    globalSetup: "./e2e/global-setup.js",
 
     // Reporter configuration
     reporter: [
@@ -59,14 +63,32 @@ export default defineConfig({
 
     // Configure projects for different browsers
     projects: [
+        // Tests that don't need authentication
+        {
+            name: "setup",
+            testMatch: /unauthenticated\.spec\.js/,
+            use: { ...devices["Desktop Chrome"] },
+        },
+        // Main test suite with shared auth state
         {
             name: "chromium",
-            use: { ...devices["Desktop Chrome"] },
+            testIgnore: /unauthenticated\.spec\.js/,
+            use: {
+                ...devices["Desktop Chrome"],
+                // Use saved authentication state
+                storageState: "e2e/.auth/user.json",
+            },
+            dependencies: ["setup"],
         },
         // Mobile viewport for responsive testing
         {
             name: "mobile",
-            use: { ...devices["iPhone 13"] },
+            testIgnore: /unauthenticated\.spec\.js/,
+            use: {
+                ...devices["iPhone 13"],
+                storageState: "e2e/.auth/user.json",
+            },
+            dependencies: ["setup"],
         },
     ],
 
