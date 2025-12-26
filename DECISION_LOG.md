@@ -4,6 +4,36 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-27
+
+### Backend Test Coverage Expansion (#115)
+
+**Context:** Backend had 73% coverage overall but specific route files had significant gaps: recurring_generation (29%), user_data (18%), income (46%), password_reset (42%).
+
+**Decision:** Add comprehensive tests for under-tested route files to improve reliability.
+
+**Changes:**
+
+1. **New Test Files Created:**
+
+    - `test_recurring_generation_routes.py` - 17 tests for /generate, /generate/all, /preview
+    - `test_user_data.py` - 26 tests for delete-all, recurring-lookahead, default-currency
+    - `test_income.py` - 26 tests for income CRUD, stats, currency, search
+    - `test_password_reset.py` - 21 tests for forgot-password, reset-password, validate-token
+
+2. **Coverage Improvements:**
+    - Overall backend: 73% → **80%**
+    - recurring_generation: 29% → 88%
+    - user_data: 18% → 87%
+    - income: 46% → 88%
+    - password_reset: 42% → 87%
+
+**Rationale:** Higher test coverage catches regressions earlier, especially in security-critical code like password reset.
+
+**Impact:** 90 new tests added, all passing. Total backend tests now 357.
+
+---
+
 ## 2025-12-26
 
 ### CI Optimization & Coverage Thresholds (#115)
