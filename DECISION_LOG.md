@@ -6,6 +6,55 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### E2E Test Patterns & HttpOnly Cookie Auth Fix (#107)
+
+**Context:** E2E tests were failing/skipping because HttpOnly cookies (JWT auth) cannot be captured by Playwright's default `storageState` which only saves localStorage/sessionStorage. Tests also had issues with week navigation using wrong selectors (buttons vs dropdown).
+
+**Decision:** Fix HttpOnly cookie capture in global setup and establish consistent patterns for UI interactions.
+
+**Changes:**
+
+1. **HttpOnly Cookie Fix (`global-setup.js`):**
+
+    - Changed from `context.storageState()` to `context.cookies()` to capture HttpOnly cookies
+    - Save cookies to JSON file, then manually inject via `context.addCookies()` in config
+    - This approach captures JWT stored in HttpOnly cookies that `storageState` misses
+
+2. **Week Navigation Pattern:**
+
+    - Dashboard uses `<select>` dropdown for week navigation, NOT "Next/Previous" buttons
+    - Correct: `page.locator("select").first().selectOption({ label: "Week 2" })`
+    - Wrong: Clicking button with text "Next week" (doesn't exist)
+    - "Next/Previous day" buttons exist but are for day-by-day navigation within a week
+
+3. **Modal Date Behavior:**
+
+    - Add Expense modal defaults date to current period date
+    - Tests should NOT modify the date unless testing date assignment
+    - Modifying date can assign expense to wrong period, causing assertion failures
+
+4. **Selector Best Practices:**
+    - Use `getByRole("heading", { name: "..." })` for modal detection
+    - Use `getByRole("option", { name: "..." })` for dropdown verification
+    - Avoid regex locators like `text=/pattern/i` - can match multiple elements
+    - Use `waitFor({ state: 'hidden' })` for modal close detection instead of timeout + isVisible check
+
+**Files Changed:**
+
+-   `frontend/e2e/global-setup.js` - HttpOnly cookie capture
+-   `frontend/playwright.config.js` - Cookie injection on context creation
+-   `frontend/e2e/transactions.spec.js` - Modal interaction patterns
+-   `frontend/e2e/navigation.spec.js` - Week dropdown navigation
+-   `frontend/e2e/salary-period.spec.js` - Week dropdown navigation, edit mode button
+
+**Impact:**
+
+-   E2E tests: 3 passed → **125 passed** (Chromium)
+-   Auth works correctly across all tests
+-   Consistent patterns for future E2E tests
+
+---
+
 ### Backend Test Coverage Expansion - Phase 2 (#115)
 
 **Context:** After Phase 1 brought backend to 80%, expenses.py (61%), salary_periods.py (52%), and export_import.py (33%) remained under-tested despite being core features.

@@ -114,14 +114,12 @@ test.describe("Navigation and State Management", () => {
         test("carryover information is displayed when applicable", async ({
             page,
         }) => {
-            // Navigate to week 2, 3, or 4 where carryover might exist
-            const weekNav = page
-                .locator('button:has-text("Next"), button:has-text(">")')
-                .first();
+            // Use the week selector dropdown to navigate between weeks
+            const weekSelector = page.locator("select").first();
 
             // Try to navigate to a later week
-            if (await weekNav.isVisible()) {
-                await weekNav.click();
+            if (await weekSelector.isVisible({ timeout: 3000 })) {
+                await weekSelector.selectOption({ label: "Week 2" });
                 await page.waitForTimeout(500);
 
                 // Look for carryover indicator
@@ -298,14 +296,12 @@ test.describe("Navigation and State Management", () => {
 
     test.describe("State Persistence", () => {
         test("selected week persists after page reload", async ({ page }) => {
-            // Navigate to a specific week
-            const nextWeekButton = page
-                .locator('button:has-text("Next"), button:has-text(">")')
-                .first();
+            // Navigate to a specific week using the dropdown selector
+            const weekSelector = page.locator("select").first();
 
-            if (await nextWeekButton.isVisible({ timeout: 3000 })) {
-                // Click next to change week
-                await nextWeekButton.click();
+            if (await weekSelector.isVisible({ timeout: 3000 })) {
+                // Select week 2 to change week
+                await weekSelector.selectOption({ label: "Week 2" });
                 await page.waitForTimeout(500);
 
                 // Get current week

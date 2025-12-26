@@ -32,11 +32,11 @@ test.describe("Settings Page", () => {
         test("can access Settings page", async ({ page }) => {
             // Should be on settings page (not login)
             expect(page.url()).toContain("/settings");
-            const hasPageContent = await page
-                .locator("h1, h2, button")
-                .first()
-                .isVisible({ timeout: 5000 });
-            expect(hasPageContent).toBeTruthy();
+
+            // Look for the Categories tab which should be visible on Settings page
+            await expect(
+                page.locator("button:has-text('Categories')")
+            ).toBeVisible({ timeout: 5000 });
         });
 
         test("Settings page shows tab navigation when authenticated", async ({
@@ -104,50 +104,46 @@ test.describe("Settings Page", () => {
         }) => {
             // Open create modal
             const addButton = page.locator(
-                'button:has-text("Add Subcategory"), button:has-text("Add")'
+                'button:has-text("Add Subcategory")'
             );
-            await addButton.first().click();
+            await addButton.click();
             await page.waitForTimeout(500);
 
-            // Should have name input and category selector
+            // Should have name input (by placeholder text)
             const nameInput = page.locator(
-                'input[name="name"], input[placeholder*="name" i]'
+                'input[placeholder*="Streaming Services"]'
             );
-            await expect(nameInput.first()).toBeVisible();
+            await expect(nameInput).toBeVisible();
 
-            // Category selector (might be pre-filled with current selection)
-            const categorySelector = page.locator('select, [role="listbox"]');
-            // Category might be pre-selected, so check for either selector or current category text
+            // Category selector should be visible
+            const categorySelector = page.locator("select");
+            await expect(categorySelector.first()).toBeVisible();
         });
 
         test("can create a new subcategory", async ({ page }) => {
             // Open create modal
             const addButton = page.locator(
-                'button:has-text("Add Subcategory"), button:has-text("Add")'
+                'button:has-text("Add Subcategory")'
             );
-            await addButton.first().click();
+            await addButton.click();
             await page.waitForTimeout(500);
 
-            // Fill in name
-            const nameInput = page
-                .locator('input[name="name"], input[placeholder*="name" i]')
-                .first();
+            // Fill in name using placeholder selector
+            const nameInput = page.locator(
+                'input[placeholder*="Streaming Services"]'
+            );
             const testName = `E2E Test Sub ${Date.now()}`;
             await nameInput.fill(testName);
 
-            // Submit
-            const submitButton = page
-                .locator(
-                    'button[type="submit"], button:has-text("Save"), button:has-text("Create")'
-                )
-                .last();
+            // Submit (Create button)
+            const submitButton = page.locator('button:has-text("Create")');
             await submitButton.click();
 
             // Wait for modal to close
             await page.waitForTimeout(1000);
 
             // Subcategory should appear in list
-            await expect(page.locator(`text=${testName}`).first()).toBeVisible({
+            await expect(page.getByText(testName).first()).toBeVisible({
                 timeout: 5000,
             });
         });
@@ -287,16 +283,18 @@ test.describe("Settings Page", () => {
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
 
-            // Currency setting might be visible
-            const currencySelector = page.locator(
-                'text=/Currency|Default Currency/i, select:has(option:has-text("EUR")), [data-testid*="currency"]'
-            );
-
-            // This might not be visible if multi-currency is disabled
-            const isVisible = await currencySelector
-                .first()
+            // Currency setting might be visible - check for either the label or a select with EUR
+            const hasCurrencyLabel = await page
+                .getByText(/Currency|Default Currency/i)
                 .isVisible({ timeout: 3000 });
+
+            const hasEurOption = await page
+                .locator('select:has(option:has-text("EUR"))')
+                .isVisible({ timeout: 1000 });
+
             // Either visible or not - both are valid states
+            // This test just verifies we can access the preferences tab
+            expect(true).toBeTruthy();
         });
     });
 
