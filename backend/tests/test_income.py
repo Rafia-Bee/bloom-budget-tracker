@@ -246,7 +246,7 @@ class TestIncomeCRUD:
         assert "date format" in response.json["error"]
 
     def test_delete_income(self, client, auth_headers, user_id):
-        """Should delete income entry"""
+        """Should soft delete income entry"""
         income = create_income(user_id)
 
         response = client.delete(
@@ -257,8 +257,14 @@ class TestIncomeCRUD:
         assert response.status_code == 200
         assert "deleted" in response.json["message"]
 
-        # Verify deleted
-        assert Income.query.get(income.id) is None
+        # Verify soft-deleted (record exists but has deleted_at set)
+        deleted_income = Income.query.get(income.id)
+        assert deleted_income is not None
+        assert deleted_income.deleted_at is not None
+        assert deleted_income.is_deleted is True
+
+        # Verify not returned by active() filter
+        assert Income.active().filter_by(id=income.id).first() is None
 
     def test_delete_income_not_found(self, client, auth_headers):
         """Should return 404 for non-existent income"""

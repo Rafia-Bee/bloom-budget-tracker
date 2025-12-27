@@ -392,10 +392,72 @@ def delete_expense(expense_id):
             if debt.current_balance > 0 and debt.archived:
                 debt.archived = False
 
-    db.session.delete(expense)
+    # Soft delete instead of hard delete
+    expense.soft_delete()
     db.session.commit()
 
     return jsonify({"message": "Expense deleted successfully"}), 200
+
+
+@expenses_bp.route("/<int:expense_id>/restore", methods=["POST"])
+@jwt_required()
+def restore_expense(expense_id):
+    """Restore a soft-deleted expense"""
+    current_user_id = int(get_jwt_identity())
+    expense = (
+        Expense.deleted().filter_by(id=expense_id, user_id=current_user_id).first()
+    )
+
+    if not expense:
+        return jsonify({"error": "Deleted expense not found"}), 404
+
+    # If this was a debt payment, re-apply it to the debt balance
+    if (
+        expense.category == "Debt Payments"
+        and expense.subcategory
+        and expense.subcategory != "Credit Card"
+    ):
+        debt = Debt.query.filter_by(
+            user_id=current_user_id, name=expense.subcategory
+        ).first()
+        if debt:
+            # Subtract the payment from the debt balance again
+            debt.current_balance = max(0, debt.current_balance - expense.amount)
+            # Auto-archive if fully paid
+            if debt.current_balance == 0:
+                debt.archived = True
+
+    expense.restore()
+    db.session.commit()
+
+    return jsonify({"message": "Expense restored successfully"}), 200
+
+
+@expenses_bp.route("/deleted", methods=["GET"])
+@jwt_required()
+def get_deleted_expenses():
+    """Get all soft-deleted expenses for the current user"""
+    current_user_id = int(get_jwt_identity())
+    deleted_expenses = Expense.deleted().filter_by(user_id=current_user_id).all()
+
+    return (
+        jsonify(
+            [
+                {
+                    "id": e.id,
+                    "name": e.name,
+                    "amount": e.amount,
+                    "category": e.category,
+                    "subcategory": e.subcategory,
+                    "date": e.date.isoformat(),
+                    "payment_method": e.payment_method,
+                    "deleted_at": e.deleted_at.isoformat() if e.deleted_at else None,
+                }
+                for e in deleted_expenses
+            ]
+        ),
+        200,
+    )
 
 
 @expenses_bp.route("/dates-with-transactions", methods=["GET"])

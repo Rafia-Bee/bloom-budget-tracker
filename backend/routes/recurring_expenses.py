@@ -368,7 +368,7 @@ def update_recurring_expense(id):
 @recurring_expenses_bp.route("/<int:id>", methods=["DELETE"])
 @jwt_required()
 def delete_recurring_expense(id):
-    """Delete a recurring expense template"""
+    """Delete a recurring expense template (soft delete)"""
     try:
         current_user_id = int(get_jwt_identity())
         re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
@@ -379,7 +379,8 @@ def delete_recurring_expense(id):
         # Track if this was a fixed bill before deletion
         was_fixed_bill = re.is_fixed_bill
 
-        db.session.delete(re)
+        # Soft delete instead of hard delete
+        re.soft_delete()
         db.session.commit()
 
         # Calculate budget impact if deleted expense was a fixed bill
@@ -400,6 +401,73 @@ def delete_recurring_expense(id):
             jsonify({"error": "Failed to delete recurring expense. Please try again."}),
             500,
         )
+
+
+@recurring_expenses_bp.route("/<int:id>/restore", methods=["POST"])
+@jwt_required()
+def restore_recurring_expense(id):
+    """Restore a soft-deleted recurring expense template"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        re = (
+            RecurringExpense.deleted().filter_by(id=id, user_id=current_user_id).first()
+        )
+
+        if not re:
+            return jsonify({"error": "Deleted recurring expense not found"}), 404
+
+        re.restore()
+        db.session.commit()
+
+        # Calculate budget impact if restored expense is a fixed bill
+        response_data = {"message": "Recurring expense restored successfully"}
+
+        if re.is_fixed_bill:
+            budget_impact = calculate_budget_impact(current_user_id)
+            if budget_impact:
+                response_data["budget_impact"] = budget_impact
+
+        return jsonify(response_data), 200
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f"[restore_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify(
+                {"error": "Failed to restore recurring expense. Please try again."}
+            ),
+            500,
+        )
+
+
+@recurring_expenses_bp.route("/deleted", methods=["GET"])
+@jwt_required()
+def get_deleted_recurring_expenses():
+    """Get all soft-deleted recurring expense templates for the current user"""
+    current_user_id = int(get_jwt_identity())
+    deleted_recurring = (
+        RecurringExpense.deleted().filter_by(user_id=current_user_id).all()
+    )
+
+    return (
+        jsonify(
+            [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "amount": r.amount,
+                    "category": r.category,
+                    "subcategory": r.subcategory,
+                    "frequency": r.frequency,
+                    "is_fixed_bill": r.is_fixed_bill,
+                    "deleted_at": r.deleted_at.isoformat() if r.deleted_at else None,
+                }
+                for r in deleted_recurring
+            ]
+        ),
+        200,
+    )
 
 
 @recurring_expenses_bp.route("/<int:id>/toggle", methods=["PUT"])

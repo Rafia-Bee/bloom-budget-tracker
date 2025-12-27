@@ -203,17 +203,60 @@ def update_debt(debt_id):
 @debts_bp.route("/<int:debt_id>", methods=["DELETE"])
 @jwt_required()
 def delete_debt(debt_id):
-    """Delete a debt."""
+    """Delete a debt (soft delete)."""
     current_user_id = int(get_jwt_identity())
     debt = Debt.active().filter_by(id=debt_id, user_id=current_user_id).first()
 
     if not debt:
         return jsonify({"error": "Debt not found"}), 404
 
-    db.session.delete(debt)
+    # Soft delete instead of hard delete
+    debt.soft_delete()
     db.session.commit()
 
     return jsonify({"message": "Debt deleted successfully"}), 200
+
+
+@debts_bp.route("/<int:debt_id>/restore", methods=["POST"])
+@jwt_required()
+def restore_debt(debt_id):
+    """Restore a soft-deleted debt."""
+    current_user_id = int(get_jwt_identity())
+    debt = Debt.deleted().filter_by(id=debt_id, user_id=current_user_id).first()
+
+    if not debt:
+        return jsonify({"error": "Deleted debt not found"}), 404
+
+    debt.restore()
+    db.session.commit()
+
+    return jsonify({"message": "Debt restored successfully"}), 200
+
+
+@debts_bp.route("/deleted", methods=["GET"])
+@jwt_required()
+def get_deleted_debts():
+    """Get all soft-deleted debts for the current user."""
+    current_user_id = int(get_jwt_identity())
+    deleted_debts = Debt.deleted().filter_by(user_id=current_user_id).all()
+
+    return (
+        jsonify(
+            [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "original_amount": d.original_amount,
+                    "current_balance": d.current_balance,
+                    "monthly_payment": d.monthly_payment,
+                    "archived": d.archived,
+                    "deleted_at": d.deleted_at.isoformat() if d.deleted_at else None,
+                }
+                for d in deleted_debts
+            ]
+        ),
+        200,
+    )
 
 
 @debts_bp.route("/pay", methods=["POST"])

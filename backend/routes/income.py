@@ -306,14 +306,56 @@ def get_income_stats():
 @income_bp.route("/<int:income_id>", methods=["DELETE"])
 @jwt_required()
 def delete_income(income_id):
-    """Delete an income entry."""
+    """Delete an income entry (soft delete)."""
     user_id = int(get_jwt_identity())
     income = Income.active().filter_by(id=income_id, user_id=user_id).first()
 
     if not income:
         return jsonify({"error": "Income not found"}), 404
 
-    db.session.delete(income)
+    # Soft delete instead of hard delete
+    income.soft_delete()
     db.session.commit()
 
     return jsonify({"message": "Income deleted successfully"}), 200
+
+
+@income_bp.route("/<int:income_id>/restore", methods=["POST"])
+@jwt_required()
+def restore_income(income_id):
+    """Restore a soft-deleted income entry."""
+    user_id = int(get_jwt_identity())
+    income = Income.deleted().filter_by(id=income_id, user_id=user_id).first()
+
+    if not income:
+        return jsonify({"error": "Deleted income not found"}), 404
+
+    income.restore()
+    db.session.commit()
+
+    return jsonify({"message": "Income restored successfully"}), 200
+
+
+@income_bp.route("/deleted", methods=["GET"])
+@jwt_required()
+def get_deleted_income():
+    """Get all soft-deleted income entries for the current user."""
+    user_id = int(get_jwt_identity())
+    deleted_income = Income.deleted().filter_by(user_id=user_id).all()
+
+    return (
+        jsonify(
+            [
+                {
+                    "id": i.id,
+                    "type": i.type,
+                    "amount": i.amount,
+                    "scheduled_date": i.scheduled_date.isoformat(),
+                    "actual_date": i.actual_date.isoformat() if i.actual_date else None,
+                    "deleted_at": i.deleted_at.isoformat() if i.deleted_at else None,
+                }
+                for i in deleted_income
+            ]
+        ),
+        200,
+    )
