@@ -5,6 +5,7 @@ Adds deleted_at column to support soft delete pattern for:
 - income
 - debts
 - recurring_expenses
+- goals
 
 This allows users to recover accidentally deleted data and maintains
 an audit trail. Records with deleted_at = NULL are active; records
@@ -77,9 +78,24 @@ def upgrade():
         unique=False,
     )
 
+    # Add deleted_at column to goals table
+    op.add_column(
+        "goals",
+        sa.Column("deleted_at", sa.DateTime(), nullable=True),
+    )
+    op.create_index(
+        "idx_goals_deleted_at",
+        "goals",
+        ["deleted_at"],
+        unique=False,
+    )
+
 
 def downgrade():
     # Remove indexes first, then columns
+    op.drop_index("idx_goals_deleted_at", table_name="goals")
+    op.drop_column("goals", "deleted_at")
+
     op.drop_index("idx_recurring_expenses_deleted_at", table_name="recurring_expenses")
     op.drop_column("recurring_expenses", "deleted_at")
 

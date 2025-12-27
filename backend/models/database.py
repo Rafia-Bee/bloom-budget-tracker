@@ -527,12 +527,13 @@ class Subcategory(db.Model):
         }
 
 
-class Goal(db.Model):
+class Goal(SoftDeleteMixin, db.Model):
     """
     Goal model for tracking savings goals and financial targets.
 
     Goals are linked to subcategories in the 'Savings & Investments' category.
     Progress is tracked through expense entries in the linked subcategory.
+    Supports soft deletion for recovery of accidentally deleted goals.
     """
 
     __tablename__ = "goals"

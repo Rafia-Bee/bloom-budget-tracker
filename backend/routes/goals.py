@@ -22,7 +22,8 @@ def get_goals():
     current_user_id = int(get_jwt_identity())
 
     goals = (
-        Goal.query.filter_by(user_id=current_user_id, is_active=True)
+        Goal.active()
+        .filter_by(user_id=current_user_id, is_active=True)
         .order_by(Goal.created_at.desc())
         .all()
     )
@@ -154,7 +155,7 @@ def update_goal(id):
     data = request.get_json()
 
     # Single query with user_id to prevent enumeration attacks
-    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
+    goal = Goal.active().filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
 
@@ -281,7 +282,7 @@ def delete_goal(id):
     force = request.args.get("force", "false").lower() == "true"
 
     # Single query with user_id to prevent enumeration attacks
-    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
+    goal = Goal.active().filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
 
@@ -335,8 +336,8 @@ def delete_goal(id):
         if subcategory:
             db.session.delete(subcategory)
 
-        # Delete the goal
-        db.session.delete(goal)
+        # Soft delete the goal
+        goal.soft_delete()
         db.session.commit()
 
         message = "Goal deleted successfully"
@@ -356,6 +357,104 @@ def delete_goal(id):
         return jsonify({"error": "Failed to delete goal. Please try again."}), 500
 
 
+@goals_bp.route("/<int:id>/restore", methods=["POST"])
+@jwt_required()
+def restore_goal(id):
+    """Restore a soft-deleted goal, recreate its subcategory, and reassign contributions."""
+    current_user_id = int(get_jwt_identity())
+    goal = Goal.deleted().filter_by(id=id, user_id=current_user_id).first()
+
+    if not goal:
+        return jsonify({"error": "Deleted goal not found"}), 404
+
+    try:
+        # Restore the goal
+        goal.restore()
+
+        # Recreate the subcategory if it doesn't exist
+        existing_subcategory = Subcategory.query.filter_by(
+            user_id=current_user_id,
+            category="Savings & Investments",
+            name=goal.subcategory_name,
+        ).first()
+
+        subcategory_recreated = False
+        if not existing_subcategory:
+            new_subcategory = Subcategory(
+                user_id=current_user_id,
+                category="Savings & Investments",
+                name=goal.subcategory_name,
+                is_active=True,
+                is_system=False,
+            )
+            db.session.add(new_subcategory)
+            subcategory_recreated = True
+
+        # Find and reassign expenses that were moved to "Other" when this goal was deleted
+        # These have a note like: "[Auto-updated] Moved from deleted goal 'GoalName'"
+        marker = f"[Auto-updated] Moved from deleted goal '{goal.name}'"
+        moved_expenses = Expense.query.filter(
+            Expense.user_id == current_user_id,
+            Expense.category == "Savings & Investments",
+            Expense.subcategory == "Other",
+            Expense.notes.contains(marker),
+        ).all()
+
+        contributions_restored = 0
+        for expense in moved_expenses:
+            expense.subcategory = goal.subcategory_name
+            # Remove the auto-added note
+            if expense.notes:
+                expense.notes = expense.notes.replace(f"\n{marker}", "").replace(
+                    marker, ""
+                )
+                if not expense.notes.strip():
+                    expense.notes = None
+            contributions_restored += 1
+
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "message": "Goal restored successfully",
+                    "subcategory_recreated": subcategory_recreated,
+                    "contributions_restored": contributions_restored,
+                }
+            ),
+            200,
+        )
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f"[restore_goal] Database error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to restore goal. Please try again."}), 500
+
+
+@goals_bp.route("/deleted", methods=["GET"])
+@jwt_required()
+def get_deleted_goals():
+    """Get all soft-deleted goals for the current user."""
+    current_user_id = int(get_jwt_identity())
+    deleted_goals = Goal.deleted().filter_by(user_id=current_user_id).all()
+
+    return (
+        jsonify(
+            [
+                {
+                    "id": g.id,
+                    "name": g.name,
+                    "target_amount": g.target_amount,
+                    "subcategory_name": g.subcategory_name,
+                    "deleted_at": g.deleted_at.isoformat() if g.deleted_at else None,
+                }
+                for g in deleted_goals
+            ]
+        ),
+        200,
+    )
+
+
 @goals_bp.route("/<int:id>/progress", methods=["GET"])
 @jwt_required()
 def get_goal_progress(id):
@@ -363,7 +462,7 @@ def get_goal_progress(id):
     current_user_id = int(get_jwt_identity())
 
     # Single query with user_id to prevent enumeration attacks
-    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
+    goal = Goal.active().filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
 
@@ -407,7 +506,7 @@ def get_goal_transactions(id):
     current_user_id = int(get_jwt_identity())
 
     # Single query with user_id to prevent enumeration attacks
-    goal = Goal.query.filter_by(id=id, user_id=current_user_id).first()
+    goal = Goal.active().filter_by(id=id, user_id=current_user_id).first()
     if not goal:
         return jsonify({"error": "Goal not found"}), 404
 

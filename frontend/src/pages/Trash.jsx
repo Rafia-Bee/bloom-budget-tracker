@@ -3,11 +3,11 @@
  *
  * View and restore soft-deleted items.
  * Items are auto-purged after 30 days.
- * Tabs for: Expenses, Income, Debts, Recurring Expenses
+ * Tabs for: Expenses, Income, Debts, Goals, Recurring Expenses
  */
 
 import { useState, useEffect } from 'react'
-import { expenseAPI, incomeAPI, debtAPI, recurringExpenseAPI } from '../api'
+import { expenseAPI, incomeAPI, debtAPI, recurringExpenseAPI, goalAPI } from '../api'
 import { logError } from '../utils/logger'
 import Header from '../components/Header'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -18,6 +18,7 @@ function Trash({ setIsAuthenticated }) {
   const [deletedExpenses, setDeletedExpenses] = useState([])
   const [deletedIncome, setDeletedIncome] = useState([])
   const [deletedDebts, setDeletedDebts] = useState([])
+  const [deletedGoals, setDeletedGoals] = useState([])
   const [deletedRecurring, setDeletedRecurring] = useState([])
   const [loading, setLoading] = useState(true)
   const [restoring, setRestoring] = useState(null)
@@ -36,15 +37,17 @@ function Trash({ setIsAuthenticated }) {
   const loadAllDeleted = async () => {
     setLoading(true)
     try {
-      const [expensesRes, incomeRes, debtsRes, recurringRes] = await Promise.all([
+      const [expensesRes, incomeRes, debtsRes, goalsRes, recurringRes] = await Promise.all([
         expenseAPI.getDeleted(),
         incomeAPI.getDeleted(),
         debtAPI.getDeleted(),
+        goalAPI.getDeleted(),
         recurringExpenseAPI.getDeleted()
       ])
       setDeletedExpenses(expensesRes.data)
       setDeletedIncome(incomeRes.data)
       setDeletedDebts(debtsRes.data)
+      setDeletedGoals(goalsRes.data)
       setDeletedRecurring(recurringRes.data)
     } catch (error) {
       logError('loadAllDeleted', error)
@@ -68,6 +71,10 @@ function Trash({ setIsAuthenticated }) {
         case 'debt':
           await debtAPI.restore(id)
           setDeletedDebts(prev => prev.filter(d => d.id !== id))
+          break
+        case 'goal':
+          await goalAPI.restore(id)
+          setDeletedGoals(prev => prev.filter(g => g.id !== id))
           break
         case 'recurring':
           await recurringExpenseAPI.restore(id)
@@ -109,12 +116,13 @@ function Trash({ setIsAuthenticated }) {
     return Math.max(0, daysLeft)
   }
 
-  const totalCount = deletedExpenses.length + deletedIncome.length + deletedDebts.length + deletedRecurring.length
+  const totalCount = deletedExpenses.length + deletedIncome.length + deletedDebts.length + deletedGoals.length + deletedRecurring.length
 
   const tabs = [
     { id: 'expenses', label: 'Expenses', count: deletedExpenses.length },
     { id: 'income', label: 'Income', count: deletedIncome.length },
     { id: 'debts', label: 'Debts', count: deletedDebts.length },
+    { id: 'goals', label: 'Goals', count: deletedGoals.length },
     { id: 'recurring', label: 'Recurring', count: deletedRecurring.length },
   ]
 
@@ -225,6 +233,29 @@ function Trash({ setIsAuthenticated }) {
                       deletedAt={debt.deleted_at}
                       onRestore={() => handleRestore('debt', debt.id)}
                       isRestoring={restoring === `debt-${debt.id}`}
+                      formatDeletedAt={formatDeletedAt}
+                      getDaysUntilPurge={getDaysUntilPurge}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Goals Tab */}
+            {activeTab === 'goals' && (
+              <div className="space-y-2">
+                {deletedGoals.length === 0 ? (
+                  <EmptyState message="No deleted goals" />
+                ) : (
+                  deletedGoals.map(goal => (
+                    <DeletedItemCard
+                      key={goal.id}
+                      title={goal.name}
+                      subtitle={goal.subcategory_name || 'Savings Goal'}
+                      amount={fcEur(goal.target_amount)}
+                      deletedAt={goal.deleted_at}
+                      onRestore={() => handleRestore('goal', goal.id)}
+                      isRestoring={restoring === `goal-${goal.id}`}
                       formatDeletedAt={formatDeletedAt}
                       getDaysUntilPurge={getDaysUntilPurge}
                     />

@@ -210,6 +210,8 @@ export const goalAPI = {
         api.get(`/goals/${id}/transactions`, {
             params: { page, per_page: perPage },
         }),
+    getDeleted: () => api.get("/goals/deleted"),
+    restore: (id) => api.post(`/goals/${id}/restore`),
 };
 
 export default api;
