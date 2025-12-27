@@ -9,6 +9,7 @@ Available commands:
   cleanup-recurring    - Remove orphaned recurring expenses
   remove-duplicates    - Remove duplicate recurring expense templates
   verify-db           - Verify database integrity
+  purge-deleted [days] - Permanently delete soft-deleted records (default: 30 days)
 
 Security Note (#81):
 - Table/column names are hardcoded constants (no user input)
@@ -420,6 +421,46 @@ def verify_database():
         print(f"\n✗ Verification failed: {str(e)}")
 
 
+def purge_soft_deleted():
+    """
+    Permanently delete soft-deleted records older than 30 days.
+
+    This is the cleanup job for the soft delete feature (#61).
+    Records that have been in the Trash for more than 30 days are
+    permanently removed to free up space.
+    """
+    from backend.services.cleanup_service import CleanupService
+
+    print("\n=== Purging Soft-Deleted Records ===\n")
+
+    # Get optional days argument
+    days = 30
+    if len(sys.argv) > 2:
+        try:
+            days = int(sys.argv[2])
+        except ValueError:
+            print(f"✗ Invalid days argument: {sys.argv[2]}")
+            return
+
+    print(f"Purging records deleted more than {days} days ago...\n")
+
+    try:
+        results = CleanupService.purge_soft_deleted_records(days_old=days)
+
+        print(f"  Expenses:           {results['expenses']}")
+        print(f"  Income:             {results['income']}")
+        print(f"  Debts:              {results['debts']}")
+        print(f"  Recurring Expenses: {results['recurring_expenses']}")
+        print(f"  Goals:              {results['goals']}")
+        print(f"  ─────────────────────────────────")
+        print(f"  Total purged:       {results['total']}")
+
+        print("\n✓ Purge complete")
+
+    except Exception as e:
+        print(f"\n✗ Purge failed: {str(e)}")
+
+
 def show_help():
     """Display help message."""
     print(__doc__)
@@ -442,6 +483,7 @@ def main():
             "cleanup-recurring": cleanup_recurring_expenses,
             "remove-duplicates": remove_duplicate_recurring,
             "verify-db": verify_database,
+            "purge-deleted": purge_soft_deleted,
             "help": show_help,
         }
 

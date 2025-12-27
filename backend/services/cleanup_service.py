@@ -1,12 +1,21 @@
 """
 Bloom - Cleanup Service
 
-Handles periodic cleanup tasks like removing expired password reset tokens.
+Handles periodic cleanup tasks like removing expired password reset tokens
+and permanently deleting soft-deleted records past retention period.
 """
 
 import logging
 from datetime import datetime, timedelta
-from backend.models.database import db, PasswordResetToken
+from backend.models.database import (
+    db,
+    PasswordResetToken,
+    Expense,
+    Income,
+    Debt,
+    RecurringExpense,
+    Goal,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +133,125 @@ class CleanupService:
 
         except Exception as e:
             logger.error(f"Cleanup operation failed: {str(e)}")
+            raise
+
+    @staticmethod
+    def purge_soft_deleted_records(days_old=30):
+        """
+        Permanently delete soft-deleted records older than specified days.
+
+        This implements the "auto-purge after 30 days" feature for:
+        - Expenses
+        - Income
+        - Debts
+        - RecurringExpenses
+        - Goals
+
+        Args:
+            days_old: Purge records deleted more than this many days ago (default: 30)
+
+        Returns:
+            dict: Summary of purged records by type
+
+        Raises:
+            Exception: If purge fails
+        """
+        cutoff_time = datetime.utcnow() - timedelta(days=days_old)
+        results = {
+            "expenses": 0,
+            "income": 0,
+            "debts": 0,
+            "recurring_expenses": 0,
+            "goals": 0,
+            "total": 0,
+        }
+
+        try:
+            # Purge old soft-deleted expenses
+            results["expenses"] = Expense.query.filter(
+                Expense.deleted_at.isnot(None),
+                Expense.deleted_at < cutoff_time,
+            ).delete()
+
+            # Purge old soft-deleted income
+            results["income"] = Income.query.filter(
+                Income.deleted_at.isnot(None),
+                Income.deleted_at < cutoff_time,
+            ).delete()
+
+            # Purge old soft-deleted debts
+            results["debts"] = Debt.query.filter(
+                Debt.deleted_at.isnot(None),
+                Debt.deleted_at < cutoff_time,
+            ).delete()
+
+            # Purge old soft-deleted recurring expenses
+            results["recurring_expenses"] = RecurringExpense.query.filter(
+                RecurringExpense.deleted_at.isnot(None),
+                RecurringExpense.deleted_at < cutoff_time,
+            ).delete()
+
+            # Purge old soft-deleted goals
+            results["goals"] = Goal.query.filter(
+                Goal.deleted_at.isnot(None),
+                Goal.deleted_at < cutoff_time,
+            ).delete()
+
+            results["total"] = sum(
+                [
+                    results["expenses"],
+                    results["income"],
+                    results["debts"],
+                    results["recurring_expenses"],
+                    results["goals"],
+                ]
+            )
+
+            db.session.commit()
+
+            logger.info(
+                f"Purged {results['total']} soft-deleted records "
+                f"(deleted more than {days_old} days ago): "
+                f"expenses={results['expenses']}, "
+                f"income={results['income']}, "
+                f"debts={results['debts']}, "
+                f"recurring={results['recurring_expenses']}, "
+                f"goals={results['goals']}"
+            )
+
+            return results
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to purge soft-deleted records: {str(e)}")
+            raise
+
+    @staticmethod
+    def run_all_cleanup_tasks():
+        """
+        Run all cleanup operations including token cleanup and soft delete purge.
+
+        Returns:
+            dict: Summary of all cleanup operations
+        """
+        results = {
+            "password_reset_tokens": {},
+            "soft_deleted_records": {},
+        }
+
+        try:
+            results[
+                "password_reset_tokens"
+            ] = CleanupService.cleanup_all_password_reset_tokens()
+            results["soft_deleted_records"] = CleanupService.purge_soft_deleted_records(
+                days_old=30
+            )
+
+            logger.info("All cleanup tasks completed successfully")
+            return results
+
+        except Exception as e:
+            logger.error(f"Cleanup tasks failed: {str(e)}")
             raise
 
 

@@ -23,6 +23,10 @@ CREATE INDEX IF NOT EXISTS idx_debts_deleted_at ON debts(deleted_at);
 ALTER TABLE recurring_expenses ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
 CREATE INDEX IF NOT EXISTS idx_recurring_expenses_deleted_at ON recurring_expenses(deleted_at);
 
+-- Add deleted_at column to goals table
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_goals_deleted_at ON goals(deleted_at);
+
 -- Verify columns were added
 SELECT
     table_name,
