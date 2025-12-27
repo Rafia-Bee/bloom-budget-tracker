@@ -32,7 +32,7 @@ def get_debts():
     # Check if requesting archived debts
     show_archived = request.args.get("archived", "false").lower() == "true"
 
-    query = Debt.query.filter_by(user_id=current_user_id)
+    query = Debt.active().filter_by(user_id=current_user_id)
 
     if show_archived:
         query = query.filter_by(archived=True)
@@ -128,7 +128,7 @@ def create_debt():
 def get_debt(debt_id):
     """Get a specific debt."""
     current_user_id = int(get_jwt_identity())
-    debt = Debt.query.filter_by(id=debt_id, user_id=current_user_id).first()
+    debt = Debt.active().filter_by(id=debt_id, user_id=current_user_id).first()
 
     if not debt:
         return jsonify({"error": "Debt not found"}), 404
@@ -155,7 +155,7 @@ def get_debt(debt_id):
 def update_debt(debt_id):
     """Update a debt."""
     current_user_id = int(get_jwt_identity())
-    debt = Debt.query.filter_by(id=debt_id, user_id=current_user_id).first()
+    debt = Debt.active().filter_by(id=debt_id, user_id=current_user_id).first()
 
     if not debt:
         return jsonify({"error": "Debt not found"}), 404
@@ -205,7 +205,7 @@ def update_debt(debt_id):
 def delete_debt(debt_id):
     """Delete a debt."""
     current_user_id = int(get_jwt_identity())
-    debt = Debt.query.filter_by(id=debt_id, user_id=current_user_id).first()
+    debt = Debt.active().filter_by(id=debt_id, user_id=current_user_id).first()
 
     if not debt:
         return jsonify({"error": "Debt not found"}), 404
@@ -233,7 +233,7 @@ def pay_debt():
         payment_date = data.get("date", datetime.now().strftime("%Y-%m-%d"))
 
         # Validate debt exists and belongs to user
-        debt = Debt.query.filter_by(id=debt_id, user_id=current_user_id).first()
+        debt = Debt.active().filter_by(id=debt_id, user_id=current_user_id).first()
         if not debt:
             return jsonify({"error": "Debt not found"}), 404
 
@@ -295,7 +295,7 @@ def pay_debt():
 def export_debts():
     """Export all debts as JSON for backup/testing"""
     current_user_id = int(get_jwt_identity())
-    debts = Debt.query.filter_by(user_id=current_user_id).all()
+    debts = Debt.active().filter_by(user_id=current_user_id).all()
 
     export_data = [
         {

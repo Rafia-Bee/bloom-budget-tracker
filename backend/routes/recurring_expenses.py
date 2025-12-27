@@ -37,9 +37,11 @@ def calculate_budget_impact(user_id):
         return None
 
     # Calculate current fixed bills total
-    fixed_bills = RecurringExpense.query.filter_by(
-        user_id=user_id, is_active=True, is_fixed_bill=True
-    ).all()
+    fixed_bills = (
+        RecurringExpense.active()
+        .filter_by(user_id=user_id, is_active=True, is_fixed_bill=True)
+        .all()
+    )
     current_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
     # Check if there's a difference
@@ -77,7 +79,7 @@ def get_recurring_expenses():
         current_user_id = int(get_jwt_identity())
         active_only = request.args.get("active_only", "false").lower() == "true"
 
-        query = RecurringExpense.query.filter_by(user_id=current_user_id)
+        query = RecurringExpense.active().filter_by(user_id=current_user_id)
 
         if active_only:
             query = query.filter_by(is_active=True)
@@ -128,7 +130,7 @@ def get_recurring_expense(id):
     """Get a specific recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -267,7 +269,7 @@ def update_recurring_expense(id):
     """Update a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -369,7 +371,7 @@ def delete_recurring_expense(id):
     """Delete a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -406,7 +408,7 @@ def toggle_recurring_expense(id):
     """Toggle active status of a recurring expense template"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -443,7 +445,7 @@ def toggle_fixed_bill(id):
     """Toggle whether a recurring expense is a fixed bill"""
     try:
         current_user_id = int(get_jwt_identity())
-        re = RecurringExpense.query.filter_by(id=id, user_id=current_user_id).first()
+        re = RecurringExpense.active().filter_by(id=id, user_id=current_user_id).first()
 
         if not re:
             return jsonify({"error": "Recurring expense not found"}), 404
@@ -477,7 +479,9 @@ def toggle_fixed_bill(id):
 def export_recurring_expenses():
     """Export all recurring expenses as JSON for backup/testing"""
     current_user_id = int(get_jwt_identity())
-    recurring_expenses = RecurringExpense.query.filter_by(user_id=current_user_id).all()
+    recurring_expenses = (
+        RecurringExpense.active().filter_by(user_id=current_user_id).all()
+    )
 
     export_data = [
         {

@@ -42,7 +42,7 @@ def get_expenses():
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in name/notes
 
-    query = Expense.query.filter_by(user_id=current_user_id)
+    query = Expense.active().filter_by(user_id=current_user_id)
 
     # Apply filters
     # Note: period_id parameter is deprecated - use start_date/end_date instead
@@ -244,7 +244,7 @@ def create_expense():
 @jwt_required()
 def get_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
+    expense = Expense.active().filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404
@@ -275,7 +275,7 @@ def get_expense(expense_id):
 @jwt_required()
 def update_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
+    expense = Expense.active().filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404
@@ -371,7 +371,7 @@ def update_expense(expense_id):
 @jwt_required()
 def delete_expense(expense_id):
     current_user_id = int(get_jwt_identity())
-    expense = Expense.query.filter_by(id=expense_id, user_id=current_user_id).first()
+    expense = Expense.active().filter_by(id=expense_id, user_id=current_user_id).first()
 
     if not expense:
         return jsonify({"error": "Expense not found"}), 404

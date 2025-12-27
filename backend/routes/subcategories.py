@@ -165,9 +165,11 @@ def update_subcategory(id):
 
         # Update all existing expenses to use the new subcategory name
         if old_name != new_name:
-            expenses_to_update = Expense.query.filter_by(
-                user_id=current_user_id, subcategory=old_name
-            ).all()
+            expenses_to_update = (
+                Expense.active()
+                .filter_by(user_id=current_user_id, subcategory=old_name)
+                .all()
+            )
 
             for expense in expenses_to_update:
                 expense.subcategory = new_name
@@ -209,9 +211,11 @@ def delete_subcategory(id):
         return jsonify({"error": "Subcategory not found"}), 404
 
     # Check if subcategory is in use
-    expense_count = Expense.query.filter_by(
-        user_id=current_user_id, subcategory=subcategory.name
-    ).count()
+    expense_count = (
+        Expense.active()
+        .filter_by(user_id=current_user_id, subcategory=subcategory.name)
+        .count()
+    )
 
     if expense_count > 0 and not force:
         return (
@@ -246,9 +250,11 @@ def delete_subcategory(id):
                 db.session.flush()  # Get ID before continuing
 
             # Move all expenses to "Other" subcategory and add explanatory note
-            expenses_to_update = Expense.query.filter_by(
-                user_id=current_user_id, subcategory=subcategory.name
-            ).all()
+            expenses_to_update = (
+                Expense.active()
+                .filter_by(user_id=current_user_id, subcategory=subcategory.name)
+                .all()
+            )
 
             for expense in expenses_to_update:
                 # Add note about the subcategory change

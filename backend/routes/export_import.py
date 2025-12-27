@@ -55,13 +55,17 @@ def generate_weekly_budget_breakdown(user_id):
         # Calculate spending and carryover for each week
         for week in weeks:
             # Get all expenses for this week using date range
-            week_expenses = Expense.query.filter(
-                and_(
-                    Expense.user_id == user_id,
-                    Expense.date >= week.start_date,
-                    Expense.date <= week.end_date,
+            week_expenses = (
+                Expense.active()
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.date >= week.start_date,
+                        Expense.date <= week.end_date,
+                    )
                 )
-            ).all()
+                .all()
+            )
 
             # Separate fixed and flexible expenses
             flexible_expenses = [e for e in week_expenses if not e.is_fixed_bill]
@@ -162,7 +166,9 @@ def export_data():
 
         # Export Debts
         if "debts" in export_types:
-            debts = Debt.query.filter_by(user_id=current_user_id, archived=False).all()
+            debts = (
+                Debt.active().filter_by(user_id=current_user_id, archived=False).all()
+            )
             export_data["data"]["debts"] = [
                 {
                     "name": d.name,
@@ -176,9 +182,11 @@ def export_data():
 
         # Export Recurring Expenses
         if "recurring_expenses" in export_types:
-            recurring = RecurringExpense.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).all()
+            recurring = (
+                RecurringExpense.active()
+                .filter_by(user_id=current_user_id, is_active=True)
+                .all()
+            )
             export_data["data"]["recurring_expenses"] = [
                 {
                     "name": r.name,
@@ -236,11 +244,15 @@ def export_data():
 
                     for bp in budget_periods:
                         # Calculate actual spending for this week
-                        week_expenses = Expense.query.filter(
-                            Expense.user_id == current_user_id,
-                            Expense.date >= bp.start_date,
-                            Expense.date <= bp.end_date,
-                        ).all()
+                        week_expenses = (
+                            Expense.active()
+                            .filter(
+                                Expense.user_id == current_user_id,
+                                Expense.date >= bp.start_date,
+                                Expense.date <= bp.end_date,
+                            )
+                            .all()
+                        )
 
                         debit_spent = sum(
                             e.amount
@@ -282,7 +294,7 @@ def export_data():
 
         # Export Expenses
         if "expenses" in export_types:
-            expenses = Expense.query.filter_by(user_id=current_user_id).all()
+            expenses = Expense.active().filter_by(user_id=current_user_id).all()
             export_data["data"]["expenses"] = [
                 {
                     "name": e.name,
@@ -300,7 +312,7 @@ def export_data():
 
         # Export Income
         if "income" in export_types:
-            incomes = Income.query.filter_by(user_id=current_user_id).all()
+            incomes = Income.active().filter_by(user_id=current_user_id).all()
             export_data["data"]["income"] = [
                 {
                     "type": i.type,
@@ -382,12 +394,16 @@ def import_data():
             if "debts" in data["data"]:
                 for debt_data in data["data"]["debts"]:
                     # Check for duplicate: same name and original_amount
-                    existing_debt = Debt.query.filter_by(
-                        user_id=current_user_id,
-                        name=debt_data["name"],
-                        original_amount=debt_data["original_amount"],
-                        archived=False,
-                    ).first()
+                    existing_debt = (
+                        Debt.active()
+                        .filter_by(
+                            user_id=current_user_id,
+                            name=debt_data["name"],
+                            original_amount=debt_data["original_amount"],
+                            archived=False,
+                        )
+                        .first()
+                    )
 
                     if existing_debt:
                         skipped_counts["debts"] += 1
@@ -425,13 +441,17 @@ def import_data():
                     )
 
                     # Check for duplicate: same name, amount, and category
-                    existing_recurring = RecurringExpense.query.filter_by(
-                        user_id=current_user_id,
-                        name=recurring_data["name"],
-                        amount=recurring_data["amount"],
-                        category=recurring_data["category"],
-                        is_active=True,
-                    ).first()
+                    existing_recurring = (
+                        RecurringExpense.active()
+                        .filter_by(
+                            user_id=current_user_id,
+                            name=recurring_data["name"],
+                            amount=recurring_data["amount"],
+                            category=recurring_data["category"],
+                            is_active=True,
+                        )
+                        .first()
+                    )
 
                     if existing_recurring:
                         skipped_counts["recurring_expenses"] += 1
@@ -677,12 +697,16 @@ def import_data():
                     ).date()
 
                     # Check for duplicate: same date, name, and amount
-                    existing_expense = Expense.query.filter_by(
-                        user_id=current_user_id,
-                        name=exp_data["name"],
-                        amount=exp_data["amount"],
-                        date=expense_date,
-                    ).first()
+                    existing_expense = (
+                        Expense.active()
+                        .filter_by(
+                            user_id=current_user_id,
+                            name=exp_data["name"],
+                            amount=exp_data["amount"],
+                            date=expense_date,
+                        )
+                        .first()
+                    )
 
                     if existing_expense:
                         skipped_detail = f"{exp_data['name']} (€{exp_data['amount']/100:.2f} on {expense_date})"
@@ -735,12 +759,16 @@ def import_data():
                         ).date()
 
                     # Check for duplicate: same scheduled_date, type, and amount
-                    existing_income = Income.query.filter_by(
-                        user_id=current_user_id,
-                        type=income_data["type"],
-                        amount=income_data["amount"],
-                        scheduled_date=scheduled_date,
-                    ).first()
+                    existing_income = (
+                        Income.active()
+                        .filter_by(
+                            user_id=current_user_id,
+                            type=income_data["type"],
+                            amount=income_data["amount"],
+                            scheduled_date=scheduled_date,
+                        )
+                        .first()
+                    )
 
                     if existing_income:
                         skipped_detail = f"{income_data['type']} (€{income_data['amount']/100:.2f} on {scheduled_date})"
@@ -1024,12 +1052,16 @@ def parse_bank_transactions(
             # Check for duplicate (same date, amount, and merchant name)
             is_duplicate = False
             if check_duplicates:
-                existing = Expense.query.filter_by(
-                    user_id=current_user_id,
-                    name=merchant_name,
-                    amount=amount_cents,
-                    date=date_obj,
-                ).first()
+                existing = (
+                    Expense.active()
+                    .filter_by(
+                        user_id=current_user_id,
+                        name=merchant_name,
+                        amount=amount_cents,
+                        date=date_obj,
+                    )
+                    .first()
+                )
 
                 if existing:
                     is_duplicate = True

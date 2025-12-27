@@ -33,7 +33,7 @@ def get_income():
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in type field
 
-    query = Income.query.filter_by(user_id=user_id)
+    query = Income.active().filter_by(user_id=user_id)
 
     # Apply filters
     # Note: budget_period_id parameter is deprecated - use start_date/end_date instead
@@ -183,7 +183,7 @@ def create_income():
 def update_income(income_id):
     """Update an existing income entry."""
     user_id = int(get_jwt_identity())
-    income = Income.query.filter_by(id=income_id, user_id=user_id).first()
+    income = Income.active().filter_by(id=income_id, user_id=user_id).first()
 
     if not income:
         return jsonify({"error": "Income not found"}), 404
@@ -308,7 +308,7 @@ def get_income_stats():
 def delete_income(income_id):
     """Delete an income entry."""
     user_id = int(get_jwt_identity())
-    income = Income.query.filter_by(id=income_id, user_id=user_id).first()
+    income = Income.active().filter_by(id=income_id, user_id=user_id).first()
 
     if not income:
         return jsonify({"error": "Income not found"}), 404

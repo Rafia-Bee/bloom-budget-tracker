@@ -309,9 +309,11 @@ def preview_salary_period():
             )
 
         # Auto-detect fixed bills from recurring expenses
-        fixed_bills = RecurringExpense.query.filter_by(
-            user_id=current_user_id, is_active=True, is_fixed_bill=True
-        ).all()
+        fixed_bills = (
+            RecurringExpense.active()
+            .filter_by(user_id=current_user_id, is_active=True, is_fixed_bill=True)
+            .all()
+        )
 
         # Allow manual adjustments to fixed bills
         fixed_bill_adjustments = data.get("fixed_bills", [])
@@ -432,9 +434,11 @@ def create_salary_period():
             fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
         else:
             # Auto-detect from recurring expenses
-            fixed_bills = RecurringExpense.query.filter_by(
-                user_id=current_user_id, is_active=True, is_fixed_bill=True
-            ).all()
+            fixed_bills = (
+                RecurringExpense.active()
+                .filter_by(user_id=current_user_id, is_active=True, is_fixed_bill=True)
+                .all()
+            )
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
         # Calculate budget: debit + credit allowance - fixed bills
@@ -545,9 +549,11 @@ def create_salary_period():
             # Create initial income entry for the debit balance ONLY for the first salary period
             # This makes the dashboard debit/credit cards show correct available amounts
             # Subsequent salary periods should NOT create new Initial Balance entries
-            existing_initial_balance = Income.query.filter_by(
-                user_id=current_user_id, type="Initial Balance"
-            ).first()
+            existing_initial_balance = (
+                Income.active()
+                .filter_by(user_id=current_user_id, type="Initial Balance")
+                .first()
+            )
 
             if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(
@@ -685,9 +691,9 @@ def get_week_leftover(id, week_number):
         # Get user's active debts for allocation suggestions
         from backend.models.database import Debt
 
-        active_debts = Debt.query.filter_by(
-            user_id=current_user_id, archived=False
-        ).all()
+        active_debts = (
+            Debt.active().filter_by(user_id=current_user_id, archived=False).all()
+        )
 
         # Get user's active goals for allocation suggestions
         active_goals = Goal.query.filter_by(
@@ -778,9 +784,11 @@ def update_salary_period_full(id):
             fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
         else:
             # Auto-detect from recurring expenses
-            fixed_bills = RecurringExpense.query.filter_by(
-                user_id=current_user_id, is_active=True, is_fixed_bill=True
-            ).all()
+            fixed_bills = (
+                RecurringExpense.active()
+                .filter_by(user_id=current_user_id, is_active=True, is_fixed_bill=True)
+                .all()
+            )
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
         # Calculate budget: debit + credit allowance - fixed bills
@@ -878,7 +886,8 @@ def update_salary_period_full(id):
         # NEVER create a new Initial Balance - it should only be created with the first salary period
         # Search for ANY Initial Balance entry for this user (not just by date)
         initial_income = (
-            Income.query.filter_by(
+            Income.active()
+            .filter_by(
                 user_id=current_user_id,
                 type="Initial Balance",
             )
@@ -913,7 +922,8 @@ def update_salary_period_full(id):
         # Update Pre-existing Credit Card Debt expense if credit changed
         pre_existing_debt = credit_limit - credit_balance
         debt_expense = (
-            Expense.query.filter_by(
+            Expense.active()
+            .filter_by(
                 user_id=current_user_id,
                 name="Pre-existing Credit Card Debt",
                 category="Debt",
@@ -987,9 +997,11 @@ def recalculate_salary_period(id):
             return jsonify({"error": "Salary period not found"}), 404
 
         # Calculate new fixed bills total from active recurring expenses
-        fixed_bills = RecurringExpense.query.filter_by(
-            user_id=current_user_id, is_active=True, is_fixed_bill=True
-        ).all()
+        fixed_bills = (
+            RecurringExpense.active()
+            .filter_by(user_id=current_user_id, is_active=True, is_fixed_bill=True)
+            .all()
+        )
         new_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
         # Calculate new budget values
@@ -1083,9 +1095,11 @@ def get_budget_impact(id):
             return jsonify({"error": "Salary period not found"}), 404
 
         # Calculate current fixed bills total
-        fixed_bills = RecurringExpense.query.filter_by(
-            user_id=current_user_id, is_active=True, is_fixed_bill=True
-        ).all()
+        fixed_bills = (
+            RecurringExpense.active()
+            .filter_by(user_id=current_user_id, is_active=True, is_fixed_bill=True)
+            .all()
+        )
         projected_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
         # Calculate projected budget values
@@ -1188,16 +1202,24 @@ def delete_salary_period(id):
         # Use date ranges instead of budget_period_id
         has_transactions = False
         for budget_period in salary_period.budget_periods:
-            expense_count = Expense.query.filter(
-                Expense.user_id == current_user_id,
-                Expense.date >= budget_period.start_date,
-                Expense.date <= budget_period.end_date,
-            ).count()
-            income_count = Income.query.filter(
-                Income.user_id == current_user_id,
-                Income.actual_date >= budget_period.start_date,
-                Income.actual_date <= budget_period.end_date,
-            ).count()
+            expense_count = (
+                Expense.active()
+                .filter(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= budget_period.start_date,
+                    Expense.date <= budget_period.end_date,
+                )
+                .count()
+            )
+            income_count = (
+                Income.active()
+                .filter(
+                    Income.user_id == current_user_id,
+                    Income.actual_date >= budget_period.start_date,
+                    Income.actual_date <= budget_period.end_date,
+                )
+                .count()
+            )
             if expense_count > 0 or income_count > 0:
                 has_transactions = True
                 break
