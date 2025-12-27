@@ -141,7 +141,8 @@ def create_income():
     if currency != "EUR" and original_amount:
         try:
             exchange_rate_used = get_exchange_rate(currency, "EUR")
-        except Exception:
+        except (ValueError, ConnectionError, TimeoutError):
+            # Silently fail - exchange rate is optional
             pass
 
     # Create income entry

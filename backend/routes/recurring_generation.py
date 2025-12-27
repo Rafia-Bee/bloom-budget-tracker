@@ -11,6 +11,7 @@ from backend.utils.recurring_generator import (
     generate_due_expenses,
     get_upcoming_recurring_expenses,
 )
+from sqlalchemy.exc import SQLAlchemyError
 
 recurring_generation_bp = Blueprint("recurring_generation", __name__)
 
@@ -54,9 +55,11 @@ def trigger_generation():
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         current_app.logger.error(f"[trigger_generation] Error: {str(e)}", exc_info=True)
         return jsonify({"error": "Failed to generate expenses. Please try again."}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @recurring_generation_bp.route("/generate/all", methods=["POST"])
@@ -82,11 +85,13 @@ def trigger_generation_all():
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         current_app.logger.error(
             f"[trigger_generation_all] Error: {str(e)}", exc_info=True
         )
         return jsonify({"error": "Failed to generate expenses. Please try again."}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @recurring_generation_bp.route("/preview", methods=["GET"])
@@ -123,7 +128,7 @@ def preview_upcoming():
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         current_app.logger.error(f"[preview_upcoming] Error: {str(e)}", exc_info=True)
         return (
             jsonify(
@@ -131,3 +136,5 @@ def preview_upcoming():
             ),
             500,
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400

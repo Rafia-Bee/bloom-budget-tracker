@@ -180,7 +180,7 @@ def create_expense():
         # This allows accurate historical conversion later
         try:
             exchange_rate_used = get_exchange_rate(currency, "EUR")
-        except Exception:
+        except (ValueError, ConnectionError, TimeoutError):
             # If rate fetch fails, we still create the expense without the rate
             pass
 

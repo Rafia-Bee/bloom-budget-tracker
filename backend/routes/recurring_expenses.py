@@ -11,6 +11,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, RecurringExpense, SalaryPeriod
 from datetime import datetime, timedelta
 from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
 import json
 
 recurring_expenses_bp = Blueprint("recurring_expenses", __name__)
@@ -111,7 +112,7 @@ def get_recurring_expenses():
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         current_app.logger.error(
             f"[get_recurring_expenses] Error: {str(e)}", exc_info=True
         )
@@ -157,7 +158,7 @@ def get_recurring_expense(id):
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         current_app.logger.error(
             f"[get_recurring_expense] Error: {str(e)}", exc_info=True
         )
@@ -247,7 +248,7 @@ def create_recurring_expense():
                 response_data["budget_impact"] = budget_impact
 
         return jsonify(response_data), 201
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
             f"[create_recurring_expense] Error: {str(e)}", exc_info=True
@@ -256,6 +257,8 @@ def create_recurring_expense():
             jsonify({"error": "Failed to create recurring expense. Please try again."}),
             500,
         )
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @recurring_expenses_bp.route("/<int:id>", methods=["PUT"])
@@ -347,7 +350,7 @@ def update_recurring_expense(id):
                 response_data["budget_impact"] = budget_impact
 
         return jsonify(response_data), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
             f"[update_recurring_expense] Error: {str(e)}", exc_info=True
@@ -356,6 +359,8 @@ def update_recurring_expense(id):
             jsonify({"error": "Failed to update recurring expense. Please try again."}),
             500,
         )
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @recurring_expenses_bp.route("/<int:id>", methods=["DELETE"])
@@ -384,7 +389,7 @@ def delete_recurring_expense(id):
                 response_data["budget_impact"] = budget_impact
 
         return jsonify(response_data), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
             f"[delete_recurring_expense] Error: {str(e)}", exc_info=True
@@ -421,7 +426,7 @@ def toggle_recurring_expense(id):
                 response_data["budget_impact"] = budget_impact
 
         return jsonify(response_data), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
             f"[toggle_recurring_expense] Error: {str(e)}", exc_info=True
@@ -458,7 +463,7 @@ def toggle_fixed_bill(id):
             response_data["budget_impact"] = budget_impact
 
         return jsonify(response_data), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"[toggle_fixed_bill] Error: {str(e)}", exc_info=True)
         return (
@@ -544,7 +549,7 @@ def import_recurring_expenses():
             201,
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
             f"[import_recurring_expenses] Error: {str(e)}", exc_info=True
@@ -555,3 +560,5 @@ def import_recurring_expenses():
             ),
             500,
         )
+    except (ValueError, KeyError, json.JSONDecodeError) as e:
+        return jsonify({"error": str(e)}), 400

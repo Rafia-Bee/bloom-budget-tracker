@@ -6,6 +6,61 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### Exception Handling Standardization (#59)
+
+**Context:** Issue #59 - Replace generic exception handling with specific SQLAlchemy exceptions across all backend routes.
+
+**Problem:** 45 instances of overly broad `except Exception as e:` blocks that:
+
+-   Leaked internal error messages to clients (security risk)
+-   Didn't log stack traces (debugging difficulty)
+-   Caught exceptions that shouldn't be caught (reliability issues)
+
+**Decision:** Standardize exception handling across all 12 route files:
+
+1. Use `SQLAlchemyError` for database operations
+2. Use `ValueError`/`KeyError` for input validation failures
+3. Use specific exceptions for external services (`ConnectionError`, `TimeoutError`)
+4. Add `current_app.logger.error()` with `exc_info=True` for all database errors
+5. Return sanitized error messages to clients (never expose internal details)
+
+**Pattern Implemented:**
+
+```python
+try:
+    # Database operation
+    db.session.add(entity)
+    db.session.commit()
+except SQLAlchemyError as e:
+    db.session.rollback()
+    current_app.logger.error(f"Database error: {e}", exc_info=True)
+    return jsonify({"error": "Operation failed"}), 500
+except (ValueError, KeyError) as e:
+    return jsonify({"error": str(e)}), 400
+```
+
+**Files Updated:**
+
+-   `salary_periods.py` (10 handlers)
+-   `recurring_expenses.py` (8 handlers)
+-   `user_data.py` (5 handlers)
+-   `export_import.py` (5 handlers)
+-   `password_reset.py` (4 handlers)
+-   `goals.py` (3 handlers)
+-   `recurring_generation.py` (3 handlers)
+-   `debts.py` (2 handlers)
+-   `admin.py` (2 handlers)
+-   `income.py`, `expenses.py`, `auth.py` (1 each - external API handlers)
+
+**Impact:**
+
+-   No internal error messages leaked to clients
+-   All database errors logged with full stack traces
+-   Better error categorization (400 vs 500 status codes)
+-   Improved debugging capability in production
+
+---
+
 ### Phase 3 Architecture & Testing (#88)
 
 **Context:** Issue #88 Phase 3 audit for architecture and testing improvements.

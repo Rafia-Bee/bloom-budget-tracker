@@ -72,8 +72,12 @@ def get_salary_periods():
             ),
             200,
         )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error fetching salary periods for user {current_user_id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to retrieve salary periods"}), 500
 
 
 @salary_periods_bp.route("/current", methods=["GET"])
@@ -275,8 +279,12 @@ def get_current_salary_period():
             ),
             200,
         )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error fetching current salary period: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to retrieve current salary period"}), 500
 
 
 @salary_periods_bp.route("/preview", methods=["POST"])
@@ -384,8 +392,14 @@ def preview_salary_period():
             ),
             200,
         )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error previewing salary period for user {current_user_id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to preview salary period"}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @salary_periods_bp.route("", methods=["POST"])
@@ -577,13 +591,8 @@ def create_salary_period():
                 jsonify({"error": "Failed to create salary period. Please try again."}),
                 500,
             )
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(
-            f"Unexpected error creating salary period for user {current_user_id}: {str(e)}",
-            exc_info=True,
-        )
-        return jsonify({"error": str(e)}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @salary_periods_bp.route("/<int:id>/week/<int:week_number>/leftover", methods=["GET"])
@@ -724,8 +733,12 @@ def get_week_leftover(id, week_number):
             ),
             200,
         )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error getting week leftover for period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to calculate week leftover"}), 500
 
 
 @salary_periods_bp.route("/<int:id>", methods=["PUT"])
@@ -943,9 +956,15 @@ def update_salary_period_full(id):
             ),
             200,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"Database error updating salary period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to update salary period"}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @salary_periods_bp.route("/<int:id>/recalculate", methods=["POST"])
@@ -1037,9 +1056,13 @@ def recalculate_salary_period(id):
             200,
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"Database error recalculating salary period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to recalculate salary period"}), 500
 
 
 @salary_periods_bp.route("/<int:id>/budget-impact", methods=["GET"])
@@ -1108,8 +1131,12 @@ def get_budget_impact(id):
             200,
         )
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error calculating budget impact for period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to calculate budget impact"}), 500
 
 
 @salary_periods_bp.route("/<int:id>", methods=["PATCH"])
@@ -1134,9 +1161,13 @@ def update_salary_period_partial(id):
         db.session.commit()
 
         return jsonify({"message": "Salary period updated successfully"}), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"Database error updating salary period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to update salary period"}), 500
 
 
 @salary_periods_bp.route("/<int:id>", methods=["DELETE"])
@@ -1190,6 +1221,10 @@ def delete_salary_period(id):
         db.session.commit()
 
         return jsonify({"message": "Salary period deleted successfully"}), 200
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"Database error deleting salary period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to delete salary period"}), 500

@@ -335,8 +335,12 @@ def export_data():
 
         return jsonify(export_data), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error exporting data for user: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to export data"}), 500
 
 
 @export_import_bp.route("/import", methods=["POST"])
@@ -873,13 +877,15 @@ def import_data():
             200,
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
-            f"Unexpected error importing data for user {current_user_id}: {str(e)}",
+            f"Database error importing data: {str(e)}",
             exc_info=True,
         )
-        return jsonify({"error": f"Import failed: {str(e)}"}), 500
+        return jsonify({"error": "Import failed due to database error"}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 def parse_bank_transactions(
@@ -1052,7 +1058,7 @@ def parse_bank_transactions(
                 }
             )
 
-        except Exception as e:
+        except ValueError as e:
             errors.append(f"Line {line_num}: {str(e)}")
             skipped_count += 1
             continue
@@ -1102,8 +1108,12 @@ def preview_bank_transactions():
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": f"Preview failed: {str(e)}"}), 500
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error previewing bank transactions: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Preview failed due to database error"}), 500
 
 
 @export_import_bp.route("/import-bank-transactions", methods=["POST"])
@@ -1190,6 +1200,10 @@ def import_bank_transactions():
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": f"Import failed: {str(e)}"}), 500
+        current_app.logger.error(
+            f"Database error importing bank transactions: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Import failed due to database error"}), 500

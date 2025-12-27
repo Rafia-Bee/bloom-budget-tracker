@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, Income
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -119,9 +120,15 @@ def remove_duplicate_initial_balances():
             200,
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        from flask import current_app
+
+        current_app.logger.error(
+            f"Database error removing duplicate balances: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to remove duplicate balances"}), 500
 
 
 @admin_bp.route("/cleanup-tokens", methods=["POST"])
@@ -157,5 +164,11 @@ def cleanup_password_reset_tokens():
             200,
         )
 
-    except Exception as e:
-        return jsonify({"error": f"Cleanup failed: {str(e)}"}), 500
+    except SQLAlchemyError as e:
+        from flask import current_app
+
+        current_app.logger.error(
+            f"Database error during token cleanup: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Cleanup failed due to database error"}), 500

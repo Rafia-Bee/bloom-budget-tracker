@@ -150,12 +150,12 @@ def login():
             user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
             db.session.commit()
 
-            # Send email notification
+            # Send email notification - failure shouldn't block login
             try:
                 email_service.send_account_lockout_email(
                     to_email=user.email, lockout_minutes=LOCKOUT_MINUTES
                 )
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 current_app.logger.error(
                     f"Failed to send lockout email to {user.email}: {str(e)}"
                 )

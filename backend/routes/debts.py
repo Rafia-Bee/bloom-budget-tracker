@@ -288,13 +288,6 @@ def pay_debt():
 
     except ValueError as e:
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(
-            f"Unexpected error recording debt payment for user {current_user_id}: {str(e)}",
-            exc_info=True,
-        )
-        return jsonify({"error": str(e)}), 500
 
 
 @debts_bp.route("/export", methods=["GET"])
@@ -360,6 +353,5 @@ def import_debts():
                 500,
             )
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+    except (ValueError, KeyError, json.JSONDecodeError) as e:
+        return jsonify({"error": str(e)}), 400

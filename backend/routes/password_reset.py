@@ -12,6 +12,7 @@ from backend.models.database import db, User, PasswordResetToken
 from backend.utils.validators import validate_email
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
+from sqlalchemy.exc import SQLAlchemyError
 
 password_reset_bp = Blueprint("password_reset", __name__)
 
@@ -86,8 +87,12 @@ def forgot_password():
 
         return jsonify(response_data), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
+        current_app.logger.error(
+            f"Database error processing password reset request: {e}",
+            exc_info=True,
+        )
         return (
             jsonify({"error": "An error occurred while processing your request"}),
             500,
@@ -103,7 +108,7 @@ def reset_password():
 
         try:
             cleanup_service.cleanup_expired_password_reset_tokens(hours_old=24)
-        except Exception as cleanup_error:
+        except SQLAlchemyError as cleanup_error:
             current_app.logger.warning(
                 f"Token cleanup failed but continuing with reset: {cleanup_error}"
             )
@@ -160,8 +165,12 @@ def reset_password():
 
         return jsonify({"message": "Password successfully reset"}), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
+        current_app.logger.error(
+            f"Database error resetting password: {e}",
+            exc_info=True,
+        )
         return (
             jsonify({"error": "An error occurred while resetting your password"}),
             500,
@@ -192,5 +201,9 @@ def validate_reset_token():
 
         return jsonify({"valid": True}), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error validating reset token: {e}",
+            exc_info=True,
+        )
         return jsonify({"error": "An error occurred while validating the token"}), 500

@@ -7,7 +7,7 @@ Goals are linked to subcategories in the 'Savings & Investments' category.
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from backend.models.database import db, Goal, Subcategory, Expense
 from datetime import datetime, date
 from backend.utils.validators import ALLOWED_CATEGORIES
@@ -136,12 +136,14 @@ def create_goal():
             ),
             409,
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
-            f"[create_goal] Unexpected error: {str(e)}", exc_info=True
+            f"[create_goal] Database error: {str(e)}", exc_info=True
         )
         return jsonify({"error": "Failed to create goal. Please try again."}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @goals_bp.route("/<int:id>", methods=["PUT"])
@@ -258,12 +260,14 @@ def update_goal(id):
 
         return jsonify({"message": "Goal updated successfully", "goal": goal_dict}), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
-            f"[update_goal] Unexpected error: {str(e)}", exc_info=True
+            f"[update_goal] Database error: {str(e)}", exc_info=True
         )
         return jsonify({"error": "Failed to update goal. Please try again."}), 500
+    except (ValueError, KeyError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @goals_bp.route("/<int:id>", methods=["DELETE"])
@@ -344,10 +348,10 @@ def delete_goal(id):
             200,
         )
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(
-            f"[delete_goal] Unexpected error: {str(e)}", exc_info=True
+            f"[delete_goal] Database error: {str(e)}", exc_info=True
         )
         return jsonify({"error": "Failed to delete goal. Please try again."}), 500
 
