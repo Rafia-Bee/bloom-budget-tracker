@@ -5,7 +5,7 @@
  * Verifies period selection, view toggling, edit/delete actions.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import PeriodSelector from '../components/PeriodSelector'

@@ -949,7 +949,6 @@ describe('AddRecurringExpenseModal', () => {
         expect(screen.getByText('Start Date')).toBeInTheDocument()
       })
 
-      const dateInputs = screen.getAllByRole('textbox', { hidden: true })
       // Find the start date input which should be required
       const startDateLabel = screen.getByText('Start Date')
       const startDateInput = startDateLabel.closest('div').querySelector('input')

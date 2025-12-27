@@ -56,7 +56,7 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     }
   }
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = () => {
     if (isDragging) {
       const wasDragging = hasMoved
       setIsDragging(false)
@@ -142,6 +142,7 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
         document.removeEventListener('touchend', handleTouchEnd)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragStart, hasMoved, position])
 
   // Calculate menu position - show above button unless too close to top

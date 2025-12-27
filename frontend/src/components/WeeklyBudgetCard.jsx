@@ -27,6 +27,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
 
   useEffect(() => {
     loadWeeklyData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Expose refresh method to parent via ref

@@ -42,7 +42,6 @@ function Debts({ setIsAuthenticated }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportMode, setExportMode] = useState('export')
   const [showBankImportModal, setShowBankImportModal] = useState(false)
-  const creditLimit = 1500
 
   const handleExport = () => {
     setExportMode('export');
@@ -68,6 +67,7 @@ function Debts({ setIsAuthenticated }) {
     if (currentPeriod) {
       loadCreditCardDebt()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPeriod])
 
   const loadCurrentPeriod = async () => {

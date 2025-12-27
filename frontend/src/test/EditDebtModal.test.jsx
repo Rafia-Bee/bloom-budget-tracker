@@ -396,7 +396,6 @@ describe('EditDebtModal', () => {
 
   describe('Decimal Amount Handling', () => {
     it('handles amount with decimal places', async () => {
-      const user = userEvent.setup()
       const debtWithDecimals = {
         ...mockDebt,
         current_balance: 123456, // €1234.56

@@ -99,8 +99,6 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
     return baseSubcategories[targetCategory] || []
   }
 
-  const subcategories = getSubcategories()
-
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   const handleCategoryChange = (value) => {

@@ -263,10 +263,6 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      // Get all date inputs - first is start date, second is end date
-      const dateInputs = screen.getAllByRole('textbox', { hidden: true }).filter(
-        input => input.type === 'date'
-      )
       // Use getAllByDisplayValue for type=date inputs
       const allInputs = document.querySelectorAll('input[type="date"]')
       const startDate = allInputs[0]

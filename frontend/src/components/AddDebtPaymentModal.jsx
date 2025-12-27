@@ -24,6 +24,7 @@ function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
 
   useEffect(() => {
     loadDebts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadDebts = async () => {

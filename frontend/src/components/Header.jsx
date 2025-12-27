@@ -54,7 +54,6 @@ function Header({
   const navLinkClasses = "px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-bloom-pink transition font-semibold";
   const activeLinkClasses = "text-bloom-pink dark:text-dark-pink";
   const mobileNavLinkClasses = "block px-4 py-3 text-gray-700 dark:text-dark-text hover:bg-bloom-pink/10 dark:hover:bg-dark-pink/20 hover:text-bloom-pink dark:hover:text-dark-pink transition rounded-lg font-semibold";
-  const mobileActiveLinkClasses = "bg-bloom-pink/10 dark:bg-dark-pink/20 text-bloom-pink dark:text-dark-pink";
 
   const navigationLinks = (
     <>

@@ -24,6 +24,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
 
   useEffect(() => {
     loadLeftoverData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadLeftoverData = async () => {

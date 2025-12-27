@@ -32,7 +32,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
   const [view, setView] = useState('active') // 'active' or 'upcoming'
   const [scheduledExpenses, setScheduledExpenses] = useState([])
   const [selectedScheduled, setSelectedScheduled] = useState([])
-  const [selectionMode, setSelectionMode] = useState(false)
   const [budgetImpact, setBudgetImpact] = useState(null)
 
   // Currency context for multi-currency support

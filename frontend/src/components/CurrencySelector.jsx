@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { currencyAPI } from "../api";
 import { logWarn } from "../utils/logger";
-import { CURRENCY_INFO, getCurrencyName } from "../utils/formatters";
+import { CURRENCY_INFO } from "../utils/formatters";
 
 function CurrencySelector({
     value = "EUR",

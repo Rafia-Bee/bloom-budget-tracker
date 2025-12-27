@@ -22,7 +22,6 @@ vi.mock('../api', () => ({
 
 describe('ExportImportModal', () => {
   const mockOnClose = vi.fn()
-  const mockOnImportComplete = vi.fn()
   let originalCreateObjectURL
   let originalRevokeObjectURL
 

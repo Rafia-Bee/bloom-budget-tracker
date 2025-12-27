@@ -36,16 +36,6 @@ const mockExpense = {
   payment_method: 'Debit card'
 }
 
-const mockDebtExpense = {
-  id: 2,
-  name: 'Car Loan Payment',
-  amount: 30000, // 300.00 in cents
-  date: '15 Dec, 2025',
-  category: 'Debt Payments',
-  subcategory: 'Credit Card',
-  payment_method: 'Debit card'
-}
-
 describe('EditExpenseModal', () => {
   const mockOnClose = vi.fn()
   const mockOnEdit = vi.fn()

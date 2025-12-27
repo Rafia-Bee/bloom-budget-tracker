@@ -6,9 +6,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, authAPI, recurringExpenseAPI } from '../api'
+import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, recurringExpenseAPI } from '../api'
 import { logError } from '../utils/logger'
-import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
 import AddExpenseModal from '../components/AddExpenseModal'
@@ -71,9 +70,6 @@ function Dashboard({ setIsAuthenticated }) {
   const [isInitialLoading, setIsInitialLoading] = useState(true) // Prevent flickering on initial load
   const weeklyBudgetCardRef = useRef(null)
 
-  // Feature flags for experimental features
-  const { flags, toggleFlag } = useFeatureFlag()
-
   // Currency context for multi-currency support
   const { defaultCurrency, convertAmount } = useCurrency()
 
@@ -129,12 +125,14 @@ function Dashboard({ setIsAuthenticated }) {
     if (currentPeriod) {
       loadIncomeStats()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPeriod])
 
   useEffect(() => {
     if (currentPeriod) {
       loadTransactionsAndBalances()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPeriod])
 
   const loadTransactionsAndBalances = async () => {
@@ -321,6 +319,7 @@ function Dashboard({ setIsAuthenticated }) {
     if (currentPeriod) {
       loadTransactionsAndBalances()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilters])
 
   const loadTransactionDates = async () => {
@@ -453,9 +452,6 @@ function Dashboard({ setIsAuthenticated }) {
     }
   }
 
-  // Keep old loadPeriods method for other callers
-  const loadPeriods = loadPeriodsAndCurrentWeek
-
   // Handle date navigation change
   const handleDateNavigate = (date) => {
     if (date === null) {
@@ -554,17 +550,6 @@ function Dashboard({ setIsAuthenticated }) {
     // Debt = limit - available
     return creditLimit - creditAvailable
   }
-
-  const handleLogout = async () => {
-    try {
-      await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
-    } catch (error) {
-      logError('logout', error);
-    }
-
-    localStorage.removeItem('user_email'); // Only email is stored locally now
-    setIsAuthenticated(false);
-  };
 
   const handleAddExpense = async (expenseData) => {
     const expenseAmount = expenseData.amount / 100 // Convert cents to euros

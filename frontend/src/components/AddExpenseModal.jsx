@@ -10,7 +10,6 @@ import { debtAPI, recurringExpenseAPI, subcategoryAPI, goalAPI } from '../api'
 import { logError } from '../utils/logger'
 import PropTypes from 'prop-types';
 import CurrencySelector from './CurrencySelector'
-import { getCurrencySymbol } from '../utils/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 
 function AddExpenseModal({ onClose, onAdd }) {

@@ -5,8 +5,8 @@
  * Verifies positioning, menu toggle, and drag behavior.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
 

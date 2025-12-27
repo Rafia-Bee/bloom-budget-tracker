@@ -71,6 +71,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
       nextDay.setDate(nextDay.getDate() + 1)
       setStartDate(nextDay.toISOString().split('T')[0])
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editPeriod, rolloverData])
 
   const formatCurrency = (cents) => {
