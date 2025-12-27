@@ -5,7 +5,7 @@ Endpoints for user data operations including data deletion.
 WARNING: These operations are destructive and cannot be undone!
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import (
     db,
@@ -121,7 +121,10 @@ def delete_all_user_data():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[delete_all_user_data] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to delete user data. Please try again."}), 500
 
 
 @user_data_bp.route("/settings/recurring-lookahead", methods=["GET"])
@@ -143,7 +146,10 @@ def get_recurring_lookahead():
         return jsonify({"recurring_lookahead_days": user.recurring_lookahead_days}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[get_recurring_lookahead] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load settings. Please try again."}), 500
 
 
 @user_data_bp.route("/settings/recurring-lookahead", methods=["PUT"])
@@ -200,7 +206,10 @@ def update_recurring_lookahead():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[update_recurring_lookahead] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update settings. Please try again."}), 500
 
 
 @user_data_bp.route("/settings/default-currency", methods=["GET"])
@@ -222,7 +231,10 @@ def get_default_currency():
         return jsonify({"default_currency": user.default_currency}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[get_default_currency] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load settings. Please try again."}), 500
 
 
 @user_data_bp.route("/settings/default-currency", methods=["PUT"])
@@ -278,4 +290,7 @@ def update_default_currency():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[update_default_currency] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update settings. Please try again."}), 500

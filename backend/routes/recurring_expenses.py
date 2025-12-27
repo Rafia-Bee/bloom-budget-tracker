@@ -6,7 +6,7 @@ Handles creation, retrieval, updates, and deletion of recurring expenses.
 Also includes export/import for testing purposes.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, RecurringExpense, SalaryPeriod
 from datetime import datetime, timedelta
@@ -112,7 +112,13 @@ def get_recurring_expenses():
             200,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[get_recurring_expenses] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to load recurring expenses. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/<int:id>", methods=["GET"])
@@ -152,7 +158,13 @@ def get_recurring_expense(id):
             200,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[get_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to load recurring expense. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("", methods=["POST"])
@@ -237,7 +249,13 @@ def create_recurring_expense():
         return jsonify(response_data), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[create_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to create recurring expense. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/<int:id>", methods=["PUT"])
@@ -331,7 +349,13 @@ def update_recurring_expense(id):
         return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[update_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to update recurring expense. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/<int:id>", methods=["DELETE"])
@@ -362,7 +386,13 @@ def delete_recurring_expense(id):
         return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[delete_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to delete recurring expense. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/<int:id>/toggle", methods=["PUT"])
@@ -393,7 +423,13 @@ def toggle_recurring_expense(id):
         return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[toggle_recurring_expense] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify({"error": "Failed to toggle recurring expense. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/<int:id>/fixed-bill", methods=["PATCH"])
@@ -424,7 +460,11 @@ def toggle_fixed_bill(id):
         return jsonify(response_data), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"[toggle_fixed_bill] Error: {str(e)}", exc_info=True)
+        return (
+            jsonify({"error": "Failed to update fixed bill status. Please try again."}),
+            500,
+        )
 
 
 @recurring_expenses_bp.route("/export", methods=["GET"])
@@ -506,4 +546,12 @@ def import_recurring_expenses():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[import_recurring_expenses] Error: {str(e)}", exc_info=True
+        )
+        return (
+            jsonify(
+                {"error": "Failed to import recurring expenses. Please try again."}
+            ),
+            500,
+        )

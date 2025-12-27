@@ -122,3 +122,40 @@ def remove_duplicate_initial_balances():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/cleanup-tokens", methods=["POST"])
+@jwt_required()
+def cleanup_password_reset_tokens():
+    """
+    Clean up expired and used password reset tokens.
+
+    This removes:
+    - Expired tokens older than 24 hours
+    - Used tokens older than 7 days
+
+    Can be run periodically to maintain database hygiene.
+
+    Returns:
+        200: Success with cleanup statistics
+        500: Error if operation fails
+    """
+    try:
+        from backend.services.cleanup_service import cleanup_service
+
+        results = cleanup_service.cleanup_all_password_reset_tokens()
+
+        return (
+            jsonify(
+                {
+                    "message": "Password reset token cleanup completed",
+                    "expired_tokens_deleted": results["expired_tokens_deleted"],
+                    "used_tokens_deleted": results["used_tokens_deleted"],
+                    "total_deleted": results["total_deleted"],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": f"Cleanup failed: {str(e)}"}), 500

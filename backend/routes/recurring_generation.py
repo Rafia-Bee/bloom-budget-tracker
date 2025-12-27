@@ -4,7 +4,7 @@ Bloom - Recurring Expense Generation Routes
 Endpoints for triggering and previewing recurring expense generation.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import User
 from backend.utils.recurring_generator import (
@@ -55,7 +55,8 @@ def trigger_generation():
             200,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"[trigger_generation] Error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Failed to generate expenses. Please try again."}), 500
 
 
 @recurring_generation_bp.route("/generate/all", methods=["POST"])
@@ -82,7 +83,10 @@ def trigger_generation_all():
             200,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(
+            f"[trigger_generation_all] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to generate expenses. Please try again."}), 500
 
 
 @recurring_generation_bp.route("/preview", methods=["GET"])
@@ -120,4 +124,10 @@ def preview_upcoming():
             200,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"[preview_upcoming] Error: {str(e)}", exc_info=True)
+        return (
+            jsonify(
+                {"error": "Failed to preview upcoming expenses. Please try again."}
+            ),
+            500,
+        )

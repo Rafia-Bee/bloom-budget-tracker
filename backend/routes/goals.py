@@ -5,7 +5,7 @@ REST endpoints for managing savings goals and financial targets.
 Goals are linked to subcategories in the 'Savings & Investments' category.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, Goal, Subcategory, Expense
@@ -138,7 +138,10 @@ def create_goal():
         )
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to create goal: {str(e)}"}), 500
+        current_app.logger.error(
+            f"[create_goal] Unexpected error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to create goal. Please try again."}), 500
 
 
 @goals_bp.route("/<int:id>", methods=["PUT"])
@@ -257,7 +260,10 @@ def update_goal(id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to update goal: {str(e)}"}), 500
+        current_app.logger.error(
+            f"[update_goal] Unexpected error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update goal. Please try again."}), 500
 
 
 @goals_bp.route("/<int:id>", methods=["DELETE"])
@@ -340,7 +346,10 @@ def delete_goal(id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to delete goal: {str(e)}"}), 500
+        current_app.logger.error(
+            f"[delete_goal] Unexpected error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to delete goal. Please try again."}), 500
 
 
 @goals_bp.route("/<int:id>/progress", methods=["GET"])

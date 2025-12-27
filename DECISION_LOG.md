@@ -6,6 +6,33 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### Phase 1 Technical Debt Cleanup (#88)
+
+**Context:** Issue #88 identified 14 technical debt items across 5 categories. Implementing Phase 1 (Quick Wins).
+
+**Decision:** Implement Phase 1 items:
+
+1. Console logging cleanup - **ALREADY DONE** (centralized in utils/logger.js)
+2. Error handling standardization - Added proper logging to route exception handlers
+3. Data retention cleanup - Admin endpoint added for token cleanup
+
+**Changes Made:**
+
+-   `backend/utils/error_handlers.py` - New utility with standardized error handling patterns
+-   `backend/routes/goals.py` - Added current_app.logger.error() calls
+-   `backend/routes/recurring_expenses.py` - Added logging, sanitized error messages
+-   `backend/routes/user_data.py` - Added logging, sanitized error messages
+-   `backend/routes/recurring_generation.py` - Added logging, sanitized error messages
+-   `backend/routes/admin.py` - Added `/cleanup-tokens` endpoint
+
+**Key Pattern:** Error responses no longer return `str(e)` to clients (prevents info leakage). Errors are logged server-side with `exc_info=True` for debugging.
+
+**Excluded from Phase 1:** CDN/static asset optimization (moved to Phase 2)
+
+**Impact:** Cleaner production code, consistent error logging, safer error messages.
+
+---
+
 ### Post-Creation Budget Recalculation - Option C (#116)
 
 **Context:** Issue #116 identified that users who add fixed bills AFTER creating their budget period would have inaccurate weekly budgets. Option D (quick add in wizard) helps new users, but Option C addresses users who modify fixed bills post-setup.
