@@ -125,29 +125,37 @@ describe("Date Formatters", () => {
     });
 
     describe("formatRelativeDate", () => {
+        // Helper to get YYYY-MM-DD in local timezone (not UTC)
+        const getLocalDateString = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+
         it("returns 'Today' for current date", () => {
-            const today = new Date().toISOString().split("T")[0];
+            const today = getLocalDateString(new Date());
             expect(formatRelativeDate(today)).toBe("Today");
         });
 
         it("returns 'Tomorrow' for next day", () => {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowStr = tomorrow.toISOString().split("T")[0];
+            const tomorrowStr = getLocalDateString(tomorrow);
             expect(formatRelativeDate(tomorrowStr)).toBe("Tomorrow");
         });
 
         it("returns 'Yesterday' for previous day", () => {
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().split("T")[0];
+            const yesterdayStr = getLocalDateString(yesterday);
             expect(formatRelativeDate(yesterdayStr)).toBe("Yesterday");
         });
 
         it("returns formatted date for other dates", () => {
             const farDate = new Date();
             farDate.setDate(farDate.getDate() + 10);
-            const result = formatRelativeDate(farDate.toISOString().split("T")[0]);
+            const result = formatRelativeDate(getLocalDateString(farDate));
             // Should be the standard format, not a relative string
             expect(result).not.toBe("Today");
             expect(result).not.toBe("Tomorrow");
