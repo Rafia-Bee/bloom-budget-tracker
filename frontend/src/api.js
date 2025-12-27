@@ -86,6 +86,9 @@ export const expenseAPI = {
     delete: (id) => api.delete(`/expenses/${id}`),
     getDatesWithTransactions: () =>
         api.get("/expenses/dates-with-transactions"),
+    // Soft delete endpoints
+    getDeleted: () => api.get("/expenses/deleted"),
+    restore: (id) => api.post(`/expenses/${id}/restore`),
 };
 
 export const incomeAPI = {
@@ -94,6 +97,9 @@ export const incomeAPI = {
     update: (id, data) => api.put(`/income/${id}`, data),
     delete: (id) => api.delete(`/income/${id}`),
     getStats: () => api.get("/income/stats"),
+    // Soft delete endpoints
+    getDeleted: () => api.get("/income/deleted"),
+    restore: (id) => api.post(`/income/${id}/restore`),
 };
 
 export const budgetPeriodAPI = {
@@ -111,6 +117,9 @@ export const debtAPI = {
     create: (data) => api.post("/debts", data),
     update: (id, data) => api.put(`/debts/${id}`, data),
     delete: (id) => api.delete(`/debts/${id}`),
+    // Soft delete endpoints
+    getDeleted: () => api.get("/debts/deleted"),
+    restore: (id) => api.post(`/debts/${id}/restore`),
 };
 
 export const recurringExpenseAPI = {
@@ -139,6 +148,9 @@ export const recurringExpenseAPI = {
         api.get(`/recurring-generation/preview`, {
             params: days ? { days } : {},
         }),
+    // Soft delete endpoints
+    getDeleted: () => api.get("/recurring-expenses/deleted"),
+    restore: (id) => api.post(`/recurring-expenses/${id}/restore`),
 };
 
 export const salaryPeriodAPI = {

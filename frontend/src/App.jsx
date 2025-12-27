@@ -16,6 +16,7 @@ import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import Goals from './pages/Goals'
+import Trash from './pages/Trash'
 import CatLoading from './components/CatLoading'
 import OfflineIndicator from './components/OfflineIndicator'
 import { setLoadingCallback, authAPI } from './api'
@@ -114,6 +115,10 @@ function App() {
         <Route
           path="/goals"
           element={isAuthenticated ? <Goals setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/trash"
+          element={isAuthenticated ? <Trash setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/login" />}
         />
         <Route
           path="/admin"
