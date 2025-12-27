@@ -15,6 +15,13 @@ Models:
 - UserDefaults: User's default expense values
 - CreditCardSettings: Credit card configuration
 - PeriodSuggestion: End-of-period recommendations
+
+Soft Delete Pattern:
+- Models with SoftDeleteMixin have deleted_at column
+- Use Model.active() to query non-deleted records
+- Use Model.deleted() to query soft-deleted records
+- Use instance.soft_delete() to mark as deleted
+- Use instance.restore() to restore deleted records
 """
 
 from datetime import datetime
@@ -22,6 +29,45 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+
+
+class SoftDeleteMixin:
+    """
+    Mixin that adds soft delete functionality to models.
+
+    Adds:
+    - deleted_at: DateTime column (NULL = active, set = deleted)
+    - active(): Class method to query non-deleted records
+    - deleted(): Class method to query only deleted records
+    - soft_delete(): Instance method to mark as deleted
+    - restore(): Instance method to restore a deleted record
+    - is_deleted: Property to check deletion status
+    """
+
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)
+
+    @classmethod
+    def active(cls):
+        """Return query filtering only non-deleted records."""
+        return cls.query.filter(cls.deleted_at.is_(None))
+
+    @classmethod
+    def deleted(cls):
+        """Return query filtering only soft-deleted records."""
+        return cls.query.filter(cls.deleted_at.isnot(None))
+
+    def soft_delete(self):
+        """Mark this record as deleted (soft delete)."""
+        self.deleted_at = datetime.utcnow()
+
+    def restore(self):
+        """Restore a soft-deleted record."""
+        self.deleted_at = None
+
+    @property
+    def is_deleted(self):
+        """Check if record is soft-deleted."""
+        return self.deleted_at is not None
 
 
 class User(db.Model):
@@ -202,7 +248,7 @@ class BudgetPeriod(db.Model):
     )
 
 
-class Expense(db.Model):
+class Expense(SoftDeleteMixin, db.Model):
     __tablename__ = "expenses"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -250,7 +296,7 @@ class Expense(db.Model):
     )
 
 
-class Income(db.Model):
+class Income(SoftDeleteMixin, db.Model):
     __tablename__ = "income"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -280,7 +326,7 @@ class Income(db.Model):
     )
 
 
-class Debt(db.Model):
+class Debt(SoftDeleteMixin, db.Model):
     __tablename__ = "debts"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -298,7 +344,7 @@ class Debt(db.Model):
     )
 
 
-class RecurringExpense(db.Model):
+class RecurringExpense(SoftDeleteMixin, db.Model):
     __tablename__ = "recurring_expenses"
 
     id = db.Column(db.Integer, primary_key=True)

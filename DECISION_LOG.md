@@ -6,6 +6,63 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### Soft Delete Pattern Implementation (#61) - Phase 1
+
+**Context:** Issue #61 - Implement soft delete pattern for expenses and recurring expenses to allow recovery of accidentally deleted data.
+
+**Problem:** All deletions are hard deletes (permanent removal), causing:
+
+-   No recovery after accidental deletion
+-   Lost audit trail
+-   Poor user experience (can't undo)
+
+**Decision:** Implement soft delete using a `deleted_at` column and a `SoftDeleteMixin` class.
+
+**Implementation:**
+
+1. Created `SoftDeleteMixin` class with:
+
+    - `deleted_at` column (DateTime, nullable, indexed)
+    - `active()` class method - query non-deleted records
+    - `deleted()` class method - query soft-deleted records
+    - `soft_delete()` instance method - mark as deleted
+    - `restore()` instance method - restore deleted record
+    - `is_deleted` property - check deletion status
+
+2. Applied mixin to models:
+
+    - `Expense` - most common accidental deletion
+    - `Income` - for consistency
+    - `Debt` - distinguish archived vs deleted
+    - `RecurringExpense` - preserve template history
+
+3. Created database migration for local (Flask-Migrate) and production (Neon SQL)
+
+**Pattern:**
+
+```python
+class SoftDeleteMixin:
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)
+
+    @classmethod
+    def active(cls):
+        return cls.query.filter(cls.deleted_at.is_(None))
+
+    def soft_delete(self):
+        self.deleted_at = datetime.utcnow()
+```
+
+**Next Phases:**
+
+-   Phase 2: Update queries to use `.active()` method
+-   Phase 3: Update DELETE endpoints to soft delete, add /restore endpoints
+-   Phase 4: Frontend UI changes
+-   Phase 5: Cleanup job (hard delete after 30 days)
+
+**Rationale:** Mixin pattern allows reuse across models without code duplication. Index on `deleted_at` ensures query performance when filtering.
+
+---
+
 ### Exception Handling Standardization (#59)
 
 **Context:** Issue #59 - Replace generic exception handling with specific SQLAlchemy exceptions across all backend routes.
