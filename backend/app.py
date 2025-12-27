@@ -115,7 +115,11 @@ def create_app(config_name="development"):
     first_request_done = {"value": False}
 
     @app.before_request
-    def simulate_cold_start():
+    def before_request_handler():
+        # Store request start time for performance monitoring
+        request.start_time = time.time()
+
+        # Simulate cold start (development only)
         if config_name == "development" and os.getenv("SIMULATE_COLD_START") == "true":
             if (
                 not first_request_done["value"]
@@ -129,6 +133,15 @@ def create_app(config_name="development"):
     # Security headers
     @app.after_request
     def add_security_headers(response):
+        # Log slow requests (>1 second) for performance monitoring
+        if hasattr(request, 'start_time'):
+            duration = time.time() - request.start_time
+            if duration > 1.0:
+                app.logger.warning(
+                    f"Slow request: {request.method} {request.path} "
+                    f"took {duration:.2f}s (status: {response.status_code})"
+                )
+
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"

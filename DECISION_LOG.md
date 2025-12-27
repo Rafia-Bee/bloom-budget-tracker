@@ -6,6 +6,24 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### Phase 2 Performance & Monitoring (#88)
+
+**Context:** Issue #88 Phase 2 audit for performance improvements.
+
+**Assessment:**
+
+1. **Database connection pooling** - Already implemented in `config.py` (pool_size=3, max_overflow=2, pool_pre_ping, keepalives)
+2. **Database query optimization** - Already implemented: proper indexes on Expense and BudgetPeriod tables
+3. **Automated backups** - Already implemented: GitHub Actions runs daily at 2 AM UTC
+
+**New Addition:**
+
+-   `backend/app.py` - Added slow request logging (>1 second) in after_request handler
+
+**Impact:** Slow requests now logged for debugging. No architectural changes needed - infrastructure was already well-optimized.
+
+---
+
 ### Phase 1 Technical Debt Cleanup (#88)
 
 **Context:** Issue #88 identified 14 technical debt items across 5 categories. Implementing Phase 1 (Quick Wins).
