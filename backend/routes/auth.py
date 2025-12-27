@@ -26,6 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
+from backend.services.audit_service import log_auth_event
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -67,6 +68,9 @@ def register():
     db.session.add(defaults)
     db.session.add(credit_settings)
     db.session.commit()
+
+    # Audit log successful registration
+    log_auth_event("register", user_id=user.id, success=True)
 
     # Send welcome email
     frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
@@ -179,6 +183,9 @@ def login():
     # Successful login - reset failed attempts
     user.reset_failed_attempts()
     db.session.commit()
+
+    # Audit log successful login
+    log_auth_event("login", user_id=user.id, success=True)
 
     # Create JWT tokens
     access_token = create_access_token(identity=str(user.id))

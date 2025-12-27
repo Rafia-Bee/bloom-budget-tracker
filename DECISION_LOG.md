@@ -6,6 +6,31 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2025-12-27
 
+### Phase 3 Architecture & Testing (#88)
+
+**Context:** Issue #88 Phase 3 audit for architecture and testing improvements.
+
+**Assessment:**
+
+1. **Test coverage** - Already at 80%+ backend, 924 frontend tests
+2. **E2E testing** - Already implemented: 12 Playwright spec files covering auth, transactions, debts, goals, navigation, recurring, salary periods, settings
+
+**New Addition:**
+
+-   `backend/services/audit_service.py` - Lightweight audit logging for key operations
+-   `backend/routes/auth.py` - Added login/register audit logging
+-   `backend/routes/user_data.py` - Added data deletion audit logging
+
+**Audit Log Format:** Structured JSON-like logs written to Flask logger at INFO level:
+
+```
+[AUDIT] auth.login: {"timestamp": "...", "user_id": 1, "action": "login", "success": true}
+```
+
+**Impact:** Key operations now logged for forensic capability without database overhead.
+
+---
+
 ### Phase 2 Performance & Monitoring (#88)
 
 **Context:** Issue #88 Phase 2 audit for performance improvements.

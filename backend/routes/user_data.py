@@ -19,6 +19,7 @@ from backend.models.database import (
     Subcategory,
     Goal,
 )
+from backend.services.audit_service import log_admin_event
 
 user_data_bp = Blueprint("user_data", __name__)
 
@@ -97,6 +98,18 @@ def delete_all_user_data():
         Subcategory.query.filter_by(user_id=current_user_id).delete()
 
         db.session.commit()
+
+        # Audit log this critical operation
+        log_admin_event(
+            "delete_all_user_data",
+            {
+                "total_records": total_records,
+                "expenses": expense_count,
+                "income": income_count,
+                "debts": debt_count,
+                "goals": goal_count,
+            },
+        )
 
         return (
             jsonify(

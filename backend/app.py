@@ -134,7 +134,7 @@ def create_app(config_name="development"):
     @app.after_request
     def add_security_headers(response):
         # Log slow requests (>1 second) for performance monitoring
-        if hasattr(request, 'start_time'):
+        if hasattr(request, "start_time"):
             duration = time.time() - request.start_time
             if duration > 1.0:
                 app.logger.warning(
