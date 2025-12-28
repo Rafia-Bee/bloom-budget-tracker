@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - ForgotPasswordModal Tests
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, clearWithAct, focusWithAct } from './test-utils'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
 import api from '../api'
 
@@ -82,23 +83,21 @@ describe('ForgotPasswordModal', () => {
 
   describe('Email Input', () => {
     it('allows typing in email field', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const emailInput = getEmailInput()
-      await user.type(emailInput, 'test@example.com')
+      await typeWithAct(emailInput, 'test@example.com')
 
       expect(emailInput).toHaveValue('test@example.com')
     })
 
     it('clears and retypes email correctly', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const emailInput = getEmailInput()
-      await user.type(emailInput, 'wrong@email.com')
-      await user.clear(emailInput)
-      await user.type(emailInput, 'correct@email.com')
+      await typeWithAct(emailInput, 'wrong@email.com')
+      await clearWithAct(emailInput)
+      await typeWithAct(emailInput, 'correct@email.com')
 
       expect(emailInput).toHaveValue('correct@email.com')
     })
@@ -106,11 +105,10 @@ describe('ForgotPasswordModal', () => {
 
   describe('Form Submission', () => {
     it('submits with correct email', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/auth/forgot-password', {
@@ -120,11 +118,10 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('trims whitespace from email', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), '  test@example.com  ')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), '  test@example.com  ')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/auth/forgot-password', {
@@ -134,11 +131,10 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('calls onSuccess with message after successful submission', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(mockOnSuccess).toHaveBeenCalledWith('Password reset email sent successfully')
@@ -146,11 +142,10 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('calls onClose after successful submission', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalled()
@@ -160,49 +155,45 @@ describe('ForgotPasswordModal', () => {
 
   describe('Loading State', () => {
     it('shows loading text during submission', async () => {
-      const user = userEvent.setup()
       api.post.mockImplementation(() => new Promise(() => {})) // Never resolves
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       expect(screen.getByRole('button', { name: 'Sending...' })).toBeInTheDocument()
     })
 
     it('disables submit button during loading', async () => {
-      const user = userEvent.setup()
       api.post.mockImplementation(() => new Promise(() => {}))
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       expect(screen.getByRole('button', { name: 'Sending...' })).toBeDisabled()
     })
 
     it('disables Cancel button during loading', async () => {
-      const user = userEvent.setup()
       api.post.mockImplementation(() => new Promise(() => {}))
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     })
 
     it('disables email input during loading', async () => {
-      const user = userEvent.setup()
       api.post.mockImplementation(() => new Promise(() => {}))
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       expect(getEmailInput()).toBeDisabled()
     })
@@ -210,15 +201,14 @@ describe('ForgotPasswordModal', () => {
 
   describe('Error Handling', () => {
     it('displays API error message', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Email not found' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'unknown@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'unknown@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Email not found')).toBeInTheDocument()
@@ -226,13 +216,12 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('displays generic error when no API message', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue(new Error('Network error'))
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Unable to connect to server')).toBeInTheDocument()
@@ -240,15 +229,14 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('displays rate limit error', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Too many requests. Please try again later.' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Too many requests. Please try again later.')).toBeInTheDocument()
@@ -256,15 +244,14 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('allows dismissing error message', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Some error' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Some error')).toBeInTheDocument()
@@ -284,15 +271,14 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('does not call onSuccess on error', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Error' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Error')).toBeInTheDocument()
@@ -302,15 +288,14 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('does not call onClose on error', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Error' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Error')).toBeInTheDocument()
@@ -320,15 +305,14 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('re-enables form after error', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Error' } }
       })
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Error')).toBeInTheDocument()
@@ -342,16 +326,14 @@ describe('ForgotPasswordModal', () => {
 
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel button clicked', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalled()
     })
 
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       // Find the close X button (first button in header area)
@@ -359,7 +341,7 @@ describe('ForgotPasswordModal', () => {
       const closeButton = buttons.find(btn =>
         btn.querySelector('svg') && !btn.textContent.includes('Cancel') && !btn.textContent.includes('Send')
       )
-      await user.click(closeButton)
+      await clickWithAct(closeButton)
 
       expect(mockOnClose).toHaveBeenCalled()
     })
@@ -367,7 +349,6 @@ describe('ForgotPasswordModal', () => {
 
   describe('Retry After Error', () => {
     it('allows retry after error', async () => {
-      const user = userEvent.setup()
       // First call fails, second succeeds
       api.post.mockRejectedValueOnce({
         response: { data: { error: 'Error' } }
@@ -377,15 +358,15 @@ describe('ForgotPasswordModal', () => {
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('Error')).toBeInTheDocument()
       })
 
       // Retry
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(mockOnSuccess).toHaveBeenCalledWith('Success!')
@@ -393,22 +374,21 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('clears previous error on new submission', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValueOnce({
         response: { data: { error: 'First Error' } }
       }).mockImplementation(() => new Promise(() => {})) // Never resolves
 
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
-      await user.type(getEmailInput(), 'test@example.com')
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await typeWithAct(getEmailInput(), 'test@example.com')
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       await waitFor(() => {
         expect(screen.getByText('First Error')).toBeInTheDocument()
       })
 
       // Start new submission
-      await user.click(screen.getByRole('button', { name: 'Send Reset Link' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Send Reset Link' }))
 
       // Error should be cleared
       expect(screen.queryByText('First Error')).not.toBeInTheDocument()
@@ -424,11 +404,10 @@ describe('ForgotPasswordModal', () => {
     })
 
     it('email input can receive focus', async () => {
-      const user = userEvent.setup()
       render(<ForgotPasswordModal onClose={mockOnClose} onSuccess={mockOnSuccess} />)
 
       const emailInput = getEmailInput()
-      await user.click(emailInput)
+      await focusWithAct(emailInput)
 
       expect(document.activeElement).toBe(emailInput)
     })

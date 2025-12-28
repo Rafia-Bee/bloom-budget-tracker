@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * DraggableFloatingButton Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
 
 describe('DraggableFloatingButton', () => {
@@ -131,7 +132,6 @@ describe('DraggableFloatingButton', () => {
 
   describe('Click Behavior', () => {
     it('calls onToggleMenu when button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <DraggableFloatingButton
           showMenu={false}
@@ -141,7 +141,7 @@ describe('DraggableFloatingButton', () => {
         </DraggableFloatingButton>
       )
 
-      await user.click(screen.getByRole('button'))
+      await clickWithAct(screen.getByRole('button'))
 
       expect(mockOnToggleMenu).toHaveBeenCalled()
     })

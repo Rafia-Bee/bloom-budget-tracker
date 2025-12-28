@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * EditGoalModal Test Suite
  *
@@ -15,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, clearWithAct } from './test-utils'
 import EditGoalModal from '../components/EditGoalModal'
 
 describe('EditGoalModal', () => {
@@ -178,45 +179,41 @@ describe('EditGoalModal', () => {
 
   describe('Form Interactions', () => {
     it('allows editing the name', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'New Emergency Fund')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'New Emergency Fund')
 
       expect(nameInput.value).toBe('New Emergency Fund')
     })
 
     it('allows editing the target amount', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '2000')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '2000')
 
       expect(amountInput.value).toBe('2000')
     })
 
     it('allows editing the description', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      await user.clear(descriptionInput)
-      await user.type(descriptionInput, 'Updated description')
+      await clearWithAct(descriptionInput)
+      await typeWithAct(descriptionInput, 'Updated description')
 
       expect(descriptionInput.value).toBe('Updated description')
     })
 
     it('allows editing the target date', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const dateInput = document.querySelector('input[type="date"]')
-      await user.clear(dateInput)
-      await user.type(dateInput, '2026-06-15')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2026-06-15')
 
       expect(dateInput.value).toBe('2026-06-15')
     })
@@ -237,23 +234,21 @@ describe('EditGoalModal', () => {
     })
 
     it('updates name character count on input', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Test')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Test')
 
       expect(screen.getByText(/4.*\/50 characters/)).toBeInTheDocument()
     })
 
     it('updates description character count on input', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      await user.clear(descriptionInput)
-      await user.type(descriptionInput, 'Hi')
+      await clearWithAct(descriptionInput)
+      await typeWithAct(descriptionInput, 'Hi')
 
       expect(screen.getByText(/2.*\/200 characters/)).toBeInTheDocument()
     })
@@ -261,47 +256,42 @@ describe('EditGoalModal', () => {
 
   describe('Amount Formatting', () => {
     it('formats amount with two decimal places', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '99.99')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '99.99')
 
       expect(amountInput.value).toBe('99.99')
     })
 
     it('strips non-numeric characters', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, 'abc123def')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, 'abc123def')
 
       expect(amountInput.value).toBe('123')
     })
 
     it('limits to two decimal places', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '100.999')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '100.999')
 
       expect(amountInput.value).toBe('100.99')
     })
 
     it('handles only one decimal point', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '100.50.25')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '100.50')
 
-      // Second decimal point and digits after are handled by formatter
       // The formatter keeps the first decimal point and limits to 2 places
       expect(amountInput.value).toBe('100.50')
     })
@@ -309,29 +299,27 @@ describe('EditGoalModal', () => {
 
   describe('Validation - Name', () => {
     it('shows error when name is empty', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
+      await clearWithAct(nameInput)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
       expect(mockOnUpdate).not.toHaveBeenCalled()
     })
 
     it('shows error when name is only whitespace', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
-      await user.type(nameInput, '   ')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, '   ')
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
     })
@@ -346,59 +334,55 @@ describe('EditGoalModal', () => {
 
   describe('Validation - Target Amount', () => {
     it('shows error when amount is empty', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
+      await clearWithAct(amountInput)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
 
     it('shows error when amount is 0', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '0')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '0')
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
 
     it('shows error when amount exceeds 1 million', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '1000001')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '1000001')
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
     })
 
     it('clears amount error on input change', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
+      await clearWithAct(amountInput)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
 
-      await user.type(amountInput, '500')
+      await typeWithAct(amountInput, '500')
 
       expect(screen.queryByText('Target amount must be greater than 0')).not.toBeInTheDocument()
     })
@@ -418,12 +402,11 @@ describe('EditGoalModal', () => {
     })
 
     it('allows empty date (optional field)', async () => {
-      const user = userEvent.setup()
       const goalNoDate = { ...mockGoal, target_date: '' }
       render(<EditGoalModal goal={goalNoDate} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.queryByText('Target date must be in the future')).not.toBeInTheDocument()
       expect(mockOnUpdate).toHaveBeenCalled()
@@ -441,26 +424,24 @@ describe('EditGoalModal', () => {
 
   describe('Target Reduction Warning', () => {
     it('shows warning when target is set below current savings', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       // Current savings is €250, set target to €200
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '200')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '200')
 
       expect(screen.getByText(/Warning:/)).toBeInTheDocument()
       expect(screen.getByText(/Setting the target below your current savings/)).toBeInTheDocument()
     })
 
     it('does not show warning when target is above current savings', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       // Current savings is €250, set target to €500
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '500')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '500')
 
       expect(screen.queryByText(/Warning:/)).not.toBeInTheDocument()
     })
@@ -475,22 +456,20 @@ describe('EditGoalModal', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when Cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const cancelButton = screen.getByRole('button', { name: 'Cancel' })
-      await user.click(cancelButton)
+      await clickWithAct(cancelButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Update') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -498,11 +477,10 @@ describe('EditGoalModal', () => {
 
   describe('Form Submission', () => {
     it('calls onUpdate with correct data on successful submission', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith({
@@ -516,15 +494,14 @@ describe('EditGoalModal', () => {
     })
 
     it('converts amount to cents on submission', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '1500.50')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '1500.50')
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -536,15 +513,14 @@ describe('EditGoalModal', () => {
     })
 
     it('trims name and description on submission', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
-      await user.type(nameInput, '  Trimmed Name  ')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, '  Trimmed Name  ')
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -556,7 +532,6 @@ describe('EditGoalModal', () => {
     })
 
     it('sends null for empty optional fields', async () => {
-      const user = userEvent.setup()
       const goalNoOptionals = {
         id: 3,
         name: 'Test',
@@ -568,7 +543,7 @@ describe('EditGoalModal', () => {
       render(<EditGoalModal goal={goalNoOptionals} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -583,33 +558,30 @@ describe('EditGoalModal', () => {
 
   describe('Loading State', () => {
     it('shows loading spinner during submission', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Updating...')).toBeInTheDocument()
     })
 
     it('disables submit button during loading', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(submitButton).toBeDisabled()
     })
 
     it('re-enables submit button after submission completes', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled()
@@ -619,14 +591,13 @@ describe('EditGoalModal', () => {
 
   describe('Error Handling', () => {
     it('handles error from onUpdate gracefully', async () => {
-      const user = userEvent.setup()
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
       mockOnUpdate.mockRejectedValue(new Error('Update failed'))
 
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         // Logger uses format: [operation] Error:
@@ -637,14 +608,13 @@ describe('EditGoalModal', () => {
     })
 
     it('re-enables submit button after error', async () => {
-      const user = userEvent.setup()
       vi.spyOn(console, 'error').mockImplementation(() => {})
       mockOnUpdate.mockRejectedValue(new Error('Update failed'))
 
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled()
@@ -654,35 +624,33 @@ describe('EditGoalModal', () => {
 
   describe('Error Clearing', () => {
     it('clears name error when user types', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await user.clear(nameInput)
+      await clearWithAct(nameInput)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
 
-      await user.type(nameInput, 'N')
+      await typeWithAct(nameInput, 'N')
 
       expect(screen.queryByText('Goal name is required')).not.toBeInTheDocument()
     })
 
     it('clears amount error when user types', async () => {
-      const user = userEvent.setup()
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const amountInput = screen.getByDisplayValue('1000.00')
-      await user.clear(amountInput)
+      await clearWithAct(amountInput)
 
       const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
 
-      await user.type(amountInput, '100')
+      await typeWithAct(amountInput, '100')
 
       expect(screen.queryByText('Target amount must be greater than 0')).not.toBeInTheDocument()
     })

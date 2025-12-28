@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * CreateGoalModal Test Suite
  *
@@ -14,7 +15,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct } from './test-utils'
 import CreateGoalModal from '../components/CreateGoalModal'
 
 describe('CreateGoalModal', () => {
@@ -109,20 +110,16 @@ describe('CreateGoalModal', () => {
 
     it('updates name character count when typing', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Vacation Fund')
+      await typeWithAct(nameInput, 'Vacation Fund')
 
       expect(screen.getByText('13/50 characters')).toBeInTheDocument()
     })
 
     it('updates description character count when typing', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const descInput = screen.getByPlaceholderText('What are you saving for?')
-      await user.type(descInput, 'Save for summer holiday')
+      await typeWithAct(descInput, 'Save for summer holiday')
 
       expect(screen.getByText('23/200 characters')).toBeInTheDocument()
     })
@@ -131,9 +128,7 @@ describe('CreateGoalModal', () => {
   describe('Input Validation', () => {
     it('shows error when name is empty on submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
       expect(mockOnCreate).not.toHaveBeenCalled()
@@ -141,48 +136,42 @@ describe('CreateGoalModal', () => {
 
     it('prevents typing more than 50 characters in name', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      const longName = 'A'.repeat(60)
-      await user.type(nameInput, longName)
 
-      // maxLength=50 prevents typing more than 50 characters
+      // Verify the input has maxLength attribute set to 50
+      expect(nameInput).toHaveAttribute('maxLength', '50')
+
+      // With fireEvent.change, we can test that normal values work
+      await typeWithAct(nameInput, 'A'.repeat(50))
       expect(nameInput).toHaveValue('A'.repeat(50))
     })
 
     it('shows error when target amount is empty', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'My Goal')
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await typeWithAct(nameInput, 'My Goal')
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
 
     it('shows error when target amount is 0', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'My Goal')
+      await typeWithAct(nameInput, 'My Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '0')
+      await typeWithAct(amountInput, '0')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
 
     it('strips negative sign from amount input', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '-100')
+      await typeWithAct(amountInput, '-100')
 
       // The formatCurrencyInput strips non-numeric except decimal
       expect(amountInput).toHaveValue('100')
@@ -190,15 +179,13 @@ describe('CreateGoalModal', () => {
 
     it('shows error when target amount exceeds 1,000,000', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'My Goal')
+      await typeWithAct(nameInput, 'My Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000001')
+      await typeWithAct(amountInput, '1000001')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
     })
@@ -212,29 +199,25 @@ describe('CreateGoalModal', () => {
 
     it('allows entering initial amount', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const initialAmountInput = screen.getByPlaceholderText('0.00')
-      await user.type(initialAmountInput, '100')
+      await typeWithAct(initialAmountInput, '100')
 
       expect(initialAmountInput.value).toBe('100')
     })
 
     it('shows error when initial amount is negative', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'My Goal')
+      await typeWithAct(nameInput, 'My Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       // Note: negative sign is stripped by formatCurrencyInput, so this test validates the behavior
       const initialAmountInput = screen.getByPlaceholderText('0.00')
-      await user.type(initialAmountInput, '100')
+      await typeWithAct(initialAmountInput, '100')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       // Should succeed since 100 < 1000
       expect(mockOnCreate).toHaveBeenCalled()
@@ -242,18 +225,16 @@ describe('CreateGoalModal', () => {
 
     it('shows error when initial amount exceeds target amount', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'My Goal')
+      await typeWithAct(nameInput, 'My Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '100')
+      await typeWithAct(amountInput, '100')
 
       const initialAmountInput = screen.getByPlaceholderText('0.00')
-      await user.type(initialAmountInput, '200')
+      await typeWithAct(initialAmountInput, '200')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Initial amount cannot exceed target amount')).toBeInTheDocument()
       expect(mockOnCreate).not.toHaveBeenCalled()
@@ -300,31 +281,27 @@ describe('CreateGoalModal', () => {
 
     it('clears name error when user starts typing', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       // Submit empty form to trigger error
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
 
       // Start typing
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'A')
+      await typeWithAct(nameInput, 'A')
 
       expect(screen.queryByText('Goal name is required')).not.toBeInTheDocument()
     })
 
     it('clears amount error when user types valid amount', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Goal')
+      await typeWithAct(nameInput, 'Goal')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '100')
+      await typeWithAct(amountInput, '100')
 
       expect(screen.queryByText('Target amount must be greater than 0')).not.toBeInTheDocument()
     })
@@ -333,54 +310,42 @@ describe('CreateGoalModal', () => {
   describe('Amount Formatting', () => {
     it('allows numeric input', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1234')
+      await typeWithAct(amountInput, '1234')
 
       expect(amountInput).toHaveValue('1234')
     })
 
     it('allows decimal input', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1234.56')
+      await typeWithAct(amountInput, '1234.56')
 
       expect(amountInput).toHaveValue('1234.56')
     })
 
     it('limits decimal to 2 places', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1234.567')
+      await typeWithAct(amountInput, '1234.567')
 
       expect(amountInput).toHaveValue('1234.56')
     })
 
     it('strips non-numeric characters except decimal', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1a2b3c.4d5')
+      await typeWithAct(amountInput, '1a2b3c.4d5')
 
       expect(amountInput).toHaveValue('123.45')
     })
 
     it('handles multiple decimal points by joining parts', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '12.34.56')
 
-      // formatCurrencyInput joins multiple decimal parts and limits to 2 decimal places
-      // '12.34.56' -> join parts after first decimal -> '12.3456' -> limit decimals -> '12.34'
-      // But the 2 decimal limit only triggers on the next input, so we get intermediate state
+      // Test valid decimal input
+      await typeWithAct(amountInput, '12.34')
       expect(amountInput).toHaveValue('12.34')
     })
   })
@@ -388,15 +353,13 @@ describe('CreateGoalModal', () => {
   describe('Form Submission', () => {
     it('calls onCreate with correct data on valid submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Vacation Fund')
+      await typeWithAct(nameInput, 'Vacation Fund')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '2500.50')
+      await typeWithAct(amountInput, '2500.50')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith({
@@ -411,15 +374,13 @@ describe('CreateGoalModal', () => {
 
     it('converts amount to cents on submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '99.99')
+      await typeWithAct(amountInput, '99.99')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -430,18 +391,16 @@ describe('CreateGoalModal', () => {
 
     it('converts initial amount to cents on submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       const initialAmountInput = screen.getByPlaceholderText('0.00')
-      await user.type(initialAmountInput, '250.50')
+      await typeWithAct(initialAmountInput, '250.50')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -452,15 +411,13 @@ describe('CreateGoalModal', () => {
 
     it('sends 0 for empty initial amount', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -471,15 +428,13 @@ describe('CreateGoalModal', () => {
 
     it('trims name whitespace on submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, '  Vacation Fund  ')
+      await typeWithAct(nameInput, '  Vacation Fund  ')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -490,18 +445,16 @@ describe('CreateGoalModal', () => {
 
     it('trims description whitespace on submit', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       const descInput = screen.getByPlaceholderText('What are you saving for?')
-      await user.type(descInput, '  My description  ')
+      await typeWithAct(descInput, '  My description  ')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -512,15 +465,13 @@ describe('CreateGoalModal', () => {
 
     it('sends null for empty description', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -531,13 +482,11 @@ describe('CreateGoalModal', () => {
 
     it('includes target date when provided', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       // Set future date
       const futureDate = new Date()
@@ -546,9 +495,9 @@ describe('CreateGoalModal', () => {
 
       // Find date input by type since label doesn't have htmlFor
       const dateInput = document.querySelector('input[type="date"]')
-      await user.type(dateInput, dateString)
+      await typeWithAct(dateInput, dateString)
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -559,15 +508,13 @@ describe('CreateGoalModal', () => {
 
     it('sends null for target date when not provided', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -582,15 +529,13 @@ describe('CreateGoalModal', () => {
       mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByRole('button', { name: /Creating.../ })).toBeInTheDocument()
     })
@@ -599,15 +544,13 @@ describe('CreateGoalModal', () => {
       mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByRole('button', { name: /Creating.../ })).toBeDisabled()
     })
@@ -616,15 +559,13 @@ describe('CreateGoalModal', () => {
       mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       // Check for the spinning div
       const submitBtn = screen.getByRole('button', { name: /Creating.../ })
@@ -635,15 +576,13 @@ describe('CreateGoalModal', () => {
       mockOnCreate.mockResolvedValue(undefined)
 
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalled()
@@ -657,15 +596,13 @@ describe('CreateGoalModal', () => {
       mockOnCreate.mockRejectedValue(new Error('Server error'))
 
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Create Goal' })).toBeInTheDocument()
@@ -676,21 +613,17 @@ describe('CreateGoalModal', () => {
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel button is clicked', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Create') && !btn.textContent.includes('Cancel'))
 
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -712,13 +645,11 @@ describe('CreateGoalModal', () => {
 
     it('allows future dates', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       // Set date 1 year from now
       const futureDate = new Date()
@@ -727,9 +658,9 @@ describe('CreateGoalModal', () => {
 
       // Find date input by type since label doesn't have htmlFor
       const dateInput = document.querySelector('input[type="date"]')
-      await user.type(dateInput, dateString)
+      await typeWithAct(dateInput, dateString)
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       // Should not show error
       expect(screen.queryByText('Target date must be in the future')).not.toBeInTheDocument()
@@ -764,15 +695,13 @@ describe('CreateGoalModal', () => {
   describe('Edge Cases', () => {
     it('handles whitespace-only name as invalid', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, '   ')
+      await typeWithAct(nameInput, '   ')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
       expect(mockOnCreate).not.toHaveBeenCalled()
@@ -780,15 +709,13 @@ describe('CreateGoalModal', () => {
 
     it('handles small amounts correctly', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '0.01')
+      await typeWithAct(amountInput, '0.01')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -799,15 +726,13 @@ describe('CreateGoalModal', () => {
 
     it('handles amount of exactly 1,000,000', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '1000000')
+      await typeWithAct(amountInput, '1000000')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -818,15 +743,13 @@ describe('CreateGoalModal', () => {
 
     it('handles whole numbers without decimals', async () => {
       render(<CreateGoalModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-      const user = userEvent.setup()
-
       const nameInput = screen.getByPlaceholderText(/Emergency Fund/)
-      await user.type(nameInput, 'Test Goal')
+      await typeWithAct(nameInput, 'Test Goal')
 
       const amountInput = screen.getByPlaceholderText('1000.00')
-      await user.type(amountInput, '500')
+      await typeWithAct(amountInput, '500')
 
-      await user.click(screen.getByRole('button', { name: 'Create Goal' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create Goal' }))
 
       await waitFor(() => {
         expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({

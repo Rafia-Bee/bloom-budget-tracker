@@ -102,13 +102,14 @@ export const submitWithAct = async (formElement) => {
 
 /**
  * Focus an element wrapped in act().
+ * Uses native DOM focus() method to actually move focus.
  *
  * @param {HTMLElement} element - The element to focus
  * @returns {Promise<void>}
  */
 export const focusWithAct = async (element) => {
     await act(async () => {
-        fireEvent.focus(element);
+        element.focus();
     });
 };
 
@@ -145,5 +146,19 @@ export const flushPromises = async () => {
 export const uploadWithAct = async (inputElement, file) => {
     await act(async () => {
         fireEvent.change(inputElement, { target: { files: [file] } });
+    });
+};
+
+/**
+ * Trigger a keydown event wrapped in act().
+ * Use this for simulating keyboard interactions.
+ *
+ * @param {HTMLElement} element - The element to trigger the keydown on
+ * @param {string} key - The key to press (e.g., ' ', 'Enter', 'Escape')
+ * @returns {Promise<void>}
+ */
+export const keydownWithAct = async (element, key) => {
+    await act(async () => {
+        fireEvent.keyDown(element, { key, code: key === " " ? "Space" : key });
     });
 };

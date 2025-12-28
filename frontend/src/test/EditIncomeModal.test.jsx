@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * EditIncomeModal Test Suite
  *
@@ -12,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
 import EditIncomeModal from '../components/EditIncomeModal'
 
 describe('EditIncomeModal', () => {
@@ -117,11 +118,10 @@ describe('EditIncomeModal', () => {
     })
 
     it('allows changing income type', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Bonus')
+      await selectWithAct(typeSelect, 'Bonus')
 
       expect(typeSelect).toHaveValue('Bonus')
     })
@@ -129,23 +129,21 @@ describe('EditIncomeModal', () => {
 
   describe('Form Editing', () => {
     it('allows editing amount', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '3000.50')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '3000.50')
 
       expect(amountInput).toHaveValue(3000.5)
     })
 
     it('allows editing date', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const dateInput = screen.getByLabelText('Date')
-      await user.clear(dateInput)
-      await user.type(dateInput, '2025-12-25')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2025-12-25')
 
       expect(dateInput).toHaveValue('2025-12-25')
     })
@@ -181,21 +179,19 @@ describe('EditIncomeModal', () => {
 
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Save') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -203,13 +199,12 @@ describe('EditIncomeModal', () => {
 
   describe('Form Submission', () => {
     it('calls onEdit with income ID and updated data', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Bonus')
+      await selectWithAct(typeSelect, 'Bonus')
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -221,14 +216,13 @@ describe('EditIncomeModal', () => {
     })
 
     it('converts edited amount from euros to cents', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '1234.56')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '1234.56')
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -238,14 +232,13 @@ describe('EditIncomeModal', () => {
     })
 
     it('submits with edited date', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
       const dateInput = screen.getByLabelText('Date')
-      await user.clear(dateInput)
-      await user.type(dateInput, '2025-12-31')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2025-12-31')
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -255,13 +248,12 @@ describe('EditIncomeModal', () => {
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnEdit.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       expect(screen.getByText('Saving...')).toBeInTheDocument()
 
@@ -270,13 +262,12 @@ describe('EditIncomeModal', () => {
     })
 
     it('disables button while loading', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnEdit.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
 
@@ -285,10 +276,9 @@ describe('EditIncomeModal', () => {
     })
 
     it('submits without editing when no changes made', async () => {
-      const user = userEvent.setup()
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, {
@@ -302,14 +292,13 @@ describe('EditIncomeModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when submission fails', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce({
         response: { data: { error: 'Income update failed' } }
       })
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(screen.getByText('Income update failed')).toBeInTheDocument()
@@ -317,12 +306,11 @@ describe('EditIncomeModal', () => {
     })
 
     it('shows generic error when no response error message', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce(new Error('Network error'))
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update income')).toBeInTheDocument()
@@ -330,14 +318,13 @@ describe('EditIncomeModal', () => {
     })
 
     it('error message is dismissible', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce({
         response: { data: { error: 'Test error' } }
       })
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(screen.getByText('Test error')).toBeInTheDocument()
@@ -346,20 +333,19 @@ describe('EditIncomeModal', () => {
       // Find and click dismiss button
       const errorDiv = screen.getByText('Test error').closest('div')
       const dismissButton = errorDiv.querySelector('button')
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       expect(screen.queryByText('Test error')).not.toBeInTheDocument()
     })
 
     it('resets loading state after error', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce({
         response: { data: { error: 'Update failed' } }
       })
 
       render(<EditIncomeModal onClose={mockOnClose} onEdit={mockOnEdit} income={mockIncome} />)
 
-      await user.click(screen.getByRole('button', { name: 'Save' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save' }))
 
       await waitFor(() => {
         expect(screen.getByText('Update failed')).toBeInTheDocument()

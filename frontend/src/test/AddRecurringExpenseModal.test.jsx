@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * AddRecurringExpenseModal Test Suite
  *
@@ -15,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal'
 import { debtAPI, goalAPI, subcategoryAPI } from '../api'
 
@@ -212,9 +213,8 @@ describe('AddRecurringExpenseModal', () => {
         expect(frequencySelect).toBeInTheDocument()
       })
 
-      const user = userEvent.setup()
       const frequencySelect = screen.getByDisplayValue('Monthly')
-      await user.click(frequencySelect)
+      await clickWithAct(frequencySelect)
 
       expect(screen.getByText('Weekly')).toBeInTheDocument()
       expect(screen.getByText('Biweekly (Every 2 weeks)')).toBeInTheDocument()
@@ -224,13 +224,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('shows day of week selector for weekly frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'weekly')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'weekly')
 
       await waitFor(() => {
         expect(screen.getByText('Day of Week')).toBeInTheDocument()
@@ -240,13 +238,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('shows day of week selector for biweekly frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'biweekly')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'biweekly')
 
       await waitFor(() => {
         expect(screen.getByText('Day of Week')).toBeInTheDocument()
@@ -263,13 +259,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('shows custom day interval input for custom frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'custom')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'custom')
 
       await waitFor(() => {
         expect(screen.getByText('Repeat every X days')).toBeInTheDocument()
@@ -278,13 +272,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('shows all weekday options', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'weekly')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'weekly')
 
       await waitFor(() => {
         expect(screen.getByText('Day of Week')).toBeInTheDocument()
@@ -325,13 +317,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('updates subcategories when category changes', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Flexible Expenses')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Flexible Expenses')
 
       await waitFor(() => {
         expect(screen.getByText('Food')).toBeInTheDocument()
@@ -342,8 +332,6 @@ describe('AddRecurringExpenseModal', () => {
 
     it('shows credit card option for Debt Payments', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       // Wait for API calls to complete
       await waitFor(() => {
         expect(debtAPI.getAll).toHaveBeenCalled()
@@ -351,7 +339,7 @@ describe('AddRecurringExpenseModal', () => {
 
       // Find category select and change it
       const categorySelect = screen.getByDisplayValue('Fixed Expenses')
-      await user.selectOptions(categorySelect, 'Debt Payments')
+      await selectWithAct(categorySelect, 'Debt Payments')
 
       // Wait for the category to be changed
       await waitFor(() => {
@@ -387,13 +375,11 @@ describe('AddRecurringExpenseModal', () => {
       debtAPI.getAll.mockResolvedValue({ data: mockDebts })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
 
       await waitFor(() => {
         expect(screen.getByText('Student Loan')).toBeInTheDocument()
@@ -407,13 +393,11 @@ describe('AddRecurringExpenseModal', () => {
       debtAPI.getAll.mockResolvedValue({ data: mockDebts })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
 
       await waitFor(() => {
         expect(screen.getByText('Student Loan')).toBeInTheDocument()
@@ -422,7 +406,7 @@ describe('AddRecurringExpenseModal', () => {
       // Find the subcategory select and change it
       const subcategorySelects = screen.getAllByRole('combobox')
       const subcategorySelect = subcategorySelects.find(s => s.value === 'Credit Card')
-      await user.selectOptions(subcategorySelect, 'Student Loan')
+      await selectWithAct(subcategorySelect, 'Student Loan')
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('250.00')).toBeInTheDocument()
@@ -436,13 +420,11 @@ describe('AddRecurringExpenseModal', () => {
       debtAPI.getAll.mockResolvedValue({ data: mockDebts })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Debt Payments')
 
       await waitFor(() => {
         expect(screen.getByText('Car Loan')).toBeInTheDocument()
@@ -450,7 +432,7 @@ describe('AddRecurringExpenseModal', () => {
 
       const subcategorySelects = screen.getAllByRole('combobox')
       const subcategorySelect = subcategorySelects.find(s => s.value === 'Credit Card')
-      await user.selectOptions(subcategorySelect, 'Car Loan')
+      await selectWithAct(subcategorySelect, 'Car Loan')
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('Car Loan Payment')).toBeInTheDocument()
@@ -480,13 +462,11 @@ describe('AddRecurringExpenseModal', () => {
       goalAPI.getAll.mockResolvedValue({ data: { goals: mockGoals } })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
 
       await waitFor(() => {
         expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
@@ -498,13 +478,11 @@ describe('AddRecurringExpenseModal', () => {
       goalAPI.getAll.mockResolvedValue({ data: { goals: [] } })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
 
       await waitFor(() => {
         expect(screen.getByText(/Create goals in the Goals page/)).toBeInTheDocument()
@@ -518,13 +496,11 @@ describe('AddRecurringExpenseModal', () => {
       goalAPI.getAll.mockResolvedValue({ data: { goals: mockGoals } })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
+      await selectWithAct(screen.getByDisplayValue('Fixed Expenses'), 'Savings & Investments')
 
       await waitFor(() => {
         expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
@@ -532,7 +508,7 @@ describe('AddRecurringExpenseModal', () => {
 
       const subcategorySelects = screen.getAllByRole('combobox')
       const subcategorySelect = subcategorySelects.find(s => s.value === 'Other')
-      await user.selectOptions(subcategorySelect, 'Emergency Fund')
+      await selectWithAct(subcategorySelect, 'Emergency Fund')
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('Emergency Fund Contribution')).toBeInTheDocument()
@@ -577,12 +553,10 @@ describe('AddRecurringExpenseModal', () => {
 
     it('can toggle fixed bill checkbox', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       const checkbox = screen.getByRole('checkbox')
       expect(checkbox).not.toBeChecked()
 
-      await user.click(checkbox)
+      await clickWithAct(checkbox)
 
       expect(checkbox).toBeChecked()
     })
@@ -597,19 +571,17 @@ describe('AddRecurringExpenseModal', () => {
   describe('Form Submission', () => {
     it('calls onAdd with correct data on submit', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       // Clear and type new amount
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '15.99')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '15.99')
 
       // Submit
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -627,17 +599,15 @@ describe('AddRecurringExpenseModal', () => {
 
     it('converts amount to cents', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '99.99')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '99.99')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -650,17 +620,15 @@ describe('AddRecurringExpenseModal', () => {
       mockOnAdd.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument()
     })
@@ -669,17 +637,15 @@ describe('AddRecurringExpenseModal', () => {
       mockOnAdd.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
@@ -687,19 +653,17 @@ describe('AddRecurringExpenseModal', () => {
 
     it('includes day_of_week for weekly frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'weekly')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'weekly')
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '20')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '20')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -712,17 +676,15 @@ describe('AddRecurringExpenseModal', () => {
 
     it('includes day_of_month for monthly frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '15')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '15')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -735,30 +697,28 @@ describe('AddRecurringExpenseModal', () => {
 
     it('includes frequency_value for custom frequency', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Monthly'), 'custom')
+      await selectWithAct(screen.getByDisplayValue('Monthly'), 'custom')
 
       await waitFor(() => {
         expect(screen.getByText('Repeat every X days')).toBeInTheDocument()
       })
 
       const frequencyValueInput = screen.getByDisplayValue('30')
-      await user.clear(frequencyValueInput)
-      await user.type(frequencyValueInput, '45')
+      await clearWithAct(frequencyValueInput)
+      await typeWithAct(frequencyValueInput, '45')
 
       // When custom is selected, there are 2 spinbuttons: amount and frequency_value
       // Amount input is the first one (required, step 0.01)
       const spinbuttons = screen.getAllByRole('spinbutton')
       const amountInput = spinbuttons.find(el => el.hasAttribute('step'))
-      await user.clear(amountInput)
-      await user.type(amountInput, '25')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '25')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -770,19 +730,17 @@ describe('AddRecurringExpenseModal', () => {
 
     it('includes is_fixed_bill when checked', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '50')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '50')
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -799,17 +757,15 @@ describe('AddRecurringExpenseModal', () => {
       })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to create recurring expense')).toBeInTheDocument()
@@ -820,17 +776,15 @@ describe('AddRecurringExpenseModal', () => {
       mockOnAdd.mockRejectedValue({})
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to save recurring expense')).toBeInTheDocument()
@@ -843,17 +797,15 @@ describe('AddRecurringExpenseModal', () => {
       })
 
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument()
       })
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
@@ -877,21 +829,17 @@ describe('AddRecurringExpenseModal', () => {
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel button is clicked', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Create') && !btn.textContent.includes('Cancel'))
 
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -934,10 +882,8 @@ describe('AddRecurringExpenseModal', () => {
 
     it('updates character count when typing notes', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       const notesTextarea = screen.getByPlaceholderText('Add any additional details...')
-      await user.type(notesTextarea, 'Test note')
+      await typeWithAct(notesTextarea, 'Test note')
 
       expect(screen.getByText('9/1000 characters')).toBeInTheDocument()
     })
@@ -984,13 +930,11 @@ describe('AddRecurringExpenseModal', () => {
 
     it('can change payment method', async () => {
       render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-      const user = userEvent.setup()
-
       await waitFor(() => {
         expect(screen.getByDisplayValue('Credit Card')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByDisplayValue('Credit Card'), 'Debit card')
+      await selectWithAct(screen.getByDisplayValue('Credit Card'), 'Debit card')
 
       expect(screen.getByDisplayValue('Debit Card')).toBeInTheDocument()
     })

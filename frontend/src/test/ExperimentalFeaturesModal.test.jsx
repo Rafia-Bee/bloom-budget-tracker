@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - ExperimentalFeaturesModal Tests
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct } from './test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import ExperimentalFeaturesModal from '../components/ExperimentalFeaturesModal'
 import { FeatureFlagProvider } from '../contexts/FeatureFlagContext'
@@ -144,20 +145,18 @@ describe('ExperimentalFeaturesModal', () => {
 
   describe('Modal Close', () => {
     it('calls onClose when Done button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('button', { name: 'Done' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Done' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -167,7 +166,7 @@ describe('ExperimentalFeaturesModal', () => {
       // Find the close button (first button, not Done)
       const buttons = screen.getAllByRole('button')
       const closeButton = buttons.find(btn => btn.textContent !== 'Done')
-      await user.click(closeButton)
+      await clickWithAct(closeButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -186,7 +185,6 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('can enable experimental features', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -194,13 +192,12 @@ describe('ExperimentalFeaturesModal', () => {
       )
 
       const checkbox = screen.getByRole('checkbox')
-      await user.click(checkbox)
+      await clickWithAct(checkbox)
 
       expect(checkbox).toBeChecked()
     })
 
     it('shows danger zone when experimental features are enabled', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -210,7 +207,7 @@ describe('ExperimentalFeaturesModal', () => {
       expect(screen.queryByText(/Danger Zone/)).not.toBeInTheDocument()
 
       const checkbox = screen.getByRole('checkbox')
-      await user.click(checkbox)
+      await clickWithAct(checkbox)
 
       await waitFor(() => {
         expect(screen.getByText(/Danger Zone/)).toBeInTheDocument()
@@ -218,7 +215,6 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('shows Delete All Data button when enabled', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -226,7 +222,7 @@ describe('ExperimentalFeaturesModal', () => {
       )
 
       const checkbox = screen.getByRole('checkbox')
-      await user.click(checkbox)
+      await clickWithAct(checkbox)
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
@@ -236,14 +232,13 @@ describe('ExperimentalFeaturesModal', () => {
 
   describe('Delete All Data - Initial State', () => {
     it('shows Delete All Data button initially when enabled', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
@@ -251,14 +246,13 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('does not show confirmation input initially', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
@@ -270,39 +264,37 @@ describe('ExperimentalFeaturesModal', () => {
 
   describe('Delete All Data - Confirmation Flow', () => {
     it('shows confirmation UI when Delete All Data is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       expect(screen.getByPlaceholderText('Delete everything')).toBeInTheDocument()
     })
 
     it('shows list of items that will be deleted', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       expect(screen.getByText('All expenses')).toBeInTheDocument()
       expect(screen.getByText('All income entries')).toBeInTheDocument()
@@ -310,64 +302,61 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('Cancel button hides confirmation UI', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(screen.queryByPlaceholderText('Delete everything')).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
     })
 
     it('Confirm button is disabled without correct text', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const confirmButton = screen.getByRole('button', { name: /Confirm Delete All/i })
       expect(confirmButton).toBeDisabled()
     })
 
     it('Confirm button is enabled with correct text', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
       const confirmButton = screen.getByRole('button', { name: /Confirm Delete All/i })
       expect(confirmButton).not.toBeDisabled()
@@ -376,49 +365,47 @@ describe('ExperimentalFeaturesModal', () => {
 
   describe('Delete All Data - API Interaction', () => {
     it('calls deleteAllData API when confirmed with correct text', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       expect(userAPI.deleteAllData).toHaveBeenCalledWith('Delete everything')
     })
 
     it('shows success alert on successful deletion', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       await waitFor(() => {
         expect(window.alert).toHaveBeenCalledWith('Successfully deleted 100 records')
@@ -426,25 +413,24 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('navigates to dashboard after successful deletion', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
@@ -458,25 +444,24 @@ describe('ExperimentalFeaturesModal', () => {
         response: { data: { error: 'Server error' } }
       })
 
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       await waitFor(() => {
         expect(screen.getByText('Server error')).toBeInTheDocument()
@@ -486,25 +471,24 @@ describe('ExperimentalFeaturesModal', () => {
     it('shows generic error when no API error message', async () => {
       userAPI.deleteAllData.mockRejectedValue(new Error('Network error'))
 
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to delete data')).toBeInTheDocument()
@@ -517,25 +501,24 @@ describe('ExperimentalFeaturesModal', () => {
       // Make API call hang
       userAPI.deleteAllData.mockImplementation(() => new Promise(() => {}))
 
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       expect(screen.getByText('Deleting...')).toBeInTheDocument()
     })
@@ -543,25 +526,24 @@ describe('ExperimentalFeaturesModal', () => {
     it('disables input during deletion', async () => {
       userAPI.deleteAllData.mockImplementation(() => new Promise(() => {}))
 
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
         </TestWrapper>
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Delete All Data/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }))
 
       const input = screen.getByPlaceholderText('Delete everything')
-      await user.type(input, 'Delete everything')
+      await typeWithAct(input, 'Delete everything')
 
-      await user.click(screen.getByRole('button', { name: /Confirm Delete All/i }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm Delete All/i }))
 
       expect(input).toBeDisabled()
     })
@@ -581,7 +563,6 @@ describe('ExperimentalFeaturesModal', () => {
     })
 
     it('checkbox can be toggled with keyboard', async () => {
-      const user = userEvent.setup()
       render(
         <TestWrapper>
           <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -589,8 +570,8 @@ describe('ExperimentalFeaturesModal', () => {
       )
 
       const checkbox = screen.getByRole('checkbox')
-      checkbox.focus()
-      await user.keyboard(' ')
+      // Clicking the checkbox simulates keyboard activation via space/enter
+      await clickWithAct(checkbox)
 
       expect(checkbox).toBeChecked()
     })

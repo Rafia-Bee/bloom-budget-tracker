@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * FilterTransactionsModal Test Suite
  *
@@ -8,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct } from './test-utils'
 import FilterTransactionsModal from '../components/FilterTransactionsModal'
 
 // Mock the APIs
@@ -137,7 +138,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('allows selecting Expenses', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -146,14 +147,14 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Expenses' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Expenses' }))
 
       const expensesButton = screen.getByRole('button', { name: 'Expenses' })
       expect(expensesButton).toHaveClass('bg-bloom-pink')
     })
 
     it('allows selecting Income', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -162,14 +163,14 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Income' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Income' }))
 
       const incomeButton = screen.getByRole('button', { name: 'Income' })
       expect(incomeButton).toHaveClass('bg-bloom-mint')
     })
 
     it('hides expense-specific filters when Income is selected', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -178,7 +179,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Income' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Income' }))
 
       expect(screen.queryByText('Category')).not.toBeInTheDocument()
       expect(screen.queryByText('Subcategory')).not.toBeInTheDocument()
@@ -200,7 +201,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('allows typing in search field', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -210,13 +211,13 @@ describe('FilterTransactionsModal', () => {
       )
 
       const searchInput = screen.getByPlaceholderText('Search transactions...')
-      await user.type(searchInput, 'groceries')
+      await typeWithAct(searchInput, 'groceries')
 
       expect(searchInput).toHaveValue('groceries')
     })
 
     it('debounces search input (500ms)', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -226,10 +227,10 @@ describe('FilterTransactionsModal', () => {
       )
 
       const searchInput = screen.getByPlaceholderText('Search transactions...')
-      await user.type(searchInput, 'test')
+      await typeWithAct(searchInput, 'test')
 
       // Apply immediately after typing
-      await user.click(screen.getByRole('button', { name: 'Apply Filters' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Apply Filters' }))
 
       // Search should not be in filters yet (not debounced)
       expect(mockOnApply).toHaveBeenCalledWith(
@@ -243,7 +244,7 @@ describe('FilterTransactionsModal', () => {
         vi.advanceTimersByTime(500)
       })
 
-      await user.click(screen.getByRole('button', { name: 'Apply Filters' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Apply Filters' }))
 
       // Now search should be in filters
       expect(mockOnApply).toHaveBeenCalledWith(
@@ -254,7 +255,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Date Filters', () => {
     it('allows setting start date', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -266,13 +267,13 @@ describe('FilterTransactionsModal', () => {
       // Use getAllByDisplayValue for type=date inputs
       const allInputs = document.querySelectorAll('input[type="date"]')
       const startDate = allInputs[0]
-      await user.type(startDate, '2025-01-01')
+      await typeWithAct(startDate, '2025-01-01')
 
       expect(startDate).toHaveValue('2025-01-01')
     })
 
     it('allows setting end date', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -283,7 +284,7 @@ describe('FilterTransactionsModal', () => {
 
       const allInputs = document.querySelectorAll('input[type="date"]')
       const endDate = allInputs[1]
-      await user.type(endDate, '2025-12-31')
+      await typeWithAct(endDate, '2025-12-31')
 
       expect(endDate).toHaveValue('2025-12-31')
     })
@@ -316,7 +317,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('allows selecting a category', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -331,13 +332,13 @@ describe('FilterTransactionsModal', () => {
 
       const selects = screen.getAllByRole('combobox')
       const categorySelect = selects[0]
-      await user.selectOptions(categorySelect, 'Fixed Expenses')
+      await selectWithAct(categorySelect, 'Fixed Expenses')
 
       expect(categorySelect).toHaveValue('Fixed Expenses')
     })
 
     it('clears subcategory when category changes', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -353,13 +354,13 @@ describe('FilterTransactionsModal', () => {
       const selects = screen.getAllByRole('combobox')
       const categorySelect = selects[0]
       const subcategorySelect = selects[1]
-      await user.selectOptions(categorySelect, 'Fixed Expenses')
+      await selectWithAct(categorySelect, 'Fixed Expenses')
 
       // Select subcategory
-      await user.selectOptions(subcategorySelect, 'Rent')
+      await selectWithAct(subcategorySelect, 'Rent')
 
       // Change category
-      await user.selectOptions(categorySelect, 'Flexible Expenses')
+      await selectWithAct(categorySelect, 'Flexible Expenses')
 
       // Subcategory should be reset
       expect(subcategorySelect).toHaveValue('')
@@ -368,7 +369,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Subcategory Filter', () => {
     it('shows subcategories for selected category', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -383,7 +384,7 @@ describe('FilterTransactionsModal', () => {
 
       const selects = screen.getAllByRole('combobox')
       const categorySelect = selects[0]
-      await user.selectOptions(categorySelect, 'Fixed Expenses')
+      await selectWithAct(categorySelect, 'Fixed Expenses')
 
       // Check subcategories appear
       expect(screen.getByRole('option', { name: 'Rent' })).toBeInTheDocument()
@@ -392,7 +393,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('includes debts in Debt Payments subcategories', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -407,7 +408,7 @@ describe('FilterTransactionsModal', () => {
 
       const selects = screen.getAllByRole('combobox')
       const categorySelect = selects[0]
-      await user.selectOptions(categorySelect, 'Debt Payments')
+      await selectWithAct(categorySelect, 'Debt Payments')
 
       // Should show debts in subcategory dropdown
       // Check that debts appear in the subcategory options
@@ -440,7 +441,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('allows selecting payment method', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -451,7 +452,7 @@ describe('FilterTransactionsModal', () => {
 
       const selects = screen.getAllByRole('combobox')
       const paymentSelect = selects[2]
-      await user.selectOptions(paymentSelect, 'Debit card')
+      await selectWithAct(paymentSelect, 'Debit card')
 
       expect(paymentSelect).toHaveValue('Debit card')
     })
@@ -459,7 +460,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Amount Range', () => {
     it('allows setting min amount', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -469,13 +470,13 @@ describe('FilterTransactionsModal', () => {
       )
 
       const minAmount = screen.getByPlaceholderText('0.00')
-      await user.type(minAmount, '10.50')
+      await typeWithAct(minAmount, '10.50')
 
       expect(minAmount).toHaveValue(10.5)
     })
 
     it('allows setting max amount', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -485,7 +486,7 @@ describe('FilterTransactionsModal', () => {
       )
 
       const maxAmount = screen.getByPlaceholderText('999.99')
-      await user.type(maxAmount, '500')
+      await typeWithAct(maxAmount, '500')
 
       expect(maxAmount).toHaveValue(500)
     })
@@ -523,7 +524,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Apply Filters', () => {
     it('calls onApply with all filters', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -532,7 +533,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Apply Filters' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Apply Filters' }))
 
       expect(mockOnApply).toHaveBeenCalledWith({
         startDate: '',
@@ -548,7 +549,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('calls onClose after applying', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -557,7 +558,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Apply Filters' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Apply Filters' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -565,7 +566,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Clear All', () => {
     it('clears all filters', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       const initialFilters = {
         startDate: '2025-01-01',
         endDate: '2025-01-31',
@@ -587,7 +588,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Clear All' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Clear All' }))
 
       expect(mockOnApply).toHaveBeenCalledWith({
         startDate: '',
@@ -603,7 +604,7 @@ describe('FilterTransactionsModal', () => {
     })
 
     it('calls onClose after clearing', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -612,7 +613,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Clear All' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Clear All' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -620,7 +621,7 @@ describe('FilterTransactionsModal', () => {
 
   describe('Close Modal', () => {
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
       render(
         <FilterTransactionsModal
           isOpen={true}
@@ -629,7 +630,7 @@ describe('FilterTransactionsModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: '×' }))
+      await clickWithAct(screen.getByRole('button', { name: '×' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })

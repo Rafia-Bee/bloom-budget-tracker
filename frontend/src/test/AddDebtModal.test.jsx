@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * AddDebtModal Test Suite
  *
@@ -12,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct } from './test-utils'
 import AddDebtModal from '../components/AddDebtModal'
 
 describe('AddDebtModal', () => {
@@ -148,41 +149,37 @@ describe('AddDebtModal', () => {
 
   describe('Form Interactions', () => {
     it('allows entering debt name', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const nameInput = screen.getByPlaceholderText(/Student Loan, Credit Card/)
-      await user.type(nameInput, 'Student Loan')
+      await typeWithAct(nameInput, 'Student Loan')
 
       expect(nameInput).toHaveValue('Student Loan')
     })
 
     it('allows entering current balance', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const balanceInput = screen.getByPlaceholderText('1500.00')
-      await user.type(balanceInput, '2500.50')
+      await typeWithAct(balanceInput, '2500.50')
 
       expect(balanceInput).toHaveValue(2500.5)
     })
 
     it('allows entering original amount', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const originalInput = screen.getByPlaceholderText(/2000.00 \(optional\)/)
-      await user.type(originalInput, '3000')
+      await typeWithAct(originalInput, '3000')
 
       expect(originalInput).toHaveValue(3000)
     })
 
     it('allows entering monthly payment', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const paymentInput = screen.getByPlaceholderText(/100.00 \(optional\)/)
-      await user.type(paymentInput, '150.25')
+      await typeWithAct(paymentInput, '150.25')
 
       expect(paymentInput).toHaveValue(150.25)
     })
@@ -190,21 +187,19 @@ describe('AddDebtModal', () => {
 
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Add') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -212,13 +207,12 @@ describe('AddDebtModal', () => {
 
   describe('Form Submission', () => {
     it('calls onAdd with debt data on submit', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Car Loan')
-      await user.type(screen.getByPlaceholderText('1500.00'), '5000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Car Loan')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '5000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -229,13 +223,12 @@ describe('AddDebtModal', () => {
     })
 
     it('converts amounts to cents before submission', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Credit Card')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1234.56')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Credit Card')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1234.56')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -245,13 +238,12 @@ describe('AddDebtModal', () => {
     })
 
     it('defaults original_amount to current_balance if not provided', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Loan')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Loan')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -262,14 +254,13 @@ describe('AddDebtModal', () => {
     })
 
     it('uses original_amount when provided', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Loan')
-      await user.type(screen.getByPlaceholderText('1500.00'), '500')
-      await user.type(screen.getByPlaceholderText(/2000.00 \(optional\)/), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Loan')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '500')
+      await typeWithAct(screen.getByPlaceholderText(/2000.00 \(optional\)/), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -280,13 +271,12 @@ describe('AddDebtModal', () => {
     })
 
     it('defaults monthly_payment to 0 if not provided', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -296,14 +286,13 @@ describe('AddDebtModal', () => {
     })
 
     it('uses monthly_payment when provided', async () => {
-      const user = userEvent.setup()
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '2000')
-      await user.type(screen.getByPlaceholderText(/100.00 \(optional\)/), '200.50')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '2000')
+      await typeWithAct(screen.getByPlaceholderText(/100.00 \(optional\)/), '200.50')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -313,16 +302,15 @@ describe('AddDebtModal', () => {
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       expect(screen.getByText('Adding...')).toBeInTheDocument()
 
@@ -331,16 +319,15 @@ describe('AddDebtModal', () => {
     })
 
     it('disables button while loading', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled()
 
@@ -351,17 +338,16 @@ describe('AddDebtModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when submission fails', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce({
         response: { data: { error: 'Debt already exists' } }
       })
 
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(screen.getByText('Debt already exists')).toBeInTheDocument()
@@ -369,15 +355,14 @@ describe('AddDebtModal', () => {
     })
 
     it('shows generic error when no response error message', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce(new Error('Network error'))
 
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to add debt')).toBeInTheDocument()
@@ -385,17 +370,16 @@ describe('AddDebtModal', () => {
     })
 
     it('error message is dismissible', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce({
         response: { data: { error: 'Test error' } }
       })
 
       render(<AddDebtModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.type(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
-      await user.type(screen.getByPlaceholderText('1500.00'), '1000')
+      await typeWithAct(screen.getByPlaceholderText(/Student Loan, Credit Card/), 'Debt')
+      await typeWithAct(screen.getByPlaceholderText('1500.00'), '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add Debt' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add Debt' }))
 
       await waitFor(() => {
         expect(screen.getByText('Test error')).toBeInTheDocument()
@@ -404,7 +388,7 @@ describe('AddDebtModal', () => {
       // Find and click dismiss button
       const errorDiv = screen.getByText('Test error').closest('div')
       const dismissButton = errorDiv.querySelector('button')
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       expect(screen.queryByText('Test error')).not.toBeInTheDocument()
     })

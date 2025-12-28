@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * EditDebtModal Test Suite
  *
@@ -13,7 +14,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, clearWithAct } from './test-utils'
 import EditDebtModal from '../components/EditDebtModal'
 
 describe('EditDebtModal', () => {
@@ -107,45 +108,41 @@ describe('EditDebtModal', () => {
 
   describe('Form Interactions', () => {
     it('allows editing the debt name', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const nameInput = screen.getByDisplayValue('Credit Card Debt')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Student Loan')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Student Loan')
 
       expect(nameInput.value).toBe('Student Loan')
     })
 
     it('allows editing the current balance', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const balanceInput = screen.getByDisplayValue('1500.00')
-      await user.clear(balanceInput)
-      await user.type(balanceInput, '1400')
+      await clearWithAct(balanceInput)
+      await typeWithAct(balanceInput, '1400')
 
       expect(balanceInput.value).toBe('1400')
     })
 
     it('allows editing the original amount', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const originalInput = screen.getByDisplayValue('2000.00')
-      await user.clear(originalInput)
-      await user.type(originalInput, '2500')
+      await clearWithAct(originalInput)
+      await typeWithAct(originalInput, '2500')
 
       expect(originalInput.value).toBe('2500')
     })
 
     it('allows editing the monthly payment', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const paymentInput = screen.getByDisplayValue('100.00')
-      await user.clear(paymentInput)
-      await user.type(paymentInput, '150')
+      await clearWithAct(paymentInput)
+      await typeWithAct(paymentInput, '150')
 
       expect(paymentInput.value).toBe('150')
     })
@@ -211,22 +208,20 @@ describe('EditDebtModal', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when Cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const cancelButton = screen.getByRole('button', { name: 'Cancel' })
-      await user.click(cancelButton)
+      await clickWithAct(cancelButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Save') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -234,11 +229,10 @@ describe('EditDebtModal', () => {
 
   describe('Form Submission', () => {
     it('calls onEdit with correct data on successful submission', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, {
@@ -251,15 +245,14 @@ describe('EditDebtModal', () => {
     })
 
     it('converts amounts to cents on submission', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const balanceInput = screen.getByDisplayValue('1500.00')
-      await user.clear(balanceInput)
-      await user.type(balanceInput, '1234.56')
+      await clearWithAct(balanceInput)
+      await typeWithAct(balanceInput, '1234.56')
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -269,15 +262,14 @@ describe('EditDebtModal', () => {
     })
 
     it('uses updated name in submission', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const nameInput = screen.getByDisplayValue('Credit Card Debt')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Updated Debt Name')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Updated Debt Name')
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -287,11 +279,10 @@ describe('EditDebtModal', () => {
     })
 
     it('includes debt id in submission', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.any(Object))
@@ -301,23 +292,21 @@ describe('EditDebtModal', () => {
 
   describe('Loading State', () => {
     it('shows loading text during submission', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(screen.getByText('Saving...')).toBeInTheDocument()
     })
 
     it('disables submit button during loading', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       expect(submitButton).toBeDisabled()
     })
@@ -325,14 +314,13 @@ describe('EditDebtModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when submission fails', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValue({
         response: { data: { error: 'Failed to update debt' } }
       })
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update debt')).toBeInTheDocument()
@@ -340,12 +328,11 @@ describe('EditDebtModal', () => {
     })
 
     it('displays generic error message when no specific error', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValue(new Error())
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update debt')).toBeInTheDocument()
@@ -353,14 +340,13 @@ describe('EditDebtModal', () => {
     })
 
     it('allows dismissing error message', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValue({
         response: { data: { error: 'Failed to update debt' } }
       })
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update debt')).toBeInTheDocument()
@@ -371,7 +357,7 @@ describe('EditDebtModal', () => {
       const errorContainer = errorText.closest('.bg-red-100')
       const dismissButton = errorContainer.querySelector('button')
 
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       await waitFor(() => {
         expect(screen.queryByText('Failed to update debt')).not.toBeInTheDocument()
@@ -379,14 +365,13 @@ describe('EditDebtModal', () => {
     })
 
     it('re-enables submit button after error', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValue({
         response: { data: { error: 'Failed to update debt' } }
       })
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled()
@@ -410,15 +395,14 @@ describe('EditDebtModal', () => {
     })
 
     it('rounds cents correctly on submission', async () => {
-      const user = userEvent.setup()
       render(<EditDebtModal debt={mockDebt} onClose={mockOnClose} onEdit={mockOnEdit} />)
 
       const balanceInput = screen.getByDisplayValue('1500.00')
-      await user.clear(balanceInput)
-      await user.type(balanceInput, '99.99')
+      await clearWithAct(balanceInput)
+      await typeWithAct(balanceInput, '99.99')
 
       const submitButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(submitButton)
+      await clickWithAct(submitButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({

@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * LeftoverBudgetModal Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, clearWithAct } from './test-utils'
 import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
 
 // Mock the API
@@ -125,7 +126,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('calls onClose when Continue is clicked (no leftover)', async () => {
-      const user = userEvent.setup()
       api.get.mockResolvedValue({
         data: { leftover: 0, budget_amount: 25000 }
       })
@@ -143,7 +143,7 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: 'Continue' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Continue' }))
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
   })
@@ -292,7 +292,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('allows selecting a debt', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -308,7 +307,7 @@ describe('LeftoverBudgetModal', () => {
 
       // Find and click the Car Loan button
       const carLoanButton = screen.getByText('Car Loan').closest('button')
-      await user.click(carLoanButton)
+      await clickWithAct(carLoanButton)
 
       // Should be selected (has pink border class)
       expect(carLoanButton).toHaveClass('border-bloom-pink')
@@ -339,7 +338,6 @@ describe('LeftoverBudgetModal', () => {
 
   describe('Goal Selection', () => {
     it('switches to goals when clicked', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -353,13 +351,12 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Savings Goals')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       expect(screen.getByText('Select Goal')).toBeInTheDocument()
     })
 
     it('displays available goals', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -373,14 +370,13 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Savings Goals')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
       expect(screen.getByText('Vacation')).toBeInTheDocument()
     })
 
     it('shows goal progress', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -394,7 +390,7 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Savings Goals')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       // Emergency Fund: 25000/100000 = 25%
       // Vacation: 50000/200000 = 25%
@@ -404,7 +400,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('shows no goals message when empty', async () => {
-      const user = userEvent.setup()
       api.get.mockResolvedValue({
         data: {
           ...mockLeftoverData,
@@ -425,7 +420,7 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Savings Goals')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       expect(screen.getByText(/No active goals/)).toBeInTheDocument()
     })
@@ -449,7 +444,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('allows editing amount', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -464,8 +458,8 @@ describe('LeftoverBudgetModal', () => {
       })
 
       const amountInput = screen.getByPlaceholderText('0.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '25.00')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '25.00')
 
       expect(amountInput).toHaveValue('25.00')
     })
@@ -486,7 +480,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('clicking use full amount sets amount to leftover', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -501,10 +494,10 @@ describe('LeftoverBudgetModal', () => {
       })
 
       const amountInput = screen.getByPlaceholderText('0.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '10')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '10')
 
-      await user.click(screen.getByText(/Use full amount/))
+      await clickWithAct(screen.getByText(/Use full amount/))
 
       expect(amountInput).toHaveValue('50.00')
     })
@@ -512,7 +505,6 @@ describe('LeftoverBudgetModal', () => {
 
   describe('Validation', () => {
     it('shows error for zero amount', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -527,20 +519,19 @@ describe('LeftoverBudgetModal', () => {
       })
 
       // Select a debt first
-      await user.click(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
 
       // Clear and set zero amount
       const amountInput = screen.getByPlaceholderText('0.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '0')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '0')
 
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       expect(screen.getByText('Please enter a valid amount')).toBeInTheDocument()
     })
 
     it('shows error for amount exceeding leftover', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -555,14 +546,14 @@ describe('LeftoverBudgetModal', () => {
       })
 
       // Select a debt
-      await user.click(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
 
       // Set amount higher than leftover
       const amountInput = screen.getByPlaceholderText('0.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '100')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '100')
 
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       expect(screen.getByText(/Amount cannot exceed leftover/)).toBeInTheDocument()
     })
@@ -583,7 +574,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('disables allocate button when no goal selected', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -597,7 +587,7 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Savings Goals')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       expect(screen.getByRole('button', { name: 'Allocate Funds' })).toBeDisabled()
     })
@@ -605,7 +595,6 @@ describe('LeftoverBudgetModal', () => {
 
   describe('Allocation - Debts', () => {
     it('allocates to debt successfully', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -620,10 +609,10 @@ describe('LeftoverBudgetModal', () => {
       })
 
       // Select debt
-      await user.click(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
 
       // Allocate
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/debts/pay', {
@@ -635,7 +624,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('calls onAllocate after successful debt payment', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -649,8 +637,8 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Car Loan')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Car Loan').closest('button'))
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       await waitFor(() => {
         expect(mockOnAllocate).toHaveBeenCalledTimes(1)
@@ -660,7 +648,6 @@ describe('LeftoverBudgetModal', () => {
 
   describe('Allocation - Goals', () => {
     it('allocates to goal successfully', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -675,13 +662,13 @@ describe('LeftoverBudgetModal', () => {
       })
 
       // Switch to goals
-      await user.click(screen.getByText('Savings Goals'))
+      await clickWithAct(screen.getByText('Savings Goals'))
 
       // Select goal
-      await user.click(screen.getByText('Emergency Fund').closest('button'))
+      await clickWithAct(screen.getByText('Emergency Fund').closest('button'))
 
       // Allocate
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/expenses', {
@@ -698,7 +685,6 @@ describe('LeftoverBudgetModal', () => {
 
   describe('Skip and Close', () => {
     it('calls onClose when Skip is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <LeftoverBudgetModal
           salaryPeriodId={1}
@@ -712,7 +698,7 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByRole('button', { name: 'Skip for Now' })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: 'Skip for Now' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Skip for Now' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -739,7 +725,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('displays error when allocation fails', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValue({
         response: { data: { error: 'Payment failed' } }
       })
@@ -757,8 +742,8 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Car Loan')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Car Loan').closest('button'))
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       await waitFor(() => {
         expect(screen.getByText('Payment failed')).toBeInTheDocument()
@@ -766,7 +751,6 @@ describe('LeftoverBudgetModal', () => {
     })
 
     it('shows loading state during allocation', async () => {
-      const user = userEvent.setup()
       api.post.mockImplementation(() => new Promise(() => {})) // Never resolves
 
       render(
@@ -782,8 +766,8 @@ describe('LeftoverBudgetModal', () => {
         expect(screen.getByText('Car Loan')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Car Loan').closest('button'))
-      await user.click(screen.getByRole('button', { name: 'Allocate Funds' }))
+      await clickWithAct(screen.getByText('Car Loan').closest('button'))
+      await clickWithAct(screen.getByRole('button', { name: 'Allocate Funds' }))
 
       expect(screen.getByRole('button', { name: 'Allocating...' })).toBeInTheDocument()
     })

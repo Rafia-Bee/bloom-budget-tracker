@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * BankImportModal Test Suite
  *
@@ -14,7 +15,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct } from './test-utils'
 import BankImportModal from '../components/BankImportModal'
 import api from '../api'
 
@@ -124,72 +125,65 @@ describe('BankImportModal', () => {
 
   describe('Input Step - Interactions', () => {
     it('allows switching to Credit Card payment method', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const creditRadio = screen.getByLabelText(/Credit Card/)
-      await user.click(creditRadio)
+      await clickWithAct(creditRadio)
 
       expect(creditRadio).toBeChecked()
     })
 
     it('allows checking fixed bills option', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const checkbox = screen.getByRole('checkbox')
       expect(checkbox).not.toBeChecked()
 
-      await user.click(checkbox)
+      await clickWithAct(checkbox)
       expect(checkbox).toBeChecked()
     })
 
     it('allows entering transaction text', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test transaction data')
+      await typeWithAct(textarea, 'test transaction data')
 
       expect(textarea).toHaveValue('test transaction data')
     })
 
     it('enables Preview button when text is entered', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
+      await typeWithAct(textarea, 'test data')
 
       const previewButton = screen.getByRole('button', { name: /Preview Transactions/ })
       expect(previewButton).not.toBeDisabled()
     })
 
     it('calls onClose when Cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent)
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('pastes example data when link is clicked', async () => {
-      const user = userEvent.setup()
       render(<BankImportModal onClose={mockOnClose} />)
 
       const exampleLink = screen.getByText(/Click here to paste example data/)
-      await user.click(exampleLink)
+      await clickWithAct(exampleLink)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
       expect(textarea.value).toContain('Wise Europe SA')
@@ -199,16 +193,15 @@ describe('BankImportModal', () => {
 
   describe('Preview API Call', () => {
     it('calls preview API with transaction data', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test transaction data')
+      await typeWithAct(textarea, 'test transaction data')
 
       const previewButton = screen.getByRole('button', { name: /Preview Transactions/ })
-      await user.click(previewButton)
+      await clickWithAct(previewButton)
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/data/preview-bank-transactions', {
@@ -220,18 +213,17 @@ describe('BankImportModal', () => {
     })
 
     it('sends Credit card payment method when selected', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       // Switch to Credit card
-      await user.click(screen.getByLabelText(/Credit Card/))
+      await clickWithAct(screen.getByLabelText(/Credit Card/))
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
+      await typeWithAct(textarea, 'test data')
 
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/data/preview-bank-transactions', expect.objectContaining({
@@ -241,18 +233,17 @@ describe('BankImportModal', () => {
     })
 
     it('sends mark_as_fixed_bills when checked', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       // Check fixed bills
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
+      await typeWithAct(textarea, 'test data')
 
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/data/preview-bank-transactions', expect.objectContaining({
@@ -262,16 +253,15 @@ describe('BankImportModal', () => {
     })
 
     it('shows loading state during preview', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       api.post.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
+      await typeWithAct(textarea, 'test data')
 
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       expect(screen.getByText('Previewing...')).toBeInTheDocument()
 
@@ -280,7 +270,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows error when preview fails', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValueOnce({
         response: { data: { error: 'Invalid format' } }
       })
@@ -288,9 +277,9 @@ describe('BankImportModal', () => {
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'invalid data')
+      await typeWithAct(textarea, 'invalid data')
 
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Invalid format')).toBeInTheDocument()
@@ -300,14 +289,13 @@ describe('BankImportModal', () => {
 
   describe('Preview Step - Display', () => {
     it('shows preview step after successful API call', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText(/3 transaction\(s\) ready to import/)).toBeInTheDocument()
@@ -315,14 +303,13 @@ describe('BankImportModal', () => {
     })
 
     it('shows transaction table in preview', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Wise Europe SA')).toBeInTheDocument()
@@ -331,14 +318,13 @@ describe('BankImportModal', () => {
     })
 
     it('shows table headers in preview', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Date')).toBeInTheDocument()
@@ -349,14 +335,13 @@ describe('BankImportModal', () => {
     })
 
     it('shows Confirm Import button in preview', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import 3 Transaction/ })).toBeInTheDocument()
@@ -364,14 +349,13 @@ describe('BankImportModal', () => {
     })
 
     it('shows Back to Edit button in preview', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Back to Edit' })).toBeInTheDocument()
@@ -379,27 +363,25 @@ describe('BankImportModal', () => {
     })
 
     it('returns to input step when Back to Edit is clicked', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: mockPreviewResponse })
 
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Back to Edit' })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: 'Back to Edit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Back to Edit' }))
 
       // Should be back on input step
       expect(screen.getByRole('button', { name: /Preview Transactions/ })).toBeInTheDocument()
     })
 
     it('shows skipped count when transactions are skipped', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({
         data: {
           ...mockPreviewResponse,
@@ -410,8 +392,8 @@ describe('BankImportModal', () => {
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText(/2 skipped/)).toBeInTheDocument()
@@ -419,7 +401,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows warnings when preview has errors', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({
         data: {
           ...mockPreviewResponse,
@@ -430,8 +411,8 @@ describe('BankImportModal', () => {
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText(/Warnings/)).toBeInTheDocument()
@@ -442,7 +423,6 @@ describe('BankImportModal', () => {
 
   describe('Import Confirmation', () => {
     it('calls import API when confirmed', async () => {
-      const user = userEvent.setup()
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse })
         .mockResolvedValueOnce({ data: mockImportResponse })
@@ -451,15 +431,15 @@ describe('BankImportModal', () => {
 
       // Go to preview
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import/ })).toBeInTheDocument()
       })
 
       // Confirm import
-      await user.click(screen.getByRole('button', { name: /Confirm & Import/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm & Import/ }))
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/data/import-bank-transactions', expect.objectContaining({
@@ -470,7 +450,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows success message after import', async () => {
-      const user = userEvent.setup()
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse })
         .mockResolvedValueOnce({ data: mockImportResponse })
@@ -479,15 +458,15 @@ describe('BankImportModal', () => {
 
       // Go to preview
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import/ })).toBeInTheDocument()
       })
 
       // Confirm import
-      await user.click(screen.getByRole('button', { name: /Confirm & Import/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm & Import/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Successfully imported 3 transactions')).toBeInTheDocument()
@@ -495,7 +474,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows loading state during import', async () => {
-      const user = userEvent.setup()
       let resolveImport
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse })
@@ -505,15 +483,15 @@ describe('BankImportModal', () => {
 
       // Go to preview
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import/ })).toBeInTheDocument()
       })
 
       // Confirm import
-      await user.click(screen.getByRole('button', { name: /Confirm & Import/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm & Import/ }))
 
       expect(screen.getByText('Importing...')).toBeInTheDocument()
 
@@ -522,7 +500,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows imported expenses in result', async () => {
-      const user = userEvent.setup()
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse })
         .mockResolvedValueOnce({ data: mockImportResponse })
@@ -531,14 +508,14 @@ describe('BankImportModal', () => {
 
       // Go to preview and confirm
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import/ })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /Confirm & Import/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm & Import/ }))
 
       await waitFor(() => {
         // Check for the "Imported transactions:" label which only appears in the result
@@ -547,7 +524,6 @@ describe('BankImportModal', () => {
     })
 
     it('shows error when import fails', async () => {
-      const user = userEvent.setup()
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse })
         .mockRejectedValueOnce({ response: { data: { error: 'Import failed - database error' } } })
@@ -556,15 +532,15 @@ describe('BankImportModal', () => {
 
       // Go to preview
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Confirm & Import/ })).toBeInTheDocument()
       })
 
       // Confirm import
-      await user.click(screen.getByRole('button', { name: /Confirm & Import/ }))
+      await clickWithAct(screen.getByRole('button', { name: /Confirm & Import/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Import failed - database error')).toBeInTheDocument()
@@ -574,7 +550,6 @@ describe('BankImportModal', () => {
 
   describe('Error Dismissal', () => {
     it('allows dismissing error messages', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValueOnce({
         response: { data: { error: 'Test error' } }
       })
@@ -582,8 +557,8 @@ describe('BankImportModal', () => {
       render(<BankImportModal onClose={mockOnClose} />)
 
       const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/)
-      await user.type(textarea, 'test data')
-      await user.click(screen.getByRole('button', { name: /Preview Transactions/ }))
+      await typeWithAct(textarea, 'test data')
+      await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }))
 
       await waitFor(() => {
         expect(screen.getByText('Test error')).toBeInTheDocument()
@@ -592,7 +567,7 @@ describe('BankImportModal', () => {
       // Find and click dismiss button
       const errorDiv = screen.getByText('Test error').closest('div')
       const dismissButton = errorDiv.querySelector('button')
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       expect(screen.queryByText('Test error')).not.toBeInTheDocument()
     })

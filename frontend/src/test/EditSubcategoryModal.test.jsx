@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * EditSubcategoryModal Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, clearWithAct } from './test-utils'
 import EditSubcategoryModal from '../components/EditSubcategoryModal'
 
 describe('EditSubcategoryModal', () => {
@@ -137,7 +138,6 @@ describe('EditSubcategoryModal', () => {
 
   describe('User Interactions', () => {
     it('allows name editing', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -147,14 +147,13 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Music Subscriptions')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Music Subscriptions')
 
       expect(nameInput).toHaveValue('Music Subscriptions')
     })
 
     it('calls onClose when Cancel button clicked', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -163,13 +162,12 @@ describe('EditSubcategoryModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -178,7 +176,7 @@ describe('EditSubcategoryModal', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: '✕' }))
+      await clickWithAct(screen.getByRole('button', { name: '✕' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -186,7 +184,6 @@ describe('EditSubcategoryModal', () => {
 
   describe('Form Submission', () => {
     it('submits form with updated name', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -196,9 +193,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Video Streaming')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Video Streaming')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       expect(mockOnUpdate).toHaveBeenCalledWith(1, {
         name: 'Video Streaming'
@@ -206,7 +203,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('trims whitespace from name', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -216,9 +212,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, '  New Name  ')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, '  New Name  ')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       expect(mockOnUpdate).toHaveBeenCalledWith(1, {
         name: 'New Name'
@@ -226,7 +222,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('closes without updating when name unchanged', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -236,14 +231,13 @@ describe('EditSubcategoryModal', () => {
       )
 
       // Don't change anything, just submit
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       expect(mockOnUpdate).not.toHaveBeenCalled()
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(
         <EditSubcategoryModal
@@ -254,15 +248,14 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'New Name')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'New Name')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument()
     })
 
     it('disables submit button during loading', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(
         <EditSubcategoryModal
@@ -273,9 +266,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'New Name')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'New Name')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       const submitButton = screen.getByRole('button', { name: 'Saving...' })
       expect(submitButton).toBeDisabled()
@@ -310,7 +303,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('does not call onUpdate when name is cleared', async () => {
-      const user = userEvent.setup()
       render(
         <EditSubcategoryModal
           subcategory={mockSubcategory}
@@ -320,8 +312,8 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       // Browser's required validation prevents submit
       expect(mockOnUpdate).not.toHaveBeenCalled()
@@ -330,7 +322,6 @@ describe('EditSubcategoryModal', () => {
 
   describe('Error Handling', () => {
     it('displays API error message', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockRejectedValue({
         response: { data: { error: 'Name already exists' } }
       })
@@ -343,9 +334,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Duplicate Name')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Duplicate Name')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       await waitFor(() => {
         expect(screen.getByText('Name already exists')).toBeInTheDocument()
@@ -353,7 +344,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('displays generic error for unknown errors', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockRejectedValue(new Error('Network error'))
       render(
         <EditSubcategoryModal
@@ -364,9 +354,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'New Name')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'New Name')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update subcategory')).toBeInTheDocument()
@@ -374,7 +364,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('re-enables submit button after error', async () => {
-      const user = userEvent.setup()
       mockOnUpdate.mockRejectedValue(new Error('Error'))
       render(
         <EditSubcategoryModal
@@ -385,9 +374,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'New Name')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'New Name')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled()
@@ -435,7 +424,6 @@ describe('EditSubcategoryModal', () => {
     })
 
     it('passes correct ID to onUpdate', async () => {
-      const user = userEvent.setup()
       const differentSubcategory = {
         id: 99,
         name: 'Original',
@@ -451,9 +439,9 @@ describe('EditSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByRole('textbox')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Updated')
-      await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Updated')
+      await clickWithAct(screen.getByRole('button', { name: 'Save Changes' }))
 
       expect(mockOnUpdate).toHaveBeenCalledWith(99, { name: 'Updated' })
     })

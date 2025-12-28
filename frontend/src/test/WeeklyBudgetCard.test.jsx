@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - WeeklyBudgetCard Component Tests
  *
@@ -14,7 +15,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, selectWithAct } from './test-utils'
 import { createRef } from 'react'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
 import api from '../api'
@@ -159,8 +160,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onSetupClick when Get Started is clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -173,7 +172,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByRole('button', { name: /get started/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /get started/i }))
+      await clickWithAct(screen.getByRole('button', { name: /get started/i }))
 
       expect(mockOnSetupClick).toHaveBeenCalledTimes(1)
     })
@@ -443,8 +442,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onWeekChange when week is changed', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -457,7 +454,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByRole('combobox')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByRole('combobox'), '2')
+      await selectWithAct(screen.getByRole('combobox'), '2')
 
       expect(mockOnWeekChange).toHaveBeenCalledWith(expect.objectContaining({
         week_number: 2
@@ -465,8 +462,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('updates display when week changes', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -479,7 +474,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByText('Week 1 of 4')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByRole('combobox'), '2')
+      await selectWithAct(screen.getByRole('combobox'), '2')
 
       await waitFor(() => {
         expect(screen.getByText('Week 2 of 4')).toBeInTheDocument()
@@ -487,8 +482,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('does not show "Current" badge for non-current week', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -501,7 +494,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByText('Current')).toBeInTheDocument()
       })
 
-      await user.selectOptions(screen.getByRole('combobox'), '2')
+      await selectWithAct(screen.getByRole('combobox'), '2')
 
       await waitFor(() => {
         expect(screen.queryByText('Current')).not.toBeInTheDocument()
@@ -659,8 +652,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onAllocateClick with period ID and week number', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -673,7 +664,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByRole('button', { name: /allocate leftover/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /allocate leftover/i }))
+      await clickWithAct(screen.getByRole('button', { name: /allocate leftover/i }))
 
       expect(mockOnAllocateClick).toHaveBeenCalledWith(1, 1) // period ID = 1, week = 1
     })
@@ -717,8 +708,6 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onSetupClick when settings button clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
@@ -731,7 +720,7 @@ describe('WeeklyBudgetCard', () => {
         expect(screen.getByTitle('Manage salary period')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByTitle('Manage salary period'))
+      await clickWithAct(screen.getByTitle('Manage salary period'))
 
       expect(mockOnSetupClick).toHaveBeenCalledTimes(1)
     })

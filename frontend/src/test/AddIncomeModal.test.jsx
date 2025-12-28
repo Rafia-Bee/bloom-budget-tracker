@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * AddIncomeModal Test Suite
  *
@@ -12,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
 import AddIncomeModal from '../components/AddIncomeModal'
 
 describe('AddIncomeModal', () => {
@@ -110,11 +111,10 @@ describe('AddIncomeModal', () => {
     })
 
     it('allows changing income type', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Bonus')
+      await selectWithAct(typeSelect, 'Bonus')
 
       expect(typeSelect).toHaveValue('Bonus')
     })
@@ -122,43 +122,39 @@ describe('AddIncomeModal', () => {
 
   describe('Form Interactions', () => {
     it('allows entering amount', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1500.50')
+      await typeWithAct(amountInput, '1500.50')
 
       expect(amountInput).toHaveValue(1500.5)
     })
 
     it('allows changing date', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const today = new Date().toISOString().split('T')[0]
       const dateInput = screen.getByDisplayValue(today)
-      await user.clear(dateInput)
-      await user.type(dateInput, '2025-12-25')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2025-12-25')
 
       expect(dateInput).toHaveValue('2025-12-25')
     })
 
     it('allows selecting Freelance type', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Freelance')
+      await selectWithAct(typeSelect, 'Freelance')
 
       expect(typeSelect).toHaveValue('Freelance')
     })
 
     it('allows selecting Other type', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Other')
+      await selectWithAct(typeSelect, 'Other')
 
       expect(typeSelect).toHaveValue('Other')
     })
@@ -166,21 +162,19 @@ describe('AddIncomeModal', () => {
 
   describe('Modal Close Actions', () => {
     it('calls onClose when Cancel button is clicked', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Add') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -188,14 +182,13 @@ describe('AddIncomeModal', () => {
 
   describe('Form Submission', () => {
     it('calls onAdd with income data on submit', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '2500')
+      await typeWithAct(amountInput, '2500')
 
       const addButton = screen.getByRole('button', { name: 'Add' })
-      await user.click(addButton)
+      await clickWithAct(addButton)
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -206,13 +199,12 @@ describe('AddIncomeModal', () => {
     })
 
     it('converts amount to cents before submission', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '123.45')
+      await typeWithAct(amountInput, '123.45')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -222,16 +214,15 @@ describe('AddIncomeModal', () => {
     })
 
     it('includes selected type in submission', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const typeSelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(typeSelect, 'Bonus')
+      await selectWithAct(typeSelect, 'Bonus')
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '500')
+      await typeWithAct(amountInput, '500')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -241,18 +232,17 @@ describe('AddIncomeModal', () => {
     })
 
     it('includes date in submission', async () => {
-      const user = userEvent.setup()
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const today = new Date().toISOString().split('T')[0]
       const dateInput = screen.getByDisplayValue(today)
-      await user.clear(dateInput)
-      await user.type(dateInput, '2025-12-25')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2025-12-25')
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -262,16 +252,15 @@ describe('AddIncomeModal', () => {
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       expect(screen.getByText('Adding...')).toBeInTheDocument()
 
@@ -280,17 +269,16 @@ describe('AddIncomeModal', () => {
     })
 
     it('disables Add button while loading', async () => {
-      const user = userEvent.setup()
       let resolvePromise
       mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
 
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
       const addButton = screen.getByRole('button', { name: 'Add' })
-      await user.click(addButton)
+      await clickWithAct(addButton)
 
       expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled()
 
@@ -301,7 +289,6 @@ describe('AddIncomeModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when submission fails', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce({
         response: { data: { error: 'Invalid income data' } }
       })
@@ -309,9 +296,9 @@ describe('AddIncomeModal', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(screen.getByText('Invalid income data')).toBeInTheDocument()
@@ -319,15 +306,14 @@ describe('AddIncomeModal', () => {
     })
 
     it('shows generic error when no response error message', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce(new Error('Network error'))
 
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to add income')).toBeInTheDocument()
@@ -335,7 +321,6 @@ describe('AddIncomeModal', () => {
     })
 
     it('error message is dismissible', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValueOnce({
         response: { data: { error: 'Test error' } }
       })
@@ -343,9 +328,9 @@ describe('AddIncomeModal', () => {
       render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
 
       const amountInput = screen.getByRole('spinbutton')
-      await user.type(amountInput, '1000')
+      await typeWithAct(amountInput, '1000')
 
-      await user.click(screen.getByRole('button', { name: 'Add' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
 
       await waitFor(() => {
         expect(screen.getByText('Test error')).toBeInTheDocument()
@@ -354,7 +339,7 @@ describe('AddIncomeModal', () => {
       // Find dismiss button in error area
       const errorDiv = screen.getByText('Test error').closest('div')
       const dismissButton = errorDiv.querySelector('button')
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       expect(screen.queryByText('Test error')).not.toBeInTheDocument()
     })

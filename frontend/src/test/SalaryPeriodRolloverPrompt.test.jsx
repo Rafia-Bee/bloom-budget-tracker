@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * SalaryPeriodRolloverPrompt Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 
 // Mock the API
@@ -290,7 +291,6 @@ describe('SalaryPeriodRolloverPrompt', () => {
     })
 
     it('calls onCreateNext with rollover data when Create Next Period clicked', async () => {
-      const user = userEvent.setup()
       render(
         <SalaryPeriodRolloverPrompt
           onCreateNext={mockOnCreateNext}
@@ -302,7 +302,7 @@ describe('SalaryPeriodRolloverPrompt', () => {
         expect(screen.getByText('Create Next Period')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Create Next Period'))
+      await clickWithAct(screen.getByText('Create Next Period'))
 
       expect(mockOnCreateNext).toHaveBeenCalledTimes(1)
       expect(mockOnCreateNext).toHaveBeenCalledWith(
@@ -315,7 +315,6 @@ describe('SalaryPeriodRolloverPrompt', () => {
     })
 
     it('calls onDismiss when Remind Me Later clicked', async () => {
-      const user = userEvent.setup()
       render(
         <SalaryPeriodRolloverPrompt
           onCreateNext={mockOnCreateNext}
@@ -327,13 +326,12 @@ describe('SalaryPeriodRolloverPrompt', () => {
         expect(screen.getByText('Remind Me Later')).toBeInTheDocument()
       })
 
-      await user.click(screen.getByText('Remind Me Later'))
+      await clickWithAct(screen.getByText('Remind Me Later'))
 
       expect(mockOnDismiss).toHaveBeenCalledTimes(1)
     })
 
     it('calls onDismiss when X button clicked', async () => {
-      const user = userEvent.setup()
       render(
         <SalaryPeriodRolloverPrompt
           onCreateNext={mockOnCreateNext}
@@ -346,7 +344,7 @@ describe('SalaryPeriodRolloverPrompt', () => {
       })
 
       const closeButton = screen.getByLabelText('Close')
-      await user.click(closeButton)
+      await clickWithAct(closeButton)
 
       expect(mockOnDismiss).toHaveBeenCalledTimes(1)
     })

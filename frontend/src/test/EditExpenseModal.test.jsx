@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * EditExpenseModal Test Suite
  *
@@ -12,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
 import EditExpenseModal from '../components/EditExpenseModal'
 
 // Mock the API module
@@ -175,7 +176,6 @@ describe('EditExpenseModal', () => {
 
   describe('Form Interactions', () => {
     it('allows updating the name', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -189,14 +189,13 @@ describe('EditExpenseModal', () => {
       })
 
       const nameInput = screen.getByDisplayValue('Grocery Shopping')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Weekly Groceries')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Weekly Groceries')
 
       expect(nameInput).toHaveValue('Weekly Groceries')
     })
 
     it('allows updating the amount', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -210,14 +209,13 @@ describe('EditExpenseModal', () => {
       })
 
       const amountInput = screen.getByDisplayValue('50.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '75.50')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '75.50')
 
       expect(amountInput).toHaveValue(75.5)
     })
 
     it('allows changing category', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -231,13 +229,12 @@ describe('EditExpenseModal', () => {
       })
 
       const categorySelect = screen.getAllByRole('combobox')[0]
-      await user.selectOptions(categorySelect, 'Fixed Expenses')
+      await selectWithAct(categorySelect, 'Fixed Expenses')
 
       expect(categorySelect).toHaveValue('Fixed Expenses')
     })
 
     it('allows changing payment method', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -252,7 +249,7 @@ describe('EditExpenseModal', () => {
 
       const comboboxes = screen.getAllByRole('combobox')
       const paymentMethodSelect = comboboxes[comboboxes.length - 1]
-      await user.selectOptions(paymentMethodSelect, 'Credit card')
+      await selectWithAct(paymentMethodSelect, 'Credit card')
 
       expect(paymentMethodSelect).toHaveValue('Credit card')
     })
@@ -260,7 +257,6 @@ describe('EditExpenseModal', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when Cancel button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -270,13 +266,12 @@ describe('EditExpenseModal', () => {
       )
 
       const cancelButton = screen.getByRole('button', { name: 'Cancel' })
-      await user.click(cancelButton)
+      await clickWithAct(cancelButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -288,7 +283,7 @@ describe('EditExpenseModal', () => {
       // Find the X button (svg close icon button in header)
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Save') && !btn.textContent.includes('Cancel'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -296,7 +291,6 @@ describe('EditExpenseModal', () => {
 
   describe('Form Submission', () => {
     it('calls onEdit with updated expense data', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -310,7 +304,7 @@ describe('EditExpenseModal', () => {
       })
 
       const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      await clickWithAct(saveButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -324,7 +318,6 @@ describe('EditExpenseModal', () => {
     })
 
     it('converts amount to cents before submission', async () => {
-      const user = userEvent.setup()
       render(
         <EditExpenseModal
           onClose={mockOnClose}
@@ -338,11 +331,11 @@ describe('EditExpenseModal', () => {
       })
 
       const amountInput = screen.getByDisplayValue('50.00')
-      await user.clear(amountInput)
-      await user.type(amountInput, '123.45')
+      await clearWithAct(amountInput)
+      await typeWithAct(amountInput, '123.45')
 
       const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      await clickWithAct(saveButton)
 
       await waitFor(() => {
         expect(mockOnEdit).toHaveBeenCalledWith(1, expect.objectContaining({
@@ -352,7 +345,6 @@ describe('EditExpenseModal', () => {
     })
 
     it('shows loading state while saving', async () => {
-      const user = userEvent.setup()
       // Make the API call hang
       let resolvePromise
       mockOnEdit.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
@@ -370,7 +362,7 @@ describe('EditExpenseModal', () => {
       })
 
       const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      await clickWithAct(saveButton)
 
       expect(screen.getByText('Saving...')).toBeInTheDocument()
 
@@ -381,7 +373,6 @@ describe('EditExpenseModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when save fails', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce({
         response: { data: { error: 'Failed to update expense' } }
       })
@@ -399,7 +390,7 @@ describe('EditExpenseModal', () => {
       })
 
       const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      await clickWithAct(saveButton)
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update expense')).toBeInTheDocument()
@@ -407,7 +398,6 @@ describe('EditExpenseModal', () => {
     })
 
     it('shows generic error when response has no error message', async () => {
-      const user = userEvent.setup()
       mockOnEdit.mockRejectedValueOnce(new Error('Network error'))
 
       render(
@@ -423,7 +413,7 @@ describe('EditExpenseModal', () => {
       })
 
       const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      await clickWithAct(saveButton)
 
       await waitFor(() => {
         expect(screen.getByText('Failed to update expense')).toBeInTheDocument()

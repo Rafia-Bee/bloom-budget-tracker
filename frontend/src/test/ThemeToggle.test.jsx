@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * ThemeToggle Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import ThemeToggle from '../components/ThemeToggle'
 
 // Mock ThemeContext
@@ -93,10 +94,9 @@ describe('ThemeToggle', () => {
         theme: 'light',
         toggleTheme: mockToggleTheme
       })
-      const user = userEvent.setup()
       render(<ThemeToggle />)
 
-      await user.click(screen.getByRole('button'))
+      await clickWithAct(screen.getByRole('button'))
 
       expect(mockToggleTheme).toHaveBeenCalledTimes(1)
     })
@@ -106,10 +106,9 @@ describe('ThemeToggle', () => {
         theme: 'dark',
         toggleTheme: mockToggleTheme
       })
-      const user = userEvent.setup()
       render(<ThemeToggle />)
 
-      await user.click(screen.getByRole('button'))
+      await clickWithAct(screen.getByRole('button'))
 
       expect(mockToggleTheme).toHaveBeenCalledTimes(1)
     })

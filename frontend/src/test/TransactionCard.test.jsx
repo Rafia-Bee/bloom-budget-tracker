@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - TransactionCard Component Tests
  *
@@ -13,7 +14,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import TransactionCard from '../components/TransactionCard'
 
 describe('TransactionCard', () => {
@@ -456,8 +457,6 @@ describe('TransactionCard', () => {
     })
 
     it('calls onToggleSelection when checkbox clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <TransactionCard
           transaction={mockExpense}
@@ -470,7 +469,7 @@ describe('TransactionCard', () => {
         />
       )
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       expect(mockOnToggleSelection).toHaveBeenCalledWith('expense', 1)
     })
@@ -560,8 +559,6 @@ describe('TransactionCard', () => {
     })
 
     it('calls onEdit with transaction when edit clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <TransactionCard
           transaction={mockExpense}
@@ -574,14 +571,12 @@ describe('TransactionCard', () => {
         />
       )
 
-      await user.click(screen.getByTitle('Edit'))
+      await clickWithAct(screen.getByTitle('Edit'))
 
       expect(mockOnEdit).toHaveBeenCalledWith(mockExpense)
     })
 
     it('calls onDelete with transaction when delete clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <TransactionCard
           transaction={mockExpense}
@@ -594,7 +589,7 @@ describe('TransactionCard', () => {
         />
       )
 
-      await user.click(screen.getByTitle('Delete'))
+      await clickWithAct(screen.getByTitle('Delete'))
 
       expect(mockOnDelete).toHaveBeenCalledWith(mockExpense)
     })

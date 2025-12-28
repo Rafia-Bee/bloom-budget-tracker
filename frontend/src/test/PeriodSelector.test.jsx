@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * PeriodSelector Test Suite
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import PeriodSelector from '../components/PeriodSelector'
 
 describe('PeriodSelector', () => {
@@ -79,7 +80,6 @@ describe('PeriodSelector', () => {
     })
 
     it('calls onCreateNew when create button clicked (no period)', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={null}
@@ -91,7 +91,7 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByText('+ Create Salary Period'))
+      await clickWithAct(screen.getByText('+ Create Salary Period'))
       expect(mockOnCreateNew).toHaveBeenCalledTimes(1)
     })
   })

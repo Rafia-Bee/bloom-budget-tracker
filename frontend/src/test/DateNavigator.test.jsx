@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - DateNavigator Component Tests
  *
@@ -6,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct } from './test-utils'
 import DateNavigator from '../components/DateNavigator'
 
 describe('DateNavigator', () => {
@@ -184,7 +185,7 @@ describe('DateNavigator', () => {
 
   describe('Navigation Logic', () => {
     it('navigates to previous date on Previous click', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -194,12 +195,12 @@ describe('DateNavigator', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: /previous/i }))
+      await clickWithAct(screen.getByRole('button', { name: /previous/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-22')
     })
 
     it('navigates to next date on Next click', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -209,12 +210,12 @@ describe('DateNavigator', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: /next/i }))
+      await clickWithAct(screen.getByRole('button', { name: /next/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-24')
     })
 
     it('navigates to today on Today click', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -224,12 +225,12 @@ describe('DateNavigator', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: /today/i }))
+      await clickWithAct(screen.getByRole('button', { name: /today/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith(mockToday)
     })
 
     it('clears date filter on clear button click', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -239,12 +240,12 @@ describe('DateNavigator', () => {
         />
       )
 
-      await user.click(screen.getByTitle(/clear date filter/i))
+      await clickWithAct(screen.getByTitle(/clear date filter/i))
       expect(mockOnDateChange).toHaveBeenCalledWith(null)
     })
 
     it('skips dates without transactions when navigating', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       // Dec 20, 22 have transactions, Dec 21, 23 do not
       render(
@@ -256,7 +257,7 @@ describe('DateNavigator', () => {
       )
 
       // First Previous click should go to Dec 22 (skipping Dec 23)
-      await user.click(screen.getByRole('button', { name: /previous/i }))
+      await clickWithAct(screen.getByRole('button', { name: /previous/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-22')
     })
   })
@@ -276,7 +277,7 @@ describe('DateNavigator', () => {
     })
 
     it('handles viewing date not in transaction list', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -287,12 +288,12 @@ describe('DateNavigator', () => {
       )
 
       // Should find closest previous date
-      await user.click(screen.getByRole('button', { name: /previous/i }))
+      await clickWithAct(screen.getByRole('button', { name: /previous/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-20')
     })
 
     it('handles viewing date between transaction dates', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -303,12 +304,12 @@ describe('DateNavigator', () => {
       )
 
       // Should find closest next date
-      await user.click(screen.getByRole('button', { name: /next/i }))
+      await clickWithAct(screen.getByRole('button', { name: /next/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-26')
     })
 
     it('does not call onDateChange when Previous is disabled', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -322,7 +323,7 @@ describe('DateNavigator', () => {
       expect(prevButton).toBeDisabled()
 
       // Click should do nothing
-      await user.click(prevButton)
+      await clickWithAct(prevButton)
       expect(mockOnDateChange).not.toHaveBeenCalled()
     })
 
@@ -340,7 +341,7 @@ describe('DateNavigator', () => {
     })
 
     it('works with null currentViewDate (default to today)', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      
 
       render(
         <DateNavigator
@@ -351,7 +352,7 @@ describe('DateNavigator', () => {
       )
 
       // Previous should find dates before today
-      await user.click(screen.getByRole('button', { name: /previous/i }))
+      await clickWithAct(screen.getByRole('button', { name: /previous/i }))
       expect(mockOnDateChange).toHaveBeenCalledWith('2024-12-22')
     })
   })

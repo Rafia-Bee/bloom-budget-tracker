@@ -1,3 +1,4 @@
+import React from 'react'
 /**
  * Bloom - AddExpenseModal Component Tests
  *
@@ -7,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
 import AddExpenseModal from '../components/AddExpenseModal'
 import { recurringExpenseAPI } from '../api'
 
@@ -88,8 +89,6 @@ describe('AddExpenseModal', () => {
 
   describe('Form Interactions', () => {
     it('updates name field on input', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -99,15 +98,13 @@ describe('AddExpenseModal', () => {
       })
 
       const nameInput = getInputByLabel('Name')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Coffee')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Coffee')
 
       expect(nameInput).toHaveValue('Coffee')
     })
 
     it('updates amount field on input', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -117,14 +114,12 @@ describe('AddExpenseModal', () => {
       })
 
       const amountInput = getAmountInput()
-      await user.type(amountInput, '15.50')
+      await typeWithAct(amountInput, '15.50')
 
       expect(amountInput).toHaveValue(15.50)
     })
 
     it('updates date field on input', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -134,15 +129,13 @@ describe('AddExpenseModal', () => {
       })
 
       const dateInput = getInputByLabel('Date')
-      await user.clear(dateInput)
-      await user.type(dateInput, '2025-12-25')
+      await clearWithAct(dateInput)
+      await typeWithAct(dateInput, '2025-12-25')
 
       expect(dateInput).toHaveValue('2025-12-25')
     })
 
     it('changes category selection', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -152,14 +145,12 @@ describe('AddExpenseModal', () => {
       })
 
       const categorySelect = getInputByLabel('Category')
-      await user.selectOptions(categorySelect, 'Fixed Expenses')
+      await selectWithAct(categorySelect, 'Fixed Expenses')
 
       expect(categorySelect).toHaveValue('Fixed Expenses')
     })
 
     it('changes payment method selection', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -169,7 +160,7 @@ describe('AddExpenseModal', () => {
       })
 
       const paymentSelect = getInputByLabel('Payment Method')
-      await user.selectOptions(paymentSelect, 'Credit card')
+      await selectWithAct(paymentSelect, 'Credit card')
 
       expect(paymentSelect).toHaveValue('Credit card')
     })
@@ -177,8 +168,6 @@ describe('AddExpenseModal', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when cancel button clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -187,14 +176,12 @@ describe('AddExpenseModal', () => {
         expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /cancel/i }))
+      await clickWithAct(screen.getByRole('button', { name: /cancel/i }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -206,7 +193,7 @@ describe('AddExpenseModal', () => {
       // Find the X button (close icon button in header)
       const header = screen.getByText(/add expense/i).closest('div')
       const closeButton = within(header).getAllByRole('button')[0]
-      await user.click(closeButton)
+      await clickWithAct(closeButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -224,8 +211,6 @@ describe('AddExpenseModal', () => {
     })
 
     it('shows recurring options when checkbox is checked', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -235,7 +220,7 @@ describe('AddExpenseModal', () => {
       })
 
       const recurringCheckbox = screen.getByRole('checkbox')
-      await user.click(recurringCheckbox)
+      await clickWithAct(recurringCheckbox)
 
       await waitFor(() => {
         expect(screen.getByText(/recurrence schedule/i)).toBeInTheDocument()
@@ -244,8 +229,6 @@ describe('AddExpenseModal', () => {
     })
 
     it('shows frequency options when recurring is enabled', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -254,7 +237,7 @@ describe('AddExpenseModal', () => {
         expect(screen.getByText(/make this a recurring expense/i)).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByText('Weekly')).toBeInTheDocument()
@@ -266,8 +249,6 @@ describe('AddExpenseModal', () => {
     })
 
     it('changes button text to Create Template when recurring', async () => {
-      const user = userEvent.setup()
-
       render(
         <AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
       )
@@ -276,7 +257,7 @@ describe('AddExpenseModal', () => {
         expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /create template/i })).toBeInTheDocument()
@@ -286,7 +267,6 @@ describe('AddExpenseModal', () => {
 
   describe('Form Submission', () => {
     it('submits one-time expense with correct data', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockResolvedValue({})
 
       render(
@@ -299,13 +279,13 @@ describe('AddExpenseModal', () => {
 
       // Fill in form
       const nameInput = getInputByLabel('Name')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Groceries')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Groceries')
 
-      await user.type(getAmountInput(), '25.50')
+      await typeWithAct(getAmountInput(), '25.50')
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /^add$/i }))
+      await clickWithAct(screen.getByRole('button', { name: /^add$/i }))
 
       await waitFor(() => {
         expect(mockOnAdd).toHaveBeenCalledWith(
@@ -320,7 +300,6 @@ describe('AddExpenseModal', () => {
     })
 
     it('submits recurring expense template', async () => {
-      const user = userEvent.setup()
       recurringExpenseAPI.create.mockResolvedValue({ data: {} })
 
       render(
@@ -333,19 +312,19 @@ describe('AddExpenseModal', () => {
 
       // Fill in form
       const nameInput = getInputByLabel('Name')
-      await user.clear(nameInput)
-      await user.type(nameInput, 'Netflix')
-      await user.type(getAmountInput(), '12.99')
+      await clearWithAct(nameInput)
+      await typeWithAct(nameInput, 'Netflix')
+      await typeWithAct(getAmountInput(), '12.99')
 
       // Enable recurring
-      await user.click(screen.getByRole('checkbox'))
+      await clickWithAct(screen.getByRole('checkbox'))
 
       await waitFor(() => {
         expect(screen.getByText(/recurrence schedule/i)).toBeInTheDocument()
       })
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /create template/i }))
+      await clickWithAct(screen.getByRole('button', { name: /create template/i }))
 
       await waitFor(() => {
         expect(recurringExpenseAPI.create).toHaveBeenCalledWith(
@@ -360,8 +339,6 @@ describe('AddExpenseModal', () => {
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
-
       // Create a promise that won't resolve immediately
       let resolvePromise
       mockOnAdd.mockReturnValue(new Promise(resolve => { resolvePromise = resolve }))
@@ -375,10 +352,10 @@ describe('AddExpenseModal', () => {
       })
 
       // Fill required fields
-      await user.type(getAmountInput(), '10')
+      await typeWithAct(getAmountInput(), '10')
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /^add$/i }))
+      await clickWithAct(screen.getByRole('button', { name: /^add$/i }))
 
       // Check for loading state
       await waitFor(() => {
@@ -392,7 +369,6 @@ describe('AddExpenseModal', () => {
 
   describe('Error Handling', () => {
     it('displays error message when submission fails', async () => {
-      const user = userEvent.setup()
       mockOnAdd.mockRejectedValue({
         response: { data: { error: 'Failed to add expense' } }
       })
@@ -406,10 +382,10 @@ describe('AddExpenseModal', () => {
       })
 
       // Fill required fields
-      await user.type(getAmountInput(), '10')
+      await typeWithAct(getAmountInput(), '10')
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /^add$/i }))
+      await clickWithAct(screen.getByRole('button', { name: /^add$/i }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to add expense')).toBeInTheDocument()
