@@ -48,6 +48,33 @@ export const changeWithAct = async (element, value) => {
 };
 
 /**
+ * Select an option in a dropdown/select element wrapped in act().
+ * Use this instead of userEvent.selectOptions().
+ *
+ * @param {HTMLElement} selectElement - The select element
+ * @param {string} value - The value of the option to select
+ * @returns {Promise<void>}
+ */
+export const selectWithAct = async (selectElement, value) => {
+    await act(async () => {
+        fireEvent.change(selectElement, { target: { value } });
+    });
+};
+
+/**
+ * Clear an input element wrapped in act().
+ * Use this instead of userEvent.clear().
+ *
+ * @param {HTMLElement} element - The input element to clear
+ * @returns {Promise<void>}
+ */
+export const clearWithAct = async (element) => {
+    await act(async () => {
+        fireEvent.change(element, { target: { value: "" } });
+    });
+};
+
+/**
  * Type into an input element wrapped in act().
  * Unlike changeWithAct, this simulates individual keystrokes.
  *
