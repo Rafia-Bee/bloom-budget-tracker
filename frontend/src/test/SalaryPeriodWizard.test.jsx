@@ -12,7 +12,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import api from '../api'
 import { clickWithAct, changeWithAct } from './test-utils'
@@ -367,7 +366,6 @@ describe('SalaryPeriodWizard', () => {
 
     it('shows empty state when no fixed bills', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
-      const user = userEvent.setup()
 
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
@@ -378,8 +376,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
@@ -388,7 +386,6 @@ describe('SalaryPeriodWizard', () => {
 
     it('shows quick add presets when no fixed bills', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
-      const user = userEvent.setup()
 
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
@@ -399,8 +396,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
@@ -414,7 +411,6 @@ describe('SalaryPeriodWizard', () => {
 
     it('opens quick add form when clicking preset', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
-      const user = userEvent.setup()
 
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
@@ -425,15 +421,15 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/no fixed bills set up yet/i)).toBeInTheDocument()
       })
 
       // Click a preset
-      await user.click(screen.getByRole('button', { name: /\+ rent/i }))
+      await clickWithAct(screen.getByRole('button', { name: /\+ rent/i }))
 
       // Quick add form should appear with pre-filled name
       await waitFor(() => {
@@ -450,7 +446,6 @@ describe('SalaryPeriodWizard', () => {
         ]
       }
       api.post.mockResolvedValue({ data: responseWithBills })
-      const user = userEvent.setup()
 
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
@@ -461,8 +456,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText('Rent')).toBeInTheDocument()
@@ -480,7 +475,6 @@ describe('SalaryPeriodWizard', () => {
         ]
       }
       api.post.mockResolvedValue({ data: responseWithBills })
-      const user = userEvent.setup()
 
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
@@ -491,15 +485,15 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText('Rent')).toBeInTheDocument()
       })
 
       // Click "Add another" button
-      await user.click(screen.getByRole('button', { name: /add another fixed bill/i }))
+      await clickWithAct(screen.getByRole('button', { name: /add another fixed bill/i }))
 
       // Should show remaining presets (not Rent since it exists)
       await waitFor(() => {
@@ -510,8 +504,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('allows navigating back to step 1', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -521,14 +513,14 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /back/i }))
+      await clickWithAct(screen.getByRole('button', { name: /back/i }))
 
       await waitFor(() => {
         expect(screen.getByText(/enter your current balances/i)).toBeInTheDocument()
@@ -542,8 +534,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('navigates to step 3 and shows budget summary', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -554,14 +544,14 @@ describe('SalaryPeriodWizard', () => {
 
       // Step 1
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       // Step 2
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       // Step 3
       await waitFor(() => {
@@ -570,8 +560,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays weekly budget breakdown', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -581,13 +569,13 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       // Check budget display (€375.00 weekly = 37500 cents)
       // Use getAllByText since the amount appears multiple times
@@ -598,8 +586,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays 4-week schedule', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -609,13 +595,13 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByText(/4-week schedule/i)).toBeInTheDocument()
@@ -623,8 +609,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows create button text for new period', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -634,13 +618,13 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /create budget plan/i })).toBeInTheDocument()
@@ -648,7 +632,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows update button text for edit mode', async () => {
-      const user = userEvent.setup()
       const editPeriod = {
         id: 1,
         initial_debit_balance: 150000,
@@ -670,12 +653,12 @@ describe('SalaryPeriodWizard', () => {
       await waitFor(() => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /update budget plan/i })).toBeInTheDocument()
@@ -689,8 +672,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calls API to create new salary period', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -700,20 +681,20 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /create budget plan/i })).toBeInTheDocument()
       })
 
       // Submit
-      await user.click(screen.getByRole('button', { name: /create budget plan/i }))
+      await clickWithAct(screen.getByRole('button', { name: /create budget plan/i }))
 
       await waitFor(() => {
         // Should call /salary-periods POST
@@ -724,8 +705,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calls onComplete after successful creation', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -735,19 +714,19 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /create budget plan/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /create budget plan/i }))
+      await clickWithAct(screen.getByRole('button', { name: /create budget plan/i }))
 
       await waitFor(() => {
         expect(mockOnComplete).toHaveBeenCalled()
@@ -755,7 +734,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calls API to update existing salary period in edit mode', async () => {
-      const user = userEvent.setup()
       api.put.mockResolvedValue({ data: {} })
 
       const editPeriod = {
@@ -779,18 +757,18 @@ describe('SalaryPeriodWizard', () => {
       await waitFor(() => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /update budget plan/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /update budget plan/i }))
+      await clickWithAct(screen.getByRole('button', { name: /update budget plan/i }))
 
       await waitFor(() => {
         expect(api.put).toHaveBeenCalledWith('/salary-periods/42', expect.any(Object))
@@ -798,7 +776,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows error message on API failure', async () => {
-      const user = userEvent.setup()
       api.post
         .mockResolvedValueOnce({ data: mockPreviewResponse }) // preview call 1
         .mockResolvedValueOnce({ data: mockPreviewResponse }) // preview call 2
@@ -813,19 +790,19 @@ describe('SalaryPeriodWizard', () => {
         expect(screen.getByText('Debit Balance (Current Bank Account)')).toBeInTheDocument()
       })
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
       })
-      await user.click(screen.getByText(/next: confirm budget/i))
+      await clickWithAct(screen.getByText(/next: confirm budget/i))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /create budget plan/i })).toBeInTheDocument()
       })
 
-      await user.click(screen.getByRole('button', { name: /create budget plan/i }))
+      await clickWithAct(screen.getByRole('button', { name: /create budget plan/i }))
 
       await waitFor(() => {
         expect(screen.getByText(/period overlaps existing/i)).toBeInTheDocument()
@@ -835,8 +812,6 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -846,7 +821,7 @@ describe('SalaryPeriodWizard', () => {
       })
 
       // Find the X button
-      await user.click(screen.getByText('×'))
+      await clickWithAct(screen.getByText('×'))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -854,7 +829,6 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Currency Parsing', () => {
     it('handles various currency input formats', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValue({ data: mockPreviewResponse })
 
       render(
@@ -867,8 +841,8 @@ describe('SalaryPeriodWizard', () => {
 
       // Test decimal input
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.50')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.50')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         // Should parse as 150050 cents
