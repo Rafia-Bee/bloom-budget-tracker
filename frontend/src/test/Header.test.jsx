@@ -9,12 +9,13 @@
  * - Export/Import menu options
  */
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import Header from '../components/Header'
 import { FeatureFlagProvider } from '../contexts/FeatureFlagContext'
+import { clickWithAct, mouseDownWithAct } from './test-utils'
 
 // Mock the API
 vi.mock('../api', () => ({
@@ -105,67 +106,61 @@ describe('Header', () => {
 
   describe('User Menu', () => {
     it('opens user menu when clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       // User menu should show email
       expect(screen.getByText('test@example.com')).toBeInTheDocument()
     })
 
     it('shows theme toggle in user menu', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       expect(screen.getByTestId('theme-toggle')).toBeInTheDocument()
     })
 
     it('shows Settings option in user menu', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       expect(screen.getByText('Settings')).toBeInTheDocument()
     })
 
     it('shows Logout option in user menu', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       expect(screen.getByText('Logout')).toBeInTheDocument()
     })
 
     it('shows Import/Export submenu option', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       expect(screen.getByText('Import/Export')).toBeInTheDocument()
     })
 
     it('closes user menu when clicking outside', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       expect(screen.getByText('test@example.com')).toBeInTheDocument()
 
       // Click outside the menu
-      await user.click(document.body)
+      await mouseDownWithAct(document.body)
 
       // Menu should close
       await waitFor(() => {
@@ -176,14 +171,13 @@ describe('Header', () => {
 
   describe('Import/Export Submenu', () => {
     it('expands Import/Export submenu when clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       const importExportButton = screen.getByText('Import/Export')
-      await user.click(importExportButton)
+      await clickWithAct(importExportButton)
 
       expect(screen.getByText('Export Financial Data')).toBeInTheDocument()
       expect(screen.getByText('Import Financial Data')).toBeInTheDocument()
@@ -191,46 +185,43 @@ describe('Header', () => {
     })
 
     it('calls onExport when Export is clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       const importExportButton = screen.getByText('Import/Export')
-      await user.click(importExportButton)
+      await clickWithAct(importExportButton)
 
-      await user.click(screen.getByText('Export Financial Data'))
+      await clickWithAct(screen.getByText('Export Financial Data'))
 
       expect(mockOnExport).toHaveBeenCalledTimes(1)
     })
 
     it('calls onImport when Import is clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       const importExportButton = screen.getByText('Import/Export')
-      await user.click(importExportButton)
+      await clickWithAct(importExportButton)
 
-      await user.click(screen.getByText('Import Financial Data'))
+      await clickWithAct(screen.getByText('Import Financial Data'))
 
       expect(mockOnImport).toHaveBeenCalledTimes(1)
     })
 
     it('calls onBankImport when Bank Import is clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
       const importExportButton = screen.getByText('Import/Export')
-      await user.click(importExportButton)
+      await clickWithAct(importExportButton)
 
-      await user.click(screen.getByText('Import Bank Transactions'))
+      await clickWithAct(screen.getByText('Import Bank Transactions'))
 
       expect(mockOnBankImport).toHaveBeenCalledTimes(1)
     })
@@ -238,15 +229,14 @@ describe('Header', () => {
 
   describe('Logout', () => {
     it('calls logout and setIsAuthenticated on logout', async () => {
-      const user = userEvent.setup()
       const { authAPI } = await import('../api')
 
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
-      await user.click(screen.getByText('Logout'))
+      await clickWithAct(screen.getByText('Logout'))
 
       await waitFor(() => {
         expect(authAPI.logout).toHaveBeenCalled()
@@ -255,14 +245,12 @@ describe('Header', () => {
     })
 
     it('removes user_email from localStorage on logout', async () => {
-      const user = userEvent.setup()
-
       renderHeader()
 
       const userButton = screen.getByTitle('User menu')
-      await user.click(userButton)
+      await clickWithAct(userButton)
 
-      await user.click(screen.getByText('Logout'))
+      await clickWithAct(screen.getByText('Logout'))
 
       await waitFor(() => {
         expect(localStorage.getItem('user_email')).toBeNull()
@@ -272,22 +260,20 @@ describe('Header', () => {
 
   describe('Mobile Menu', () => {
     it('opens mobile menu when hamburger is clicked', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const mobileMenuButton = screen.getByRole('button', { name: 'Menu' })
-      await user.click(mobileMenuButton)
+      await clickWithAct(mobileMenuButton)
 
       // Mobile menu should show navigation options with emojis
       expect(screen.getByText(/🏠 Dashboard/)).toBeInTheDocument()
     })
 
     it('shows navigation items in mobile menu', async () => {
-      const user = userEvent.setup()
       renderHeader()
 
       const mobileMenuButton = screen.getByRole('button', { name: 'Menu' })
-      await user.click(mobileMenuButton)
+      await clickWithAct(mobileMenuButton)
 
       expect(screen.getByText(/🎯 Goals/)).toBeInTheDocument()
       expect(screen.getByText(/🔄 Recurring Expenses/)).toBeInTheDocument()

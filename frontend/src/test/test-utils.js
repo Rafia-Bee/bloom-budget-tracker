@@ -133,3 +133,17 @@ export const blurWithAct = async (element) => {
 export const flushPromises = async () => {
     await act(async () => {});
 };
+
+/**
+ * Upload a file to a file input element wrapped in act().
+ * Use this instead of userEvent.upload() for components with async state updates.
+ *
+ * @param {HTMLElement} inputElement - The file input element
+ * @param {File} file - The file to upload
+ * @returns {Promise<void>}
+ */
+export const uploadWithAct = async (inputElement, file) => {
+    await act(async () => {
+        fireEvent.change(inputElement, { target: { files: [file] } });
+    });
+};

@@ -5,10 +5,11 @@
  * name input validation, and form submission.
  */
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
+import { clickWithAct, selectWithAct, typeWithAct } from './test-utils'
 
 describe('CreateSubcategoryModal', () => {
   let mockOnClose
@@ -94,39 +95,35 @@ describe('CreateSubcategoryModal', () => {
 
   describe('User Interactions', () => {
     it('allows category selection', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const categorySelect = screen.getByRole('combobox')
-      await user.selectOptions(categorySelect, 'Debt Payments')
+      await selectWithAct(categorySelect, 'Debt Payments')
 
       expect(categorySelect).toHaveValue('Debt Payments')
     })
 
     it('allows name input', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Gym Membership')
+      await typeWithAct(nameInput, 'Gym Membership')
 
       expect(nameInput).toHaveValue('Gym Membership')
     })
 
     it('calls onClose when Cancel button clicked', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
-      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button clicked', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
-      await user.click(screen.getByRole('button', { name: '✕' }))
+      await clickWithAct(screen.getByRole('button', { name: '✕' }))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -134,15 +131,14 @@ describe('CreateSubcategoryModal', () => {
 
   describe('Form Submission', () => {
     it('submits form with correct data', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const categorySelect = screen.getByRole('combobox')
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
 
-      await user.selectOptions(categorySelect, 'Flexible Expenses')
-      await user.type(nameInput, 'Coffee Shops')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await selectWithAct(categorySelect, 'Flexible Expenses')
+      await typeWithAct(nameInput, 'Coffee Shops')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).toHaveBeenCalledWith({
         name: 'Coffee Shops',
@@ -151,12 +147,11 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('trims whitespace from name', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, '  Groceries  ')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, '  Groceries  ')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).toHaveBeenCalledWith({
         name: 'Groceries',
@@ -165,25 +160,23 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('shows loading state during submission', async () => {
-      const user = userEvent.setup()
       mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Test Category')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Test Category')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument()
     })
 
     it('disables submit button during loading', async () => {
-      const user = userEvent.setup()
       mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Test')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Test')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       const submitButton = screen.getByRole('button', { name: 'Creating...' })
       expect(submitButton).toBeDisabled()
@@ -200,11 +193,10 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('does not call onCreate when submitting empty form', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       // Browser's required validation prevents submit
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).not.toHaveBeenCalled()
     })
@@ -219,15 +211,14 @@ describe('CreateSubcategoryModal', () => {
 
   describe('Error Handling', () => {
     it('displays API error message', async () => {
-      const user = userEvent.setup()
       mockOnCreate.mockRejectedValue({
         response: { data: { error: 'Subcategory already exists' } }
       })
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Duplicate')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Duplicate')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByText('Subcategory already exists')).toBeInTheDocument()
@@ -235,13 +226,12 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('displays generic error for unknown errors', async () => {
-      const user = userEvent.setup()
       mockOnCreate.mockRejectedValue(new Error('Network error'))
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Test')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Test')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByText('Failed to create subcategory')).toBeInTheDocument()
@@ -249,13 +239,12 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('re-enables submit button after error', async () => {
-      const user = userEvent.setup()
       mockOnCreate.mockRejectedValue(new Error('Error'))
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Test')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Test')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Create' })).not.toBeDisabled()
@@ -265,12 +254,11 @@ describe('CreateSubcategoryModal', () => {
 
   describe('All Categories', () => {
     it('can create subcategory for Fixed Expenses', async () => {
-      const user = userEvent.setup()
       render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Rent')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Rent')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).toHaveBeenCalledWith({
         name: 'Rent',
@@ -279,7 +267,6 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('can create subcategory for Savings & Investments', async () => {
-      const user = userEvent.setup()
       render(
         <CreateSubcategoryModal
           onClose={mockOnClose}
@@ -289,8 +276,8 @@ describe('CreateSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Emergency Fund')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Emergency Fund')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).toHaveBeenCalledWith({
         name: 'Emergency Fund',
@@ -299,7 +286,6 @@ describe('CreateSubcategoryModal', () => {
     })
 
     it('can create subcategory for Debt Payments', async () => {
-      const user = userEvent.setup()
       render(
         <CreateSubcategoryModal
           onClose={mockOnClose}
@@ -309,8 +295,8 @@ describe('CreateSubcategoryModal', () => {
       )
 
       const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await user.type(nameInput, 'Student Loans')
-      await user.click(screen.getByRole('button', { name: 'Create' }))
+      await typeWithAct(nameInput, 'Student Loans')
+      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
 
       expect(mockOnCreate).toHaveBeenCalledWith({
         name: 'Student Loans',

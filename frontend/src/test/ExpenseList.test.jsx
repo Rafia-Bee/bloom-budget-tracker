@@ -9,10 +9,11 @@
  * - Payment method indicator colors
  */
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import ExpenseList from '../components/ExpenseList'
+import { clickWithAct } from './test-utils'
 
 describe('ExpenseList', () => {
   const mockOnDelete = vi.fn()
@@ -132,10 +133,9 @@ describe('ExpenseList', () => {
     })
 
     it('filters to show only debit card expenses', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
-      await user.click(screen.getByRole('button', { name: 'Debit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Debit' }))
 
       // Debit expenses should be visible
       expect(screen.getByText('Groceries')).toBeInTheDocument()
@@ -147,10 +147,9 @@ describe('ExpenseList', () => {
     })
 
     it('filters to show only credit card expenses', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
-      await user.click(screen.getByRole('button', { name: 'Credit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Credit' }))
 
       // Credit expenses should be visible
       expect(screen.getByText('Netflix')).toBeInTheDocument()
@@ -162,33 +161,30 @@ describe('ExpenseList', () => {
     })
 
     it('shows all expenses when All filter clicked', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
       // First filter by debit
-      await user.click(screen.getByRole('button', { name: 'Debit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Debit' }))
       expect(screen.queryByText('Netflix')).not.toBeInTheDocument()
 
       // Then click All to show everything
-      await user.click(screen.getByRole('button', { name: 'All' }))
+      await clickWithAct(screen.getByRole('button', { name: 'All' }))
 
       expect(screen.getByText('Groceries')).toBeInTheDocument()
       expect(screen.getByText('Netflix')).toBeInTheDocument()
     })
 
     it('shows empty state when filter yields no results', async () => {
-      const user = userEvent.setup()
       // Only debit expenses
       const debitOnlyExpenses = mockExpenses.filter(e => e.payment_method === 'Debit card')
       render(<ExpenseList expenses={debitOnlyExpenses} onDelete={mockOnDelete} />)
 
-      await user.click(screen.getByRole('button', { name: 'Credit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Credit' }))
 
       expect(screen.getByText(/no expenses yet/i)).toBeInTheDocument()
     })
 
     it('updates button styles when filter changes', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
       // Initially All is active
@@ -196,7 +192,7 @@ describe('ExpenseList', () => {
       expect(screen.getByRole('button', { name: 'Debit' })).toHaveClass('bg-gray-100')
 
       // Click Debit
-      await user.click(screen.getByRole('button', { name: 'Debit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Debit' }))
 
       // Now Debit is active
       expect(screen.getByRole('button', { name: 'Debit' })).toHaveClass('bg-bloom-mint')
@@ -235,7 +231,6 @@ describe('ExpenseList', () => {
     })
 
     it('calls onDelete with expense id when delete clicked', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={[mockExpenses[0]]} onDelete={mockOnDelete} />)
 
       // Find the delete button (the one without text, just an svg)
@@ -244,13 +239,12 @@ describe('ExpenseList', () => {
         btn.querySelector('svg') && !btn.textContent.trim()
       )
 
-      await user.click(deleteButton)
+      await clickWithAct(deleteButton)
 
       expect(mockOnDelete).toHaveBeenCalledWith(1)
     })
 
     it('calls onDelete with correct id for each expense', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses.slice(0, 2)} onDelete={mockOnDelete} />)
 
       // Get all buttons without text (delete buttons)
@@ -260,11 +254,11 @@ describe('ExpenseList', () => {
       )
 
       // Click first delete button
-      await user.click(deleteButtons[0])
+      await clickWithAct(deleteButtons[0])
       expect(mockOnDelete).toHaveBeenCalledWith(1)
 
       // Click second delete button
-      await user.click(deleteButtons[1])
+      await clickWithAct(deleteButtons[1])
       expect(mockOnDelete).toHaveBeenCalledWith(2)
     })
   })
@@ -281,10 +275,9 @@ describe('ExpenseList', () => {
     })
 
     it('shows correct count when filtered by Debit', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
-      await user.click(screen.getByRole('button', { name: 'Debit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Debit' }))
 
       // Only 2 debit expenses
       expect(screen.getByText('Groceries')).toBeInTheDocument()
@@ -292,10 +285,9 @@ describe('ExpenseList', () => {
     })
 
     it('shows correct count when filtered by Credit', async () => {
-      const user = userEvent.setup()
       render(<ExpenseList expenses={mockExpenses} onDelete={mockOnDelete} />)
 
-      await user.click(screen.getByRole('button', { name: 'Credit' }))
+      await clickWithAct(screen.getByRole('button', { name: 'Credit' }))
 
       // Only 2 credit expenses
       expect(screen.getByText('Netflix')).toBeInTheDocument()

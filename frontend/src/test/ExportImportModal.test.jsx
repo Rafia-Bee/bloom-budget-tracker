@@ -7,11 +7,12 @@
  * - UI interactions: close button, loading states
  */
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import ExportImportModal from '../components/ExportImportModal'
 import api from '../api'
+import { clickWithAct, uploadWithAct } from './test-utils'
 
 // Mock the API module
 vi.mock('../api', () => ({
@@ -91,44 +92,40 @@ describe('ExportImportModal', () => {
 
   describe('Export Mode - Interactions', () => {
     it('allows unchecking export types', async () => {
-      const user = userEvent.setup()
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const debtsCheckbox = screen.getByRole('checkbox', { name: /debts/i })
-      await user.click(debtsCheckbox)
+      await clickWithAct(debtsCheckbox)
 
       expect(debtsCheckbox).not.toBeChecked()
     })
 
     it('allows switching to CSV format', async () => {
-      const user = userEvent.setup()
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const csvRadio = screen.getByLabelText('CSV (for Excel)')
-      await user.click(csvRadio)
+      await clickWithAct(csvRadio)
 
       expect(csvRadio).toBeChecked()
       expect(screen.getByText(/Note: CSV exports create separate files/)).toBeInTheDocument()
     })
 
     it('calls onClose when close button is clicked', async () => {
-      const user = userEvent.setup()
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const closeButton = screen.getByRole('button', { name: 'Cancel' })
-      await user.click(closeButton)
+      await clickWithAct(closeButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
     it('calls onClose when X button is clicked', async () => {
-      const user = userEvent.setup()
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       // Find the X button (svg close icon button)
       const buttons = screen.getAllByRole('button')
       const xButton = buttons.find(btn => btn.querySelector('svg'))
-      await user.click(xButton)
+      await clickWithAct(xButton)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
@@ -136,17 +133,16 @@ describe('ExportImportModal', () => {
 
   describe('Export Mode - API Integration', () => {
     it('calls API with selected types on export', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: { data: {} } })
 
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       // Uncheck some options
       const goalsCheckbox = screen.getByRole('checkbox', { name: /goals/i })
-      await user.click(goalsCheckbox)
+      await clickWithAct(goalsCheckbox)
 
       const exportButton = screen.getByRole('button', { name: 'Export Data' })
-      await user.click(exportButton)
+      await clickWithAct(exportButton)
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith(
@@ -157,29 +153,27 @@ describe('ExportImportModal', () => {
     })
 
     it('shows error when no types selected', async () => {
-      const user = userEvent.setup()
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       // Uncheck all options
       const checkboxes = screen.getAllByRole('checkbox')
       for (const checkbox of checkboxes) {
-        await user.click(checkbox)
+        await clickWithAct(checkbox)
       }
 
       const exportButton = screen.getByRole('button', { name: 'Export Data' })
-      await user.click(exportButton)
+      await clickWithAct(exportButton)
 
       expect(screen.getByText('Please select at least one data type to export')).toBeInTheDocument()
     })
 
     it('shows success message after export', async () => {
-      const user = userEvent.setup()
       api.post.mockResolvedValueOnce({ data: { data: { debts: [] } } })
 
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const exportButton = screen.getByRole('button', { name: 'Export Data' })
-      await user.click(exportButton)
+      await clickWithAct(exportButton)
 
       await waitFor(() => {
         expect(screen.getByText('Data exported successfully!')).toBeInTheDocument()
@@ -187,7 +181,6 @@ describe('ExportImportModal', () => {
     })
 
     it('shows loading state during export', async () => {
-      const user = userEvent.setup()
       // Make the API call hang
       let resolvePromise
       api.post.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
@@ -195,7 +188,7 @@ describe('ExportImportModal', () => {
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const exportButton = screen.getByRole('button', { name: 'Export Data' })
-      await user.click(exportButton)
+      await clickWithAct(exportButton)
 
       expect(screen.getByText('Exporting...')).toBeInTheDocument()
 
@@ -204,7 +197,6 @@ describe('ExportImportModal', () => {
     })
 
     it('shows error message on API failure', async () => {
-      const user = userEvent.setup()
       api.post.mockRejectedValueOnce({
         response: { data: { error: 'Export failed - server error' } }
       })
@@ -212,7 +204,7 @@ describe('ExportImportModal', () => {
       render(<ExportImportModal onClose={mockOnClose} mode="export" />)
 
       const exportButton = screen.getByRole('button', { name: 'Export Data' })
-      await user.click(exportButton)
+      await clickWithAct(exportButton)
 
       await waitFor(() => {
         expect(screen.getByText('Export failed - server error')).toBeInTheDocument()
@@ -252,13 +244,12 @@ describe('ExportImportModal', () => {
     })
 
     it('shows error on invalid JSON file upload', async () => {
-      const user = userEvent.setup()
       const { container } = render(<ExportImportModal onClose={mockOnClose} mode="import" />)
 
       const file = new File(['invalid json content'], 'test.json', { type: 'application/json' })
       const fileInput = container.querySelector('input[type="file"]')
 
-      await user.upload(fileInput, file)
+      await uploadWithAct(fileInput, file)
 
       // Wait for the error message (JSON parse error shows "Import failed")
       await waitFor(() => {
@@ -269,13 +260,12 @@ describe('ExportImportModal', () => {
 
   describe('Message/Error Dismissal', () => {
     it('shows dismissible error messages', async () => {
-      const user = userEvent.setup()
       const { container } = render(<ExportImportModal onClose={mockOnClose} mode="import" />)
 
       const file = new File(['invalid json'], 'test.json', { type: 'application/json' })
       const fileInput = container.querySelector('input[type="file"]')
 
-      await user.upload(fileInput, file)
+      await uploadWithAct(fileInput, file)
 
       await waitFor(() => {
         expect(screen.getByText(/Import failed/)).toBeInTheDocument()
@@ -287,7 +277,7 @@ describe('ExportImportModal', () => {
       expect(dismissButton).toBeInTheDocument()
 
       // Click dismiss
-      await user.click(dismissButton)
+      await clickWithAct(dismissButton)
 
       // Error should be gone
       expect(screen.queryByText(/Import failed/)).not.toBeInTheDocument()
