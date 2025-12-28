@@ -18,8 +18,8 @@ const COOKIES_PATH = "e2e/.auth/cookies.json";
  * Test credentials for the test account
  */
 export const TEST_USER = {
-    email: "test@test.com",
-    password: "test123",
+  email: "test@test.com",
+  password: "test123",
 };
 
 /**
@@ -27,15 +27,15 @@ export const TEST_USER = {
  * @returns {Array} Array of cookie objects
  */
 function loadSavedCookies() {
-    try {
-        if (fs.existsSync(COOKIES_PATH)) {
-            const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, "utf-8"));
-            return cookies;
-        }
-    } catch (error) {
-        console.warn("Could not load saved cookies:", error.message);
+  try {
+    if (fs.existsSync(COOKIES_PATH)) {
+      const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, "utf-8"));
+      return cookies;
     }
-    return [];
+  } catch (error) {
+    console.warn("Could not load saved cookies:", error.message);
+  }
+  return [];
 }
 
 /**
@@ -47,50 +47,50 @@ function loadSavedCookies() {
  * 3. This works because addCookies CAN set HttpOnly cookies
  */
 export const test = base.extend({
-    /**
-     * Auto-fixture that restores HttpOnly cookies before each test
-     * This runs automatically for all tests using this fixture
-     */
-    page: async ({ page, context }, use) => {
-        // Load and restore cookies (including HttpOnly JWT)
-        const savedCookies = loadSavedCookies();
-        if (savedCookies.length > 0) {
-            await context.addCookies(savedCookies);
-        }
+  /**
+   * Auto-fixture that restores HttpOnly cookies before each test
+   * This runs automatically for all tests using this fixture
+   */
+  page: async ({ page, context }, use) => {
+    // Load and restore cookies (including HttpOnly JWT)
+    const savedCookies = loadSavedCookies();
+    if (savedCookies.length > 0) {
+      await context.addCookies(savedCookies);
+    }
 
-        await use(page);
+    await use(page);
+  },
+
+  /**
+   * Fixture that ensures we're authenticated on dashboard
+   * Use this when you need guaranteed authenticated state
+   */
+  authenticatedPage: [
+    async ({ page, context }, use) => {
+      // Load and restore cookies
+      const savedCookies = loadSavedCookies();
+      if (savedCookies.length > 0) {
+        await context.addCookies(savedCookies);
+      }
+
+      // Navigate to dashboard
+      await page.goto("/dashboard");
+
+      // Check if we're authenticated
+      const isAuthenticated = await page
+        .waitForURL(/\/(dashboard)?$/, { timeout: 5000 })
+        .then(() => true)
+        .catch(() => false);
+
+      if (!isAuthenticated) {
+        // Fall back to manual login if cookies didn't work
+        await loginAsTestUser(page);
+      }
+
+      await use(page);
     },
-
-    /**
-     * Fixture that ensures we're authenticated on dashboard
-     * Use this when you need guaranteed authenticated state
-     */
-    authenticatedPage: [
-        async ({ page, context }, use) => {
-            // Load and restore cookies
-            const savedCookies = loadSavedCookies();
-            if (savedCookies.length > 0) {
-                await context.addCookies(savedCookies);
-            }
-
-            // Navigate to dashboard
-            await page.goto("/dashboard");
-
-            // Check if we're authenticated
-            const isAuthenticated = await page
-                .waitForURL(/\/(dashboard)?$/, { timeout: 5000 })
-                .then(() => true)
-                .catch(() => false);
-
-            if (!isAuthenticated) {
-                // Fall back to manual login if cookies didn't work
-                await loginAsTestUser(page);
-            }
-
-            await use(page);
-        },
-        { auto: false },
-    ],
+    { auto: false },
+  ],
 });
 
 /**
@@ -98,27 +98,27 @@ export const test = base.extend({
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function loginAsTestUser(page) {
-    await page.goto("/login");
+  await page.goto("/login");
 
-    // Wait for form to be ready
-    await page.waitForSelector('input[type="email"]', { state: "visible" });
+  // Wait for form to be ready
+  await page.waitForSelector('input[type="email"]', { state: "visible" });
 
-    // Clear and fill email
-    await page.locator('input[type="email"]').clear();
-    await page.locator('input[type="email"]').fill(TEST_USER.email);
+  // Clear and fill email
+  await page.locator('input[type="email"]').clear();
+  await page.locator('input[type="email"]').fill(TEST_USER.email);
 
-    // Clear and fill password
-    await page.locator('input[type="password"]').clear();
-    await page.locator('input[type="password"]').fill(TEST_USER.password);
+  // Clear and fill password
+  await page.locator('input[type="password"]').clear();
+  await page.locator('input[type="password"]').fill(TEST_USER.password);
 
-    // Wait a moment for React state to update
-    await page.waitForTimeout(100);
+  // Wait a moment for React state to update
+  await page.waitForTimeout(100);
 
-    // Click submit and wait for navigation
-    await Promise.all([
-        page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 }),
-        page.click('button[type="submit"]'),
-    ]);
+  // Click submit and wait for navigation
+  await Promise.all([
+    page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 }),
+    page.click('button[type="submit"]'),
+  ]);
 }
 
 /**
@@ -128,33 +128,115 @@ export async function loginAsTestUser(page) {
  * @param {import('@playwright/test').BrowserContext} context - Browser context
  */
 export async function ensureAuthenticated(page, context) {
-    // Restore cookies
-    const savedCookies = loadSavedCookies();
-    if (savedCookies.length > 0) {
-        await context.addCookies(savedCookies);
-    }
+  // Restore cookies
+  const savedCookies = loadSavedCookies();
+  if (savedCookies.length > 0) {
+    await context.addCookies(savedCookies);
+  }
 
-    // Navigate and check auth
-    await page.goto("/dashboard");
+  // Navigate and check auth
+  await page.goto("/dashboard");
 
-    // If redirected to login, do manual login
-    if (page.url().includes("/login")) {
-        await loginAsTestUser(page);
-    }
+  // If redirected to login, do manual login
+  if (page.url().includes("/login")) {
+    await loginAsTestUser(page);
+  }
 }
 
 /**
- * Helper to log out current user
+ * Check if the current viewport is mobile-sized
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @returns {Promise<boolean>} True if viewport width < 768px (md breakpoint)
+ */
+export async function isMobileViewport(page) {
+  const viewport = page.viewportSize();
+  return viewport && viewport.width < 768;
+}
+
+/**
+ * Open the mobile hamburger menu
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @returns {Promise<boolean>} True if menu was opened successfully
+ */
+export async function openMobileMenu(page) {
+  const hamburgerButton = page.locator('button[aria-label="Menu"]');
+  if (await hamburgerButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await hamburgerButton.click();
+    // Wait for menu animation
+    await page.waitForTimeout(300);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Helper to log out current user (works on both desktop and mobile viewports)
+ * Uses element visibility detection rather than viewport size for reliability.
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function logout(page) {
-    // Open user menu and click logout
-    const userMenuButton = page.locator('button[title="User menu"]');
-    if (await userMenuButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await userMenuButton.click();
+  // Wait for either menu button to be visible (page loaded)
+  const hamburgerButton = page.locator('button[aria-label="Menu"]');
+  const userMenuButton = page.locator('button[title="User menu"]');
+
+  await expect(hamburgerButton.or(userMenuButton)).toBeVisible({
+    timeout: 15000,
+  });
+
+  // Determine which one is visible and click it
+  const isHamburgerVisible = await hamburgerButton.isVisible();
+
+  if (isHamburgerVisible) {
+    // Mobile: Use hamburger menu
+    await hamburgerButton.click();
+  } else {
+    // Desktop: Use user menu button
+    await userMenuButton.click();
+  }
+
+  // Click logout button (same selector works for both menus)
+  const logoutButton = page.locator('button:has-text("Logout")');
+  await expect(logoutButton).toBeVisible({ timeout: 5000 });
+  await logoutButton.click();
+  await expect(page).toHaveURL("/login");
+}
+
+/**
+ * Navigate to a page using appropriate method for viewport size
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} path - Target path (e.g., '/debts', '/goals', '/settings')
+ * @param {string} linkText - Text to look for in navigation (e.g., 'Debts', 'Goals')
+ */
+export async function navigateToPage(page, path, linkText) {
+  const isMobile = await isMobileViewport(page);
+
+  if (isMobile) {
+    // Mobile: Use hamburger menu
+    await openMobileMenu(page);
+    // Look for link in mobile menu
+    const mobileLink = page.locator(
+      `a[href="${path}"], button:has-text("${linkText}")`,
+    );
+    if (await mobileLink.first().isVisible({ timeout: 2000 })) {
+      await mobileLink.first().click();
+    } else {
+      // Fallback to direct navigation
+      await page.goto(path);
     }
-    await page.click('button:has-text("Logout"), a:has-text("Logout")');
-    await expect(page).toHaveURL("/login");
+  } else {
+    // Desktop: Try direct link first, then user menu
+    const directLink = page.locator(
+      `a[href="${path}"], nav a:has-text("${linkText}")`,
+    );
+    if (await directLink.first().isVisible({ timeout: 2000 })) {
+      await directLink.first().click();
+    } else {
+      // Fallback to direct navigation
+      await page.goto(path);
+    }
+  }
+
+  await expect(page).toHaveURL(path);
 }
 
 /**
@@ -163,10 +245,10 @@ export async function logout(page) {
  * @param {string} urlPattern - URL pattern to wait for
  */
 export async function waitForAPI(page, urlPattern) {
-    return page.waitForResponse(
-        (response) =>
-            response.url().includes(urlPattern) && response.status() === 200
-    );
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes(urlPattern) && response.status() === 200,
+  );
 }
 
 /**
@@ -175,7 +257,7 @@ export async function waitForAPI(page, urlPattern) {
  * @returns {string} Formatted currency string
  */
 export function formatCurrency(cents) {
-    return `€${(cents / 100).toFixed(2)}`;
+  return `€${(cents / 100).toFixed(2)}`;
 }
 
 /**
@@ -183,7 +265,7 @@ export function formatCurrency(cents) {
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function waitForPageLoad(page) {
-    await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("networkidle");
 }
 
 // Re-export expect for convenience

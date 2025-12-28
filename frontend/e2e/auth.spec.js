@@ -15,127 +15,168 @@ import { TEST_USER, loginAsTestUser } from "./fixtures.js";
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe("Authentication Flow", () => {
-    test.describe("Login", () => {
-        test("user can log in with valid credentials", async ({ page }) => {
-            await page.goto("/login");
+  test.describe("Login", () => {
+    test("user can log in with valid credentials", async ({ page }) => {
+      await page.goto("/login");
 
-            // Fill in credentials (use type selectors - no name attributes)
-            await page.fill('input[type="email"]', TEST_USER.email);
-            await page.fill('input[type="password"]', TEST_USER.password);
+      // Fill in credentials (use type selectors - no name attributes)
+      await page.fill('input[type="email"]', TEST_USER.email);
+      await page.fill('input[type="password"]', TEST_USER.password);
 
-            // Submit form
-            await page.click('button[type="submit"]');
+      // Submit form
+      await page.click('button[type="submit"]');
 
-            // Should redirect to dashboard
-            await expect(page).toHaveURL(/\/(dashboard)?$/, { timeout: 15000 });
+      // Should redirect to dashboard
+      await expect(page).toHaveURL(/\/(dashboard)?$/, { timeout: 15000 });
 
-            // Dashboard should show user is logged in (has navigation or user elements)
-            // Look for any of these indicators that we're on the dashboard
-            await expect(
-                page
-                    .locator("text=/Dashboard|Budget|Balance|Salary Period/i")
-                    .first()
-            ).toBeVisible({ timeout: 10000 });
-        });
-
-        test("login persists across page reload", async ({ page }) => {
-            // Login
-            await loginAsTestUser(page);
-
-            // Reload the page
-            await page.reload();
-
-            // Should still be on dashboard, not redirected to login
-            await expect(page).not.toHaveURL("/login", { timeout: 5000 });
-        });
+      // Dashboard should show user is logged in (has navigation or user elements)
+      // Look for any of these indicators that we're on the dashboard
+      await expect(
+        page.locator("text=/Dashboard|Budget|Balance|Salary Period/i").first(),
+      ).toBeVisible({ timeout: 10000 });
     });
 
-    test.describe("Logout", () => {
-        test("user can log out", async ({ page }) => {
-            // Login first
-            await loginAsTestUser(page);
+    test("login persists across page reload", async ({ page }) => {
+      // Login
+      await loginAsTestUser(page);
 
-            // Click the user menu button (circular button with user's initial)
-            const userMenuButton = page.locator('button[title="User menu"]');
-            await userMenuButton.click();
+      // Reload the page
+      await page.reload();
 
-            // Wait for menu to appear and click logout
-            const logoutButton = page.locator('button:has-text("Logout")');
-            await expect(logoutButton).toBeVisible();
-            await logoutButton.click();
+      // Should still be on dashboard, not redirected to login
+      await expect(page).not.toHaveURL("/login", { timeout: 5000 });
+    });
+  });
 
-            // Should redirect to login
-            await expect(page).toHaveURL("/login", { timeout: 10000 });
-        });
+  test.describe("Logout", () => {
+    test("user can log out", async ({ page }) => {
+      // Login first
+      await loginAsTestUser(page);
 
-        test("after logout, protected routes redirect to login", async ({
-            page,
-        }) => {
-            // Login first
-            await loginAsTestUser(page);
+      // Wait for page to load (look for any dashboard content)
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(1000); // Extra buffer for UI to settle
 
-            // Click the user menu button (circular button with user's initial)
-            const userMenuButton = page.locator('button[title="User menu"]');
-            await userMenuButton.click();
+      // Check if mobile hamburger menu is visible
+      const hamburgerButton = page.locator('button[aria-label="Menu"]');
+      const userMenuButton = page.locator('button[title="User menu"]');
 
-            // Wait for menu to appear and click logout
-            const logoutButton = page.locator('button:has-text("Logout")');
-            await expect(logoutButton).toBeVisible();
-            await logoutButton.click();
+      // Check which menu is available and click it
+      if (await hamburgerButton.isVisible()) {
+        // Mobile: Use hamburger menu
+        await hamburgerButton.click();
+      } else {
+        // Desktop: Use user menu button
+        await expect(userMenuButton).toBeVisible({ timeout: 10000 });
+        await userMenuButton.click();
+      }
 
-            // Wait for redirect to login
-            await expect(page).toHaveURL("/login", { timeout: 10000 });
+      // Wait for menu to appear and click logout
+      const logoutButton = page.locator('button:has-text("Logout")');
+      await expect(logoutButton).toBeVisible({ timeout: 5000 });
+      await logoutButton.click();
 
-            // Try to access protected route
-            await page.goto("/dashboard");
-
-            // Should redirect back to login
-            await expect(page).toHaveURL("/login");
-        });
+      // Should redirect to login
+      await expect(page).toHaveURL("/login", { timeout: 10000 });
     });
 
-    test.describe("Session Management", () => {
-        test("authenticated user can access protected routes", async ({
-            page,
-        }) => {
-            await loginAsTestUser(page);
+    test("after logout, protected routes redirect to login", async ({
+      page,
+    }) => {
+      // Login first
+      await loginAsTestUser(page);
 
-            // Navigate to various protected routes
-            const protectedRoutes = [
-                { path: "/debts", indicator: /Debts|Debt/i },
-                { path: "/goals", indicator: /Goals|Goal|Savings/i },
-                { path: "/settings", indicator: /Settings|Preferences/i },
-            ];
+      // Wait for page to load (look for any dashboard content)
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(1000); // Extra buffer for UI to settle
 
-            for (const route of protectedRoutes) {
-                await page.goto(route.path);
-                await expect(page).toHaveURL(route.path);
-                await expect(
-                    page.locator(`text=${route.indicator}`).first()
-                ).toBeVisible({ timeout: 5000 });
-            }
-        });
+      // Check if mobile hamburger menu is visible
+      const hamburgerButton = page.locator('button[aria-label="Menu"]');
+      const userMenuButton = page.locator('button[title="User menu"]');
 
-        test("api requests include auth cookies automatically", async ({
-            page,
-            context,
-        }) => {
-            await loginAsTestUser(page);
+      // Check which menu is available and click it
+      if (await hamburgerButton.isVisible()) {
+        // Mobile: Use hamburger menu
+        await hamburgerButton.click();
+      } else {
+        // Desktop: Use user menu button
+        await expect(userMenuButton).toBeVisible({ timeout: 10000 });
+        await userMenuButton.click();
+      }
 
-            // Make an API call that requires auth
-            const responsePromise = page.waitForResponse(
-                (response) =>
-                    response.url().includes("/api/v1/salary-periods") &&
-                    response.status() < 400
-            );
+      // Wait for menu to appear and click logout
+      const logoutButton = page.locator('button:has-text("Logout")');
+      await expect(logoutButton).toBeVisible({ timeout: 5000 });
+      await logoutButton.click();
 
-            // Navigate to dashboard which triggers salary periods fetch
-            await page.goto("/");
+      // Wait for redirect to login
+      await expect(page).toHaveURL("/login", { timeout: 10000 });
 
-            const response = await responsePromise;
+      // Try to access protected route
+      await page.goto("/dashboard");
 
-            // Should not get 401
-            expect(response.status()).not.toBe(401);
-        });
+      // Should redirect back to login
+      await expect(page).toHaveURL("/login");
     });
+  });
+
+  test.describe("Session Management", () => {
+    test("authenticated user can access protected routes", async ({ page }) => {
+      await loginAsTestUser(page);
+
+      // Navigate to various protected routes
+      const protectedRoutes = [
+        {
+          path: "/debts",
+          indicator: /Debt Management|Your Debts|Debts/i,
+        },
+        {
+          path: "/goals",
+          indicator: /Savings Goals|Your Goals|Goals/i,
+        },
+        {
+          path: "/settings",
+          indicator: /Settings|Preferences|Subcategories/i,
+        },
+      ];
+
+      for (const route of protectedRoutes) {
+        await page.goto(route.path);
+        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(500);
+
+        await expect(page).toHaveURL(route.path);
+
+        // Check for page-specific content (not nav link text)
+        const pageContent = page.locator(
+          `h1:has-text("${route.indicator.source}"), h2:has-text("${route.indicator.source}"), [class*="title"], text=${route.indicator}`,
+        );
+        await expect(pageContent.first()).toBeVisible({
+          timeout: 5000,
+        });
+      }
+    });
+
+    test("api requests include auth cookies automatically", async ({
+      page,
+      context,
+    }) => {
+      await loginAsTestUser(page);
+
+      // Make an API call that requires auth
+      const responsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/salary-periods") &&
+          response.status() < 400,
+      );
+
+      // Navigate to dashboard which triggers salary periods fetch
+      await page.goto("/");
+
+      const response = await responsePromise;
+
+      // Should not get 401
+      expect(response.status()).not.toBe(401);
+    });
+  });
 });

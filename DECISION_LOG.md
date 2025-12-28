@@ -987,10 +987,10 @@ const fc = (cents) => formatCurrency(cents, defaultCurrency);
 **Solution:**
 
 -   Created Python script to restore 14 system default subcategories:
-    -   Fixed Expenses (5): Rent/Mortgage, Utilities, Insurance, Subscriptions, Other
-    -   Flexible Expenses (6): Food, Transportation, Entertainment, Shopping, Health, Other
-    -   Savings & Investments (1): Other (users create specific goals via Goals page)
-    -   Debt Payments (2): Credit Card, Other
+  -   Fixed Expenses (5): Rent/Mortgage, Utilities, Insurance, Subscriptions, Other
+  -   Flexible Expenses (6): Food, Transportation, Entertainment, Shopping, Health, Other
+  -   Savings & Investments (1): Other (users create specific goals via Goals page)
+  -   Debt Payments (2): Credit Card, Other
 -   All subcategories have `user_id=NULL`, `is_system=True`, `is_active=True`
 
 **Decision:** Added data validation check to prevent future accidental deletion of system defaults. Database restoration script can be reused if needed.
@@ -1155,21 +1155,21 @@ if not goal: return 404
 
 -   **Backend Changes**:
 
-    -   User model: Added `recurring_lookahead_days` column with constraint
-    -   Routes: Added lookahead setting endpoints in `user_data.py`
-    -   Generator: Updated to use user setting as default in `recurring_generation.py`
-    -   API: Modified `recurringExpenseAPI` to support null daysAhead (uses user setting)
+  -   User model: Added `recurring_lookahead_days` column with constraint
+  -   Routes: Added lookahead setting endpoints in `user_data.py`
+  -   Generator: Updated to use user setting as default in `recurring_generation.py`
+  -   API: Modified `recurringExpenseAPI` to support null daysAhead (uses user setting)
 
 -   **Frontend Changes**:
 
-    -   Dashboard: Added transactionView state with Transactions/Scheduled toggle
-    -   RecurringExpenses: Added view state with Active/Upcoming toggle
-    -   Settings: Added Preferences tab with lookahead dropdown (7-90 days)
-    -   Removed automatic generation from AddExpenseModal
+  -   Dashboard: Added transactionView state with Transactions/Scheduled toggle
+  -   RecurringExpenses: Added view state with Active/Upcoming toggle
+  -   Settings: Added Preferences tab with lookahead dropdown (7-90 days)
+  -   Removed automatic generation from AddExpenseModal
 
 -   **Database Migration**:
-    -   Added `recurring_lookahead_days` INTEGER NOT NULL DEFAULT 14 to users table
-    -   Check constraint: `recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90`
+  -   Added `recurring_lookahead_days` INTEGER NOT NULL DEFAULT 14 to users table
+  -   Check constraint: `recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90`
 
 **Rationale:** User feedback indicated automatic generation was intrusive and unpredictable. On-demand model gives users full control over when expenses are created while maintaining the convenience of templates. User-configurable lookahead accommodates different planning horizons (weekly vs monthly expense cycles).
 
@@ -1346,9 +1346,9 @@ Renamed all user-facing and internal references to clarify intent:
 **Rationale:**
 
 -   **Prepaid Model:** Credit card works like a bank account with max capacity (limit)
-    -   `creditAvailable` = Money you HAVE (like account balance)
-    -   `creditLimit` = Maximum capacity (like max account balance)
-    -   `creditDebt` = Money you've SPENT (limit - available)
+  -   `creditAvailable` = Money you HAVE (like account balance)
+  -   `creditLimit` = Maximum capacity (like max account balance)
+  -   `creditDebt` = Money you've SPENT (limit - available)
 -   **Eliminates Ambiguity:** "Available" is unambiguous - always means "what you can spend"
 -   **Better Communication:** Easier to explain to users and developers
 -   **Consistency:** Matches how debit card uses "balance" to mean "money you have"
@@ -1381,8 +1381,8 @@ Renamed all user-facing and internal references to clarify intent:
 -   Dashboard had 310 lines (753-1063) of custom header code duplicating Header.jsx functionality
 -   Dashboard managed its own mobile menu state: `showUserMenu`, `showMobileMenu`, `expandedMobileSubmenu`
 -   Adding new header features (like submenu system) required implementing twice:
-    -   Header.jsx for Debts and RecurringExpenses pages
-    -   Dashboard.jsx custom header
+  -   Header.jsx for Debts and RecurringExpenses pages
+  -   Dashboard.jsx custom header
 -   Technical debt from previous iterations where Dashboard needed unique period selector placement
 
 **Solution:**
@@ -1532,9 +1532,9 @@ export_data = {
 
 -   **Export all periods:** Historical data is valuable for analysis and debugging. Inactive periods represent completed budget cycles with full expense/income history.
 -   **Reject overlaps:** Allowing overlapping salary periods would break:
-    -   Carryover calculations (which week owns the overlap?)
-    -   Balance displays (double-counting expenses?)
-    -   Period navigation (which period is "active"?)
+  -   Carryover calculations (which week owns the overlap?)
+  -   Balance displays (double-counting expenses?)
+  -   Period navigation (which period is "active"?)
 -   **Future enhancement:** "Smart merge" - import only non-overlapping portion (e.g., Nov 15-19 if user has Nov 20-Dec 19)
 
 **Impact:**
