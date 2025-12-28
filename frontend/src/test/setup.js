@@ -5,9 +5,33 @@
  * Includes API mocking to prevent network errors during component tests.
  */
 
-import { afterEach, vi } from "vitest";
+import { afterEach, vi, beforeAll, afterAll } from "vitest";
 import { cleanup, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+
+// Store original console.error
+const originalConsoleError = console.error;
+
+// Suppress React act() warnings in tests
+// These warnings occur during component mount when useEffect triggers async state updates
+// All tests pass, but the warnings clutter test output
+beforeAll(() => {
+    console.error = (...args) => {
+        // Suppress act() warnings
+        if (
+            args[0] &&
+            typeof args[0] === "string" &&
+            args[0].includes("not wrapped in act")
+        ) {
+            return;
+        }
+        originalConsoleError.apply(console, args);
+    };
+});
+
+afterAll(() => {
+    console.error = originalConsoleError;
+});
 
 // Helper to flush pending state updates
 const flushPromises = async () => {

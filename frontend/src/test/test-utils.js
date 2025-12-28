@@ -5,7 +5,19 @@
  * Provides act()-wrapped event handlers to prevent React act() warnings.
  */
 
-import { act, fireEvent } from "@testing-library/react";
+import { act, fireEvent, waitFor } from "@testing-library/react";
+
+/**
+ * Wait for async effects to complete after render.
+ * Call this after rendering components that have useEffect hooks with async operations.
+ *
+ * @returns {Promise<void>}
+ */
+export const waitForEffects = async () => {
+    await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+};
 
 /**
  * Click an element wrapped in act() to ensure state updates complete.
