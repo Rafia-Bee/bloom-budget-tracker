@@ -6,8 +6,13 @@
  */
 
 import { afterEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
+
+// Helper to flush pending state updates
+const flushPromises = async () => {
+    await act(async () => {});
+};
 
 // Mock the CurrencyContext to provide default values in tests
 vi.mock("../contexts/CurrencyContext", () => ({
@@ -128,7 +133,9 @@ vi.mock("../api", () => ({
 }));
 
 // Clean up after each test
-afterEach(() => {
+afterEach(async () => {
+    // Flush any pending state updates to avoid act() warnings
+    await flushPromises();
     cleanup();
     vi.clearAllMocks();
 });

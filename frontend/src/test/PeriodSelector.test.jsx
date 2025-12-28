@@ -5,8 +5,8 @@
  * Verifies period selection, view toggling, edit/delete actions.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import PeriodSelector from '../components/PeriodSelector'
 
@@ -54,6 +54,12 @@ describe('PeriodSelector', () => {
     mockOnEdit = vi.fn()
     mockOnDelete = vi.fn()
     vi.clearAllMocks()
+  })
+
+  afterEach(async () => {
+    // Flush any pending state updates to avoid act() warnings
+    await act(async () => {})
+    cleanup()
   })
 
   describe('No Current Period', () => {
@@ -157,7 +163,6 @@ describe('PeriodSelector', () => {
 
   describe('Calendar Dropdown', () => {
     it('opens calendar dropdown when button clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -169,15 +174,14 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
     })
 
     it('shows period description in dropdown header', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -189,15 +193,14 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText(/each period has 4 weekly budgets/i)).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText(/each period has 4 weekly budgets/i)).toBeInTheDocument()
     })
 
     it('shows view mode toggle button', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -209,15 +212,14 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText(/list/i)).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText(/list/i)).toBeInTheDocument()
     })
 
     it('shows create new salary period button in dropdown', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -229,15 +231,14 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument()
     })
 
     it('closes calendar when clicking outside', async () => {
-      const user = userEvent.setup()
       render(
         <div>
           <div data-testid="outside">Outside area</div>
@@ -253,23 +254,22 @@ describe('PeriodSelector', () => {
       )
 
       // Open calendar
-      await user.click(screen.getByRole('button'))
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
+      })
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+
+      // Click outside
+      await act(async () => {
+        fireEvent.mouseDown(screen.getByTestId('outside'))
       })
 
-      // Click outside using userEvent
-      await user.click(screen.getByTestId('outside'))
-
-      await waitFor(() => {
-        expect(screen.queryByText('Salary Periods')).not.toBeInTheDocument()
-      })
+      expect(screen.queryByText('Salary Periods')).not.toBeInTheDocument()
     })
   })
 
   describe('View Mode Toggle', () => {
     it('starts in grid view by default', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -281,16 +281,15 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        // Grid view shows "List" toggle option
-        expect(screen.getByText(/list/i)).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      // Grid view shows "List" toggle option
+      expect(screen.getByText(/list/i)).toBeInTheDocument()
     })
 
     it('toggles to list view when clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -302,26 +301,25 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText(/list/i)).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText(/list/i)).toBeInTheDocument()
 
       // Toggle to list view
       const toggleButton = screen.getByText(/list/i)
-      await user.click(toggleButton)
-
-      await waitFor(() => {
-        // List view shows "Grid" toggle option
-        expect(screen.getByText(/grid/i)).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(toggleButton)
       })
+
+      // List view shows "Grid" toggle option
+      expect(screen.getByText(/grid/i)).toBeInTheDocument()
     })
   })
 
   describe('Period Selection', () => {
     it('calls onPeriodChange when period is selected', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -333,17 +331,19 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       // Find and click a different period
       const periodButtons = screen.getAllByRole('button')
       const pastPeriod = periodButtons.find(btn => btn.textContent?.includes('Nov'))
       if (pastPeriod) {
-        await user.click(pastPeriod)
+        await act(async () => {
+          fireEvent.click(pastPeriod)
+        })
         expect(mockOnPeriodChange).toHaveBeenCalled()
       }
     })
@@ -351,7 +351,6 @@ describe('PeriodSelector', () => {
 
   describe('Create New Period', () => {
     it('calls onCreateNew when create button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -363,13 +362,15 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
 
-      await user.click(screen.getByText('+ Create New Salary Period'))
+      expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument()
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('+ Create New Salary Period'))
+      })
       expect(mockOnCreateNew).toHaveBeenCalledTimes(1)
     })
   })
@@ -515,7 +516,6 @@ describe('PeriodSelector', () => {
 
   describe('Delete Confirmation', () => {
     it('shows delete confirmation modal when delete is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -528,25 +528,24 @@ describe('PeriodSelector', () => {
       )
 
       // Open dropdown
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       // Find and click a delete button (they appear on hover but are in DOM)
       const deleteButtons = screen.getAllByTitle(/delete/i)
       if (deleteButtons.length > 0) {
-        await user.click(deleteButtons[0])
-
-        await waitFor(() => {
-          expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
+        await act(async () => {
+          fireEvent.click(deleteButtons[0])
         })
+
+        expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
       }
     })
 
     it('shows warning about transaction deletion', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -558,24 +557,23 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       const deleteButtons = screen.getAllByTitle(/delete/i)
       if (deleteButtons.length > 0) {
-        await user.click(deleteButtons[0])
-
-        await waitFor(() => {
-          expect(screen.getByText(/transactions in this period will be deleted/i)).toBeInTheDocument()
+        await act(async () => {
+          fireEvent.click(deleteButtons[0])
         })
+
+        expect(screen.getByText(/transactions in this period will be deleted/i)).toBeInTheDocument()
       }
     })
 
     it('calls onDelete when confirmed', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -587,31 +585,32 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       const deleteButtons = screen.getAllByTitle(/delete/i)
       if (deleteButtons.length > 0) {
-        await user.click(deleteButtons[0])
-
-        await waitFor(() => {
-          expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
+        await act(async () => {
+          fireEvent.click(deleteButtons[0])
         })
+
+        expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
 
         // Click the Delete button in modal
         const confirmDelete = screen.getAllByRole('button').find(b => b.textContent === 'Delete')
         if (confirmDelete) {
-          await user.click(confirmDelete)
+          await act(async () => {
+            fireEvent.click(confirmDelete)
+          })
           expect(mockOnDelete).toHaveBeenCalled()
         }
       }
     })
 
     it('closes modal when cancel is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -623,33 +622,32 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       const deleteButtons = screen.getAllByTitle(/delete/i)
       if (deleteButtons.length > 0) {
-        await user.click(deleteButtons[0])
-
-        await waitFor(() => {
-          expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
+        await act(async () => {
+          fireEvent.click(deleteButtons[0])
         })
+
+        expect(screen.getByText('Delete Budget Period?')).toBeInTheDocument()
 
         // Click Cancel
-        await user.click(screen.getByText('Cancel'))
-
-        await waitFor(() => {
-          expect(screen.queryByText('Delete Budget Period?')).not.toBeInTheDocument()
+        await act(async () => {
+          fireEvent.click(screen.getByText('Cancel'))
         })
+
+        expect(screen.queryByText('Delete Budget Period?')).not.toBeInTheDocument()
       }
     })
   })
 
   describe('Edit Functionality', () => {
     it('calls onEdit when edit button is clicked', async () => {
-      const user = userEvent.setup()
       render(
         <PeriodSelector
           currentPeriod={mockCurrentPeriod}
@@ -661,15 +659,17 @@ describe('PeriodSelector', () => {
         />
       )
 
-      await user.click(screen.getByRole('button'))
-
-      await waitFor(() => {
-        expect(screen.getByText('Salary Periods')).toBeInTheDocument()
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button'))
       })
+
+      expect(screen.getByText('Salary Periods')).toBeInTheDocument()
 
       const editButtons = screen.getAllByTitle(/edit/i)
       if (editButtons.length > 0) {
-        await user.click(editButtons[0])
+        await act(async () => {
+          fireEvent.click(editButtons[0])
+        })
         expect(mockOnEdit).toHaveBeenCalled()
       }
     })

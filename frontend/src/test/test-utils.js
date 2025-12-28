@@ -1,0 +1,108 @@
+/**
+ * Bloom - Test Utilities
+ *
+ * Helper functions for testing React components.
+ * Provides act()-wrapped event handlers to prevent React act() warnings.
+ */
+
+import { act, fireEvent } from "@testing-library/react";
+
+/**
+ * Click an element wrapped in act() to ensure state updates complete.
+ * Use this instead of userEvent.click() for components with async state updates.
+ *
+ * @param {HTMLElement} element - The element to click
+ * @returns {Promise<void>}
+ */
+export const clickWithAct = async (element) => {
+    await act(async () => {
+        fireEvent.click(element);
+    });
+};
+
+/**
+ * Trigger a mousedown event wrapped in act().
+ * Use for components that listen for mousedown (e.g., click-outside handlers).
+ *
+ * @param {HTMLElement} element - The element to trigger mousedown on
+ * @returns {Promise<void>}
+ */
+export const mouseDownWithAct = async (element) => {
+    await act(async () => {
+        fireEvent.mouseDown(element);
+    });
+};
+
+/**
+ * Change an input value wrapped in act().
+ * Use this instead of userEvent.type() for components with async state updates.
+ *
+ * @param {HTMLElement} element - The input element to change
+ * @param {string} value - The new value to set
+ * @returns {Promise<void>}
+ */
+export const changeWithAct = async (element, value) => {
+    await act(async () => {
+        fireEvent.change(element, { target: { value } });
+    });
+};
+
+/**
+ * Type into an input element wrapped in act().
+ * Unlike changeWithAct, this simulates individual keystrokes.
+ *
+ * @param {HTMLElement} element - The input element to type into
+ * @param {string} text - The text to type
+ * @returns {Promise<void>}
+ */
+export const typeWithAct = async (element, text) => {
+    await act(async () => {
+        fireEvent.change(element, { target: { value: text } });
+    });
+};
+
+/**
+ * Submit a form wrapped in act().
+ *
+ * @param {HTMLElement} formElement - The form element to submit
+ * @returns {Promise<void>}
+ */
+export const submitWithAct = async (formElement) => {
+    await act(async () => {
+        fireEvent.submit(formElement);
+    });
+};
+
+/**
+ * Focus an element wrapped in act().
+ *
+ * @param {HTMLElement} element - The element to focus
+ * @returns {Promise<void>}
+ */
+export const focusWithAct = async (element) => {
+    await act(async () => {
+        fireEvent.focus(element);
+    });
+};
+
+/**
+ * Blur an element wrapped in act().
+ *
+ * @param {HTMLElement} element - The element to blur
+ * @returns {Promise<void>}
+ */
+export const blurWithAct = async (element) => {
+    await act(async () => {
+        fireEvent.blur(element);
+    });
+};
+
+/**
+ * Flush pending state updates by running an empty act().
+ * Useful in afterEach hooks to ensure all state updates complete before cleanup.
+ *
+ * @returns {Promise<void>}
+ */
+export const flushPromises = async () => {
+    await act(async () => {});
+};

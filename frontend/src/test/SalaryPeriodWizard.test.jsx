@@ -15,6 +15,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import api from '../api'
+import { clickWithAct, changeWithAct } from './test-utils'
 
 // Helper to find input by its label text
 const getInputByLabel = (labelText) => {
@@ -129,8 +130,6 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Step 1 - Form Interactions', () => {
     it('updates debit balance on input', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -140,14 +139,12 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
+      await changeWithAct(debitInput, '1500.00')
 
       expect(debitInput).toHaveValue('1500.00')
     })
 
     it('updates credit available on input', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -157,14 +154,12 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const creditInput = getInputByLabel('Credit Card Available (Remaining Limit)')
-      await user.type(creditInput, '1000.00')
+      await changeWithAct(creditInput, '1000.00')
 
       expect(creditInput).toHaveValue('1000.00')
     })
 
     it('shows credit allowance slider when credit is available', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -174,7 +169,7 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const creditInput = getInputByLabel('Credit Card Available (Remaining Limit)')
-      await user.type(creditInput, '1000.00')
+      await changeWithAct(creditInput, '1000.00')
 
       await waitFor(() => {
         expect(screen.getByText('Credit Allowance (Optional)')).toBeInTheDocument()
@@ -193,8 +188,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calculates and displays debt owed', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -205,7 +198,7 @@ describe('SalaryPeriodWizard', () => {
 
       // Set credit available less than limit to show debt
       const creditInput = getInputByLabel('Credit Card Available (Remaining Limit)')
-      await user.type(creditInput, '1000.00')
+      await changeWithAct(creditInput, '1000.00')
 
       // Limit is €1500, available is €1000, so debt is €500
       await waitFor(() => {
@@ -216,8 +209,6 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Step 1 - Validation', () => {
     it('shows error when debit balance is empty', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -227,7 +218,7 @@ describe('SalaryPeriodWizard', () => {
       })
 
       // Try to proceed without entering debit balance
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/please enter your current debit balance/i)).toBeInTheDocument()
@@ -235,8 +226,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows error when debit balance is zero', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -246,8 +235,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '0')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '0')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/please enter your current debit balance/i)).toBeInTheDocument()
@@ -340,8 +329,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('navigates to step 2 after valid step 1', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -351,8 +338,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText(/review fixed bills/i)).toBeInTheDocument()
@@ -360,8 +347,6 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays detected fixed bills', async () => {
-      const user = userEvent.setup()
-
       render(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
@@ -371,8 +356,8 @@ describe('SalaryPeriodWizard', () => {
       })
 
       const debitInput = getInputByLabel('Debit Balance (Current Bank Account)')
-      await user.type(debitInput, '1500.00')
-      await user.click(screen.getByText(/next: review fixed bills/i))
+      await changeWithAct(debitInput, '1500.00')
+      await clickWithAct(screen.getByText(/next: review fixed bills/i))
 
       await waitFor(() => {
         expect(screen.getByText('Rent')).toBeInTheDocument()

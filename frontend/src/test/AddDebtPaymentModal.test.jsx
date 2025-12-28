@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
 
@@ -35,7 +35,10 @@ describe('AddDebtPaymentModal', () => {
     vi.clearAllMocks()
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Flush any pending state updates to avoid act() warnings
+    await act(async () => {})
+    cleanup()
     vi.restoreAllMocks()
   })
 
