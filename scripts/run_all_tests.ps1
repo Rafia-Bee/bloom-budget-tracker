@@ -83,9 +83,10 @@ if ($runBackend) {
 
     try {
         if ($VerboseOutput) {
-            $backendOutput = & .\.venv\Scripts\pytest.exe backend/tests -v --tb=short --cov=backend --cov-report=term-missing 2>&1
+            & .\.venv\Scripts\pytest.exe backend/tests -v --tb=short --cov=backend --cov-report=term-missing 2>&1 | Tee-Object -Variable backendOutput
         } else {
-            $backendOutput = & .\.venv\Scripts\pytest.exe backend/tests --tb=line --cov=backend --cov-report=term 2>&1
+            # Use -v to show test names as requested
+            & .\.venv\Scripts\pytest.exe backend/tests -v --tb=line --cov=backend --cov-report=term 2>&1 | Tee-Object -Variable backendOutput
         }
         $backendExitCode = $LASTEXITCODE
 
@@ -112,13 +113,13 @@ if ($runBackend) {
         $results.Backend.Status = if ($backendExitCode -eq 0) { "passed" } else { "failed" }
         $results.Backend.Time = ((Get-Date) - $backendStart).TotalSeconds
 
-        # Show output if verbose or if failed
-        if ($VerboseOutput -or $backendExitCode -ne 0) {
-            $backendOutput | ForEach-Object { Write-Host $_ }
-        } else {
-            # Show just the summary
-            $backendOutput | Select-String -Pattern "(PASSED|FAILED|ERROR|passed|failed|error|warning|TOTAL)" | ForEach-Object { Write-Host $_.Line }
-        }
+        # Output already shown via Tee-Object
+        # if ($VerboseOutput -or $backendExitCode -ne 0) {
+        #     $backendOutput | ForEach-Object { Write-Host $_ }
+        # } else {
+        #     # Show just the summary
+        #     $backendOutput | Select-String -Pattern "(PASSED|FAILED|ERROR|passed|failed|error|warning|TOTAL)" | ForEach-Object { Write-Host $_.Line }
+        # }
 
         if ($backendExitCode -eq 0) {
             Write-Success "Backend tests passed!"
@@ -142,9 +143,10 @@ if ($runFrontend) {
         Push-Location frontend
 
         if ($VerboseOutput) {
-            $frontendOutput = npm test -- --run --reporter=verbose --coverage 2>&1
+            npm test -- --run --reporter=verbose --coverage 2>&1 | Tee-Object -Variable frontendOutput
         } else {
-            $frontendOutput = npm test -- --run --coverage 2>&1
+            # Use verbose reporter to show test names
+            npm test -- --run --reporter=verbose --coverage 2>&1 | Tee-Object -Variable frontendOutput
         }
         $frontendExitCode = $LASTEXITCODE
 
@@ -174,12 +176,12 @@ if ($runFrontend) {
         $results.Frontend.Status = if ($frontendExitCode -eq 0) { "passed" } else { "failed" }
         $results.Frontend.Time = ((Get-Date) - $frontendStart).TotalSeconds
 
-        # Show output
-        if ($VerboseOutput -or $frontendExitCode -ne 0) {
-            $frontendOutput | ForEach-Object { Write-Host $_ }
-        } else {
-            $frontendOutput | Select-String -Pattern "(Tests|PASS|FAIL|Coverage|All files)" | ForEach-Object { Write-Host $_.Line }
-        }
+        # Output already shown via Tee-Object
+        # if ($VerboseOutput -or $frontendExitCode -ne 0) {
+        #     $frontendOutput | ForEach-Object { Write-Host $_ }
+        # } else {
+        #     $frontendOutput | Select-String -Pattern "(Tests|PASS|FAIL|Coverage|All files)" | ForEach-Object { Write-Host $_.Line }
+        # }
 
         if ($frontendExitCode -eq 0) {
             Write-Success "Frontend tests passed!"
@@ -204,7 +206,8 @@ if ($runE2E) {
     try {
         Push-Location frontend
         # Use playwright.cmd directly to avoid PowerShell npx.ps1 parsing issues
-        $e2eOutput = & .\node_modules\.bin\playwright.cmd test --reporter=line 2>&1
+        # Use list reporter to show [1/N] progress
+        & .\node_modules\.bin\playwright.cmd test --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
         $e2eExitCode = $LASTEXITCODE
 
         Pop-Location
@@ -226,11 +229,12 @@ if ($runE2E) {
         $results.E2E.Status = if ($e2eExitCode -eq 0) { "passed" } else { "failed" }
         $results.E2E.Time = ((Get-Date) - $e2eStart).TotalSeconds
 
-        if ($VerboseOutput -or $e2eExitCode -ne 0) {
-            $e2eOutput | ForEach-Object { Write-Host $_ }
-        } else {
-            $e2eOutput | Select-String -Pattern "(passed|failed|error)" | ForEach-Object { Write-Host $_.Line }
-        }
+        # Output already shown via Tee-Object
+        # if ($VerboseOutput -or $e2eExitCode -ne 0) {
+        #     $e2eOutput | ForEach-Object { Write-Host $_ }
+        # } else {
+        #     $e2eOutput | Select-String -Pattern "(passed|failed|error)" | ForEach-Object { Write-Host $_.Line }
+        # }
 
         if ($e2eExitCode -eq 0) {
             Write-Success "E2E tests passed!"

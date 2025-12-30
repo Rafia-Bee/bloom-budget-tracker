@@ -7,7 +7,7 @@ Comprehensive tests for data export and import functionality including:
 - Bank transaction import and preview
 """
 
-import pytest
+
 import json
 from datetime import date, timedelta
 from backend.models.database import db, Debt, RecurringExpense, Goal, Subcategory

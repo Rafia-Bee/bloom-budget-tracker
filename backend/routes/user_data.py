@@ -152,7 +152,7 @@ def get_recurring_lookahead():
     """
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -180,7 +180,7 @@ def update_recurring_lookahead():
     """
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -239,7 +239,7 @@ def get_default_currency():
     """
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -269,7 +269,7 @@ def update_default_currency():
 
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404

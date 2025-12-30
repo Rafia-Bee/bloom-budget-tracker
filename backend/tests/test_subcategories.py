@@ -4,8 +4,6 @@ Bloom - Subcategories API Tests
 Test custom subcategory CRUD operations.
 """
 
-import pytest
-
 
 class TestSubcategoriesCRUD:
     """Test subcategory CRUD operations"""

@@ -9,7 +9,7 @@ Comprehensive tests for expense CRUD operations including:
 - Pagination
 """
 
-import pytest
+
 from datetime import date, timedelta
 from backend.models.database import db, Expense, Debt, ExpenseNameMapping
 
@@ -681,7 +681,7 @@ class TestExpenseDebtPayments:
 
         # Verify debt balance reduced
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 480000  # 500000 - 20000
 
     def test_debt_payment_auto_archives_when_paid_off(
@@ -720,7 +720,7 @@ class TestExpenseDebtPayments:
 
         # Verify debt is archived
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 0
             assert debt.archived is True
 
@@ -779,7 +779,7 @@ class TestExpenseDebtPayments:
 
         # Verify balance reduced
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 90000
 
         # Update to different amount
@@ -791,7 +791,7 @@ class TestExpenseDebtPayments:
 
         # Verify balance reflects new amount (old reversed, new applied)
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 80000  # 100000 - 20000
 
     def test_update_expense_changes_debt_category(
@@ -836,7 +836,7 @@ class TestExpenseDebtPayments:
 
         # Verify debt balance reduced
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 45000
 
     def test_delete_expense_reverses_debt_payment(
@@ -875,7 +875,7 @@ class TestExpenseDebtPayments:
 
         # Verify balance reduced
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 20000
 
         # Delete expense
@@ -883,7 +883,7 @@ class TestExpenseDebtPayments:
 
         # Verify balance restored
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.current_balance == 30000
 
     def test_delete_expense_unarchives_debt(
@@ -922,7 +922,7 @@ class TestExpenseDebtPayments:
 
         # Verify archived
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.archived is True
 
         # Delete payment
@@ -930,7 +930,7 @@ class TestExpenseDebtPayments:
 
         # Verify unarchived
         with app.app_context():
-            debt = Debt.query.get(debt_id)
+            debt = db.session.get(Debt, debt_id)
             assert debt.archived is False
             assert debt.current_balance == 5000
 

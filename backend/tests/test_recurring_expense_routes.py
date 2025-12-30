@@ -5,7 +5,7 @@ Integration tests for recurring expense template CRUD endpoints.
 Tests creation, updates, deletion, active filtering, and toggle operations.
 """
 
-import pytest
+
 from datetime import date, timedelta
 
 

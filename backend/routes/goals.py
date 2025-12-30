@@ -9,8 +9,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from backend.models.database import db, Goal, Subcategory, Expense
-from datetime import datetime, date
-from backend.utils.validators import ALLOWED_CATEGORIES
+from datetime import datetime, date, timezone
 
 goals_bp = Blueprint("goals", __name__)
 
@@ -253,7 +252,7 @@ def update_goal(id):
         if "description" in data:
             goal.description = data["description"]
 
-        goal.updated_at = datetime.utcnow()
+        goal.updated_at = datetime.now(timezone.utc)
         db.session.commit()
 
         goal_dict = goal.to_dict()
@@ -308,9 +307,9 @@ def delete_goal(id):
 
         if force and contribution_count > 0:
             # Move contributions to "Other" subcategory
-            other_subcategory = Subcategory.query.filter_by(
-                name="Other", category="Savings & Investments", is_system=True
-            ).first()
+            # other_subcategory = Subcategory.query.filter_by(
+            #     name="Other", category="Savings & Investments", is_system=True
+            # ).first()
 
             contributions = Expense.query.filter_by(
                 user_id=current_user_id,

@@ -142,7 +142,7 @@ def reset_password():
             return jsonify({"error": "Reset token has expired"}), 400
 
         # Get the user
-        user = User.query.get(reset_token.user_id)
+        user = db.session.get(User, reset_token.user_id)
         if not user:
             return jsonify({"error": "User not found"}), 400
 

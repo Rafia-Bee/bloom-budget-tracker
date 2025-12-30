@@ -345,7 +345,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                     type="number"
                     min="1"
                     value={frequencyValue}
-                    onChange={(e) => setFrequencyValue(parseInt(e.target.value))}
+                    onChange={(e) => setFrequencyValue(e.target.value === '' ? '' : parseInt(e.target.value))}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                   />
                 </div>

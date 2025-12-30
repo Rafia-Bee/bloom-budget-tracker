@@ -220,54 +220,69 @@ test.describe("Navigation and State Management", () => {
         });
 
         test("can navigate to Settings page", async ({ page }) => {
-            const settingsLink = page.locator(
-                'a[href="/settings"], button:has-text("Settings"), nav a:has-text("Settings")'
-            );
+            // Check if mobile hamburger menu is visible
+            const hamburgerButton = page.locator('button[aria-label="Menu"]');
+            const userMenuButton = page.locator('button[title="User menu"]');
 
-            if (await settingsLink.first().isVisible({ timeout: 3000 })) {
-                await settingsLink.first().click();
-                await expect(page).toHaveURL("/settings");
-                await expect(
-                    page.locator("text=/Settings|Preferences/i").first()
-                ).toBeVisible();
+            // Wait for either to be visible
+            await Promise.race([
+                hamburgerButton
+                    .waitFor({ state: "visible", timeout: 5000 })
+                    .catch(() => {}),
+                userMenuButton
+                    .waitFor({ state: "visible", timeout: 5000 })
+                    .catch(() => {}),
+            ]);
+
+            if (await hamburgerButton.isVisible()) {
+                // Mobile: Open hamburger menu
+                await hamburgerButton.click();
+                await page.waitForTimeout(300);
+                // Click Settings in mobile menu
+                await page.locator('button:has-text("Settings")').click();
             } else {
-                const menuButton = page.locator(
-                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
-                );
-                if (await menuButton.isVisible()) {
-                    await menuButton.click();
-                    await page
-                        .locator(
-                            'a[href="/settings"], button:has-text("Settings")'
-                        )
-                        .click();
-                    await expect(page).toHaveURL("/settings");
-                }
+                // Desktop: Open user menu
+                await userMenuButton.click();
+                await page.waitForTimeout(300);
+                // Click Settings in user menu
+                await page.locator('button:has-text("Settings")').click();
             }
+
+            await expect(page).toHaveURL("/settings");
+            await expect(
+                page.locator("text=/Settings|Preferences/i").first()
+            ).toBeVisible();
         });
 
         test("can navigate to Recurring Expenses page", async ({ page }) => {
-            const recurringLink = page.locator(
-                'a[href="/recurring"], a[href="/recurring-expenses"], button:has-text("Recurring"), nav a:has-text("Recurring")'
-            );
+            // Check if mobile hamburger menu is visible
+            const hamburgerButton = page.locator('button[aria-label="Menu"]');
+            const desktopLink = page.locator('a[href="/recurring-expenses"]');
 
-            if (await recurringLink.first().isVisible({ timeout: 3000 })) {
-                await recurringLink.first().click();
-                await expect(page).toHaveURL(/\/recurring/);
+            // Wait for either to be visible
+            await Promise.race([
+                hamburgerButton
+                    .waitFor({ state: "visible", timeout: 5000 })
+                    .catch(() => {}),
+                desktopLink
+                    .waitFor({ state: "visible", timeout: 5000 })
+                    .catch(() => {}),
+            ]);
+
+            if (await hamburgerButton.isVisible()) {
+                // Mobile: Open hamburger menu
+                await hamburgerButton.click();
+                await page.waitForTimeout(300);
+                // Click Recurring Expenses in mobile menu
+                await page
+                    .locator('button:has-text("Recurring Expenses")')
+                    .click();
             } else {
-                const menuButton = page.locator(
-                    'button[aria-label*="menu" i], [data-testid="menu-button"]'
-                );
-                if (await menuButton.isVisible()) {
-                    await menuButton.click();
-                    await page
-                        .locator(
-                            'a[href="/recurring"], a[href="/recurring-expenses"], button:has-text("Recurring")'
-                        )
-                        .click();
-                    await expect(page).toHaveURL(/\/recurring/);
-                }
+                // Desktop: Click nav link directly
+                await desktopLink.click();
             }
+
+            await expect(page).toHaveURL(/\/recurring-expenses/);
         });
 
         test("can navigate back to Dashboard", async ({ page }) => {

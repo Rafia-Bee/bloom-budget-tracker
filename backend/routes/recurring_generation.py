@@ -6,7 +6,7 @@ Endpoints for triggering and previewing recurring expense generation.
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models.database import User
+from backend.models.database import db, User
 from backend.utils.recurring_generator import (
     generate_due_expenses,
     get_upcoming_recurring_expenses,
@@ -25,7 +25,7 @@ def trigger_generation():
     """
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -103,7 +103,7 @@ def preview_upcoming():
     """
     try:
         current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
+        user = db.session.get(User, current_user_id)
 
         if not user:
             return jsonify({"error": "User not found"}), 404

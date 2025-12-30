@@ -5,7 +5,7 @@ Test carryover calculations, recurring expense generation, debt auto-archiving,
 and expense date assignment logic.
 """
 
-import pytest
+
 from datetime import date, timedelta
 
 

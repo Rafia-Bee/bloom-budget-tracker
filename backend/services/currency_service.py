@@ -1,20 +1,22 @@
 """
 Currency Service - Exchange rate management and currency conversion.
 
-Provides exchange rate fetching from ExchangeRate-API (open access), rate caching,
-and currency conversion utilities for multi-currency transaction support.
+Provides exchange rate fetching from ExchangeRate-API (open access),
+rate caching, and currency conversion utilities for multi-currency
+transaction support.
 
-API: open.er-api.com (165 currencies, free, no API key required for open access)
+API: open.er-api.com (165 currencies, free, no API key required)
 Attribution: Rates By Exchange Rate API (https://www.exchangerate-api.com)
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 import requests
 
 from backend.models.database import db, ExchangeRate
 
-# Supported currencies (ISO 4217 codes) - All 165 currencies from ExchangeRate-API
+# Supported currencies (ISO 4217 codes)
+# All 165 currencies from ExchangeRate-API
 SUPPORTED_CURRENCIES = [
     "AED",
     "AFN",
@@ -507,7 +509,11 @@ def _get_cached_rate(base: str, target: str, rate_date: date) -> Optional[float]
     # Current rates expire after CACHE_EXPIRY_HOURS
     if cached.fetched_at:
         expiry = cached.fetched_at + timedelta(hours=CACHE_EXPIRY_HOURS)
-        if datetime.utcnow() > expiry:
+        # Handle naive datetime from SQLite/legacy data
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+
+        if datetime.now(timezone.utc) > expiry:
             return None  # Stale, need to refetch
 
     return cached.rate
@@ -527,11 +533,11 @@ def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
             target_currency=target,
             rate=rate,
             rate_date=rate_date,
-            fetched_at=datetime.utcnow(),
+            fetched_at=datetime.now(timezone.utc),
         )
         stmt = stmt.on_conflict_do_update(
             index_elements=["base_currency", "target_currency", "rate_date"],
-            set_={"rate": rate, "fetched_at": datetime.utcnow()},
+            set_={"rate": rate, "fetched_at": datetime.now(timezone.utc)},
         )
         db.session.execute(stmt)
         db.session.commit()
@@ -544,7 +550,7 @@ def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
 
         if existing:
             existing.rate = rate
-            existing.fetched_at = datetime.utcnow()
+            existing.fetched_at = datetime.now(timezone.utc)
         else:
             try:
                 new_rate = ExchangeRate(
@@ -552,7 +558,7 @@ def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
                     target_currency=target,
                     rate=rate,
                     rate_date=rate_date,
-                    fetched_at=datetime.utcnow(),
+                    fetched_at=datetime.now(timezone.utc),
                 )
                 db.session.add(new_rate)
                 db.session.commit()
@@ -560,11 +566,13 @@ def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
                 # Race condition hit - another request inserted, just update
                 db.session.rollback()
                 existing = ExchangeRate.query.filter_by(
-                    base_currency=base, target_currency=target, rate_date=rate_date
+                    base_currency=base,
+                    target_currency=target,
+                    rate_date=rate_date,
                 ).first()
                 if existing:
                     existing.rate = rate
-                    existing.fetched_at = datetime.utcnow()
+                    existing.fetched_at = datetime.now(timezone.utc)
                     db.session.commit()
 
 

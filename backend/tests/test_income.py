@@ -258,7 +258,7 @@ class TestIncomeCRUD:
         assert "deleted" in response.json["message"]
 
         # Verify soft-deleted (record exists but has deleted_at set)
-        deleted_income = Income.query.get(income.id)
+        deleted_income = db.session.get(Income, income.id)
         assert deleted_income is not None
         assert deleted_income.deleted_at is not None
         assert deleted_income.is_deleted is True

@@ -4,8 +4,6 @@ Bloom - Authentication Tests
 Test user registration, login, token refresh, and password validation.
 """
 
-import pytest
-
 
 class TestAuthRegistration:
     """Test user registration endpoint"""

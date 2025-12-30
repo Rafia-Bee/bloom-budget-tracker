@@ -95,7 +95,7 @@ class TestGenerateEndpoint:
     def test_generate_uses_user_lookahead_setting(self, client, auth_headers, user_id):
         """Should use user's recurring_lookahead_days setting by default"""
         # Set user's lookahead to 7 days
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         user.recurring_lookahead_days = 7
         db.session.commit()
 
@@ -117,7 +117,7 @@ class TestGenerateEndpoint:
 
     def test_generate_with_custom_days_ahead(self, client, auth_headers, user_id):
         """Should allow overriding lookahead with days_ahead param"""
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         user.recurring_lookahead_days = 7
         db.session.commit()
 
@@ -209,7 +209,7 @@ class TestPreviewEndpoint:
 
     def test_preview_uses_user_lookahead(self, client, auth_headers, user_id):
         """Should use user's lookahead setting by default"""
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         user.recurring_lookahead_days = 14
         db.session.commit()
 

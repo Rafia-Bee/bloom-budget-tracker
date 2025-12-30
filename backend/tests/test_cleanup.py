@@ -4,7 +4,7 @@ Bloom - Cleanup Service Tests
 Test cleanup functionality for expired tokens and other database maintenance.
 """
 
-import pytest
+
 from datetime import datetime, timedelta, timezone
 from backend.models.database import PasswordResetToken, User
 from backend.services.cleanup_service import cleanup_service

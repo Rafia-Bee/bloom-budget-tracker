@@ -9,7 +9,7 @@ Integration tests for salary period endpoints including:
 - Period overlap validation
 """
 
-import pytest
+
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -72,7 +72,7 @@ class TestSalaryPeriodCreation:
 
         # Verify weekly budget via GET endpoint
         with client.application.app_context():
-            period = SalaryPeriod.query.get(period_id)
+            period = db.session.get(SalaryPeriod, period_id)
             # Total budget = 4000 + 400 - 800 = 3600
             # Weekly = 3600 / 4 = 900
             assert period.weekly_budget == 90000  # €900
@@ -232,7 +232,7 @@ class TestActivePeriodLogic:
 
         # Verify via database
         with client.application.app_context():
-            period = SalaryPeriod.query.get(period_id)
+            period = db.session.get(SalaryPeriod, period_id)
             assert period.is_active is True
 
     def test_future_period_is_inactive(self, client, auth_headers):
@@ -256,7 +256,7 @@ class TestActivePeriodLogic:
 
         # Verify via database
         with client.application.app_context():
-            period = SalaryPeriod.query.get(period_id)
+            period = db.session.get(SalaryPeriod, period_id)
             assert period.is_active is False
 
     def test_get_current_period_returns_404_when_none(self, client, auth_headers):
@@ -738,7 +738,7 @@ class TestSalaryPeriodPartialUpdate:
 
         # Verify it's deactivated
         with client.application.app_context():
-            period = SalaryPeriod.query.get(salary_period)
+            period = db.session.get(SalaryPeriod, salary_period)
             assert period.is_active is False
 
     def test_reactivate_salary_period(self, client, auth_headers, salary_period):
@@ -761,7 +761,7 @@ class TestSalaryPeriodPartialUpdate:
 
         # Verify it's active again
         with client.application.app_context():
-            period = SalaryPeriod.query.get(salary_period)
+            period = db.session.get(SalaryPeriod, salary_period)
             assert period.is_active is True
 
     def test_partial_update_not_found(self, client, auth_headers):
@@ -802,7 +802,7 @@ class TestAutoActivation:
 
         # Verify via database that it's active
         with client.application.app_context():
-            period = SalaryPeriod.query.get(period_id)
+            period = db.session.get(SalaryPeriod, period_id)
             assert period.is_active is True
 
 
@@ -833,7 +833,7 @@ class TestBudgetRecalculation:
 
         # Verify initial weekly budget: 4000 / 4 = €1000
         with client.application.app_context():
-            period = SalaryPeriod.query.get(period_id)
+            period = db.session.get(SalaryPeriod, period_id)
             assert period.weekly_budget == 100000  # €1000
 
         # Create a fixed bill recurring expense

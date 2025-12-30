@@ -4,7 +4,7 @@ Bloom - Goals API Tests
 Test savings goal CRUD operations and progress tracking.
 """
 
-import pytest
+
 from datetime import date, timedelta
 
 

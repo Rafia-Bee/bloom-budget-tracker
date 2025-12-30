@@ -8,7 +8,7 @@ Note: BudgetPeriods are typically auto-created by SalaryPeriods (4 weeks per sal
 These tests cover the direct CRUD API for budget periods.
 """
 
-import pytest
+
 from datetime import date, timedelta
 
 

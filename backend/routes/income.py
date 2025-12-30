@@ -9,7 +9,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, Income
 from backend.services.currency_service import get_exchange_rate
-from datetime import datetime
+from datetime import datetime, timezone
 
 income_bp = Blueprint("income", __name__)
 
@@ -25,7 +25,7 @@ def get_income():
     limit = request.args.get("limit", 50, type=int)
 
     # Filter parameters
-    budget_period_id = request.args.get("budget_period_id", type=int)
+    # budget_period_id = request.args.get("budget_period_id", type=int)
     income_type = request.args.get("type")
     start_date = request.args.get("start_date")  # YYYY-MM-DD
     end_date = request.args.get("end_date")  # YYYY-MM-DD
@@ -131,7 +131,7 @@ def create_income():
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
     else:
-        date = datetime.utcnow().date()
+        date = datetime.now(timezone.utc).date()
 
     # Get currency, default to EUR
     currency = data.get("currency", "EUR").upper()
