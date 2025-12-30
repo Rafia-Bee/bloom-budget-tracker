@@ -14,6 +14,8 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from alembic.script import ScriptDirectory
+from alembic.runtime.migration import MigrationContext
 from backend.config import config, _validate_production_secrets
 from backend.models.database import db
 from backend.routes.api_v1 import create_v1_blueprint
@@ -29,6 +31,44 @@ from backend.routes.password_reset import password_reset_bp
 from backend.routes.export_import import export_import_bp
 from backend.routes.admin import admin_bp
 from backend.routes.subcategories import subcategories_bp
+
+
+def _check_pending_migrations(app):
+    """
+    Check if there are any pending database migrations.
+    Raises RuntimeError if database is out of sync in production.
+    """
+    with app.app_context():
+        try:
+            # Get current revision from database
+            conn = db.engine.connect()
+            context = MigrationContext.configure(conn)
+            current_rev = context.get_current_revision()
+
+            # Get head revision from migration scripts
+            # Migrations are in backend/migrations
+            migrations_dir = os.path.join(app.root_path, "migrations")
+            script = ScriptDirectory(migrations_dir)
+            head_rev = script.get_current_head()
+
+            if current_rev != head_rev:
+                app.logger.warning(
+                    f"Database schema out of sync! DB: {current_rev}, Code: {head_rev}"
+                )
+                # In production, we want to fail fast to prevent data corruption
+                if app.config.get("ENV") == "production":
+                    raise RuntimeError(
+                        f"Pending migrations detected! DB: {current_rev}, Code: {head_rev}. "
+                        "Please run migrations before starting the server."
+                    )
+            else:
+                app.logger.info(
+                    f"Database schema is up to date (Revision: {current_rev})"
+                )
+
+        except Exception as e:
+            # Don't block startup if check fails (e.g. first run or DB not ready), but log it
+            app.logger.warning(f"Failed to check migration status: {str(e)}")
 
 
 def create_app(config_name="development"):
@@ -71,6 +111,9 @@ def create_app(config_name="development"):
     CORS(app, origins=cors_origins, supports_credentials=True)
 
     db.init_app(app)
+
+    # Check for pending migrations (Issue #124)
+    _check_pending_migrations(app)
 
     # Configure JWT for httpOnly cookies (#80)
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
