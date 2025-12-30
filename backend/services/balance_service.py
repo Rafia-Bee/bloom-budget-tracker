@@ -100,7 +100,13 @@ def _calculate_debit_balance(user_id: int) -> float:
     # Find earliest "Initial Balance" entry for this user
     earliest_initial_balance = (
         db.session.query(Income)
-        .filter(and_(Income.user_id == user_id, Income.type == "Initial Balance"))
+        .filter(
+            and_(
+                Income.user_id == user_id,
+                Income.type == "Initial Balance",
+                Income.deleted_at.is_(None),
+            )
+        )
         .order_by(Income.actual_date)
         .first()
     )
@@ -109,7 +115,7 @@ def _calculate_debit_balance(user_id: int) -> float:
         # No initial balance, use earliest income instead
         earliest_income = (
             db.session.query(Income)
-            .filter(Income.user_id == user_id)
+            .filter(and_(Income.user_id == user_id, Income.deleted_at.is_(None)))
             .order_by(Income.actual_date)
             .first()
         )
@@ -133,6 +139,7 @@ def _calculate_debit_balance(user_id: int) -> float:
                 != "Initial Balance",  # Exclude all initial balance snapshots
                 Income.actual_date >= start_from_date,
                 Income.actual_date <= today,
+                Income.deleted_at.is_(None),
             )
         )
         .scalar()
@@ -148,6 +155,7 @@ def _calculate_debit_balance(user_id: int) -> float:
                 Expense.payment_method == "Debit card",
                 Expense.date >= start_from_date,
                 Expense.date <= today,
+                Expense.deleted_at.is_(None),
             )
         )
         .scalar()
@@ -189,6 +197,7 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
                 Expense.category == "Debt",
                 Expense.subcategory == "Credit Card",
                 Expense.payment_method == "Credit card",
+                Expense.deleted_at.is_(None),
             )
         )
         .order_by(Expense.date)
@@ -215,6 +224,7 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
                 Expense.category != "Debt",  # Exclude pre-existing debt markers
                 Expense.date >= start_from_date,
                 Expense.date <= today,
+                Expense.deleted_at.is_(None),
             )
         )
         .scalar()
@@ -231,6 +241,7 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
                 Expense.subcategory == "Credit Card",
                 Expense.date >= start_from_date,
                 Expense.date <= today,
+                Expense.deleted_at.is_(None),
             )
         )
         .scalar()
@@ -273,6 +284,7 @@ def get_period_summary(salary_period_id: int, user_id: int) -> Dict:
                 Expense.user_id == user_id,
                 Expense.date >= bp.start_date,
                 Expense.date <= bp.end_date,
+                Expense.deleted_at.is_(None),
             )
         ).all()
         total_spent += sum(e.amount for e in expenses)
