@@ -237,7 +237,7 @@ class TestPasswordResetTokenCleanup:
 
             # Reset password (should trigger cleanup)
             response = client.post(
-                "/auth/reset-password",
+                "/api/v1/auth/reset-password",
                 json={"token": "valid_token", "password": "NewPass123!"},
             )
 
