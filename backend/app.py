@@ -79,8 +79,8 @@ def create_app(config_name="development"):
     )  # HTTPS only in production
     app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
     app.config["JWT_REFRESH_COOKIE_PATH"] = "/auth/refresh"
-    # Disable for now (can enable later)
-    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+    # Enable CSRF protection (#122)
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = True
     # Prevent CSRF while allowing navigation
     app.config["JWT_COOKIE_SAMESITE"] = "Lax"
 
