@@ -7,7 +7,7 @@ and reset password endpoints.
 
 import pytest
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 from backend.models.database import db, User, PasswordResetToken
 
@@ -92,7 +92,9 @@ class TestForgotPassword:
                 user_id=user_id, is_used=False
             ).first()
             assert token is not None
-            assert token.expires_at > datetime.utcnow()
+            assert token.expires_at.replace(tzinfo=timezone.utc) > datetime.now(
+                timezone.utc
+            )
 
     def test_forgot_password_invalidates_old_tokens(self, client, user_id):
         """Should invalidate any existing tokens for the user"""
@@ -103,7 +105,7 @@ class TestForgotPassword:
         old_token = PasswordResetToken(
             user_id=user_id,
             token="old_token_123",
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(old_token)
         db.session.commit()
@@ -177,7 +179,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -217,7 +219,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() - timedelta(hours=1),  # Expired
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),  # Expired
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -239,7 +241,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             is_used=True,  # Already used
         )
         db.session.add(reset_token)
@@ -275,7 +277,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -304,7 +306,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -333,7 +335,7 @@ class TestResetPassword:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -365,7 +367,7 @@ class TestValidateResetToken:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -395,7 +397,7 @@ class TestValidateResetToken:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() - timedelta(hours=1),  # Expired
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),  # Expired
         )
         db.session.add(reset_token)
         db.session.commit()
@@ -415,7 +417,7 @@ class TestValidateResetToken:
         reset_token = PasswordResetToken(
             user_id=user_id,
             token=token_value,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             is_used=True,
         )
         db.session.add(reset_token)

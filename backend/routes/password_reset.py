@@ -6,7 +6,7 @@ Handles password reset functionality including token generation and validation.
 
 import secrets
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app
 from backend.models.database import db, User, PasswordResetToken
 from backend.utils.validators import validate_email
@@ -54,7 +54,7 @@ def forgot_password():
         reset_token = PasswordResetToken(
             user_id=user.id,
             token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
         db.session.add(reset_token)
@@ -136,7 +136,9 @@ def reset_password():
             return jsonify({"error": "Invalid or expired reset token"}), 400
 
         # Check if token has expired
-        if reset_token.expires_at < datetime.utcnow():
+        if reset_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(
+            timezone.utc
+        ):
             return jsonify({"error": "Reset token has expired"}), 400
 
         # Get the user
@@ -196,7 +198,9 @@ def validate_reset_token():
             return jsonify({"valid": False, "error": "Invalid token"}), 200
 
         # Check if token has expired
-        if reset_token.expires_at < datetime.utcnow():
+        if reset_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(
+            timezone.utc
+        ):
             return jsonify({"valid": False, "error": "Token has expired"}), 200
 
         return jsonify({"valid": True}), 200

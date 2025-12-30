@@ -24,7 +24,7 @@ Soft Delete Pattern:
 - Use instance.restore() to restore deleted records
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -58,7 +58,7 @@ class SoftDeleteMixin:
 
     def soft_delete(self):
         """Mark this record as deleted (soft delete)."""
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now(timezone.utc)
 
     def restore(self):
         """Restore a soft-deleted record."""
@@ -76,7 +76,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     failed_login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
     recurring_lookahead_days = db.Column(db.Integer, default=14, nullable=False)
@@ -120,7 +120,11 @@ class User(db.Model):
         """Check if account is currently locked"""
         if self.locked_until is None:
             return False
-        return datetime.utcnow() < self.locked_until
+        return (
+            datetime.now(timezone.utc) < self.locked_until.replace(tzinfo=timezone.utc)
+            if self.locked_until.tzinfo is None
+            else self.locked_until
+        )
 
     def reset_failed_attempts(self):
         """Reset failed login attempts counter"""
@@ -166,7 +170,7 @@ class SalaryPeriod(db.Model):
     start_date = db.Column(db.Date, nullable=False)  # Period start date
     end_date = db.Column(db.Date, nullable=False)  # Period end date
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     budget_periods = db.relationship(
@@ -229,7 +233,7 @@ class BudgetPeriod(db.Model):
     start_date = db.Column(db.Date, nullable=False, index=True)
     end_date = db.Column(db.Date, nullable=False, index=True)
     period_type = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Composite index for active period queries
     __table_args__ = (
@@ -284,7 +288,7 @@ class Expense(SoftDeleteMixin, db.Model):
     receipt_url = db.Column(db.String(500), nullable=True)
     # True for fixed bills that don't count against weekly budget
     is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Composite index for common query pattern: user + date range + ordering
     __table_args__ = (
@@ -316,7 +320,7 @@ class Income(SoftDeleteMixin, db.Model):
     exchange_rate_used = db.Column(db.Float, nullable=True)
     scheduled_date = db.Column(db.Date, nullable=True, index=True)
     actual_date = db.Column(db.Date, nullable=True, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Composite index for common query pattern: user + date filtering
     __table_args__ = (
@@ -338,9 +342,11 @@ class Debt(SoftDeleteMixin, db.Model):
     current_balance = db.Column(db.Integer, nullable=False)
     monthly_payment = db.Column(db.Integer, nullable=False)
     archived = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
 
@@ -370,9 +376,11 @@ class RecurringExpense(SoftDeleteMixin, db.Model):
     # True if this counts as a fixed bill for weekly budgeting
     is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Relationship to generated expenses
@@ -414,7 +422,9 @@ class ExpenseNameMapping(db.Model):
     subcategory = db.Column(db.String(100), nullable=False)
     confidence = db.Column(db.Float, default=1.0)
     last_updated = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
 
@@ -445,9 +455,11 @@ class CreditCardSettings(db.Model):
         unique=True,
     )
     credit_limit = db.Column(db.Integer, default=150000)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     __table_args__ = (
@@ -465,7 +477,7 @@ class PeriodSuggestion(db.Model):
     suggestion_type = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default="pending")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
         db.CheckConstraint(
@@ -484,7 +496,7 @@ class PasswordResetToken(db.Model):
     token = db.Column(db.String(255), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship("User", backref="password_reset_tokens")
 
@@ -508,9 +520,11 @@ class Subcategory(db.Model):
     name = db.Column(db.String(100), nullable=False)
     is_system = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     user = db.relationship("User", backref="subcategories")
@@ -554,9 +568,11 @@ class Goal(SoftDeleteMixin, db.Model):
     target_date = db.Column(db.Date, nullable=True)
     subcategory_name = db.Column(db.String(100), nullable=False)  # Links to subcategory
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Relationships
@@ -633,7 +649,7 @@ class ExchangeRate(db.Model):
     target_currency = db.Column(db.String(3), nullable=False, index=True)
     rate = db.Column(db.Float, nullable=False)  # 1 base = X target
     rate_date = db.Column(db.Date, nullable=False, index=True)  # Date rate is valid for
-    fetched_at = db.Column(db.DateTime, default=datetime.utcnow)
+    fetched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
         db.UniqueConstraint(

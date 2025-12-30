@@ -4,6 +4,26 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-30
+
+### Backend Datetime Deprecation Fix (#118)
+
+**Context:** Issue #118 - `datetime.utcnow()` is deprecated in Python 3.12+ and produces warnings in 3.11.
+
+**Problem:** 2,500+ warnings in test output cluttering logs and indicating future breakage.
+
+**Decision:** Replace all `datetime.utcnow()` usages with `datetime.now(timezone.utc)`.
+
+**Rationale:**
+-   Future-proofs the application for Python 3.12+.
+-   Uses timezone-aware datetimes in application logic, reducing ambiguity.
+-   Maintains compatibility with existing `db.DateTime` (naive) columns by relying on SQLAlchemy's handling of aware datetimes (converting to UTC/naive for storage).
+
+**Impact:**
+-   No database schema change required.
+-   Application logic now handles aware datetimes.
+-   Comparisons with DB-fetched dates (naive) must now be handled carefully (e.g., `.replace(tzinfo=timezone.utc)`).
+
 ## 2025-12-27
 
 ### Soft Delete Pattern Implementation (#61) - Phase 1

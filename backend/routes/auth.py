@@ -11,7 +11,7 @@ Endpoints:
 - GET /auth/me: Get current user info
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app, make_response
 from flask_jwt_extended import (
     create_access_token,
@@ -147,7 +147,9 @@ def login():
         LOCKOUT_MINUTES = 15
 
         if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
-            user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
+            user.locked_until = datetime.now(timezone.utc) + timedelta(
+                minutes=LOCKOUT_MINUTES
+            )
             db.session.commit()
 
             # Send email notification - failure shouldn't block login

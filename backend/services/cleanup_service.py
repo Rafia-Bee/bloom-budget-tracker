@@ -6,7 +6,7 @@ and permanently deleting soft-deleted records past retention period.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta, timezone
 from backend.models.database import (
     db,
     PasswordResetToken,
@@ -38,7 +38,7 @@ class CleanupService:
             Exception: If cleanup fails
         """
         try:
-            cutoff_time = datetime.utcnow() - timedelta(hours=hours_old)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_old)
 
             # Delete tokens that expired before cutoff time
             deleted_count = PasswordResetToken.query.filter(
@@ -74,7 +74,7 @@ class CleanupService:
             Exception: If cleanup fails
         """
         try:
-            cutoff_time = datetime.utcnow() - timedelta(days=days_old)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(days=days_old)
 
             # Delete used tokens created before cutoff time
             deleted_count = PasswordResetToken.query.filter(
@@ -156,7 +156,7 @@ class CleanupService:
         Raises:
             Exception: If purge fails
         """
-        cutoff_time = datetime.utcnow() - timedelta(days=days_old)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(days=days_old)
         results = {
             "expenses": 0,
             "income": 0,

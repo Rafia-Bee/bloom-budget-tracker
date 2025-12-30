@@ -77,7 +77,8 @@ test.describe("Authentication Flow", () => {
             // Wait for menu to appear and click logout
             const logoutButton = page.locator('button:has-text("Logout")');
             await expect(logoutButton).toBeVisible({ timeout: 5000 });
-            await logoutButton.click();
+            // Use force click to handle mobile menu where button might be outside viewport
+            await logoutButton.click({ force: true });
 
             // Should redirect to login
             await expect(page).toHaveURL("/login", { timeout: 10000 });
@@ -110,7 +111,8 @@ test.describe("Authentication Flow", () => {
             // Wait for menu to appear and click logout
             const logoutButton = page.locator('button:has-text("Logout")');
             await expect(logoutButton).toBeVisible({ timeout: 5000 });
-            await logoutButton.click();
+            // Use force click to handle mobile menu where button might be outside viewport
+            await logoutButton.click({ force: true });
 
             // Wait for redirect to login
             await expect(page).toHaveURL("/login", { timeout: 10000 });

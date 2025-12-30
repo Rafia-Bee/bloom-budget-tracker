@@ -5,7 +5,7 @@ Utility service to automatically generate expenses from recurring templates.
 Checks for due recurring expenses and creates expense instances.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import IntegrityError
 from backend.models.database import db, RecurringExpense, Expense, BudgetPeriod
 
@@ -131,7 +131,7 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                     recurring_expense.next_due_date = calculate_next_due_date(
                         recurring_expense
                     )
-                    recurring_expense.updated_at = datetime.utcnow()
+                    recurring_expense.updated_at = datetime.now(timezone.utc)
                 updated_templates.append(
                     {
                         "id": recurring_expense.id,
@@ -183,7 +183,7 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                 recurring_expense.next_due_date = calculate_next_due_date(
                     recurring_expense
                 )
-                recurring_expense.updated_at = datetime.utcnow()
+                recurring_expense.updated_at = datetime.now(timezone.utc)
 
                 # Check if we should deactivate (past end_date)
                 if (

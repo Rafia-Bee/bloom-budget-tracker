@@ -16,7 +16,7 @@ Key operations logged:
 
 from flask import current_app, request
 from flask_jwt_extended import get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def get_client_info():
@@ -49,7 +49,7 @@ def log_audit_event(event_type, action, details=None, user_id=None):
     client_info = get_client_info()
 
     audit_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "event_type": event_type,
         "action": action,
         "user_id": user_id,

@@ -7,7 +7,7 @@ For production, consider using Redis-based solution.
 
 from functools import wraps
 from flask import request, jsonify, current_app
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
 # Store: {ip_address: [(timestamp, endpoint), ...]}
@@ -48,7 +48,7 @@ def rate_limit(endpoint_name=None):
             )
 
             # Clean up old entries
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             cutoff = now - timedelta(seconds=window_seconds)
             _request_history[client_ip] = [
                 (ts, ep) for ts, ep in _request_history[client_ip] if ts > cutoff

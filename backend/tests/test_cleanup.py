@@ -5,7 +5,7 @@ Test cleanup functionality for expired tokens and other database maintenance.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from backend.models.database import PasswordResetToken, User
 from backend.services.cleanup_service import cleanup_service
 
@@ -28,7 +28,7 @@ class TestPasswordResetTokenCleanup:
             old_expired_token = PasswordResetToken(
                 user_id=user.id,
                 token="old_expired_token",
-                expires_at=datetime.utcnow() - timedelta(hours=25),
+                expires_at=datetime.now(timezone.utc) - timedelta(hours=25),
                 is_used=False,
             )
 
@@ -36,7 +36,7 @@ class TestPasswordResetTokenCleanup:
             recent_expired_token = PasswordResetToken(
                 user_id=user.id,
                 token="recent_expired_token",
-                expires_at=datetime.utcnow() - timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
                 is_used=False,
             )
 
@@ -44,7 +44,7 @@ class TestPasswordResetTokenCleanup:
             valid_token = PasswordResetToken(
                 user_id=user.id,
                 token="valid_token",
-                expires_at=datetime.utcnow() + timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
                 is_used=False,
             )
 
@@ -88,25 +88,25 @@ class TestPasswordResetTokenCleanup:
             old_used_token = PasswordResetToken(
                 user_id=user.id,
                 token="old_used_token",
-                expires_at=datetime.utcnow() - timedelta(days=8),
+                expires_at=datetime.now(timezone.utc) - timedelta(days=8),
                 is_used=True,
-                created_at=datetime.utcnow() - timedelta(days=8),
+                created_at=datetime.now(timezone.utc) - timedelta(days=8),
             )
 
             # Create recent used token (3 days old - should NOT be deleted)
             recent_used_token = PasswordResetToken(
                 user_id=user.id,
                 token="recent_used_token",
-                expires_at=datetime.utcnow() - timedelta(days=3),
+                expires_at=datetime.now(timezone.utc) - timedelta(days=3),
                 is_used=True,
-                created_at=datetime.utcnow() - timedelta(days=3),
+                created_at=datetime.now(timezone.utc) - timedelta(days=3),
             )
 
             # Create unused token (should NOT be deleted)
             unused_token = PasswordResetToken(
                 user_id=user.id,
                 token="unused_token",
-                expires_at=datetime.utcnow() + timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
                 is_used=False,
             )
 
@@ -150,7 +150,7 @@ class TestPasswordResetTokenCleanup:
             old_expired = PasswordResetToken(
                 user_id=user.id,
                 token="old_expired",
-                expires_at=datetime.utcnow() - timedelta(hours=25),
+                expires_at=datetime.now(timezone.utc) - timedelta(hours=25),
                 is_used=False,
             )
 
@@ -158,16 +158,17 @@ class TestPasswordResetTokenCleanup:
             old_used = PasswordResetToken(
                 user_id=user.id,
                 token="old_used",
-                expires_at=datetime.utcnow() + timedelta(days=30),  # Still valid
+                expires_at=datetime.now(timezone.utc)
+                + timedelta(days=30),  # Still valid
                 is_used=True,
-                created_at=datetime.utcnow() - timedelta(days=8),
+                created_at=datetime.now(timezone.utc) - timedelta(days=8),
             )
 
             # Create valid token
             valid = PasswordResetToken(
                 user_id=user.id,
                 token="valid",
-                expires_at=datetime.utcnow() + timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
                 is_used=False,
             )
 
@@ -219,7 +220,7 @@ class TestPasswordResetTokenCleanup:
             old_token = PasswordResetToken(
                 user_id=user.id,
                 token="old_token",
-                expires_at=datetime.utcnow() - timedelta(hours=25),
+                expires_at=datetime.now(timezone.utc) - timedelta(hours=25),
                 is_used=False,
             )
 
@@ -227,7 +228,7 @@ class TestPasswordResetTokenCleanup:
             valid_token = PasswordResetToken(
                 user_id=user.id,
                 token="valid_token",
-                expires_at=datetime.utcnow() + timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
                 is_used=False,
             )
 
