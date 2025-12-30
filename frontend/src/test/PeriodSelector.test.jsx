@@ -55,9 +55,13 @@ describe('PeriodSelector', () => {
     mockOnEdit = vi.fn()
     mockOnDelete = vi.fn()
     vi.clearAllMocks()
+    // Set system time to be within the current period (Dec 15, 2025)
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2025-12-15T12:00:00Z'))
   })
 
   afterEach(async () => {
+    vi.useRealTimers()
     // Flush any pending state updates to avoid act() warnings
     await act(async () => {})
     cleanup()
