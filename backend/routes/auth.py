@@ -222,8 +222,6 @@ def refresh():
 
     return response
 
-    return response
-
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
