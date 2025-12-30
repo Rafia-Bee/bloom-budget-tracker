@@ -9,24 +9,18 @@ import { useState, useEffect, useRef } from 'react'
 import { expenseAPI, incomeAPI, budgetPeriodAPI, salaryPeriodAPI, recurringExpenseAPI } from '../api'
 import { logError } from '../utils/logger'
 import { useCurrency } from '../contexts/CurrencyContext'
-import { formatCurrency, formatTransactionAmount } from '../utils/formatters'
-import AddExpenseModal from '../components/AddExpenseModal'
-import AddIncomeModal from '../components/AddIncomeModal'
-import AddDebtPaymentModal from '../components/AddDebtPaymentModal'
-import EditExpenseModal from '../components/EditExpenseModal'
-import EditIncomeModal from '../components/EditIncomeModal'
+import { formatCurrency } from '../utils/formatters'
 import Header from '../components/Header'
 import PeriodSelector from '../components/PeriodSelector'
-import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
-import LeftoverBudgetModal from '../components/LeftoverBudgetModal'
-import ExportImportModal from '../components/ExportImportModal'
 import DraggableFloatingButton from '../components/DraggableFloatingButton'
-import BankImportModal from '../components/BankImportModal'
-import FilterTransactionsModal from '../components/FilterTransactionsModal'
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
 import CatLoading from '../components/CatLoading'
-import DateNavigator from '../components/DateNavigator'
+
+// Refactored Components
+import BalanceCards from '../components/dashboard/BalanceCards'
+import TransactionList from '../components/dashboard/TransactionList'
+import DashboardModals from '../components/dashboard/DashboardModals'
 
 function Dashboard({ setIsAuthenticated }) {
   const [expenses, setExpenses] = useState([])
@@ -72,9 +66,6 @@ function Dashboard({ setIsAuthenticated }) {
 
   // Currency context for multi-currency support
   const { defaultCurrency, convertAmount } = useCurrency()
-
-  // Helper function to format currency with user's default currency
-  const fc = (cents) => formatCurrency(cents, defaultCurrency)
 
   // Helper to convert EUR amounts to user's currency and format
   // Used for balances/totals stored in EUR on backend
@@ -915,554 +906,50 @@ function Dashboard({ setIsAuthenticated }) {
             }}
           />
 
-          {/* Debit Card */}
-          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-bloom-mint dark:border-bloom-mint/50">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Debit Card</p>
-                <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
-                <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
-                  {fcEur(currentPeriodDebitSpent * 100)}
-                </h2>
-                <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
-                  {fcEur(getDebitAvailable() * 100)} <span className="text-sm text-gray-500 dark:text-dark-text-tertiary font-normal">available</span>
-                </p>
-              </div>
-              <div className="bg-bloom-mint rounded-full p-3">
-                <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
-                <span>Period income: {fcEur(currentPeriodIncome * 100)}</span>
-                <span>Total spent: {fcEur(debitBalance * 100)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <span>All-time income: {fcEur(totalIncome * 100)}</span>
-                <span>{totalIncome > 0 ? ((debitBalance / totalIncome) * 100).toFixed(0) : 0}% of total</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Credit Card */}
-          {creditLimit !== null && (
-            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-bloom-pink dark:border-bloom-pink/50">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <p className="text-gray-600 dark:text-dark-text-secondary font-semibold mb-1">Credit Card</p>
-                  <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-3">Spent this period</p>
-                  <h2 className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-1">
-                    {fcEur(currentPeriodCreditSpent * 100)}
-                  </h2>
-                  <p className="text-2xl font-semibold text-bloom-mint dark:text-dark-success mt-2">
-                    {fcEur(getCreditAvailable() * 100)} <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">available</span>
-                  </p>
-                </div>
-                <div className="bg-bloom-pink rounded-full p-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
-                  <span>Period spent: {fcEur(currentPeriodCreditSpent * 100)}</span>
-                  <span>Total debt: {fcEur(getCreditDebt() * 100)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
-                  <span>Credit limit: {fcEur(creditLimit * 100)}</span>
-                  <span>{((getCreditDebt() / creditLimit) * 100).toFixed(0)}% used</span>
-                </div>
-              </div>
-            </div>
-          )}
+          <BalanceCards
+            currentPeriodDebitSpent={currentPeriodDebitSpent}
+            debitAvailable={getDebitAvailable()}
+            currentPeriodIncome={currentPeriodIncome}
+            totalIncome={totalIncome}
+            creditLimit={creditLimit}
+            currentPeriodCreditSpent={currentPeriodCreditSpent}
+            creditAvailable={getCreditAvailable()}
+            creditDebt={getCreditDebt()}
+          />
         </div>
 
         {/* Transactions Section */}
-        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-4 sm:p-6">
-          <div className="mb-6">
-            <div className="flex justify-between items-start mb-4">
-              {/* View Toggle Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setTransactionView('transactions')}
-                  className={`px-4 py-2 rounded-lg transition font-semibold ${
-                    transactionView === 'transactions'
-                      ? 'bg-bloom-pink text-white'
-                      : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
-                  }`}
-                >
-                  Transactions
-                </button>
-                <button
-                  onClick={() => setTransactionView('scheduled')}
-                  className={`px-4 py-2 rounded-lg transition font-semibold ${
-                    transactionView === 'scheduled'
-                      ? 'bg-bloom-pink text-white'
-                      : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
-                  }`}
-                >
-                  Scheduled
-                </button>
-              </div>
-
-              {/* Selection Mode Controls */}
-              <div className="flex items-center gap-2">
-                {!selectionMode ? (
-                  <button
-                    onClick={() => setSelectionMode(true)}
-                    className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                    Select
-                  </button>
-                ) : (
-                  <>
-                    {selectedTransactions.length > 0 && (
-                      <>
-                        <span className="text-sm text-gray-600 dark:text-dark-text-secondary">{selectedTransactions.length} selected</span>
-                        <button
-                          onClick={() => setShowBulkDeleteConfirm(true)}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Delete
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectionMode(false)
-                        setSelectedTransactions([])
-                      }}
-                      className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Transactions View */}
-          {transactionView === 'transactions' && (
-            <>
-                {/* Date Navigator */}
-                <DateNavigator
-                  transactionDates={transactionDates}
-                  currentViewDate={currentViewDate}
-                  onDateChange={handleDateNavigate}
-                  className="mb-4"
-                />
-
-                {/* Filter buttons - scrollable on mobile, flex-wrap on larger screens */}
-                <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible scrollbar-hide">
-              {/* Advanced Filter Button */}
-              <button
-                onClick={() => setShowFilterModal(true)}
-                className="relative px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 bg-bloom-pink text-white hover:bg-pink-600 flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-                Filter
-                {(() => {
-                  const activeCount = Object.entries(activeFilters).filter(([key, value]) => {
-                    if (key === 'transactionType') return value !== 'both'
-                    return value !== ''
-                  }).length
-                  return activeCount > 0 ? (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {activeCount}
-                    </span>
-                  ) : null
-                })()}
-              </button>
-
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'all'
-                    ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilter('income')}
-                className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'income'
-                    ? 'bg-bloom-mint text-green-800'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-              >
-                Income
-              </button>
-              <button
-                onClick={() => setFilter('expense')}
-                className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'expense'
-                    ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-              >
-                Expenses
-              </button>
-              <button
-                onClick={() => setFilter('debit')}
-                className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'debit'
-                    ? 'bg-bloom-mint text-green-800'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-              >
-                Debit
-              </button>
-              <button
-                onClick={() => setFilter('credit')}
-                className={`px-4 py-2 rounded-lg transition whitespace-nowrap flex-shrink-0 ${filter === 'credit'
-                    ? 'bg-bloom-pink text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-              >
-                Credit
-              </button>
-            </div>
-
-            {/* Select All Checkbox */}
-            {selectionMode && transactions.filter(t => {
-              if (filter === 'all') return true
-              if (filter === 'income') return t.transactionType === 'income'
-              if (filter === 'expense') return t.transactionType === 'expense'
-              if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
-              if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
-              return true
-            }).length > 0 && (
-              <div className="mt-4 flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  id="select-all"
-                  checked={selectedTransactions.length === transactions.filter(t => {
-                    if (filter === 'all') return true
-                    if (filter === 'income') return t.transactionType === 'income'
-                    if (filter === 'expense') return t.transactionType === 'expense'
-                    if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
-                    if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
-                    return true
-                  }).length && selectedTransactions.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
-                />
-                <label htmlFor="select-all" className="text-gray-700 dark:text-dark-text-secondary cursor-pointer select-none">
-                  Select All
-                </label>
-              </div>
-            )}
-
-          {transactions.filter(t => {
-            if (filter === 'all') return true
-            if (filter === 'income') return t.transactionType === 'income'
-            if (filter === 'expense') return t.transactionType === 'expense'
-            if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
-            if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
-            return true
-          }).length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-dark-text-tertiary">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p>No transactions yet. Start tracking your finances!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {transactions.filter(t => {
-                if (filter === 'all') return true
-                if (filter === 'income') return t.transactionType === 'income'
-                if (filter === 'expense') return t.transactionType === 'expense'
-                if (filter === 'debit') return t.transactionType === 'expense' && t.payment_method === 'Debit card'
-                if (filter === 'credit') return t.transactionType === 'expense' && t.payment_method === 'Credit card'
-                return true
-              }).map(transaction => {
-                const isFuture = new Date(transaction.date) > new Date()
-                const isSelected = selectedTransactions.some(t => t.key === `${transaction.transactionType}-${transaction.id}`)
-                return (
-                  <div
-                    key={`${transaction.transactionType}-${transaction.id}`}
-                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg hover:opacity-80 transition ${transaction.transactionType === 'income' ? 'bg-bloom-mint/20 dark:bg-bloom-mint/10' : 'bg-gray-50 dark:bg-dark-elevated'
-                      } ${isFuture ? 'opacity-60 border-2 border-dashed border-gray-300 dark:border-gray-600' : ''} ${isSelected ? 'ring-2 ring-bloom-pink' : ''}`}
-                  >
-                    {/* Top row on mobile: checkbox, title/badges */}
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      {/* Checkbox */}
-                      {selectionMode && (
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleTransactionSelection(transaction.transactionType, transaction.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 mt-1 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer flex-shrink-0"
-                        />
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-gray-800 dark:text-dark-text">
-                            {transaction.transactionType === 'income' ? transaction.type : transaction.name}
-                          </h3>
-                          {isFuture && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                              Scheduled
-                            </span>
-                          )}
-                          {transaction.transactionType === 'expense' && transaction.recurring_template_id && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap flex-shrink-0">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              Recurring
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {transaction.transactionType === 'expense'
-                            ? `${transaction.category} • ${transaction.subcategory}`
-                            : 'Income'}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{transaction.date}</p>
-                      </div>
-                    </div>
-
-                    {/* Bottom row on mobile: amount + payment method + buttons */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 mt-3 sm:mt-0 sm:ml-4 flex-shrink-0">
-                      <div className="text-left sm:text-right">
-                        {(() => {
-                          const txAmount = formatTransactionAmount(transaction, defaultCurrency, convertAmount)
-                          return (
-                            <>
-                              <p className={`font-bold ${transaction.transactionType === 'income' ? 'text-green-700 dark:text-dark-success' : 'text-gray-800 dark:text-dark-text'}`}>
-                                {transaction.transactionType === 'income' ? '+' : ''}{txAmount.display}
-                              </p>
-                              {txAmount.showDual && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  ≈ {txAmount.converted}
-                                </p>
-                              )}
-                            </>
-                          )
-                        })()}
-                        {transaction.transactionType === 'expense' && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${
-                            transaction.payment_method === 'Credit card'
-                              ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300'
-                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                          }`}>
-                            {transaction.payment_method}
-                          </span>
-                        )}
-                      </div>
-                      {!selectionMode && (
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => {
-                              setSelectedTransaction(transaction)
-                              setEditType(transaction.transactionType)
-                              setShowEditModal(true)
-                            }}
-                            className="p-2.5 sm:p-2 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Edit"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmation({
-                              type: transaction.transactionType,
-                              id: transaction.id,
-                              transaction: transaction
-                            })}
-                            className="p-2.5 sm:p-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Delete"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Load More Button */}
-          {(hasMoreExpenses || hasMoreIncome) && transactions.length > 0 && (
-            <div className="mt-6 flex justify-center">
-              <button
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="px-6 py-3 bg-bloom-pink text-white rounded-lg font-medium hover:bg-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                    Load More
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-          </>
-        )}
-
-        {/* Scheduled View */}
-        {transactionView === 'scheduled' && (
-          <>
-            {/* Scheduled Actions */}
-            {scheduledExpenses.length > 0 && (
-              <div className="flex justify-between items-center mb-4">
-                {selectionMode ? (
-                  <>
-                    {selectedScheduled.length > 0 && (
-                      <>
-                        <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                          {selectedScheduled.length} selected
-                        </span>
-                        <button
-                          onClick={async () => {
-                            try {
-                              // Delete selected scheduled items from recurring templates
-                              await Promise.all(
-                                selectedScheduled.map(id => recurringExpenseAPI.delete(id))
-                              )
-                              loadScheduledExpenses()
-                              setSelectedScheduled([])
-                              setSelectionMode(false)
-                            } catch (error) {
-                              logError('deleteScheduledExpenses', error)
-                            }
-                          }}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
-                        >
-                          Delete Selected
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectionMode(false)
-                        setSelectedScheduled([])
-                      }}
-                      className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await recurringExpenseAPI.generateNow(false)
-                        // Reload transactions and switch to transactions view
-                        loadTransactionsAndBalances()
-                        setTransactionView('transactions')
-                      } catch (error) {
-                        logError('confirmScheduledExpenses', error)
-                      }
-                    }}
-                    className="px-4 py-2 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition font-semibold flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Confirm Schedule
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Scheduled Expenses List */}
-            {scheduledExpenses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
-                <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p>No upcoming scheduled expenses</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {scheduledExpenses.map((expense, idx) => {
-                  const isSelected = selectedScheduled.includes(expense.template_id)
-                  return (
-                    <div
-                      key={`scheduled-${expense.template_id}-${idx}`}
-                      className={`bg-gray-50 dark:bg-dark-elevated rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
-                        isSelected ? 'ring-2 ring-bloom-pink' : ''
-                      }`}
-                      onClick={() => {
-                        if (selectionMode) {
-                          setSelectedScheduled(prev =>
-                            prev.includes(expense.template_id)
-                              ? prev.filter(id => id !== expense.template_id)
-                              : [...prev, expense.template_id]
-                          )
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        {selectionMode && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-1">
-                            <div>
-                              <h4 className="font-semibold text-gray-800 dark:text-dark-text">
-                                {expense.name}
-                              </h4>
-                              <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                                {expense.category} {expense.subcategory && `• ${expense.subcategory}`}
-                              </p>
-                            </div>
-                            <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                              -{fcEur(expense.amount * 100)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
-                            <span>{(() => { const d = new Date(expense.date); return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`; })()}</span>
-                            <span className="capitalize">{expense.frequency}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
-        </div>
+        <TransactionList
+          transactionView={transactionView}
+          setTransactionView={setTransactionView}
+          transactions={transactions}
+          scheduledExpenses={scheduledExpenses}
+          isLoadingMore={isLoadingMore}
+          handleLoadMore={handleLoadMore}
+          hasMoreExpenses={hasMoreExpenses}
+          hasMoreIncome={hasMoreIncome}
+          selectionMode={selectionMode}
+          setSelectionMode={setSelectionMode}
+          selectedTransactions={selectedTransactions}
+          toggleTransactionSelection={toggleTransactionSelection}
+          toggleSelectAll={toggleSelectAll}
+          setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
+          setSelectedTransaction={setSelectedTransaction}
+          setEditType={setEditType}
+          setShowEditModal={setShowEditModal}
+          setDeleteConfirmation={setDeleteConfirmation}
+          transactionDates={transactionDates}
+          currentViewDate={currentViewDate}
+          handleDateNavigate={handleDateNavigate}
+          activeFilters={activeFilters}
+          setShowFilterModal={setShowFilterModal}
+          selectedScheduled={selectedScheduled}
+          setSelectedScheduled={setSelectedScheduled}
+          loadScheduledExpenses={loadScheduledExpenses}
+          loadTransactionsAndBalances={loadTransactionsAndBalances}
+          defaultCurrency={defaultCurrency}
+          convertAmount={convertAmount}
+        />
       </>
       )}
       </main>
@@ -1509,297 +996,58 @@ function Dashboard({ setIsAuthenticated }) {
         </DraggableFloatingButton>
       )}
 
-      {/* Add Modals */}
-      {showAddModal && modalType === 'expense' && (
-        <AddExpenseModal
-          onClose={() => {
-            setShowAddModal(false)
-            setModalType(null)
-          }}
-          onAdd={handleAddExpense}
-        />
-      )}
-      {showAddModal && modalType === 'income' && (
-        <AddIncomeModal
-          onClose={() => {
-            setShowAddModal(false)
-            setModalType(null)
-          }}
-          onAdd={handleAddIncome}
-        />
-      )}
-      {showAddModal && modalType === 'debt' && (
-        <AddDebtPaymentModal
-          onClose={() => {
-            setShowAddModal(false)
-            setModalType(null)
-          }}
-          onAdd={handleAddExpense}
-        />
-      )}
-
-      {/* Edit Modals */}
-      {showEditModal && editType === 'expense' && selectedTransaction && (
-        <EditExpenseModal
-          onClose={() => {
-            setShowEditModal(false)
-            setEditType(null)
-            setSelectedTransaction(null)
-          }}
-          onEdit={handleEditExpense}
-          expense={selectedTransaction}
-        />
-      )}
-      {showEditModal && editType === 'income' && selectedTransaction && (
-        <EditIncomeModal
-          onClose={() => {
-            setShowEditModal(false)
-            setEditType(null)
-            setSelectedTransaction(null)
-          }}
-          onEdit={handleEditIncome}
-          income={selectedTransaction}
-        />
-      )}
-
-      {/* Warning Modal for Exceeding Balance/Credit */}
-      {warningModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-950/30 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text">
-                {warningModal.type === 'debit' ? 'Insufficient Funds' : 'Credit Limit Exceeded'}
-              </h3>
-            </div>
-
-            {warningModal.type === 'debit' ? (
-              <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
-                <p>You're trying to spend <strong>{fcEur(warningModal.expenseAmount * 100)}</strong> but only have <strong>{fcEur(warningModal.available * 100)}</strong> available in your debit account.</p>
-                <p className="text-red-600 dark:text-dark-danger font-semibold">This will result in a negative balance of {fcEur((warningModal.available - warningModal.expenseAmount) * 100)}.</p>
-                <p className="text-sm">Do you want to proceed anyway?</p>
-              </div>
-            ) : (
-              <div className="text-gray-700 dark:text-dark-text mb-6 space-y-2">
-                <p>You're trying to spend <strong>{fcEur(warningModal.expenseAmount * 100)}</strong> but only have <strong>{fcEur(warningModal.available * 100)}</strong> available credit.</p>
-                <p>Your credit limit is {fcEur(creditLimit * 100)} and you have {fcEur(creditAvailable * 100)} available.</p>
-                <p className="text-red-600 dark:text-dark-danger font-semibold">This will exceed your limit by {fcEur((warningModal.expenseAmount - warningModal.available) * 100)}.</p>
-                <p className="text-sm">Do you want to proceed anyway?</p>
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => {
-                  warningModal.reject(new Error('Transaction cancelled by user'))
-                  setWarningModal(null)
-                }}
-                className="px-4 py-2 bg-gray-200 dark:bg-dark-elevated text-gray-800 dark:text-dark-text rounded-lg hover:bg-gray-300 dark:hover:bg-dark-elevated/80 transition font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  const data = warningModal.expenseData
-                  const resolve = warningModal.resolve
-                  setWarningModal(null)
-
-                  try {
-                    await expenseAPI.create({
-                      ...data,
-                      budget_period_id: currentPeriod.id
-                    })
-                    await loadExpenses()
-                    setShowAddModal(false)
-                    setModalType(null)
-                    resolve()
-                  } catch (error) {
-                    logError('addExpense', error)
-                    throw error
-                  }
-                }}
-                className="px-4 py-2 bg-yellow-600 dark:bg-yellow-700 text-white rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-600 transition font-semibold"
-              >
-                Proceed Anyway
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Salary Period Wizard */}
-      {/* Creates 4-week salary periods with automatic weekly budgets */}
-      {showSalaryWizard && (
-        <SalaryPeriodWizard
-          editPeriod={editSalaryPeriod}
-          rolloverData={rolloverData}
-          onClose={() => {
-            setShowSalaryWizard(false)
-            setEditSalaryPeriod(null)
-            // Don't clear rolloverData on cancel - keep prompt visible
-          }}
-          onComplete={async () => {
-            setShowSalaryWizard(false)
-            setEditSalaryPeriod(null)
-            setRolloverData(null)
-            // Reload all data
-            await loadPeriodsAndCurrentWeek()
-            await loadExpenses()
-            // Force refresh the weekly budget card
-            weeklyBudgetCardRef.current?.refresh()
-          }}
-        />
-      )}
-
-      {/* Leftover Budget Allocation Modal */}
-      {showLeftoverModal && leftoverModalData && (
-        <LeftoverBudgetModal
-          salaryPeriodId={leftoverModalData.salaryPeriodId}
-          weekNumber={leftoverModalData.weekNumber}
-          onClose={() => {
-            setShowLeftoverModal(false)
-            setLeftoverModalData(null)
-          }}
-          onAllocate={() => {
-            setShowLeftoverModal(false)
-            setLeftoverModalData(null)
-            weeklyBudgetCardRef.current?.refresh()
-            loadTransactionsAndBalances()
-          }}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Transaction?</h3>
-            <p className="text-gray-600 dark:text-dark-text-secondary mb-2">
-              Are you sure you want to delete this {deleteConfirmation.type}?
-            </p>
-            <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-3 mb-6">
-              <p className="text-sm text-gray-500 dark:text-dark-text-tertiary">
-                {deleteConfirmation.type === 'income' ? 'Type' : 'Name'}
-              </p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                {deleteConfirmation.type === 'income'
-                  ? deleteConfirmation.transaction.type
-                  : deleteConfirmation.transaction.name}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Amount</p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                {fc(deleteConfirmation.transaction.amount)}
-              </p>
-            </div>
-            <p className="text-sm text-red-600 dark:text-red-400 mb-6">
-              ⚠️ This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteConfirmation(null)}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (deleteConfirmation.type === 'income') {
-                    handleDeleteIncome(deleteConfirmation.id)
-                  } else {
-                    handleDeleteExpense(deleteConfirmation.id)
-                  }
-                  setDeleteConfirmation(null)
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Delete Confirmation Modal */}
-      {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-dark-surface rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-3">Delete Multiple Transactions?</h3>
-            <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
-              Are you sure you want to delete <strong>{selectedTransactions.length}</strong> transaction(s)?
-            </p>
-            <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-3 mb-4 max-h-48 overflow-y-auto">
-              <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mb-2">Selected transactions:</p>
-              {selectedTransactions.map(txn => {
-                const transaction = transactions.find(t =>
-                  t.transactionType === txn.type && t.id === txn.id
-                )
-                if (!transaction) return null
-                return (
-                  <div key={txn.key} className="flex justify-between items-center py-1 text-sm">
-                    <span className="text-gray-700 dark:text-dark-text-secondary">
-                      {txn.type === 'income' ? transaction.type : transaction.name}
-                    </span>
-                    <span className="font-semibold text-gray-800 dark:text-dark-text">
-                      {fc(transaction.amount)}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="text-sm text-red-600 dark:text-red-400 mb-6">
-              ⚠️ This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowBulkDeleteConfirm(false)}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
-              >
-                Delete {selectedTransactions.length} Transaction(s)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Export/Import Modal */}
-      {showExportModal && (
-        <ExportImportModal
-          mode={exportMode}
-          onClose={() => setShowExportModal(false)}
-          onImportComplete={() => {
-            loadPeriodsAndCurrentWeek()
-            loadTransactionsAndBalances()
-          }}
-        />
-      )}
-
-      {/* Bank Import Modal */}
-      {showBankImportModal && (
-        <BankImportModal
-          onClose={() => setShowBankImportModal(false)}
-          onImportComplete={() => {
-            loadTransactionsAndBalances()
-            setShowBankImportModal(false)
-          }}
-        />
-      )}
-
-      {/* Filter Transactions Modal */}
-      <FilterTransactionsModal
-        isOpen={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        onApply={handleApplyFilters}
-        initialFilters={activeFilters}
+      <DashboardModals
+        showAddModal={showAddModal}
+        setShowAddModal={setShowAddModal}
+        modalType={modalType}
+        setModalType={setModalType}
+        handleAddExpense={handleAddExpense}
+        handleAddIncome={handleAddIncome}
+        showEditModal={showEditModal}
+        setShowEditModal={setShowEditModal}
+        editType={editType}
+        setEditType={setEditType}
+        selectedTransaction={selectedTransaction}
+        setSelectedTransaction={setSelectedTransaction}
+        handleEditExpense={handleEditExpense}
+        handleEditIncome={handleEditIncome}
+        warningModal={warningModal}
+        setWarningModal={setWarningModal}
+        creditLimit={creditLimit}
+        creditAvailable={getCreditAvailable()}
+        currentPeriod={currentPeriod}
+        loadExpenses={loadExpenses}
+        showSalaryWizard={showSalaryWizard}
+        setShowSalaryWizard={setShowSalaryWizard}
+        editSalaryPeriod={editSalaryPeriod}
+        setEditSalaryPeriod={setEditSalaryPeriod}
+        rolloverData={rolloverData}
+        setRolloverData={setRolloverData}
+        loadPeriodsAndCurrentWeek={loadPeriodsAndCurrentWeek}
+        weeklyBudgetCardRef={weeklyBudgetCardRef}
+        showLeftoverModal={showLeftoverModal}
+        setShowLeftoverModal={setShowLeftoverModal}
+        leftoverModalData={leftoverModalData}
+        setLeftoverModalData={setLeftoverModalData}
+        loadTransactionsAndBalances={loadTransactionsAndBalances}
+        deleteConfirmation={deleteConfirmation}
+        setDeleteConfirmation={setDeleteConfirmation}
+        handleDeleteIncome={handleDeleteIncome}
+        handleDeleteExpense={handleDeleteExpense}
+        showBulkDeleteConfirm={showBulkDeleteConfirm}
+        setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
+        selectedTransactions={selectedTransactions}
+        transactions={transactions}
+        handleBulkDelete={handleBulkDelete}
+        showExportModal={showExportModal}
+        setShowExportModal={setShowExportModal}
+        exportMode={exportMode}
+        showBankImportModal={showBankImportModal}
+        setShowBankImportModal={setShowBankImportModal}
+        showFilterModal={showFilterModal}
+        setShowFilterModal={setShowFilterModal}
+        handleApplyFilters={handleApplyFilters}
+        activeFilters={activeFilters}
       />
     </div>
   )
