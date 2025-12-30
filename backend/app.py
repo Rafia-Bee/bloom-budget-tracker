@@ -93,20 +93,6 @@ def create_app(config_name="development"):
     v1_bp = create_v1_blueprint()
     app.register_blueprint(v1_bp)
 
-    # Keep legacy routes for backward compatibility (will deprecate later)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(expenses_bp)
-    app.register_blueprint(income_bp, url_prefix="/income")
-    app.register_blueprint(budget_periods_bp)
-    app.register_blueprint(debts_bp)
-    app.register_blueprint(recurring_expenses_bp, url_prefix="/recurring-expenses")
-    app.register_blueprint(recurring_generation_bp, url_prefix="/recurring-generation")
-    app.register_blueprint(salary_periods_bp, url_prefix="/salary-periods")
-    app.register_blueprint(password_reset_bp, url_prefix="/auth")
-    app.register_blueprint(export_import_bp)
-    app.register_blueprint(admin_bp, url_prefix="/admin")
-    app.register_blueprint(subcategories_bp)
-
     # Database tables are now managed by Flask-Migrate
     # with app.app_context():
     #     db.create_all()
