@@ -129,11 +129,6 @@ def app(isolate_environment):
                 ":memory:" in uri or uri == "sqlite://"
             ), f"SAFETY CHECK FAILED: Using real database! URI: {uri}"
 
-            # Clear rate limiter state before each test
-            from backend.utils.rate_limiter import _request_history
-
-            _request_history.clear()
-
             # Create fresh tables in in-memory database
             db.create_all()
 

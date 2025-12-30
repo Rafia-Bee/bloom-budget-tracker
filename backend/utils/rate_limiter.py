@@ -1,17 +1,15 @@
 """
 Bloom - Rate Limiting Utilities
 
-Simple in-memory rate limiter for protecting authentication endpoints.
-For production, consider using Redis-based solution.
+Database-backed rate limiter for protecting authentication endpoints.
+Persists across restarts (CRITICAL-2).
 """
 
 from functools import wraps
 from flask import request, jsonify, current_app
 from datetime import datetime, timedelta, timezone
-from collections import defaultdict
-
-# Store: {ip_address: [(timestamp, endpoint), ...]}
-_request_history = defaultdict(list)
+import random
+from backend.models.database import db, RateLimit
 
 # Rate limits: {endpoint: (max_requests, time_window_seconds)}
 RATE_LIMITS = {
@@ -47,32 +45,42 @@ def rate_limit(endpoint_name=None):
                 limit_key, RATE_LIMITS["default"]
             )
 
-            # Clean up old entries
+            key = f"{client_ip}:{limit_key}"
             now = datetime.now(timezone.utc)
             cutoff = now - timedelta(seconds=window_seconds)
-            _request_history[client_ip] = [
-                (ts, ep) for ts, ep in _request_history[client_ip] if ts > cutoff
-            ]
 
-            # Count requests for this endpoint in the time window
-            endpoint_requests = [
-                ts for ts, ep in _request_history[client_ip] if ep == limit_key
-            ]
+            try:
+                # Count requests in window
+                request_count = RateLimit.query.filter(
+                    RateLimit.key == key, RateLimit.timestamp > cutoff
+                ).count()
 
-            # Check if limit exceeded
-            if len(endpoint_requests) >= max_requests:
-                return (
-                    jsonify(
-                        {
-                            "error": "Too many requests. Please try again later.",
-                            "retry_after": window_seconds,
-                        }
-                    ),
-                    429,
-                )
+                # Check if limit exceeded
+                if request_count >= max_requests:
+                    return (
+                        jsonify(
+                            {
+                                "error": "Too many requests. Please try again later.",
+                                "retry_after": window_seconds,
+                            }
+                        ),
+                        429,
+                    )
 
-            # Log this request
-            _request_history[client_ip].append((now, limit_key))
+                # Log this request
+                db.session.add(RateLimit(key=key, timestamp=now))
+
+                # Cleanup old entries (1% probability)
+                if random.random() < 0.01:
+                    RateLimit.query.filter(RateLimit.timestamp < cutoff).delete()
+
+                db.session.commit()
+
+            except Exception as e:
+                # Fallback if DB fails (e.g. during migration or connection issue)
+                current_app.logger.error(f"Rate limiter error: {str(e)}")
+                # Allow request to proceed if rate limiter fails
+                pass
 
             # Execute the actual endpoint
             return f(*args, **kwargs)

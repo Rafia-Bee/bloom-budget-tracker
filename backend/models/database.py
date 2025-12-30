@@ -660,3 +660,19 @@ class ExchangeRate(db.Model):
         ),
         db.CheckConstraint("rate > 0", name="check_exchange_rate_positive"),
     )
+
+
+class RateLimit(db.Model):
+    """
+    Store rate limiting data to persist across restarts.
+    Replaces in-memory storage for CRITICAL-2.
+    """
+
+    __tablename__ = "rate_limits"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(255), nullable=False, index=True)  # ip:endpoint
+    timestamp = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), index=True
+    )
+
