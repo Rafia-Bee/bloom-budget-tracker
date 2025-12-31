@@ -4,7 +4,7 @@ Adds updated_at column to track when records were last modified.
 Part of simplified Issue #63 - audit trail for debugging and troubleshooting.
 
 Revision ID: i1j2k3l4m5n6
-Revises: h1i2j3k4l5m6
+Revises: 249aa66e83e7
 Create Date: 2024-12-31
 
 """
@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 # revision identifiers, used by Alembic.
 revision = "i1j2k3l4m5n6"
-down_revision = "h1i2j3k4l5m6"
+down_revision = "249aa66e83e7"
 branch_labels = None
 depends_on = None
 
