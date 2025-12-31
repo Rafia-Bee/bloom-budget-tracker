@@ -4,6 +4,35 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2025-12-31
+
+### Simplified Audit Trail Implementation (#63)
+
+**Context:** Issue #63 proposed adding `created_by`, `modified_at`, and `modified_by` columns plus optional AuditLog table.
+
+**Problem:** Original scope assumed multi-user access to records, but Bloom uses single-user-per-record architecture (every record has `user_id` foreign key, users can only access their own data).
+
+**Decision:** Simplify to only add `updated_at` column to key models:
+
+-   `Expense`
+-   `Income`
+-   `SalaryPeriod`
+
+**Rationale:**
+
+-   `created_by`/`modified_by` are redundant since they would always equal `user_id`
+-   `updated_at` is useful for debugging ("when was this last changed?")
+-   Full AuditLog table would be overkill for a personal finance app
+-   Existing models (Debt, RecurringExpense, Goal, Subcategory) already have `updated_at`
+
+**Impact:**
+
+-   3 models gain `updated_at` with `onupdate` trigger
+-   Existing records get `updated_at = created_at` via migration
+-   No API changes needed (column auto-populated by SQLAlchemy)
+
+---
+
 ## 2025-12-30
 
 ### SQLAlchemy 2.0 Transition (#118)

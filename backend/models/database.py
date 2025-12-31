@@ -171,6 +171,11 @@ class SalaryPeriod(db.Model):
     end_date = db.Column(db.Date, nullable=False)  # Period end date
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     # Relationships
     budget_periods = db.relationship(
@@ -289,6 +294,11 @@ class Expense(SoftDeleteMixin, db.Model):
     # True for fixed bills that don't count against weekly budget
     is_fixed_bill = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     # Composite index for common query pattern: user + date range + ordering
     __table_args__ = (
@@ -321,6 +331,11 @@ class Income(SoftDeleteMixin, db.Model):
     scheduled_date = db.Column(db.Date, nullable=True, index=True)
     actual_date = db.Column(db.Date, nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     # Composite index for common query pattern: user + date filtering
     __table_args__ = (
