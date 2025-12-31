@@ -16,7 +16,7 @@ import React from 'react'
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import { clickWithAct, typeWithAct, clearWithAct } from './test-utils'
+import { clickWithAct, typeWithAct, clearWithAct, submitWithAct } from './test-utils'
 import EditGoalModal from '../components/EditGoalModal'
 
 describe('EditGoalModal', () => {
@@ -304,8 +304,9 @@ describe('EditGoalModal', () => {
       const nameInput = screen.getByDisplayValue('Emergency Fund')
       await clearWithAct(nameInput)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      // Use submitWithAct on the form for reliable form submission after input changes
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
       expect(mockOnUpdate).not.toHaveBeenCalled()
@@ -318,8 +319,9 @@ describe('EditGoalModal', () => {
       await clearWithAct(nameInput)
       await typeWithAct(nameInput, '   ')
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      // Use submitWithAct on the form for reliable form submission after input changes
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
     })
@@ -339,8 +341,8 @@ describe('EditGoalModal', () => {
       const amountInput = screen.getByDisplayValue('1000.00')
       await clearWithAct(amountInput)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
@@ -352,8 +354,8 @@ describe('EditGoalModal', () => {
       await clearWithAct(amountInput)
       await typeWithAct(amountInput, '0')
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
     })
@@ -365,8 +367,8 @@ describe('EditGoalModal', () => {
       await clearWithAct(amountInput)
       await typeWithAct(amountInput, '1000001')
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
     })
@@ -377,8 +379,8 @@ describe('EditGoalModal', () => {
       const amountInput = screen.getByDisplayValue('1000.00')
       await clearWithAct(amountInput)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
 
@@ -479,8 +481,8 @@ describe('EditGoalModal', () => {
     it('calls onUpdate with correct data on successful submission', async () => {
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith({
@@ -500,8 +502,8 @@ describe('EditGoalModal', () => {
       await clearWithAct(amountInput)
       await typeWithAct(amountInput, '1500.50')
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -519,8 +521,8 @@ describe('EditGoalModal', () => {
       await clearWithAct(nameInput)
       await typeWithAct(nameInput, '  Trimmed Name  ')
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       await waitFor(() => {
         expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -561,8 +563,8 @@ describe('EditGoalModal', () => {
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Updating...')).toBeInTheDocument()
     })
@@ -571,9 +573,11 @@ describe('EditGoalModal', () => {
       mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
+      // Button text changes to "Updating..." during loading
+      const submitButton = screen.getByRole('button', { name: /Updating/i })
       expect(submitButton).toBeDisabled()
     })
 
@@ -596,8 +600,8 @@ describe('EditGoalModal', () => {
 
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       await waitFor(() => {
         // Logger uses format: [operation] Error:
@@ -629,8 +633,8 @@ describe('EditGoalModal', () => {
       const nameInput = screen.getByDisplayValue('Emergency Fund')
       await clearWithAct(nameInput)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Goal name is required')).toBeInTheDocument()
 
@@ -645,8 +649,8 @@ describe('EditGoalModal', () => {
       const amountInput = screen.getByDisplayValue('1000.00')
       await clearWithAct(amountInput)
 
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
+      const form = document.querySelector('form')
+      await submitWithAct(form)
 
       expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
 
