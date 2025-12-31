@@ -13,7 +13,13 @@
  * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect, loginAsTestUser } from "./fixtures.js";
+import {
+    test,
+    expect,
+    loginAsTestUser,
+    isMobileViewport,
+    openMobileMenu,
+} from "./fixtures.js";
 
 test.describe("Goals & Savings", () => {
     test.beforeEach(async ({ page }) => {
@@ -33,13 +39,12 @@ test.describe("Goals & Savings", () => {
             await page.waitForLoadState("networkidle");
             await page.waitForTimeout(500);
 
-            // Check if mobile viewport - hamburger menu will be visible
-            const hamburger = page.locator('button[aria-label="Menu"]');
+            // Use viewport-based detection for mobile (more reliable than element visibility)
+            const isMobile = await isMobileViewport(page);
 
-            if (await hamburger.isVisible()) {
+            if (isMobile) {
                 // Mobile: Use hamburger menu
-                await hamburger.click();
-                await page.waitForTimeout(300);
+                await openMobileMenu(page);
                 // Click Goals in mobile menu
                 const mobileGoalsLink = page.locator(
                     'button:has-text("Goals")'

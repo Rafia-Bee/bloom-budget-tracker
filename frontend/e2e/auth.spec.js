@@ -9,7 +9,12 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { TEST_USER, loginAsTestUser } from "./fixtures.js";
+import {
+    TEST_USER,
+    loginAsTestUser,
+    isMobileViewport,
+    openMobileMenu,
+} from "./fixtures.js";
 
 // These tests check login/logout behavior - start without auth state
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -98,14 +103,13 @@ test.describe("Authentication Flow", () => {
             await page.waitForLoadState("networkidle");
             await page.waitForTimeout(1000); // Extra buffer for UI to settle
 
-            // Check if mobile hamburger menu is visible
-            const hamburgerButton = page.locator('button[aria-label="Menu"]');
+            // Use viewport-based detection for mobile (more reliable than element visibility)
+            const isMobile = await isMobileViewport(page);
             const userMenuButton = page.locator('button[title="User menu"]');
 
-            // Check which menu is available and click it
-            if (await hamburgerButton.isVisible({ timeout: 5000 })) {
+            if (isMobile) {
                 // Mobile: Use hamburger menu
-                await hamburgerButton.click();
+                await openMobileMenu(page);
             } else {
                 // Desktop: Use user menu button
                 await expect(userMenuButton).toBeVisible({ timeout: 5000 });
