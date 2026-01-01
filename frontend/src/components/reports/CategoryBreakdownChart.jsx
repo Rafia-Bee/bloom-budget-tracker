@@ -5,7 +5,7 @@
  * Uses Recharts library for visualization.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   PieChart,
   Pie,
@@ -31,12 +31,37 @@ const COLORS = [
 
 function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClick, clickable = false }) {
   const [activeIndex, setActiveIndex] = useState(null)
+  const [isAnimating, setIsAnimating] = useState(true)
+
+  // Reset animation state when data changes (e.g., drill-down)
+  useEffect(() => {
+    setIsAnimating(true)
+    setActiveIndex(null)
+  }, [data])
 
   // Handle click on pie slice
   const handleClick = (data, index) => {
-    if (clickable && onCategoryClick && data?.name) {
+    if (clickable && onCategoryClick && data?.name && !isAnimating) {
       onCategoryClick(data.name)
     }
+  }
+
+  // Handle mouse events only after animation completes
+  const handleMouseEnter = (_, index) => {
+    if (!isAnimating) {
+      setActiveIndex(index)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!isAnimating) {
+      setActiveIndex(null)
+    }
+  }
+
+  // Animation complete callback
+  const handleAnimationEnd = () => {
+    setIsAnimating(false)
   }
 
   // Custom tooltip component
@@ -117,10 +142,14 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
             paddingAngle={2}
             dataKey="total"
             nameKey="name"
-            onMouseEnter={(_, index) => setActiveIndex(index)}
-            onMouseLeave={() => setActiveIndex(null)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             onClick={handleClick}
-            style={{ cursor: clickable ? 'pointer' : 'default' }}
+            style={{ cursor: clickable && !isAnimating ? 'pointer' : 'default' }}
+            animationBegin={0}
+            animationDuration={400}
+            animationEasing="ease-out"
+            onAnimationEnd={handleAnimationEnd}
           >
             {chartData.map((entry, index) => (
               <Cell
@@ -129,7 +158,7 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
                 stroke={entry.color}
                 strokeWidth={activeIndex === index ? 3 : 1}
                 opacity={activeIndex === null || activeIndex === index ? 1 : 0.6}
-                style={{ cursor: clickable ? 'pointer' : 'default' }}
+                style={{ cursor: clickable && !isAnimating ? 'pointer' : 'default' }}
               />
             ))}
           </Pie>
