@@ -10,6 +10,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { logError } from '../utils/logger';
 import ThemeToggle from './ThemeToggle';
 import { authAPI } from '../api';
+import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Header({
   setIsAuthenticated,
@@ -22,6 +23,8 @@ function Header({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [expandedSubmenu, setExpandedSubmenu] = useState(null); // 'import-export' | null
   const navigate = useNavigate();
+  const { isEnabled, experimentalEnabled } = useFeatureFlag();
+  const reportsEnabled = experimentalEnabled && isEnabled('reportsEnabled');
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -59,6 +62,9 @@ function Header({
     <>
       <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Dashboard</NavLink>
       <NavLink to="/goals" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Goals</NavLink>
+      {reportsEnabled && (
+        <NavLink to="/reports" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Reports</NavLink>
+      )}
       <NavLink to="/recurring-expenses" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Recurring</NavLink>
       <NavLink to="/debts" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}>Debts</NavLink>
     </>
@@ -88,6 +94,19 @@ function Header({
       >
         🎯 Goals
       </button>
+      {reportsEnabled && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowMobileMenu(false);
+            navigate('/reports');
+          }}
+          className={`${mobileNavLinkClasses} text-left w-full`}
+        >
+          📊 Reports
+        </button>
+      )}
       <button
         onClick={(e) => {
           e.preventDefault();

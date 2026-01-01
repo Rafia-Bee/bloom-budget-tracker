@@ -6,6 +6,263 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Top Merchants Feature (#3)
+
+**Context:** User requested a "Top Merchants" feature for the Reports dashboard to show most frequent and highest spending merchants.
+
+**Decision:**
+
+1. **Dual Sort Modes**: Users can toggle between sorting by total amount (default) or by transaction frequency
+2. **Ranked List Display**: Shows top 5 by default with "View more" button to expand to top 10
+3. **Visual Ranking**: Rank badges with gold/silver/bronze colors for top 3
+4. **Rich Merchant Details**: Each row shows merchant name, category emoji, transaction count, average spend, total, and percentage of total spending
+5. **Progress Bar**: Visual indicator showing proportion of total spending
+6. **Excludes System Entries**: Pre-existing Credit Card Debt and Initial Balance entries are filtered out
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/top-merchants` endpoint
+    -   Query params: start_date, end_date, limit, sort_by (amount/frequency), payment_method
+    -   Returns merchants with: name, total, count, average, percentage, category
+    -   Groups expenses by name and category
+-   **Frontend**: `TopMerchantsCard` component
+    -   Toggle buttons to switch sort mode (triggers API re-fetch)
+    -   Shows top 5 with "View X more" expand button
+    -   Merchant rows with rank badges, category emoji, stats, and progress bars
+    -   Responsive layout (progress bar hidden on mobile)
+
+**Files Created:**
+
+-   `frontend/src/components/reports/TopMerchantsCard.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_top_merchants` endpoint
+-   `backend/tests/test_analytics.py` - Added 8 unit tests (TestTopMerchants class)
+-   `frontend/src/api.js` - Added `getTopMerchants` function
+-   `frontend/src/pages/Reports.jsx` - Integrated TopMerchantsCard, added state for merchants and sort mode
+
+---
+
+### Budget vs Actual Feature (#3)
+
+**Context:** User requested a feature to compare planned budget vs actual spending by category on the Reports dashboard.
+
+**Decision:**
+
+1. **Pro-rated Budget**: When viewing a subset of the salary period dates, the budget is automatically pro-rated (daily budget × selected days)
+2. **Excludes Fixed Bills**: Comparison only includes discretionary spending (is_fixed_bill=False) since fixed bills are already accounted for in budget calculation
+3. **Visual Progress Indicator**: Color-coded utilization bar (green ≤75%, yellow ≤90%, orange ≤100%, red >100%)
+4. **Category Breakdown**: Horizontal bar chart showing actual spending per category with reference line for average budget per category
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/budget-vs-actual` endpoint
+    -   Returns planned_budget, actual_spending, remaining, utilization_percent
+    -   Includes category breakdown with percentage of spending and percentage of budget
+    -   Returns salary_period info for context
+    -   Pro-rates budget when date range is subset of period
+-   **Frontend**: `BudgetVsActualChart` component
+    -   Budget overview card with progress bar and stats (Planned/Spent/Remaining)
+    -   Horizontal bar chart by category using Recharts
+    -   Handles edge cases: no period, no spending, over budget
+
+**Files Created:**
+
+-   `frontend/src/components/reports/BudgetVsActualChart.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_budget_vs_actual` endpoint
+-   `backend/tests/test_analytics.py` - Added 7 unit tests for the new endpoint
+-   `frontend/src/api.js` - Added `getBudgetVsActual` function
+-   `frontend/src/pages/Reports.jsx` - Integrated BudgetVsActualChart
+
+---
+
+### Period Comparison Feature (#3)
+
+**Context:** User requested ability to compare spending/income between two date ranges (e.g., salary periods) to track financial progress over time.
+
+**Decision:**
+
+1. **User-Selected Date Ranges**: No auto-calculated defaults. Users select their own dates (Period A and Period B) to match their actual salary periods.
+2. **Layout**: Period B on left, Period A on right (natural "before → after" reading order). Income on left, Spending on right.
+3. **Visual Indicators**: Color-coded change indicators (green = good, red = bad), inverted for spending (decrease = green).
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/period-comparison` endpoint
+    -   Accepts `current_start`, `current_end`, `previous_start`, `previous_end`
+    -   Returns spending/income totals and category-by-category breakdown
+    -   Calculates change amounts and percentages
+    -   Excludes "Pre-existing Credit Card Debt" and "Initial Balance" for accurate comparison
+-   **Frontend**: `PeriodComparisonCard` component
+    -   Two date range selectors with color-coded backgrounds (blue=A, purple=B)
+    -   "Compare Periods" button triggers API call
+    -   Results show totals with change indicators and category breakdown
+
+**Why No Auto-Defaults:**
+Initial implementation tried "last 30 days vs previous 30 days" but this didn't align with user's actual salary period boundaries, causing incorrect income/spending attribution. Letting users select their own dates ensures accurate comparison.
+
+**Files Created:**
+
+-   `frontend/src/components/reports/PeriodComparisonCard.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_period_comparison` endpoint
+-   `frontend/src/api.js` - Added `getPeriodComparison` function
+-   `frontend/src/pages/Reports.jsx` - Integrated PeriodComparisonCard, disabled Export All button
+
+---
+
+### Chart Export Feature - PNG/PDF Export (#3)
+
+**Context:** User requested ability to export charts from the Reports dashboard for sharing and archiving.
+
+**Decision:**
+
+1.  **Individual Chart Export**: Each chart card has a download button with PNG/PDF options
+2.  **Export All as PNG**: Single button exports all charts + subcategory breakdowns to one combined image
+3.  **Canvas-based Subcategory Charts**: Drew pie charts using Canvas 2D API instead of capturing Recharts SVG
+
+**Implementation Details:**
+
+-   **Libraries**: Added `html2canvas` and `jspdf` for capture and PDF generation
+-   **ChartExportButton**: Reusable dropdown button with PNG/PDF options. Hides itself during capture.
+-   **ExportAllReportsButton**: Comprehensive export that:
+    -   Captures main charts (Spending Trends, Category Breakdown, Debt Payoff)
+    -   Fetches subcategory data for each category via API
+    -   Renders subcategory pie charts directly on canvas (not SVG)
+    -   Combines all into a single high-resolution PNG with title and date range
+
+**Technical Decisions:**
+
+1.  **Canvas 2D for Subcategories**: html2canvas doesn't capture SVG properly, so subcategory charts are drawn using native Canvas arc() for pie slices. This guarantees visibility in exports.
+2.  **PNG over PDF for "Export All"**: PDF had emoji encoding issues (📊 → gibberish). PNG preserves quality and avoids font/encoding problems.
+3.  **Hide Export UI During Capture**: Export buttons use `visibility: hidden` before capture to avoid appearing in exported images.
+4.  **Progress Feedback**: Shows status messages ("Capturing...", "Loading subcategories...") during multi-step export.
+
+**Files Created:**
+
+-   `frontend/src/components/reports/ChartExportButton.jsx` - Individual chart export
+-   `frontend/src/components/reports/ExportAllReportsButton.jsx` - Combined export with subcategories
+
+**Files Modified:**
+
+-   `frontend/src/pages/Reports.jsx` - Added refs and export buttons
+-   `frontend/package.json` - Added html2canvas, jspdf dependencies
+
+---
+
+### Reports & Analytics Dashboard - Complete Implementation (#3)
+
+**Context:** Issue #3 requested a comprehensive Reports & Analytics Dashboard with charts, trends, and category breakdowns.
+
+**Decision:** Implemented in phases:
+
+**Phase 1 - Backend Analytics API:**
+
+1. Created `/api/v1/analytics/spending-by-category` - Category breakdown with totals and percentages
+2. Created `/api/v1/analytics/spending-trends` - Time-series data with daily/weekly/monthly granularity
+3. Created `/api/v1/analytics/income-vs-expense` - Summary comparison with savings rate
+
+**Phase 2 - Frontend Core:**
+
+1. Installed Recharts library for chart visualizations
+2. Added `reportsEnabled` feature flag (experimental)
+3. Created Reports page with date range controls (quick buttons: 7/30/90 days)
+4. Built SpendingTrendsChart (line chart) showing Total/Debit/Credit trends
+5. Built CategoryBreakdownChart (donut chart) with percentage breakdown
+6. Added navigation link to Header (desktop and mobile, behind feature flag)
+7. Added Reports toggle to Settings → Preferences → Experimental Features
+
+**Phase 3 - Bug Fixes:**
+
+1. **Payment method mismatch**: Database stores "Debit card"/"Credit card" but code checked for "debit"/"credit"
+    - Fixed using `ilike("%debit%")` for SQLAlchemy filters
+    - Fixed using `"debit" in payment_method.lower()` for Python logic
+2. **Data exclusions** for accurate analytics:
+    - Exclude "Pre-existing Credit Card Debt" expenses (not actual spending)
+    - Exclude "Initial Balance" income after the first one (avoids double counting)
+3. **Recharts dimension warnings**: Added `minWidth={0}` to ResponsiveContainer
+
+**Tech Choices:**
+
+-   Recharts (smaller bundle than Chart.js, better React integration)
+-   Feature flag `reportsEnabled` for experimental rollout
+-   TDD approach with 19 unit tests (17 original + 2 for exclusions)
+-   E2E tests with Playwright
+
+**Files Created:**
+
+-   `backend/routes/analytics.py` - 3 endpoints with proper filtering
+
+### Reports Dashboard Refinements (#3)
+
+**Context:** User feedback on the initial Reports implementation requested better interactivity and more logical data presentation.
+
+**Decision:**
+
+1.  **Subcategory Drill-down**: Implemented interactive drill-down in Category Pie Chart. Clicking a category fetches and displays its subcategories. Added back navigation.
+2.  **Smart Default Dates**: Changed default date range to match the _current salary period_ instead of an arbitrary 30-day window, aligning with the app's budget-period philosophy.
+3.  **All-Time Summary**: Decoupled summary cards (Income/Expense/Savings) from the date filter. They now show _lifetime_ totals to provide high-level context, while charts remain filtered.
+4.  **Layout Optimization**: Moved All-Time Summary cards to the top of the page for better visibility. Removed "Quick Range" buttons (7/30/90 days) to reduce clutter.
+
+**Rationale:**
+
+-   Drill-down provides granular insight without cluttering the main view.
+-   Salary period default is more relevant to the user's budgeting cycle.
+-   All-time totals provide a "net worth" style overview that is always useful, regardless of the specific period being analyzed.
+
+### Debt Payoff Analytics (#3)
+
+**Context:** User requested a way to track overall debt payoff progress over time.
+
+**Decision:**
+
+1.  **Backend Endpoint**: Created `/api/v1/analytics/debt-payoff` which reconstructs historical debt balances by working backwards from the current balance using "Debt Payments" expenses.
+2.  **Visualization**: Implemented a Multi-Line Chart showing:
+    -   **Total Debt**: Thick line (dynamic color for light/dark mode).
+    -   **Individual Debts**: Thinner colored lines.
+3.  **Data Filtering**: Filtered the timeline to only show dates where a payment occurred (or balance changed), creating a clean "step-like" progression without long flat lines.
+4.  **All-Time Scope**: The chart always shows the full history (All Time) regardless of the dashboard's date filter, providing complete context.
+
+**Rationale:**
+
+-   Reconstructing history allows us to show trends without having stored daily snapshots in the database.
+-   Filtering for activity dates makes the chart more readable and focuses on the user's actions (payments).
+-   All-time scope is essential for debt tracking as it's a long-term goal.
+-   `backend/tests/test_analytics.py` - 19 comprehensive tests
+-   `frontend/src/pages/Reports.jsx` - Main analytics page
+-   `frontend/src/components/reports/SpendingTrendsChart.jsx`
+-   `frontend/src/components/reports/CategoryBreakdownChart.jsx`
+-   `frontend/e2e/reports.spec.js` - E2E tests
+
+**Rationale:**
+
+-   Aggregation in backend reduces frontend complexity
+-   Data exclusions ensure analytics reflect actual spending, not accounting entries
+-   Date range filters allow flexible time window analysis
+
+---
+
+### DateNavigator Prop Mismatch Fix (#92)
+
+**Context:** Day-by-day transaction navigation was broken with error "onDateChange is not a function".
+
+**Problem:** TransactionList.jsx was passing props with wrong names:
+
+-   Passed: `dates`, `currentDate`, `onNavigate`
+-   Expected: `transactionDates`, `currentViewDate`, `onDateChange`
+
+**Decision:** Updated TransactionList.jsx to use correct prop names matching DateNavigator component.
+
+**Rationale:** Simple fix, maintains single source of truth for prop naming in DateNavigator.
+
+---
+
 ### Flexible Sub-Period Division (#9)
 
 **Context:** Issue #9 requested the ability to divide budget into custom number of sub-periods instead of the hardcoded 4-week structure.

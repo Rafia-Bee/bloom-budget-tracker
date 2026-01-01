@@ -16,7 +16,8 @@ export function FeatureFlagProvider({ children }) {
       experimentalFeaturesEnabled: false,
       multiCurrencyEnabled: false,
       budgetRecalculationEnabled: false,
-      flexibleSubPeriodsEnabled: false
+      flexibleSubPeriodsEnabled: false,
+      reportsEnabled: false
     }
   })
 

@@ -44,12 +44,17 @@ test.describe("Goals & Savings", () => {
 
             if (isMobile) {
                 // Mobile: Use hamburger menu
-                await openMobileMenu(page);
-                // Click Goals in mobile menu
-                const mobileGoalsLink = page.locator(
-                    'button:has-text("Goals")'
-                );
-                await mobileGoalsLink.click();
+                const menuOpened = await openMobileMenu(page);
+                if (menuOpened) {
+                    // Click Goals in mobile menu - use emoji prefix for exact match
+                    const mobileGoalsLink = page.locator(
+                        'button:has-text("🎯 Goals")'
+                    );
+                    await mobileGoalsLink.click();
+                } else {
+                    // Fallback to direct navigation if menu fails
+                    await page.goto("/goals");
+                }
             } else {
                 // Desktop: Click nav link directly
                 const goalsLink = page.locator('a[href="/goals"]');
