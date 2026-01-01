@@ -5,7 +5,7 @@
  * Behind experimental feature flag (reportsEnabled).
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { analyticsAPI, salaryPeriodAPI } from '../api'
 import { formatCurrency } from '../utils/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -13,6 +13,8 @@ import Header from '../components/Header'
 import SpendingTrendsChart from '../components/reports/SpendingTrendsChart'
 import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart'
 import DebtPayoffChart from '../components/reports/DebtPayoffChart'
+import ChartExportButton from '../components/reports/ChartExportButton'
+import ExportAllReportsButton from '../components/reports/ExportAllReportsButton'
 
 function Reports({ setIsAuthenticated }) {
   const [loading, setLoading] = useState(true)
@@ -59,6 +61,11 @@ function Reports({ setIsAuthenticated }) {
 
   // Drill-down state: null = category view, 'Food' = show Food subcategories
   const [selectedCategory, setSelectedCategory] = useState(null)
+
+  // Chart refs for export functionality
+  const spendingTrendsRef = useRef(null)
+  const categoryBreakdownRef = useRef(null)
+  const debtPayoffRef = useRef(null)
 
   const { defaultCurrency, convertAmount } = useCurrency()
 
@@ -137,13 +144,26 @@ function Reports({ setIsAuthenticated }) {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            📊 Reports & Analytics
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Visualize your spending patterns and track your financial progress
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              📊 Reports & Analytics
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              Visualize your spending patterns and track your financial progress
+            </p>
+          </div>
+          {!loading && !error && (
+            <ExportAllReportsButton
+              chartRefs={{
+                spendingTrends: spendingTrendsRef,
+                categoryBreakdown: categoryBreakdownRef,
+                debtPayoff: debtPayoffRef
+              }}
+              dateRange={dateRange}
+              categoryData={spendingByCategory}
+            />
+          )}
         </div>
 
         {/* Summary Cards (All Time) */}
@@ -220,20 +240,27 @@ function Reports({ setIsAuthenticated }) {
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Spending Trends Chart */}
-              <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <div ref={spendingTrendsRef} className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                     📈 Spending Trends
                   </h2>
-                  <select
-                    value={granularity}
-                    onChange={(e) => setGranularity(e.target.value)}
-                    className="px-2 py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={granularity}
+                      onChange={(e) => setGranularity(e.target.value)}
+                      className="px-2 py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                    <ChartExportButton
+                      targetRef={spendingTrendsRef}
+                      filename="spending-trends"
+                      title="Spending Trends"
+                    />
+                  </div>
                 </div>
                 {spendingTrends && (
                   <SpendingTrendsChart
@@ -245,7 +272,7 @@ function Reports({ setIsAuthenticated }) {
               </div>
 
               {/* Category Breakdown Chart with drill-down */}
-              <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <div ref={categoryBreakdownRef} className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
                     {selectedCategory && (
@@ -263,6 +290,11 @@ function Reports({ setIsAuthenticated }) {
                       🌸 {selectedCategory ? `${selectedCategory} Subcategories` : 'Spending by Category'}
                     </h2>
                   </div>
+                  <ChartExportButton
+                    targetRef={categoryBreakdownRef}
+                    filename={selectedCategory ? `${selectedCategory.toLowerCase()}-breakdown` : 'category-breakdown'}
+                    title={selectedCategory ? `${selectedCategory} Subcategories` : 'Spending by Category'}
+                  />
                 </div>
                 {/* Category view (default) - clickable to drill down */}
                 {!selectedCategory && spendingByCategory && (
@@ -287,14 +319,21 @@ function Reports({ setIsAuthenticated }) {
 
             {/* Debt Payoff Progress */}
             {debtPayoffData && debtPayoffData.length > 0 && (
-              <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    📉 Debt Payoff Progress
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Track your total debt balance over time
-                  </p>
+              <div ref={debtPayoffRef} className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      📉 Debt Payoff Progress
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Track your total debt balance over time
+                    </p>
+                  </div>
+                  <ChartExportButton
+                    targetRef={debtPayoffRef}
+                    filename="debt-payoff-progress"
+                    title="Debt Payoff Progress"
+                  />
                 </div>
                 <DebtPayoffChart
                   data={debtPayoffData}

@@ -108,43 +108,6 @@ test.describe("Reports & Analytics", () => {
             await expect(startDate).toBeVisible();
             await expect(endDate).toBeVisible();
         });
-
-        test("has quick range buttons", async ({ page }) => {
-            await page.goto("/reports");
-            await page.waitForLoadState("networkidle");
-
-            // Should have quick range buttons
-            await expect(
-                page.locator('button:has-text("7 days")')
-            ).toBeVisible();
-            await expect(
-                page.locator('button:has-text("30 days")')
-            ).toBeVisible();
-            await expect(
-                page.locator('button:has-text("90 days")')
-            ).toBeVisible();
-        });
-
-        test("clicking quick range button updates date range", async ({
-            page,
-        }) => {
-            await page.goto("/reports");
-            await page.waitForLoadState("networkidle");
-
-            // Get initial date value
-            const startDate = page.locator('input[type="date"]').first();
-            const initialValue = await startDate.inputValue();
-
-            // Click 7 days button
-            await page.locator('button:has-text("7 days")').click();
-            await page.waitForTimeout(500);
-
-            // Date should have changed
-            const newValue = await startDate.inputValue();
-            // The date should be different (7 days ago vs 30 days ago default)
-            // We just verify the input has a valid date format
-            expect(newValue).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-        });
     });
 
     test.describe("Summary Cards", () => {

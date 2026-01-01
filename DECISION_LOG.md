@@ -6,6 +6,45 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Chart Export Feature - PNG/PDF Export (#3)
+
+**Context:** User requested ability to export charts from the Reports dashboard for sharing and archiving.
+
+**Decision:**
+
+1.  **Individual Chart Export**: Each chart card has a download button with PNG/PDF options
+2.  **Export All as PNG**: Single button exports all charts + subcategory breakdowns to one combined image
+3.  **Canvas-based Subcategory Charts**: Drew pie charts using Canvas 2D API instead of capturing Recharts SVG
+
+**Implementation Details:**
+
+-   **Libraries**: Added `html2canvas` and `jspdf` for capture and PDF generation
+-   **ChartExportButton**: Reusable dropdown button with PNG/PDF options. Hides itself during capture.
+-   **ExportAllReportsButton**: Comprehensive export that:
+    -   Captures main charts (Spending Trends, Category Breakdown, Debt Payoff)
+    -   Fetches subcategory data for each category via API
+    -   Renders subcategory pie charts directly on canvas (not SVG)
+    -   Combines all into a single high-resolution PNG with title and date range
+
+**Technical Decisions:**
+
+1.  **Canvas 2D for Subcategories**: html2canvas doesn't capture SVG properly, so subcategory charts are drawn using native Canvas arc() for pie slices. This guarantees visibility in exports.
+2.  **PNG over PDF for "Export All"**: PDF had emoji encoding issues (📊 → gibberish). PNG preserves quality and avoids font/encoding problems.
+3.  **Hide Export UI During Capture**: Export buttons use `visibility: hidden` before capture to avoid appearing in exported images.
+4.  **Progress Feedback**: Shows status messages ("Capturing...", "Loading subcategories...") during multi-step export.
+
+**Files Created:**
+
+-   `frontend/src/components/reports/ChartExportButton.jsx` - Individual chart export
+-   `frontend/src/components/reports/ExportAllReportsButton.jsx` - Combined export with subcategories
+
+**Files Modified:**
+
+-   `frontend/src/pages/Reports.jsx` - Added refs and export buttons
+-   `frontend/package.json` - Added html2canvas, jspdf dependencies
+
+---
+
 ### Reports & Analytics Dashboard - Complete Implementation (#3)
 
 **Context:** Issue #3 requested a comprehensive Reports & Analytics Dashboard with charts, trends, and category breakdowns.
