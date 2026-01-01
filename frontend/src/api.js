@@ -244,6 +244,8 @@ export const analyticsAPI = {
         api.get("/analytics/period-comparison", { params }),
     getBudgetVsActual: (params = {}) =>
         api.get("/analytics/budget-vs-actual", { params }),
+    getTopMerchants: (params = {}) =>
+        api.get("/analytics/top-merchants", { params }),
 };
 
 export default api;

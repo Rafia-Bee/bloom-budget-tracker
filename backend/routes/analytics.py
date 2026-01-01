@@ -806,6 +806,113 @@ def get_period_comparison():
     )
 
 
+@analytics_bp.route("/top-merchants", methods=["GET"])
+@jwt_required()
+def get_top_merchants():
+    """
+    Get top merchants by frequency and total spending.
+
+    Query params:
+        start_date: YYYY-MM-DD (default: 30 days ago)
+        end_date: YYYY-MM-DD (default: today)
+        limit: Number of merchants to return (default: 10)
+        sort_by: 'frequency' | 'amount' (default: 'amount')
+        payment_method: 'debit' | 'credit' | null (all)
+
+    Returns:
+        {
+            merchants: [
+                {
+                    name: 'Wolt',
+                    total: 45000,
+                    count: 15,
+                    average: 3000,
+                    percentage: 25.5,
+                    category: 'Food'
+                },
+                ...
+            ],
+            total_spending: 176400,
+            total_transactions: 45,
+            date_range: { start: '2025-12-01', end: '2025-12-31' }
+        }
+    """
+    current_user_id = int(get_jwt_identity())
+
+    default_start, default_end = get_date_range_defaults()
+    start_date = parse_date(request.args.get("start_date"), default_start)
+    end_date = parse_date(request.args.get("end_date"), default_end)
+    limit = request.args.get("limit", 10, type=int)
+    sort_by = request.args.get("sort_by", "amount")
+    payment_method = request.args.get("payment_method")
+
+    # Base query to group by merchant name
+    query = (
+        db.session.query(
+            Expense.name,
+            Expense.category,
+            func.sum(Expense.amount).label("total"),
+            func.count(Expense.id).label("count"),
+        )
+        .filter(
+            Expense.user_id == current_user_id,
+            Expense.deleted_at.is_(None),
+            Expense.date >= start_date,
+            Expense.date <= end_date,
+            # Exclude system entries
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
+            ~Expense.name.ilike("%initial balance%"),
+        )
+        .group_by(Expense.name, Expense.category)
+    )
+
+    # Payment method filter
+    if payment_method == "debit":
+        query = query.filter(Expense.payment_method.ilike("%debit%"))
+    elif payment_method == "credit":
+        query = query.filter(Expense.payment_method.ilike("%credit%"))
+
+    results = query.all()
+
+    # Calculate totals
+    total_spending = sum(r.total for r in results)
+    total_transactions = sum(r.count for r in results)
+
+    # Sort and limit
+    if sort_by == "frequency":
+        sorted_results = sorted(results, key=lambda x: x.count, reverse=True)
+    else:
+        sorted_results = sorted(results, key=lambda x: x.total, reverse=True)
+
+    limited_results = sorted_results[:limit]
+
+    merchants = [
+        {
+            "name": r.name,
+            "total": r.total,
+            "count": r.count,
+            "average": r.total // r.count if r.count > 0 else 0,
+            "percentage": (
+                round((r.total / total_spending) * 100, 1) if total_spending > 0 else 0
+            ),
+            "category": r.category,
+        }
+        for r in limited_results
+    ]
+
+    return jsonify(
+        {
+            "merchants": merchants,
+            "total_spending": total_spending,
+            "total_transactions": total_transactions,
+            "date_range": {
+                "start": start_date.strftime("%Y-%m-%d"),
+                "end": end_date.strftime("%Y-%m-%d"),
+            },
+        }
+    )
+
+
 @analytics_bp.route("/budget-vs-actual", methods=["GET"])
 @jwt_required()
 def get_budget_vs_actual():

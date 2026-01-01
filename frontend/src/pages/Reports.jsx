@@ -14,6 +14,7 @@ import SpendingTrendsChart from '../components/reports/SpendingTrendsChart'
 import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart'
 import DebtPayoffChart from '../components/reports/DebtPayoffChart'
 import BudgetVsActualChart from '../components/reports/BudgetVsActualChart'
+import TopMerchantsCard from '../components/reports/TopMerchantsCard'
 import ChartExportButton from '../components/reports/ChartExportButton'
 import ExportAllReportsButton from '../components/reports/ExportAllReportsButton'
 import PeriodComparisonCard from '../components/reports/PeriodComparisonCard'
@@ -61,6 +62,8 @@ function Reports({ setIsAuthenticated }) {
   const [incomeVsExpense, setIncomeVsExpense] = useState(null)
   const [debtPayoffData, setDebtPayoffData] = useState(null)
   const [budgetVsActual, setBudgetVsActual] = useState(null)
+  const [topMerchants, setTopMerchants] = useState(null)
+  const [merchantSortBy, setMerchantSortBy] = useState('amount')
 
   // Drill-down state: null = category view, 'Food' = show Food subcategories
   const [selectedCategory, setSelectedCategory] = useState(null)
@@ -81,7 +84,7 @@ function Reports({ setIsAuthenticated }) {
 
   useEffect(() => {
     loadAnalyticsData()
-  }, [dateRange, granularity])
+  }, [dateRange, granularity, merchantSortBy])
 
   const loadAnalyticsData = async () => {
     setLoading(true)
@@ -93,12 +96,13 @@ function Reports({ setIsAuthenticated }) {
         end_date: dateRange.end
       }
 
-      const [categoryRes, trendsRes, incomeExpenseRes, debtRes, budgetRes] = await Promise.all([
+      const [categoryRes, trendsRes, incomeExpenseRes, debtRes, budgetRes, merchantsRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
         analyticsAPI.getAllTimeStats(), // Fetch all-time stats for summary cards
         analyticsAPI.getDebtPayoffProgress({ all_time: true }), // Fetch all-time debt history
-        analyticsAPI.getBudgetVsActual(params) // Fetch budget vs actual for selected period
+        analyticsAPI.getBudgetVsActual(params), // Fetch budget vs actual for selected period
+        analyticsAPI.getTopMerchants({ ...params, sort_by: merchantSortBy, limit: 10 }) // Fetch top 10 merchants (show 5, expand to 10)
       ])
 
       setSpendingByCategory(categoryRes.data)
@@ -106,6 +110,7 @@ function Reports({ setIsAuthenticated }) {
       setIncomeVsExpense(incomeExpenseRes.data)
       setDebtPayoffData(debtRes.data.data)
       setBudgetVsActual(budgetRes.data)
+      setTopMerchants(merchantsRes.data)
       // Reset drill-down when date range changes
       setSelectedCategory(null)
       setSpendingBySubcategory(null)
@@ -345,6 +350,24 @@ function Reports({ setIsAuthenticated }) {
               <BudgetVsActualChart
                 data={budgetVsActual}
                 currencyFormatter={fcEur}
+              />
+            </div>
+
+            {/* Top Merchants */}
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  🏪 Top Merchants
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Your most frequent and highest spending merchants
+                </p>
+              </div>
+              <TopMerchantsCard
+                data={topMerchants}
+                currencyFormatter={fcEur}
+                sortBy={merchantSortBy}
+                onSortChange={setMerchantSortBy}
               />
             </div>
 

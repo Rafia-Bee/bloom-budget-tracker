@@ -6,6 +6,44 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Top Merchants Feature (#3)
+
+**Context:** User requested a "Top Merchants" feature for the Reports dashboard to show most frequent and highest spending merchants.
+
+**Decision:**
+
+1. **Dual Sort Modes**: Users can toggle between sorting by total amount (default) or by transaction frequency
+2. **Ranked List Display**: Shows top 5 by default with "View more" button to expand to top 10
+3. **Visual Ranking**: Rank badges with gold/silver/bronze colors for top 3
+4. **Rich Merchant Details**: Each row shows merchant name, category emoji, transaction count, average spend, total, and percentage of total spending
+5. **Progress Bar**: Visual indicator showing proportion of total spending
+6. **Excludes System Entries**: Pre-existing Credit Card Debt and Initial Balance entries are filtered out
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/top-merchants` endpoint
+    -   Query params: start_date, end_date, limit, sort_by (amount/frequency), payment_method
+    -   Returns merchants with: name, total, count, average, percentage, category
+    -   Groups expenses by name and category
+-   **Frontend**: `TopMerchantsCard` component
+    -   Toggle buttons to switch sort mode (triggers API re-fetch)
+    -   Shows top 5 with "View X more" expand button
+    -   Merchant rows with rank badges, category emoji, stats, and progress bars
+    -   Responsive layout (progress bar hidden on mobile)
+
+**Files Created:**
+
+-   `frontend/src/components/reports/TopMerchantsCard.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_top_merchants` endpoint
+-   `backend/tests/test_analytics.py` - Added 8 unit tests (TestTopMerchants class)
+-   `frontend/src/api.js` - Added `getTopMerchants` function
+-   `frontend/src/pages/Reports.jsx` - Integrated TopMerchantsCard, added state for merchants and sort mode
+
+---
+
 ### Budget vs Actual Feature (#3)
 
 **Context:** User requested a feature to compare planned budget vs actual spending by category on the Reports dashboard.

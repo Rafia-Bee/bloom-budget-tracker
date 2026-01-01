@@ -1118,3 +1118,337 @@ class TestBudgetVsActual:
             assert data["actual_spending"] == 15000
             assert data["remaining"] == -5000
             assert data["utilization_percent"] == 150.0
+
+
+class TestTopMerchants:
+    """Test top merchants analytics endpoint."""
+
+    def test_top_merchants_requires_auth(self, client):
+        """Top merchants endpoint requires authentication."""
+        response = client.get("/api/v1/analytics/top-merchants")
+        assert response.status_code == 401
+
+    def test_top_merchants_empty(self, client, auth_headers):
+        """Returns empty merchants when no expenses exist."""
+        response = client.get("/api/v1/analytics/top-merchants", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json
+
+        assert data["merchants"] == []
+        assert data["total_spending"] == 0
+        assert data["total_transactions"] == 0
+        assert "date_range" in data
+
+    def test_top_merchants_with_data(self, app, client, auth_headers):
+        """Returns merchants sorted by total spending by default."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Wolt",
+                    amount=2500,
+                    category="Food",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Wolt",
+                    amount=3000,
+                    category="Food",
+                    date=today - timedelta(days=1),
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Uber",
+                    amount=1500,
+                    category="Transport",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Uber",
+                    amount=1500,
+                    category="Transport",
+                    date=today - timedelta(days=1),
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Uber",
+                    amount=1500,
+                    category="Transport",
+                    date=today - timedelta(days=2),
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/top-merchants", headers=auth_headers
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Wolt should be first (higher total: 5500 vs 4500)
+            assert len(data["merchants"]) == 2
+            assert data["merchants"][0]["name"] == "Wolt"
+            assert data["merchants"][0]["total"] == 5500
+            assert data["merchants"][0]["count"] == 2
+            assert data["merchants"][0]["average"] == 2750
+            assert data["merchants"][0]["category"] == "Food"
+
+            assert data["merchants"][1]["name"] == "Uber"
+            assert data["merchants"][1]["total"] == 4500
+            assert data["merchants"][1]["count"] == 3
+            assert data["merchants"][1]["average"] == 1500
+
+            assert data["total_spending"] == 10000
+            assert data["total_transactions"] == 5
+
+    def test_top_merchants_sort_by_frequency(self, app, client, auth_headers):
+        """Returns merchants sorted by frequency when specified."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                # Big Shop: 1 transaction, high amount
+                Expense(
+                    user_id=user.id,
+                    name="Big Shop",
+                    amount=10000,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                # Small Shop: 5 transactions, lower total
+                Expense(
+                    user_id=user.id,
+                    name="Small Shop",
+                    amount=500,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Small Shop",
+                    amount=500,
+                    category="Shopping",
+                    date=today - timedelta(days=1),
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Small Shop",
+                    amount=500,
+                    category="Shopping",
+                    date=today - timedelta(days=2),
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Small Shop",
+                    amount=500,
+                    category="Shopping",
+                    date=today - timedelta(days=3),
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Small Shop",
+                    amount=500,
+                    category="Shopping",
+                    date=today - timedelta(days=4),
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Sort by frequency
+            response = client.get(
+                "/api/v1/analytics/top-merchants?sort_by=frequency",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Small Shop should be first (5 transactions vs 1)
+            assert data["merchants"][0]["name"] == "Small Shop"
+            assert data["merchants"][0]["count"] == 5
+            assert data["merchants"][1]["name"] == "Big Shop"
+            assert data["merchants"][1]["count"] == 1
+
+    def test_top_merchants_limit(self, app, client, auth_headers):
+        """Respects limit parameter."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            # Create 5 different merchants
+            for i in range(5):
+                expense = Expense(
+                    user_id=user.id,
+                    name=f"Merchant {i}",
+                    amount=1000 * (5 - i),  # Different amounts
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                )
+                db.session.add(expense)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/top-merchants?limit=3",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert len(data["merchants"]) == 3
+            # Should be top 3 by amount
+            assert data["merchants"][0]["name"] == "Merchant 0"
+            assert data["merchants"][0]["total"] == 5000
+
+    def test_top_merchants_date_filter(self, app, client, auth_headers):
+        """Filters merchants by date range."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                # Today
+                Expense(
+                    user_id=user.id,
+                    name="Recent Shop",
+                    amount=2000,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                # 60 days ago - outside default range
+                Expense(
+                    user_id=user.id,
+                    name="Old Shop",
+                    amount=5000,
+                    category="Shopping",
+                    date=today - timedelta(days=60),
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Default 30-day range should only include Recent Shop
+            response = client.get(
+                "/api/v1/analytics/top-merchants", headers=auth_headers
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert len(data["merchants"]) == 1
+            assert data["merchants"][0]["name"] == "Recent Shop"
+
+    def test_top_merchants_payment_method_filter(self, app, client, auth_headers):
+        """Filters by payment method."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Debit Shop",
+                    amount=3000,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Credit Shop",
+                    amount=4000,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Filter debit only
+            response = client.get(
+                "/api/v1/analytics/top-merchants?payment_method=debit",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert len(data["merchants"]) == 1
+            assert data["merchants"][0]["name"] == "Debit Shop"
+
+            # Filter credit only
+            response = client.get(
+                "/api/v1/analytics/top-merchants?payment_method=credit",
+                headers=auth_headers,
+            )
+            data = response.json
+
+            assert len(data["merchants"]) == 1
+            assert data["merchants"][0]["name"] == "Credit Shop"
+
+    def test_top_merchants_excludes_system_entries(self, app, client, auth_headers):
+        """Excludes pre-existing credit card debt and initial balance."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                # Normal expense
+                Expense(
+                    user_id=user.id,
+                    name="Normal Shop",
+                    amount=2000,
+                    category="Shopping",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                # System entries that should be excluded
+                Expense(
+                    user_id=user.id,
+                    name="Pre-existing Credit Card Debt",
+                    amount=50000,
+                    category="Other",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Initial Balance Setup",
+                    amount=10000,
+                    category="Other",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/top-merchants", headers=auth_headers
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Only Normal Shop should appear
+            assert len(data["merchants"]) == 1
+            assert data["merchants"][0]["name"] == "Normal Shop"
+            assert data["total_spending"] == 2000
