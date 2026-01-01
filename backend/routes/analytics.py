@@ -12,7 +12,7 @@ Endpoints:
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-from sqlalchemy import func, case
+from sqlalchemy import func
 from backend.models.database import db, Expense, Income, Debt
 
 analytics_bp = Blueprint("analytics", __name__, url_prefix="/analytics")
@@ -709,9 +709,11 @@ def get_period_comparison():
             {
                 "name": name,
                 "total": total,
-                "percentage": round((total / spending_query) * 100, 2)
-                if spending_query > 0
-                else 0,
+                "percentage": (
+                    round((total / spending_query) * 100, 2)
+                    if spending_query > 0
+                    else 0
+                ),
             }
             for name, total in sorted(
                 categories.items(), key=lambda x: x[1], reverse=True
@@ -799,6 +801,172 @@ def get_period_comparison():
                 "income_change": income_change,
                 "income_change_percent": income_change_percent,
                 "category_changes": category_changes,
+            },
+        }
+    )
+
+
+@analytics_bp.route("/budget-vs-actual", methods=["GET"])
+@jwt_required()
+def get_budget_vs_actual():
+    """
+    Compare planned budget vs actual spending by category.
+
+    Query params:
+        start_date: YYYY-MM-DD (default: current salary period start)
+        end_date: YYYY-MM-DD (default: current salary period end)
+
+    Returns:
+        {
+            planned_budget: 60000,  // Total planned budget for the period
+            actual_spending: 45000,  // Total actual spending
+            remaining: 15000,  // Budget remaining
+            utilization_percent: 75.0,  // Percentage of budget used
+            by_category: [
+                {
+                    name: 'Food',
+                    actual: 15000,
+                    percentage_of_spending: 33.3,
+                    percentage_of_budget: 25.0
+                },
+                ...
+            ],
+            salary_period: {
+                id: 1,
+                start_date: '2025-12-21',
+                end_date: '2026-01-17',
+                weekly_budget: 15000
+            },
+            date_range: { start: '2025-12-21', end: '2026-01-17' }
+        }
+    """
+    from backend.models.database import SalaryPeriod
+
+    current_user_id = int(get_jwt_identity())
+    today = datetime.now().date()
+
+    # Get current salary period if no dates specified
+    salary_period = SalaryPeriod.query.filter(
+        SalaryPeriod.user_id == current_user_id,
+        SalaryPeriod.is_active.is_(True),
+        SalaryPeriod.start_date <= today,
+        SalaryPeriod.end_date >= today,
+    ).first()
+
+    if salary_period:
+        default_start = salary_period.start_date
+        default_end = salary_period.end_date
+    else:
+        default_start, default_end = get_date_range_defaults()
+
+    start_date = parse_date(request.args.get("start_date"), default_start)
+    end_date = parse_date(request.args.get("end_date"), default_end)
+
+    # Find the salary period that covers the date range
+    matching_period = SalaryPeriod.query.filter(
+        SalaryPeriod.user_id == current_user_id,
+        SalaryPeriod.start_date <= start_date,
+        SalaryPeriod.end_date >= end_date,
+    ).first()
+
+    # If no exact match, try to find overlapping period
+    if not matching_period:
+        matching_period = SalaryPeriod.query.filter(
+            SalaryPeriod.user_id == current_user_id,
+            SalaryPeriod.start_date <= end_date,
+            SalaryPeriod.end_date >= start_date,
+        ).first()
+
+    # Calculate planned budget based on the period and date range
+    if matching_period:
+        # Calculate how many days in the selected range
+        total_period_days = (
+            matching_period.end_date - matching_period.start_date
+        ).days + 1
+        selected_days = (end_date - start_date).days + 1
+
+        # Pro-rate the budget if date range is subset of period
+        if selected_days < total_period_days:
+            # Calculate daily budget and multiply by selected days
+            total_period_budget = (
+                matching_period.remaining_amount
+            )  # Budget after fixed bills
+            daily_budget = total_period_budget / total_period_days
+            planned_budget = int(daily_budget * selected_days)
+        else:
+            planned_budget = matching_period.remaining_amount
+
+        period_info = {
+            "id": matching_period.id,
+            "start_date": matching_period.start_date.strftime("%Y-%m-%d"),
+            "end_date": matching_period.end_date.strftime("%Y-%m-%d"),
+            "weekly_budget": matching_period.weekly_budget,
+            "total_budget": matching_period.remaining_amount,
+            "num_sub_periods": matching_period.num_sub_periods,
+        }
+    else:
+        # No matching period - return zero budget
+        planned_budget = 0
+        period_info = None
+
+    # Get actual spending by category (excluding fixed bills for fair comparison)
+    category_query = (
+        db.session.query(
+            Expense.category,
+            func.sum(Expense.amount).label("total"),
+            func.count(Expense.id).label("count"),
+        )
+        .filter(
+            Expense.user_id == current_user_id,
+            Expense.deleted_at.is_(None),
+            Expense.date >= start_date,
+            Expense.date <= end_date,
+            Expense.is_fixed_bill.is_(False),
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
+        )
+        .group_by(Expense.category)
+        .all()
+    )
+
+    # Calculate totals
+    actual_spending = sum(r.total for r in category_query)
+    remaining = planned_budget - actual_spending
+
+    # Calculate utilization percentage
+    if planned_budget > 0:
+        utilization_percent = round((actual_spending / planned_budget) * 100, 1)
+    else:
+        utilization_percent = 0 if actual_spending == 0 else 100
+
+    # Build category breakdown
+    by_category = []
+    for r in sorted(category_query, key=lambda x: x.total, reverse=True):
+        cat_data = {
+            "name": r.category,
+            "actual": r.total,
+            "count": r.count,
+            "percentage_of_spending": (
+                round((r.total / actual_spending) * 100, 1)
+                if actual_spending > 0
+                else 0
+            ),
+            "percentage_of_budget": (
+                round((r.total / planned_budget) * 100, 1) if planned_budget > 0 else 0
+            ),
+        }
+        by_category.append(cat_data)
+
+    return jsonify(
+        {
+            "planned_budget": planned_budget,
+            "actual_spending": actual_spending,
+            "remaining": remaining,
+            "utilization_percent": utilization_percent,
+            "by_category": by_category,
+            "salary_period": period_info,
+            "date_range": {
+                "start": start_date.strftime("%Y-%m-%d"),
+                "end": end_date.strftime("%Y-%m-%d"),
             },
         }
     )

@@ -13,6 +13,7 @@ import Header from '../components/Header'
 import SpendingTrendsChart from '../components/reports/SpendingTrendsChart'
 import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart'
 import DebtPayoffChart from '../components/reports/DebtPayoffChart'
+import BudgetVsActualChart from '../components/reports/BudgetVsActualChart'
 import ChartExportButton from '../components/reports/ChartExportButton'
 import ExportAllReportsButton from '../components/reports/ExportAllReportsButton'
 import PeriodComparisonCard from '../components/reports/PeriodComparisonCard'
@@ -59,6 +60,7 @@ function Reports({ setIsAuthenticated }) {
   const [spendingTrends, setSpendingTrends] = useState(null)
   const [incomeVsExpense, setIncomeVsExpense] = useState(null)
   const [debtPayoffData, setDebtPayoffData] = useState(null)
+  const [budgetVsActual, setBudgetVsActual] = useState(null)
 
   // Drill-down state: null = category view, 'Food' = show Food subcategories
   const [selectedCategory, setSelectedCategory] = useState(null)
@@ -67,6 +69,7 @@ function Reports({ setIsAuthenticated }) {
   const spendingTrendsRef = useRef(null)
   const categoryBreakdownRef = useRef(null)
   const debtPayoffRef = useRef(null)
+  const budgetVsActualRef = useRef(null)
 
   const { defaultCurrency, convertAmount } = useCurrency()
 
@@ -90,17 +93,19 @@ function Reports({ setIsAuthenticated }) {
         end_date: dateRange.end
       }
 
-      const [categoryRes, trendsRes, incomeExpenseRes, debtRes] = await Promise.all([
+      const [categoryRes, trendsRes, incomeExpenseRes, debtRes, budgetRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
         analyticsAPI.getAllTimeStats(), // Fetch all-time stats for summary cards
-        analyticsAPI.getDebtPayoffProgress({ all_time: true }) // Fetch all-time debt history
+        analyticsAPI.getDebtPayoffProgress({ all_time: true }), // Fetch all-time debt history
+        analyticsAPI.getBudgetVsActual(params) // Fetch budget vs actual for selected period
       ])
 
       setSpendingByCategory(categoryRes.data)
       setSpendingTrends(trendsRes.data)
       setIncomeVsExpense(incomeExpenseRes.data)
       setDebtPayoffData(debtRes.data.data)
+      setBudgetVsActual(budgetRes.data)
       // Reset drill-down when date range changes
       setSelectedCategory(null)
       setSpendingBySubcategory(null)
@@ -318,6 +323,29 @@ function Reports({ setIsAuthenticated }) {
                   />
                 )}
               </div>
+            </div>
+
+            {/* Budget vs Actual Chart */}
+            <div ref={budgetVsActualRef} className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    📊 Budget vs Actual
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Compare planned budget with actual spending by category
+                  </p>
+                </div>
+                <ChartExportButton
+                  targetRef={budgetVsActualRef}
+                  filename="budget-vs-actual"
+                  title="Budget vs Actual"
+                />
+              </div>
+              <BudgetVsActualChart
+                data={budgetVsActual}
+                currencyFormatter={fcEur}
+              />
             </div>
 
             {/* Debt Payoff Progress */}

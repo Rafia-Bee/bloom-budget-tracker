@@ -6,6 +6,42 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Budget vs Actual Feature (#3)
+
+**Context:** User requested a feature to compare planned budget vs actual spending by category on the Reports dashboard.
+
+**Decision:**
+
+1. **Pro-rated Budget**: When viewing a subset of the salary period dates, the budget is automatically pro-rated (daily budget × selected days)
+2. **Excludes Fixed Bills**: Comparison only includes discretionary spending (is_fixed_bill=False) since fixed bills are already accounted for in budget calculation
+3. **Visual Progress Indicator**: Color-coded utilization bar (green ≤75%, yellow ≤90%, orange ≤100%, red >100%)
+4. **Category Breakdown**: Horizontal bar chart showing actual spending per category with reference line for average budget per category
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/budget-vs-actual` endpoint
+    -   Returns planned_budget, actual_spending, remaining, utilization_percent
+    -   Includes category breakdown with percentage of spending and percentage of budget
+    -   Returns salary_period info for context
+    -   Pro-rates budget when date range is subset of period
+-   **Frontend**: `BudgetVsActualChart` component
+    -   Budget overview card with progress bar and stats (Planned/Spent/Remaining)
+    -   Horizontal bar chart by category using Recharts
+    -   Handles edge cases: no period, no spending, over budget
+
+**Files Created:**
+
+-   `frontend/src/components/reports/BudgetVsActualChart.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_budget_vs_actual` endpoint
+-   `backend/tests/test_analytics.py` - Added 7 unit tests for the new endpoint
+-   `frontend/src/api.js` - Added `getBudgetVsActual` function
+-   `frontend/src/pages/Reports.jsx` - Integrated BudgetVsActualChart
+
+---
+
 ### Period Comparison Feature (#3)
 
 **Context:** User requested ability to compare spending/income between two date ranges (e.g., salary periods) to track financial progress over time.

@@ -789,3 +789,332 @@ class TestAnalyticsRoutes:
             # Should count first Initial Balance (300000) + Salary (50000)
             # but NOT the second Initial Balance (200000)
             assert response.json["total_income"] == 350000
+
+
+class TestBudgetVsActual:
+    """Test budget vs actual analytics endpoint."""
+
+    def test_budget_vs_actual_requires_auth(self, client):
+        """Endpoint requires authentication."""
+        response = client.get("/api/v1/analytics/budget-vs-actual")
+        assert response.status_code == 401
+
+    def test_budget_vs_actual_no_period(self, client, auth_headers):
+        """Returns zero budget when no salary period exists."""
+        response = client.get(
+            "/api/v1/analytics/budget-vs-actual", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json
+
+        assert data["planned_budget"] == 0
+        assert data["actual_spending"] == 0
+        assert data["remaining"] == 0
+        assert data["salary_period"] is None
+
+    def test_budget_vs_actual_with_period(self, client, app, auth_headers):
+        """Returns budget comparison when salary period exists."""
+        from backend.models.database import SalaryPeriod
+
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            # Create a salary period covering today
+            salary_period = SalaryPeriod(
+                user_id=user.id,
+                initial_debit_balance=100000,
+                initial_credit_balance=50000,
+                credit_limit=100000,
+                credit_budget_allowance=0,
+                total_budget_amount=100000,
+                fixed_bills_total=20000,
+                remaining_amount=80000,  # Budget after fixed bills
+                weekly_budget=20000,
+                weekly_debit_budget=20000,
+                weekly_credit_budget=0,
+                num_sub_periods=4,
+                start_date=today - timedelta(days=7),
+                end_date=today + timedelta(days=21),
+                is_active=True,
+            )
+            db.session.add(salary_period)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/budget-vs-actual",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert data["planned_budget"] == 80000
+            assert data["actual_spending"] == 0
+            assert data["remaining"] == 80000
+            assert data["utilization_percent"] == 0
+            assert data["salary_period"] is not None
+            assert data["salary_period"]["weekly_budget"] == 20000
+
+    def test_budget_vs_actual_with_spending(self, client, app, auth_headers):
+        """Returns correct spending breakdown by category."""
+        from backend.models.database import SalaryPeriod
+
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            # Create salary period
+            salary_period = SalaryPeriod(
+                user_id=user.id,
+                initial_debit_balance=100000,
+                initial_credit_balance=50000,
+                credit_limit=100000,
+                credit_budget_allowance=0,
+                total_budget_amount=100000,
+                fixed_bills_total=0,
+                remaining_amount=100000,
+                weekly_budget=25000,
+                weekly_debit_budget=25000,
+                weekly_credit_budget=0,
+                num_sub_periods=4,
+                start_date=today - timedelta(days=7),
+                end_date=today + timedelta(days=21),
+                is_active=True,
+            )
+            db.session.add(salary_period)
+
+            # Add expenses (not fixed bills)
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Groceries",
+                    amount=15000,
+                    category="Food",
+                    date=today,
+                    payment_method="Debit card",
+                    is_fixed_bill=False,
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Restaurant",
+                    amount=5000,
+                    category="Food",
+                    date=today,
+                    payment_method="Credit card",
+                    is_fixed_bill=False,
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Bus pass",
+                    amount=3000,
+                    category="Transport",
+                    date=today,
+                    payment_method="Debit card",
+                    is_fixed_bill=False,
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/budget-vs-actual",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert data["planned_budget"] == 100000
+            assert data["actual_spending"] == 23000
+            assert data["remaining"] == 77000
+            assert data["utilization_percent"] == 23.0
+
+            # Check category breakdown
+            assert len(data["by_category"]) == 2
+            food = next(c for c in data["by_category"] if c["name"] == "Food")
+            assert food["actual"] == 20000
+            assert food["count"] == 2
+
+    def test_budget_vs_actual_excludes_fixed_bills(self, client, app, auth_headers):
+        """Fixed bill expenses are excluded from comparison."""
+        from backend.models.database import SalaryPeriod
+
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            salary_period = SalaryPeriod(
+                user_id=user.id,
+                initial_debit_balance=100000,
+                initial_credit_balance=50000,
+                credit_limit=100000,
+                credit_budget_allowance=0,
+                total_budget_amount=100000,
+                fixed_bills_total=10000,
+                remaining_amount=90000,
+                weekly_budget=22500,
+                weekly_debit_budget=22500,
+                weekly_credit_budget=0,
+                num_sub_periods=4,
+                start_date=today - timedelta(days=7),
+                end_date=today + timedelta(days=21),
+                is_active=True,
+            )
+            db.session.add(salary_period)
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Groceries",
+                    amount=5000,
+                    category="Food",
+                    date=today,
+                    payment_method="Debit card",
+                    is_fixed_bill=False,
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Rent",
+                    amount=10000,
+                    category="Housing",
+                    date=today,
+                    payment_method="Debit card",
+                    is_fixed_bill=True,  # Fixed bill - should be excluded
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/budget-vs-actual",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Only non-fixed-bill expense should be counted
+            assert data["actual_spending"] == 5000
+            assert len(data["by_category"]) == 1
+            assert data["by_category"][0]["name"] == "Food"
+
+    def test_budget_vs_actual_date_filter(self, client, app, auth_headers):
+        """Respects date range filter and pro-rates budget."""
+        from backend.models.database import SalaryPeriod
+
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+            period_start = today - timedelta(days=14)
+            period_end = today + timedelta(days=13)
+
+            # 28-day period with 28000 cents remaining budget = 1000/day
+            salary_period = SalaryPeriod(
+                user_id=user.id,
+                initial_debit_balance=100000,
+                initial_credit_balance=50000,
+                credit_limit=100000,
+                credit_budget_allowance=0,
+                total_budget_amount=100000,
+                fixed_bills_total=72000,
+                remaining_amount=28000,  # 28000 cents / 28 days = 1000/day
+                weekly_budget=7000,
+                weekly_debit_budget=7000,
+                weekly_credit_budget=0,
+                num_sub_periods=4,
+                start_date=period_start,
+                end_date=period_end,
+                is_active=True,
+            )
+            db.session.add(salary_period)
+
+            # Add expense at different dates
+            expense1 = Expense(
+                user_id=user.id,
+                name="Recent expense",
+                amount=2000,
+                category="Food",
+                date=today,
+                payment_method="Debit card",
+                is_fixed_bill=False,
+            )
+            expense2 = Expense(
+                user_id=user.id,
+                name="Old expense",
+                amount=3000,
+                category="Food",
+                date=today - timedelta(days=10),
+                payment_method="Debit card",
+                is_fixed_bill=False,
+            )
+            db.session.add_all([expense1, expense2])
+            db.session.commit()
+
+            # Request only the last 7 days
+            query_start = (today - timedelta(days=6)).strftime("%Y-%m-%d")
+            query_end = today.strftime("%Y-%m-%d")
+
+            response = client.get(
+                f"/api/v1/analytics/budget-vs-actual"
+                f"?start_date={query_start}&end_date={query_end}",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Only recent expense should be counted
+            assert data["actual_spending"] == 2000
+
+            # Budget should be pro-rated (7 days out of 28 days)
+            # 28000 * (7/28) = 7000
+            assert data["planned_budget"] == 7000
+
+    def test_budget_vs_actual_over_budget(self, client, app, auth_headers):
+        """Correctly handles over-budget scenario."""
+        from backend.models.database import SalaryPeriod
+
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            salary_period = SalaryPeriod(
+                user_id=user.id,
+                initial_debit_balance=10000,
+                initial_credit_balance=0,
+                credit_limit=0,
+                credit_budget_allowance=0,
+                total_budget_amount=10000,
+                fixed_bills_total=0,
+                remaining_amount=10000,
+                weekly_budget=2500,
+                weekly_debit_budget=2500,
+                weekly_credit_budget=0,
+                num_sub_periods=4,
+                start_date=today - timedelta(days=7),
+                end_date=today + timedelta(days=21),
+                is_active=True,
+            )
+            db.session.add(salary_period)
+
+            # Spend more than budget
+            expense = Expense(
+                user_id=user.id,
+                name="Big purchase",
+                amount=15000,
+                category="Shopping",
+                date=today,
+                payment_method="Debit card",
+                is_fixed_bill=False,
+            )
+            db.session.add(expense)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/budget-vs-actual",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert data["planned_budget"] == 10000
+            assert data["actual_spending"] == 15000
+            assert data["remaining"] == -5000
+            assert data["utilization_percent"] == 150.0
