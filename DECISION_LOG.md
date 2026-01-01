@@ -6,6 +6,30 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Reports & Analytics Dashboard - Phase 1 Backend (#3)
+
+**Context:** Issue #3 requested a comprehensive Reports & Analytics Dashboard with charts, trends, and category breakdowns.
+
+**Decision:** Implement in phases, starting with backend analytics API endpoints:
+
+1. Create `/api/v1/analytics/spending-by-category` - Category breakdown with totals and percentages
+2. Create `/api/v1/analytics/spending-trends` - Time-series data with daily/weekly/monthly granularity
+3. Create `/api/v1/analytics/income-vs-expense` - Summary comparison with savings rate and monthly breakdown
+
+**Tech Choices:**
+
+-   Recharts library for frontend visualizations (smaller bundle than Chart.js, better React integration)
+-   Feature flag `reportsEnabled` for experimental rollout
+-   TDD approach with 17 unit tests for analytics endpoints
+
+**Rationale:**
+
+-   Aggregation in backend reduces frontend complexity and improves performance
+-   Date range filters allow flexible time window analysis
+-   Granularity options support different visualization needs
+
+---
+
 ### Flexible Sub-Period Division (#9)
 
 **Context:** Issue #9 requested the ability to divide budget into custom number of sub-periods instead of the hardcoded 4-week structure.

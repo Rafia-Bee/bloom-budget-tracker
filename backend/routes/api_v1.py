@@ -20,6 +20,7 @@ from backend.routes.user_data import user_data_bp
 from backend.routes.subcategories import subcategories_bp
 from backend.routes.goals import goals_bp
 from backend.routes.currency import currency_bp
+from backend.routes.analytics import analytics_bp
 
 
 def create_v1_blueprint():
@@ -45,5 +46,6 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(subcategories_bp)
     v1_bp.register_blueprint(goals_bp, url_prefix="/goals")
     v1_bp.register_blueprint(currency_bp)
+    v1_bp.register_blueprint(analytics_bp)
 
     return v1_bp
