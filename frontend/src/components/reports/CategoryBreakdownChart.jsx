@@ -130,8 +130,8 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
   const totalHeight = baseHeight + legendHeight
 
   return (
-    <div style={{ height: `${totalHeight}px`, minHeight: '320px' }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+    <div style={{ height: `${totalHeight}px`, minHeight: '320px', width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <PieChart>
           <Pie
             data={chartData}
