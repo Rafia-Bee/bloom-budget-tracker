@@ -236,6 +236,8 @@ export const analyticsAPI = {
         api.get("/analytics/spending-trends", { params }),
     getIncomeVsExpense: (params = {}) =>
         api.get("/analytics/income-vs-expense", { params }),
+    getAllTimeStats: () =>
+        api.get("/analytics/income-vs-expense", { params: { all_time: true } }),
 };
 
 export default api;

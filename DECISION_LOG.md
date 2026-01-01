@@ -48,6 +48,23 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Files Created:**
 
 -   `backend/routes/analytics.py` - 3 endpoints with proper filtering
+
+### Reports Dashboard Refinements (#3)
+
+**Context:** User feedback on the initial Reports implementation requested better interactivity and more logical data presentation.
+
+**Decision:**
+
+1.  **Subcategory Drill-down**: Implemented interactive drill-down in Category Pie Chart. Clicking a category fetches and displays its subcategories. Added back navigation.
+2.  **Smart Default Dates**: Changed default date range to match the _current salary period_ instead of an arbitrary 30-day window, aligning with the app's budget-period philosophy.
+3.  **All-Time Summary**: Decoupled summary cards (Income/Expense/Savings) from the date filter. They now show _lifetime_ totals to provide high-level context, while charts remain filtered.
+4.  **Layout Optimization**: Moved All-Time Summary cards to the top of the page for better visibility. Removed "Quick Range" buttons (7/30/90 days) to reduce clutter.
+
+**Rationale:**
+
+-   Drill-down provides granular insight without cluttering the main view.
+-   Salary period default is more relevant to the user's budgeting cycle.
+-   All-time totals provide a "net worth" style overview that is always useful, regardless of the specific period being analyzed.
 -   `backend/tests/test_analytics.py` - 19 comprehensive tests
 -   `frontend/src/pages/Reports.jsx` - Main analytics page
 -   `frontend/src/components/reports/SpendingTrendsChart.jsx`

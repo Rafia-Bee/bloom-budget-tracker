@@ -325,8 +325,17 @@ def get_income_vs_expense():
     current_user_id = int(get_jwt_identity())
 
     default_start, default_end = get_date_range_defaults()
-    start_date = parse_date(request.args.get("start_date"), default_start)
-    end_date = parse_date(request.args.get("end_date"), default_end)
+
+    # Check if "all_time" parameter is present
+    is_all_time = request.args.get("all_time") == "true"
+
+    if is_all_time:
+        # For all-time, set start date to very old date and end date to today
+        start_date = datetime(2000, 1, 1).date()
+        end_date = datetime.now().date()
+    else:
+        start_date = parse_date(request.args.get("start_date"), default_start)
+        end_date = parse_date(request.args.get("end_date"), default_end)
 
     # Find the first "Initial Balance" income for this user (to exclude later ones)
     first_initial_balance = (

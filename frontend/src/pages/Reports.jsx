@@ -82,7 +82,7 @@ function Reports({ setIsAuthenticated }) {
       const [categoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
-        analyticsAPI.getIncomeVsExpense(params)
+        analyticsAPI.getAllTimeStats() // Fetch all-time stats for summary cards
       ])
 
       setSpendingByCategory(categoryRes.data)
@@ -125,17 +125,6 @@ function Reports({ setIsAuthenticated }) {
     setDateRange(prev => ({ ...prev, [field]: value }))
   }
 
-  // Quick date range presets
-  const setQuickRange = (days) => {
-    const end = new Date()
-    const start = new Date()
-    start.setDate(start.getDate() - days)
-    setDateRange({
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
-    })
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-base">
       <Header setIsAuthenticated={setIsAuthenticated} />
@@ -151,33 +140,41 @@ function Reports({ setIsAuthenticated }) {
           </p>
         </div>
 
+        {/* Summary Cards (All Time) */}
+        {incomeVsExpense && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Income (All Time)</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {fcEur(incomeVsExpense.total_income)}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Spending (All Time)</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {fcEur(incomeVsExpense.total_expense)}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Net Savings (All Time)</p>
+              <p className={`text-2xl font-bold ${incomeVsExpense.net_savings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {fcEur(incomeVsExpense.net_savings)}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Savings Rate (All Time)</p>
+              <p className={`text-2xl font-bold ${incomeVsExpense.savings_rate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {incomeVsExpense.savings_rate}%
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Date Range Controls */}
         <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Quick Range Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setQuickRange(7)}
-                className="px-3 py-1 text-sm rounded-full bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface"
-              >
-                7 days
-              </button>
-              <button
-                onClick={() => setQuickRange(30)}
-                className="px-3 py-1 text-sm rounded-full bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface"
-              >
-                30 days
-              </button>
-              <button
-                onClick={() => setQuickRange(90)}
-                className="px-3 py-1 text-sm rounded-full bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-surface"
-              >
-                90 days
-              </button>
-            </div>
-
+          <div className="flex flex-wrap items-center gap-4 justify-end">
             {/* Custom Date Range */}
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2">
               <label className="text-sm text-gray-500 dark:text-gray-400">From:</label>
               <input
                 type="date"
@@ -214,36 +211,6 @@ function Reports({ setIsAuthenticated }) {
         {/* Analytics Content */}
         {!loading && !error && (
           <div className="space-y-6">
-            {/* Summary Cards */}
-            {incomeVsExpense && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Income</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {fcEur(incomeVsExpense.total_income)}
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Spending</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {fcEur(incomeVsExpense.total_expense)}
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Net Savings</p>
-                  <p className={`text-2xl font-bold ${incomeVsExpense.net_savings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {fcEur(incomeVsExpense.net_savings)}
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Savings Rate</p>
-                  <p className={`text-2xl font-bold ${incomeVsExpense.savings_rate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {incomeVsExpense.savings_rate}%
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Spending Trends Chart */}
