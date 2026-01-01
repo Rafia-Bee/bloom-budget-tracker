@@ -117,6 +117,10 @@ Access at `http://localhost:3000`
 -   **Email:** `test@test.com`
 -   **Password:** `test`
 
+### Contributing
+
+**Always use Pull Requests** - never push directly to `main`. See [DEVELOPMENT_REFERENCE.md](DEVELOPMENT_REFERENCE.md) for the full PR workflow.
+
 ## 🗺️ Roadmap
 
 ### In Progress

@@ -4,6 +4,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-01
+
+### PR-Based Git Workflow Enforcement
+
+**Context:** Previously, development was done by pushing directly to `main`, where CI would run. This led to an incident where a Copilot agent fix was deployed to Cloudflare before CI passed (though it was only a preview deploy, not production).
+
+**Problem:**
+
+-   No protection against merging broken code
+-   Cloudflare auto-deploys every branch to preview URLs
+-   On free GitHub tier, branch protection rules aren't available for private repos
+
+**Decision:** Adopt PR-based workflow with manual CI verification:
+
+1. All changes go through feature branches (`feat/`, `fix/`, `docs/`, `refactor/`)
+2. Create PR and wait for CI to pass (green checks)
+3. Review diff manually before merging
+4. Use `gh pr merge --squash --delete-branch` to merge
+
+**Rationale:**
+
+-   Creates audit trail of all changes
+-   CI runs before code reaches `main`
+-   Encourages smaller, reviewable changes
+-   Works within free GitHub tier limitations
+
+**Impact:**
+
+-   Updated `.github/copilot-instructions.md` with PR workflow rules
+-   Updated `DEVELOPMENT_REFERENCE.md` with full workflow documentation
+-   Updated `README.md` with contributing note
+-   Copilot agents instructed to never merge PRs without human approval
+
+---
+
 ## 2025-12-31
 
 ### Simplified Audit Trail Implementation (#63)

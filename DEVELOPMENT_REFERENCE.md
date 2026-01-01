@@ -328,12 +328,43 @@ breset   # Reset database
 bformat  # Run black formatter
 ```
 
-### Commit Workflow
+### PR-Based Workflow (Required)
 
-1. Update DECISION_LOG.md (if architectural decision)
-2. Run `bformat`
-3. `git add . && git commit -m "feat: description (#XX)"`
-4. Push (pre-push hook runs black, flake8, npm build)
+**⚠️ IMPORTANT: Always use Pull Requests. Never push directly to `main`.**
+
+```powershell
+# 1. Create feature branch
+git checkout -b feat/my-feature
+
+# 2. Make changes, then format and commit
+bformat
+git add . && git commit -m "feat: description (#XX)"
+
+# 3. Push branch
+git push -u origin feat/my-feature
+
+# 4. Create PR
+gh pr create --fill
+
+# 5. Wait for CI to pass (check GitHub Actions)
+gh pr checks
+
+# 6. After CI passes, merge
+gh pr merge --squash --delete-branch
+
+# 7. Update local main
+git checkout main && git pull
+```
+
+### Pre-Merge Checklist
+
+Before merging any PR:
+
+-   [ ] CI pipeline passed (all green checks)
+-   [ ] Reviewed the diff
+-   [ ] Tests cover new functionality
+-   [ ] No console.log or debug code
+-   [ ] DECISION_LOG.md updated (if architectural change)
 
 ### Pre-Push Hook
 
@@ -344,7 +375,7 @@ Runs automatically:
 -   Frontend build validation
 -   Console.log detection
 
-Bypass: `git push origin main --no-verify`
+Bypass: `git push --no-verify`
 
 ---
 
