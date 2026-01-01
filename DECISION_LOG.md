@@ -6,6 +6,43 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Period Comparison Feature (#3)
+
+**Context:** User requested ability to compare spending/income between two date ranges (e.g., salary periods) to track financial progress over time.
+
+**Decision:**
+
+1. **User-Selected Date Ranges**: No auto-calculated defaults. Users select their own dates (Period A and Period B) to match their actual salary periods.
+2. **Layout**: Period B on left, Period A on right (natural "before → after" reading order). Income on left, Spending on right.
+3. **Visual Indicators**: Color-coded change indicators (green = good, red = bad), inverted for spending (decrease = green).
+
+**Implementation:**
+
+-   **Backend**: New `/api/v1/analytics/period-comparison` endpoint
+    -   Accepts `current_start`, `current_end`, `previous_start`, `previous_end`
+    -   Returns spending/income totals and category-by-category breakdown
+    -   Calculates change amounts and percentages
+    -   Excludes "Pre-existing Credit Card Debt" and "Initial Balance" for accurate comparison
+-   **Frontend**: `PeriodComparisonCard` component
+    -   Two date range selectors with color-coded backgrounds (blue=A, purple=B)
+    -   "Compare Periods" button triggers API call
+    -   Results show totals with change indicators and category breakdown
+
+**Why No Auto-Defaults:**
+Initial implementation tried "last 30 days vs previous 30 days" but this didn't align with user's actual salary period boundaries, causing incorrect income/spending attribution. Letting users select their own dates ensures accurate comparison.
+
+**Files Created:**
+
+-   `frontend/src/components/reports/PeriodComparisonCard.jsx`
+
+**Files Modified:**
+
+-   `backend/routes/analytics.py` - Added `get_period_comparison` endpoint
+-   `frontend/src/api.js` - Added `getPeriodComparison` function
+-   `frontend/src/pages/Reports.jsx` - Integrated PeriodComparisonCard, disabled Export All button
+
+---
+
 ### Chart Export Feature - PNG/PDF Export (#3)
 
 **Context:** User requested ability to export charts from the Reports dashboard for sharing and archiving.
