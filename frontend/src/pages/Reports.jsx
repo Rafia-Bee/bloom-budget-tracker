@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { analyticsAPI } from '../api'
+import { analyticsAPI, salaryPeriodAPI } from '../api'
 import { formatCurrency } from '../utils/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import Header from '../components/Header'
@@ -26,6 +26,27 @@ function Reports({ setIsAuthenticated }) {
     }
   })
   const [granularity, setGranularity] = useState('daily')
+
+  // Load current salary period on mount to set default date range
+  useEffect(() => {
+    const loadDefaultPeriod = async () => {
+      try {
+        const response = await salaryPeriodAPI.getCurrent()
+        // Use salary period (cycle) dates instead of current week
+        if (response.data?.salary_period) {
+          const { start_date, end_date } = response.data.salary_period
+          setDateRange({
+            start: start_date,
+            end: end_date
+          })
+        }
+      } catch (err) {
+        console.error('Failed to load current period:', err)
+        // Fallback to 30 days (already set in initial state)
+      }
+    }
+    loadDefaultPeriod()
+  }, [])
 
   // Analytics data
   const [spendingByCategory, setSpendingByCategory] = useState(null)
