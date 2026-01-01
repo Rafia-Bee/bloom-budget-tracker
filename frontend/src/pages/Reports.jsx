@@ -39,6 +39,7 @@ function Reports({ setIsAuthenticated }) {
             start: start_date,
             end: end_date
           })
+          setGranularity('daily') // Default to daily for current cycle
         }
       } catch (err) {
         console.error('Failed to load current period:', err)
@@ -123,6 +124,7 @@ function Reports({ setIsAuthenticated }) {
 
   const handleDateRangeChange = (field, value) => {
     setDateRange(prev => ({ ...prev, [field]: value }))
+    setGranularity('weekly') // Switch to weekly when manually changing dates
   }
 
   return (
