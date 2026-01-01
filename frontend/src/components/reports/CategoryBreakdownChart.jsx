@@ -97,14 +97,21 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
     )
   }
 
+  // Calculate dynamic height based on number of items
+  // Base: 320px for chart, add ~24px per row of legend items (approximately 4-5 items per row)
+  const legendRows = Math.ceil(data.length / 4)
+  const baseHeight = 280
+  const legendHeight = Math.max(40, legendRows * 28)
+  const totalHeight = baseHeight + legendHeight
+
   return (
-    <div className="h-80 min-h-[320px]">
+    <div style={{ height: `${totalHeight}px`, minHeight: '320px' }}>
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <PieChart>
           <Pie
             data={chartData}
             cx="50%"
-            cy="45%"
+            cy={baseHeight / 2}
             innerRadius={60}
             outerRadius={90}
             paddingAngle={2}
@@ -131,7 +138,7 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
           {/* Center label showing total */}
           <text
             x="50%"
-            y="45%"
+            y={baseHeight / 2}
             textAnchor="middle"
             dominantBaseline="middle"
             className="fill-gray-900 dark:fill-white"
