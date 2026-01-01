@@ -4,7 +4,6 @@ Bloom - Debts API Tests
 Test debt management CRUD operations and payment tracking.
 """
 
-
 from datetime import date, timedelta
 
 

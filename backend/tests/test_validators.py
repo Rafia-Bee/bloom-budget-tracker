@@ -5,7 +5,6 @@ Comprehensive unit tests for input validation utilities.
 Tests all validation functions in backend/utils/validators.py.
 """
 
-
 from backend.utils.validators import (
     validate_expense_name,
     validate_amount,

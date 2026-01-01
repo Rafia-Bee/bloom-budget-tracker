@@ -10,7 +10,6 @@ Coverage targets:
 - get_upcoming_recurring_expenses: lookahead preview
 """
 
-
 from datetime import datetime, date, timedelta
 from unittest.mock import patch, MagicMock
 

@@ -198,9 +198,11 @@ def generate_due_expenses(user_id=None, dry_run=False, days_ahead=60):
                     "id": recurring_expense.id,
                     "name": recurring_expense.name,
                     "amount": recurring_expense.amount / 100,
-                    "date": generation_date.isoformat()
-                    if not dry_run
-                    else recurring_expense.next_due_date.isoformat(),
+                    "date": (
+                        generation_date.isoformat()
+                        if not dry_run
+                        else recurring_expense.next_due_date.isoformat()
+                    ),
                     "action": "generated" if not dry_run else "would generate",
                 }
             )

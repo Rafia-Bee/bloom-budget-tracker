@@ -4,7 +4,6 @@ Bloom - CRUD Operations Tests
 Test expense, income, and salary period creation/update/delete operations.
 """
 
-
 from datetime import date, timedelta
 
 

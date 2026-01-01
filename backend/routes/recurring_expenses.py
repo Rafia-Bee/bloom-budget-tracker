@@ -226,9 +226,11 @@ def create_recurring_expense():
             day_of_month=data.get("day_of_month"),
             day_of_week=data.get("day_of_week"),
             start_date=start_date,
-            end_date=datetime.strptime(data["end_date"], "%Y-%m-%d").date()
-            if data.get("end_date")
-            else None,
+            end_date=(
+                datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+                if data.get("end_date")
+                else None
+            ),
             next_due_date=next_due_date,
             is_active=data.get("is_active", True),
             is_fixed_bill=data.get("is_fixed_bill", False),
@@ -600,9 +602,11 @@ def import_recurring_expenses():
                 day_of_month=re_data.get("day_of_month"),
                 day_of_week=re_data.get("day_of_week"),
                 start_date=datetime.fromisoformat(re_data["start_date"]).date(),
-                end_date=datetime.fromisoformat(re_data["end_date"]).date()
-                if re_data.get("end_date")
-                else None,
+                end_date=(
+                    datetime.fromisoformat(re_data["end_date"]).date()
+                    if re_data.get("end_date")
+                    else None
+                ),
                 next_due_date=datetime.fromisoformat(re_data["next_due_date"]).date(),
                 is_active=re_data.get("is_active", True),
                 is_fixed_bill=re_data.get("is_fixed_bill", False),

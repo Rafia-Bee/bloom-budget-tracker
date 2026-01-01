@@ -9,7 +9,6 @@ Comprehensive tests for expense CRUD operations including:
 - Pagination
 """
 
-
 from datetime import date, timedelta
 from backend.models.database import db, Expense, Debt, ExpenseNameMapping
 

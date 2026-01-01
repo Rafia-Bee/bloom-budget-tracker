@@ -80,15 +80,21 @@ def get_income():
                         "amount": entry.amount,
                         "currency": entry.currency,
                         "original_amount": entry.original_amount,
-                        "date": entry.actual_date.strftime("%d %b, %Y")
-                        if entry.actual_date
-                        else None,
-                        "date_iso": entry.actual_date.strftime("%Y-%m-%d")
-                        if entry.actual_date
-                        else None,
-                        "scheduled_date": entry.scheduled_date.strftime("%d %b, %Y")
-                        if entry.scheduled_date
-                        else None,
+                        "date": (
+                            entry.actual_date.strftime("%d %b, %Y")
+                            if entry.actual_date
+                            else None
+                        ),
+                        "date_iso": (
+                            entry.actual_date.strftime("%Y-%m-%d")
+                            if entry.actual_date
+                            else None
+                        ),
+                        "scheduled_date": (
+                            entry.scheduled_date.strftime("%d %b, %Y")
+                            if entry.scheduled_date
+                            else None
+                        ),
                     }
                     for entry in income_entries
                 ],
@@ -224,9 +230,11 @@ def update_income(income_id):
                     "id": income.id,
                     "type": income.type,
                     "amount": income.amount,
-                    "date": income.actual_date.strftime("%d %b, %Y")
-                    if income.actual_date
-                    else None,
+                    "date": (
+                        income.actual_date.strftime("%d %b, %Y")
+                        if income.actual_date
+                        else None
+                    ),
                 },
             }
         ),

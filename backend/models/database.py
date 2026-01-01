@@ -642,9 +642,11 @@ class Goal(SoftDeleteMixin, db.Model):
             "initial_amount": self.initial_amount,
             "contributions_amount": total_contributions,
             "target_amount": self.target_amount,
-            "percentage": (current_amount / self.target_amount * 100)
-            if self.target_amount > 0
-            else 0,
+            "percentage": (
+                (current_amount / self.target_amount * 100)
+                if self.target_amount > 0
+                else 0
+            ),
             "remaining": max(0, self.target_amount - current_amount),
         }
 

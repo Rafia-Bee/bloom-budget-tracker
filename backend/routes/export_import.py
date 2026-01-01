@@ -283,9 +283,11 @@ def export_data():
                             "credit_spent": credit_spent,
                             "credit_payments": credit_payments,
                             "total_spent": debit_spent + credit_spent,
-                            "remaining_budget": bp.budget_amount - debit_spent
-                            if bp.budget_amount
-                            else 0,
+                            "remaining_budget": (
+                                bp.budget_amount - debit_spent
+                                if bp.budget_amount
+                                else 0
+                            ),
                         }
 
                         period_data["weekly_breakdown"].append(week_data)
@@ -341,9 +343,9 @@ def export_data():
 
         # Add Weekly Budget Breakdown if salary_periods are exported
         if "salary_periods" in export_types:
-            export_data["data"][
-                "weekly_budget_breakdown"
-            ] = generate_weekly_budget_breakdown(current_user_id)
+            export_data["data"]["weekly_budget_breakdown"] = (
+                generate_weekly_budget_breakdown(current_user_id)
+            )
 
         return jsonify(export_data), 200
 
@@ -894,9 +896,11 @@ def import_data():
         return (
             jsonify(
                 {
-                    "message": ". ".join(message_parts)
-                    if message_parts
-                    else "No new data to import",
+                    "message": (
+                        ". ".join(message_parts)
+                        if message_parts
+                        else "No new data to import"
+                    ),
                     "imported": imported_counts,
                     "skipped": skipped_counts,
                     "skipped_items": skipped_items,

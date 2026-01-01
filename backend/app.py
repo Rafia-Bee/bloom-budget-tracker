@@ -179,9 +179,9 @@ def create_app(config_name="development"):
         # Frontend (Cloudflare Pages) should set its own CSP if needed
 
         if config_name == "production":
-            response.headers[
-                "Strict-Transport-Security"
-            ] = "max-age=31536000; includeSubDomains"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
         return response
 
     @app.route("/")

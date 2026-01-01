@@ -9,7 +9,6 @@ Integration tests for salary period endpoints including:
 - Period overlap validation
 """
 
-
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 

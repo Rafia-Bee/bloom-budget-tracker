@@ -258,22 +258,26 @@ def get_current_salary_period():
                     },
                     "current_week": {
                         "id": current_week.id if current_week else None,
-                        "week_number": current_week.week_number
-                        if current_week
-                        else None,
-                        "budget_amount": current_week.budget_amount
-                        if current_week
-                        else None,
+                        "week_number": (
+                            current_week.week_number if current_week else None
+                        ),
+                        "budget_amount": (
+                            current_week.budget_amount if current_week else None
+                        ),
                         "spent": week_spent,
-                        "remaining": (current_week.budget_amount - week_spent)
-                        if current_week
-                        else 0,
-                        "start_date": current_week.start_date.isoformat()
-                        if current_week
-                        else None,
-                        "end_date": current_week.end_date.isoformat()
-                        if current_week
-                        else None,
+                        "remaining": (
+                            (current_week.budget_amount - week_spent)
+                            if current_week
+                            else 0
+                        ),
+                        "start_date": (
+                            current_week.start_date.isoformat()
+                            if current_week
+                            else None
+                        ),
+                        "end_date": (
+                            current_week.end_date.isoformat() if current_week else None
+                        ),
                     },
                 }
             ),
@@ -726,9 +730,11 @@ def get_week_leftover(id, week_number):
                                 "id": goal.id,
                                 "name": goal.name,
                                 "target_amount": goal.target_amount,
-                                "target_date": goal.target_date.isoformat()
-                                if goal.target_date
-                                else None,
+                                "target_date": (
+                                    goal.target_date.isoformat()
+                                    if goal.target_date
+                                    else None
+                                ),
                                 "progress": goal.calculate_progress(),
                                 "subcategory_name": goal.subcategory_name,
                             }
