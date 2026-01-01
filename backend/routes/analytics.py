@@ -181,11 +181,18 @@ def get_spending_by_subcategory():
 
     total_spending = sum(r.total for r in results)
 
+    # When filtering by category, show only subcategory name; otherwise show "Category / Subcategory"
+    def format_name(category, subcategory):
+        subcat_name = subcategory or "Uncategorized"
+        if category_filter:
+            return subcat_name
+        return f"{category} / {subcat_name}"
+
     subcategories = [
         {
             "category": r.category,
             "subcategory": r.subcategory or "Uncategorized",
-            "name": f"{r.category} / {r.subcategory or 'Uncategorized'}",
+            "name": format_name(r.category, r.subcategory),
             "total": r.total,
             "count": r.count,
             "percentage": (
