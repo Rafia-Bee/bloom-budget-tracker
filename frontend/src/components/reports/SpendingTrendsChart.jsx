@@ -64,7 +64,7 @@ function SpendingTrendsChart({ data, granularity, currencyFormatter }) {
 
   return (
     <div className="h-64 min-h-[256px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis

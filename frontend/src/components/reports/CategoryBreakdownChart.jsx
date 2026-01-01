@@ -131,7 +131,7 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
 
   return (
     <div style={{ height: `${totalHeight}px`, minHeight: '320px', width: '100%' }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
         <PieChart>
           <Pie
             data={chartData}
@@ -179,11 +179,6 @@ function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClic
           </text>
         </PieChart>
       </ResponsiveContainer>
-      {clickable && (
-        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
-          Click a category to see subcategory breakdown
-        </p>
-      )}
     </div>
   )
 }
