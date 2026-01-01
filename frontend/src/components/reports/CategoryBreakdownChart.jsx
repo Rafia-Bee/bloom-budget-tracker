@@ -29,8 +29,15 @@ const COLORS = [
   '#84CC16', // Lime
 ]
 
-function CategoryBreakdownChart({ data, total, currencyFormatter }) {
+function CategoryBreakdownChart({ data, total, currencyFormatter, onCategoryClick, clickable = false }) {
   const [activeIndex, setActiveIndex] = useState(null)
+
+  // Handle click on pie slice
+  const handleClick = (data, index) => {
+    if (clickable && onCategoryClick && data?.name) {
+      onCategoryClick(data.name)
+    }
+  }
 
   // Custom tooltip component
   const CustomTooltip = ({ active, payload }) => {
@@ -105,6 +112,8 @@ function CategoryBreakdownChart({ data, total, currencyFormatter }) {
             nameKey="name"
             onMouseEnter={(_, index) => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
+            onClick={handleClick}
+            style={{ cursor: clickable ? 'pointer' : 'default' }}
           >
             {chartData.map((entry, index) => (
               <Cell
@@ -113,6 +122,7 @@ function CategoryBreakdownChart({ data, total, currencyFormatter }) {
                 stroke={entry.color}
                 strokeWidth={activeIndex === index ? 3 : 1}
                 opacity={activeIndex === null || activeIndex === index ? 1 : 0.6}
+                style={{ cursor: clickable ? 'pointer' : 'default' }}
               />
             ))}
           </Pie>
@@ -133,6 +143,11 @@ function CategoryBreakdownChart({ data, total, currencyFormatter }) {
           </text>
         </PieChart>
       </ResponsiveContainer>
+      {clickable && (
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
+          Click a category to see subcategory breakdown
+        </p>
+      )}
     </div>
   )
 }

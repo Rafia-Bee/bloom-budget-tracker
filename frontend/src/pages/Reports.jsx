@@ -33,8 +33,8 @@ function Reports({ setIsAuthenticated }) {
   const [spendingTrends, setSpendingTrends] = useState(null)
   const [incomeVsExpense, setIncomeVsExpense] = useState(null)
 
-  // View mode for category breakdown (category vs subcategory)
-  const [categoryViewMode, setCategoryViewMode] = useState('category')
+  // Drill-down state: null = category view, 'Food' = show Food subcategories
+  const [selectedCategory, setSelectedCategory] = useState(null)
 
   const { defaultCurrency, convertAmount } = useCurrency()
 
@@ -58,23 +58,46 @@ function Reports({ setIsAuthenticated }) {
         end_date: dateRange.end
       }
 
-      const [categoryRes, subcategoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
+      const [categoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
-        analyticsAPI.getSpendingBySubcategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
         analyticsAPI.getIncomeVsExpense(params)
       ])
 
       setSpendingByCategory(categoryRes.data)
-      setSpendingBySubcategory(subcategoryRes.data)
       setSpendingTrends(trendsRes.data)
       setIncomeVsExpense(incomeExpenseRes.data)
+      // Reset drill-down when date range changes
+      setSelectedCategory(null)
+      setSpendingBySubcategory(null)
     } catch (err) {
       setError('Failed to load analytics data')
       console.error('Analytics error:', err)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Load subcategory data when a category is selected
+  const handleCategoryClick = async (categoryName) => {
+    try {
+      const params = {
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+        category: categoryName
+      }
+      const subcategoryRes = await analyticsAPI.getSpendingBySubcategory(params)
+      setSpendingBySubcategory(subcategoryRes.data)
+      setSelectedCategory(categoryName)
+    } catch (err) {
+      console.error('Failed to load subcategory data:', err)
+    }
+  }
+
+  // Go back to category view
+  const handleBackToCategories = () => {
+    setSelectedCategory(null)
+    setSpendingBySubcategory(null)
   }
 
   const handleDateRangeChange = (field, value) => {
@@ -227,44 +250,38 @@ function Reports({ setIsAuthenticated }) {
                 )}
               </div>
 
-              {/* Category Breakdown Chart */}
+              {/* Category Breakdown Chart with drill-down */}
               <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    🥧 Spending by {categoryViewMode === 'category' ? 'Category' : 'Subcategory'}
-                  </h2>
-                  {/* Toggle between Category and Subcategory view */}
-                  <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
-                    <button
-                      onClick={() => setCategoryViewMode('category')}
-                      className={`px-3 py-1 text-sm font-medium transition-colors ${
-                        categoryViewMode === 'category'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-base'
-                      }`}
-                    >
-                      Category
-                    </button>
-                    <button
-                      onClick={() => setCategoryViewMode('subcategory')}
-                      className={`px-3 py-1 text-sm font-medium transition-colors ${
-                        categoryViewMode === 'subcategory'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-base'
-                      }`}
-                    >
-                      Subcategory
-                    </button>
+                  <div className="flex items-center gap-2">
+                    {selectedCategory && (
+                      <button
+                        onClick={handleBackToCategories}
+                        className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors"
+                        title="Back to categories"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      🥧 {selectedCategory ? `${selectedCategory} Subcategories` : 'Spending by Category'}
+                    </h2>
                   </div>
                 </div>
-                {categoryViewMode === 'category' && spendingByCategory && (
+                {/* Category view (default) - clickable to drill down */}
+                {!selectedCategory && spendingByCategory && (
                   <CategoryBreakdownChart
                     data={spendingByCategory.categories}
                     total={spendingByCategory.total_spending}
                     currencyFormatter={fcEur}
+                    clickable={true}
+                    onCategoryClick={handleCategoryClick}
                   />
                 )}
-                {categoryViewMode === 'subcategory' && spendingBySubcategory && (
+                {/* Subcategory view - shows breakdown for selected category */}
+                {selectedCategory && spendingBySubcategory && (
                   <CategoryBreakdownChart
                     data={spendingBySubcategory.subcategories}
                     total={spendingBySubcategory.total_spending}

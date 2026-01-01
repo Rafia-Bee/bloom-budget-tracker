@@ -328,6 +328,72 @@ class TestAnalyticsRoutes:
             assert response.status_code == 200
             assert response.json["total_spending"] == 2000
 
+    def test_spending_by_subcategory_category_filter(self, app, client, auth_headers):
+        """Filters subcategory breakdown by parent category (drill-down)."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Grocery shopping",
+                    amount=3000,
+                    category="Food",
+                    subcategory="Groceries",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Restaurant dinner",
+                    amount=2000,
+                    category="Food",
+                    subcategory="Dining Out",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Bus fare",
+                    amount=500,
+                    category="Transport",
+                    subcategory="Public Transit",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Filter by Food category only
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory?category=Food",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            # Should only return Food subcategories
+            assert data["total_spending"] == 5000
+            assert len(data["subcategories"]) == 2
+
+            # Verify all returned subcategories are from Food category
+            for subcat in data["subcategories"]:
+                assert subcat["category"] == "Food"
+
+            # Filter by Transport category only
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory?category=Transport",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert data["total_spending"] == 500
+            assert len(data["subcategories"]) == 1
+            assert data["subcategories"][0]["category"] == "Transport"
+
     def test_spending_trends_requires_auth(self, client):
         """Trends endpoint requires authentication."""
         response = client.get("/api/v1/analytics/spending-trends")
