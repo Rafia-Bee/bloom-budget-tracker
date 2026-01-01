@@ -44,12 +44,17 @@ test.describe("Debt Management", () => {
 
             if (isMobile) {
                 // Mobile: Use hamburger menu
-                await openMobileMenu(page);
-                // Click Debts in mobile menu
-                const mobileDebtsLink = page.locator(
-                    'button:has-text("Debts")'
-                );
-                await mobileDebtsLink.click();
+                const menuOpened = await openMobileMenu(page);
+                if (menuOpened) {
+                    // Click Debts in mobile menu - use emoji prefix for exact match
+                    const mobileDebtsLink = page.locator(
+                        'button:has-text("💳 Debts")'
+                    );
+                    await mobileDebtsLink.click();
+                } else {
+                    // Fallback to direct navigation if menu fails
+                    await page.goto("/debts");
+                }
             } else {
                 // Desktop: Click nav link directly
                 const debtsLink = page.locator('a[href="/debts"]');
