@@ -3,11 +3,13 @@
  *
  * Displays current week's budget information (week number, budget, spent, remaining).
  * Shows progress bar and prompts user to create salary period if none exists.
+ * Supports flexible sub-periods when experimental feature is enabled.
  */
 
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import api from '../api'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useFeatureFlag } from '../contexts/FeatureFlagContext'
 import { formatCurrency } from '../utils/formatters'
 
 const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChange }, ref) => {
@@ -19,10 +21,27 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
   // Currency context for multi-currency support
   const { defaultCurrency, convertAmount } = useCurrency()
 
+  // Feature flag for flexible sub-periods
+  const { isEnabled } = useFeatureFlag()
+  const flexibleSubPeriodsEnabled = isEnabled('flexibleSubPeriodsEnabled')
+
   // Helper function to format EUR amounts (stored in DB) converted to user's currency
   const fcEur = (cents) => {
     const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents
     return formatCurrency(converted, defaultCurrency)
+  }
+
+  // Helper to get label for period (Week vs Period based on feature flag)
+  const getPeriodLabel = (singular = false) => {
+    if (flexibleSubPeriodsEnabled) {
+      return singular ? 'Period' : 'Periods'
+    }
+    return singular ? 'Week' : 'Weeks'
+  }
+
+  // Get total number of periods
+  const getTotalPeriods = () => {
+    return weeklyData?.salary_period?.weeks?.length || 4
   }
 
   useEffect(() => {
@@ -104,9 +123,9 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold mb-2">Set Up Weekly Budget</h3>
+          <h3 className="text-xl font-bold mb-2">Set Up {flexibleSubPeriodsEnabled ? 'Budget Periods' : 'Weekly Budget'}</h3>
           <p className="text-sm opacity-90 mb-4">
-            Divide your salary into 4 weekly budgets
+            Divide your salary into {flexibleSubPeriodsEnabled ? 'budget periods' : '4 weekly budgets'}
           </p>
           <button
             onClick={onSetupClick}
@@ -141,7 +160,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold">Week {displayWeek?.week_number || '?'} of 4</h2>
+              <h2 className="text-lg font-bold">{getPeriodLabel(true)} {displayWeek?.week_number || '?'} of {getTotalPeriods()}</h2>
               {isCurrentWeek && <span className="text-xs bg-white/20 px-2 py-0.5 rounded">Current</span>}
             </div>
             <p className="text-xs opacity-75 mt-0.5">
@@ -160,7 +179,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
             >
               {salary_period.weeks.map((week) => (
                 <option key={week.week_number} value={week.week_number} className="text-gray-800">
-                  Week {week.week_number}
+                  {getPeriodLabel(true)} {week.week_number}
                 </option>
               ))}
             </select>
@@ -184,7 +203,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
         {displayWeek?.carryover !== undefined && displayWeek.carryover !== 0 && (
           <div className={`flex justify-between items-baseline text-sm ${displayWeek.carryover < 0 ? 'text-red-200' : 'text-green-200'}`}>
             <span className="opacity-90">
-              {displayWeek.carryover < 0 ? '⚠️ Overspent from previous weeks' : '✨ Leftover from previous weeks'}
+              {displayWeek.carryover < 0 ? `⚠️ Overspent from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}` : `✨ Leftover from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`}
             </span>
             <span className="font-semibold">{fcEur(Math.abs(displayWeek.carryover))}</span>
           </div>
@@ -225,7 +244,7 @@ const WeeklyBudgetCard = forwardRef(({ onSetupClick, onAllocateClick, onWeekChan
       {progress >= 90 && (
         <div className="mt-4 bg-white/20 rounded-lg p-3">
           <p className="text-xs font-medium">
-            ⚠️ You've spent {progress.toFixed(0)}% of your weekly budget
+            ⚠️ You've spent {progress.toFixed(0)}% of your {flexibleSubPeriodsEnabled ? 'period' : 'weekly'} budget
           </p>
         </div>
       )}
