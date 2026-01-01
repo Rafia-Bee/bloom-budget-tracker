@@ -605,3 +605,200 @@ def get_debt_payoff_progress():
     result_data.reverse()
 
     return jsonify({"data": result_data}), 200
+
+
+@analytics_bp.route("/period-comparison", methods=["GET"])
+@jwt_required()
+def get_period_comparison():
+    """
+    Compare spending and categories between current and previous period.
+
+    Query params:
+        current_start: YYYY-MM-DD (required)
+        current_end: YYYY-MM-DD (required)
+        previous_start: YYYY-MM-DD (optional, auto-calculated if not provided)
+        previous_end: YYYY-MM-DD (optional, auto-calculated if not provided)
+
+    Returns:
+        {
+            current_period: {
+                start: '2025-12-21', end: '2026-01-17',
+                total_spending: 48000,
+                total_income: 200000,
+                by_category: [{ name: 'Food', total: 15000, percentage: 31.25 }, ...]
+            },
+            previous_period: {
+                start: '2025-11-23', end: '2025-12-20',
+                total_spending: 52000,
+                total_income: 200000,
+                by_category: [{ name: 'Food', total: 18000, percentage: 34.62 }, ...]
+            },
+            comparison: {
+                spending_change: -4000,
+                spending_change_percent: -7.69,
+                income_change: 0,
+                income_change_percent: 0,
+                category_changes: [
+                    { name: 'Food', current: 15000, previous: 18000, change: -3000, change_percent: -16.67 },
+                    ...
+                ]
+            }
+        }
+    """
+    current_user_id = int(get_jwt_identity())
+
+    # Parse dates
+    current_start = parse_date(request.args.get("current_start"))
+    current_end = parse_date(request.args.get("current_end"))
+
+    if not current_start or not current_end:
+        return jsonify({"error": "current_start and current_end are required"}), 400
+
+    # Calculate period length
+    period_length = (current_end - current_start).days + 1
+
+    # Auto-calculate previous period if not provided
+    previous_end_str = request.args.get("previous_end")
+    previous_start_str = request.args.get("previous_start")
+
+    if previous_end_str and previous_start_str:
+        previous_start = parse_date(previous_start_str)
+        previous_end = parse_date(previous_end_str)
+    else:
+        # Previous period ends one day before current starts
+        previous_end = current_start - timedelta(days=1)
+        previous_start = previous_end - timedelta(days=period_length - 1)
+
+    def get_period_stats(start_date, end_date):
+        """Get spending stats for a period."""
+        # Total spending
+        spending_query = (
+            db.session.query(func.sum(Expense.amount))
+            .filter(
+                Expense.user_id == current_user_id,
+                Expense.deleted_at.is_(None),
+                Expense.date >= start_date,
+                Expense.date <= end_date,
+                ~Expense.name.ilike("%pre-existing credit card debt%"),
+            )
+            .scalar()
+        ) or 0
+
+        # Spending by category
+        category_query = (
+            db.session.query(
+                Expense.category,
+                func.sum(Expense.amount).label("total"),
+            )
+            .filter(
+                Expense.user_id == current_user_id,
+                Expense.deleted_at.is_(None),
+                Expense.date >= start_date,
+                Expense.date <= end_date,
+                ~Expense.name.ilike("%pre-existing credit card debt%"),
+            )
+            .group_by(Expense.category)
+        )
+
+        categories = {}
+        for r in category_query.all():
+            categories[r.category] = r.total
+
+        # Calculate percentages
+        category_list = [
+            {
+                "name": name,
+                "total": total,
+                "percentage": round((total / spending_query) * 100, 2)
+                if spending_query > 0
+                else 0,
+            }
+            for name, total in sorted(
+                categories.items(), key=lambda x: x[1], reverse=True
+            )
+        ]
+
+        # Total income
+        income_query = (
+            db.session.query(func.sum(Income.amount))
+            .filter(
+                Income.user_id == current_user_id,
+                Income.deleted_at.is_(None),
+                func.coalesce(Income.actual_date, Income.scheduled_date) >= start_date,
+                func.coalesce(Income.actual_date, Income.scheduled_date) <= end_date,
+                Income.type != "Initial Balance",
+            )
+            .scalar()
+        ) or 0
+
+        return {
+            "start": start_date.strftime("%Y-%m-%d"),
+            "end": end_date.strftime("%Y-%m-%d"),
+            "total_spending": spending_query,
+            "total_income": income_query,
+            "by_category": category_list,
+        }
+
+    # Get stats for both periods
+    current_stats = get_period_stats(current_start, current_end)
+    previous_stats = get_period_stats(previous_start, previous_end)
+
+    # Calculate comparisons
+    def calc_change(current, previous):
+        change = current - previous
+        if previous > 0:
+            change_percent = round((change / previous) * 100, 2)
+        elif current > 0:
+            change_percent = 100.0  # Went from 0 to something
+        else:
+            change_percent = 0.0
+        return change, change_percent
+
+    spending_change, spending_change_percent = calc_change(
+        current_stats["total_spending"], previous_stats["total_spending"]
+    )
+    income_change, income_change_percent = calc_change(
+        current_stats["total_income"], previous_stats["total_income"]
+    )
+
+    # Category comparisons
+    all_categories = set()
+    for cat in current_stats["by_category"]:
+        all_categories.add(cat["name"])
+    for cat in previous_stats["by_category"]:
+        all_categories.add(cat["name"])
+
+    current_by_cat = {c["name"]: c["total"] for c in current_stats["by_category"]}
+    previous_by_cat = {c["name"]: c["total"] for c in previous_stats["by_category"]}
+
+    category_changes = []
+    for cat_name in all_categories:
+        curr_val = current_by_cat.get(cat_name, 0)
+        prev_val = previous_by_cat.get(cat_name, 0)
+        change, change_percent = calc_change(curr_val, prev_val)
+        category_changes.append(
+            {
+                "name": cat_name,
+                "current": curr_val,
+                "previous": prev_val,
+                "change": change,
+                "change_percent": change_percent,
+            }
+        )
+
+    # Sort by absolute change (biggest changes first)
+    category_changes.sort(key=lambda x: abs(x["change"]), reverse=True)
+
+    return jsonify(
+        {
+            "current_period": current_stats,
+            "previous_period": previous_stats,
+            "comparison": {
+                "spending_change": spending_change,
+                "spending_change_percent": spending_change_percent,
+                "income_change": income_change,
+                "income_change_percent": income_change_percent,
+                "category_changes": category_changes,
+            },
+        }
+    )

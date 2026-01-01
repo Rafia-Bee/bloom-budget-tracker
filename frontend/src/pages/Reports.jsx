@@ -15,6 +15,7 @@ import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart
 import DebtPayoffChart from '../components/reports/DebtPayoffChart'
 import ChartExportButton from '../components/reports/ChartExportButton'
 import ExportAllReportsButton from '../components/reports/ExportAllReportsButton'
+import PeriodComparisonCard from '../components/reports/PeriodComparisonCard'
 
 function Reports({ setIsAuthenticated }) {
   const [loading, setLoading] = useState(true)
@@ -153,7 +154,8 @@ function Reports({ setIsAuthenticated }) {
               Visualize your spending patterns and track your financial progress
             </p>
           </div>
-          {!loading && !error && (
+          {/* Export All button disabled - needs improvement */}
+          {/* {!loading && !error && (
             <ExportAllReportsButton
               chartRefs={{
                 spendingTrends: spendingTrendsRef,
@@ -163,7 +165,7 @@ function Reports({ setIsAuthenticated }) {
               dateRange={dateRange}
               categoryData={spendingByCategory}
             />
-          )}
+          )} */}
         </div>
 
         {/* Summary Cards (All Time) */}
@@ -219,7 +221,8 @@ function Reports({ setIsAuthenticated }) {
           </div>
         </div>
 
-        {/* Error State */}
+        {/* Period Comparison Card */}
+        <PeriodComparisonCard currencyFormatter={fcEur} />
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">
             {error}
