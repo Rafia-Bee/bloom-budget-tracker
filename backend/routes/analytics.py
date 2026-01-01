@@ -113,6 +113,100 @@ def get_spending_by_category():
     )
 
 
+@analytics_bp.route("/spending-by-subcategory", methods=["GET"])
+@jwt_required()
+def get_spending_by_subcategory():
+    """
+    Get spending breakdown by subcategory within categories.
+
+    Query params:
+        start_date: YYYY-MM-DD (default: 30 days ago)
+        end_date: YYYY-MM-DD (default: today)
+        category: Optional filter by parent category
+        payment_method: 'debit' | 'credit' | null (all)
+
+    Returns:
+        {
+            subcategories: [
+                {
+                    category: 'Food',
+                    subcategory: 'Groceries',
+                    total: 15000,
+                    count: 12,
+                    percentage: 25.5
+                },
+                ...
+            ],
+            total_spending: 58800,
+            date_range: { start: '2025-12-01', end: '2025-12-31' }
+        }
+    """
+    current_user_id = int(get_jwt_identity())
+
+    default_start, default_end = get_date_range_defaults()
+    start_date = parse_date(request.args.get("start_date"), default_start)
+    end_date = parse_date(request.args.get("end_date"), default_end)
+    category_filter = request.args.get("category")
+    payment_method = request.args.get("payment_method")
+
+    query = (
+        db.session.query(
+            Expense.category,
+            Expense.subcategory,
+            func.sum(Expense.amount).label("total"),
+            func.count(Expense.id).label("count"),
+        )
+        .filter(
+            Expense.user_id == current_user_id,
+            Expense.deleted_at.is_(None),
+            Expense.date >= start_date,
+            Expense.date <= end_date,
+            # Exclude pre-existing credit card debt entries from analytics
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
+        )
+        .group_by(Expense.category, Expense.subcategory)
+    )
+
+    # Filter by category if specified
+    if category_filter:
+        query = query.filter(Expense.category == category_filter)
+
+    # Payment method stored as "Debit card" or "Credit card" in database
+    if payment_method == "debit":
+        query = query.filter(Expense.payment_method.ilike("%debit%"))
+    elif payment_method == "credit":
+        query = query.filter(Expense.payment_method.ilike("%credit%"))
+
+    results = query.all()
+
+    total_spending = sum(r.total for r in results)
+
+    subcategories = [
+        {
+            "category": r.category,
+            "subcategory": r.subcategory or "Uncategorized",
+            "name": f"{r.category} / {r.subcategory or 'Uncategorized'}",
+            "total": r.total,
+            "count": r.count,
+            "percentage": (
+                round((r.total / total_spending) * 100, 1) if total_spending > 0 else 0
+            ),
+        }
+        for r in sorted(results, key=lambda x: x.total, reverse=True)
+    ]
+
+    return jsonify(
+        {
+            "subcategories": subcategories,
+            "total_spending": total_spending,
+            "date_range": {
+                "start": start_date.strftime("%Y-%m-%d"),
+                "end": end_date.strftime("%Y-%m-%d"),
+            },
+        }
+    )
+
+
 @analytics_bp.route("/spending-trends", methods=["GET"])
 @jwt_required()
 def get_spending_trends():
@@ -237,7 +331,9 @@ def get_income_vs_expense():
         .order_by(Income.actual_date.asc(), Income.id.asc())
         .first()
     )
-    first_initial_balance_id = first_initial_balance.id if first_initial_balance else None
+    first_initial_balance_id = (
+        first_initial_balance.id if first_initial_balance else None
+    )
 
     total_expense = (
         db.session.query(func.sum(Expense.amount))
@@ -295,17 +391,14 @@ def get_income_vs_expense():
     )
 
     # Build income by month query, excluding Initial Balance after the first one
-    income_by_month_query = (
-        db.session.query(
-            func.strftime("%Y-%m", Income.actual_date).label("month"),
-            func.sum(Income.amount).label("total"),
-        )
-        .filter(
-            Income.user_id == current_user_id,
-            Income.deleted_at.is_(None),
-            Income.actual_date >= start_date,
-            Income.actual_date <= end_date,
-        )
+    income_by_month_query = db.session.query(
+        func.strftime("%Y-%m", Income.actual_date).label("month"),
+        func.sum(Income.amount).label("total"),
+    ).filter(
+        Income.user_id == current_user_id,
+        Income.deleted_at.is_(None),
+        Income.actual_date >= start_date,
+        Income.actual_date <= end_date,
     )
 
     if first_initial_balance_id:

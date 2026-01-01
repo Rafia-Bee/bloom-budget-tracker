@@ -172,6 +172,162 @@ class TestAnalyticsRoutes:
             assert response.status_code == 200
             assert response.json["total_spending"] == 2000
 
+    # ==================== Spending by Subcategory Tests ====================
+
+    def test_spending_by_subcategory_requires_auth(self, client):
+        """Subcategory endpoint requires authentication."""
+        response = client.get("/api/v1/analytics/spending-by-subcategory")
+        assert response.status_code == 401
+
+    def test_spending_by_subcategory_empty(self, client, auth_headers):
+        """Returns empty subcategories when no expenses exist."""
+        response = client.get(
+            "/api/v1/analytics/spending-by-subcategory", headers=auth_headers
+        )
+        assert response.status_code == 200
+        data = response.json
+
+        assert data["subcategories"] == []
+        assert data["total_spending"] == 0
+        assert "date_range" in data
+
+    def test_spending_by_subcategory_with_data(self, app, client, auth_headers):
+        """Returns subcategory breakdown with expense data."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Groceries",
+                    amount=5000,
+                    category="Food",
+                    subcategory="Groceries",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Restaurant",
+                    amount=2500,
+                    category="Food",
+                    subcategory="Dining Out",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Another Grocery",
+                    amount=1500,
+                    category="Food",
+                    subcategory="Groceries",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Bus ticket",
+                    amount=300,
+                    category="Transport",
+                    subcategory=None,
+                    date=today,
+                    payment_method="Debit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory", headers=auth_headers
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert data["total_spending"] == 9300
+            # Should have: Food/Groceries, Food/Dining Out, Transport/Uncategorized
+            assert len(data["subcategories"]) == 3
+
+            # Groceries should be first (highest total: 5000 + 1500)
+            groceries = data["subcategories"][0]
+            assert groceries["name"] == "Food / Groceries"
+            assert groceries["total"] == 6500
+
+    def test_spending_by_subcategory_null_subcategory(self, app, client, auth_headers):
+        """Handles expenses without subcategory correctly."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expense = Expense(
+                user_id=user.id,
+                name="Uncategorized expense",
+                amount=1000,
+                category="Other",
+                subcategory=None,
+                date=today,
+                payment_method="Debit card",
+            )
+            db.session.add(expense)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory", headers=auth_headers
+            )
+            assert response.status_code == 200
+            data = response.json
+
+            assert len(data["subcategories"]) == 1
+            assert data["subcategories"][0]["name"] == "Other / Uncategorized"
+            assert data["subcategories"][0]["total"] == 1000
+
+    def test_spending_by_subcategory_payment_method_filter(
+        self, app, client, auth_headers
+    ):
+        """Filters subcategory breakdown by payment method."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Debit purchase",
+                    amount=1000,
+                    category="Food",
+                    subcategory="Groceries",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Credit purchase",
+                    amount=2000,
+                    category="Food",
+                    subcategory="Groceries",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Filter debit only
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory?payment_method=debit",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            assert response.json["total_spending"] == 1000
+
+            # Filter credit only
+            response = client.get(
+                "/api/v1/analytics/spending-by-subcategory?payment_method=credit",
+                headers=auth_headers,
+            )
+            assert response.status_code == 200
+            assert response.json["total_spending"] == 2000
+
     def test_spending_trends_requires_auth(self, client):
         """Trends endpoint requires authentication."""
         response = client.get("/api/v1/analytics/spending-trends")

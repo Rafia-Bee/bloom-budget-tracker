@@ -230,6 +230,8 @@ export const goalAPI = {
 export const analyticsAPI = {
     getSpendingByCategory: (params = {}) =>
         api.get("/analytics/spending-by-category", { params }),
+    getSpendingBySubcategory: (params = {}) =>
+        api.get("/analytics/spending-by-subcategory", { params }),
     getSpendingTrends: (params = {}) =>
         api.get("/analytics/spending-trends", { params }),
     getIncomeVsExpense: (params = {}) =>

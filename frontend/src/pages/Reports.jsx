@@ -29,8 +29,12 @@ function Reports({ setIsAuthenticated }) {
 
   // Analytics data
   const [spendingByCategory, setSpendingByCategory] = useState(null)
+  const [spendingBySubcategory, setSpendingBySubcategory] = useState(null)
   const [spendingTrends, setSpendingTrends] = useState(null)
   const [incomeVsExpense, setIncomeVsExpense] = useState(null)
+
+  // View mode for category breakdown (category vs subcategory)
+  const [categoryViewMode, setCategoryViewMode] = useState('category')
 
   const { defaultCurrency, convertAmount } = useCurrency()
 
@@ -54,13 +58,15 @@ function Reports({ setIsAuthenticated }) {
         end_date: dateRange.end
       }
 
-      const [categoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
+      const [categoryRes, subcategoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
+        analyticsAPI.getSpendingBySubcategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
         analyticsAPI.getIncomeVsExpense(params)
       ])
 
       setSpendingByCategory(categoryRes.data)
+      setSpendingBySubcategory(subcategoryRes.data)
       setSpendingTrends(trendsRes.data)
       setIncomeVsExpense(incomeExpenseRes.data)
     } catch (err) {
@@ -223,13 +229,45 @@ function Reports({ setIsAuthenticated }) {
 
               {/* Category Breakdown Chart */}
               <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  🥧 Spending by Category
-                </h2>
-                {spendingByCategory && (
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    🥧 Spending by {categoryViewMode === 'category' ? 'Category' : 'Subcategory'}
+                  </h2>
+                  {/* Toggle between Category and Subcategory view */}
+                  <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                    <button
+                      onClick={() => setCategoryViewMode('category')}
+                      className={`px-3 py-1 text-sm font-medium transition-colors ${
+                        categoryViewMode === 'category'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-base'
+                      }`}
+                    >
+                      Category
+                    </button>
+                    <button
+                      onClick={() => setCategoryViewMode('subcategory')}
+                      className={`px-3 py-1 text-sm font-medium transition-colors ${
+                        categoryViewMode === 'subcategory'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-base'
+                      }`}
+                    >
+                      Subcategory
+                    </button>
+                  </div>
+                </div>
+                {categoryViewMode === 'category' && spendingByCategory && (
                   <CategoryBreakdownChart
                     data={spendingByCategory.categories}
                     total={spendingByCategory.total_spending}
+                    currencyFormatter={fcEur}
+                  />
+                )}
+                {categoryViewMode === 'subcategory' && spendingBySubcategory && (
+                  <CategoryBreakdownChart
+                    data={spendingBySubcategory.subcategories}
+                    total={spendingBySubcategory.total_spending}
                     currencyFormatter={fcEur}
                   />
                 )}
