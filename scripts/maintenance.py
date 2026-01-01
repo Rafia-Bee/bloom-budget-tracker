@@ -277,6 +277,105 @@ def migrate_add_password_reset_tokens():
         print("✓ password_reset_tokens table already exists")
 
 
+def migrate_flexible_sub_periods():
+    """
+    Update constraints for flexible sub-periods feature (#9).
+    - Adds num_sub_periods column to salary_periods
+    - Updates budget_periods date_range constraint to allow single-day periods
+    """
+    print("Checking for flexible sub-periods migration...")
+
+    # Check if num_sub_periods column exists
+    inspector = inspect(db.engine)
+    columns = [col["name"] for col in inspector.get_columns("salary_periods")]
+
+    if "num_sub_periods" not in columns:
+        print("Adding num_sub_periods column to salary_periods...")
+        with db.engine.connect() as conn:
+            try:
+                conn.execute(
+                    text(
+                        "ALTER TABLE salary_periods ADD COLUMN num_sub_periods INTEGER NOT NULL DEFAULT 4"
+                    )
+                )
+                conn.commit()
+                print("✓ num_sub_periods column added")
+            except Exception as e:
+                print(f"✗ Error adding column: {e}")
+                conn.rollback()
+                raise
+    else:
+        print("✓ num_sub_periods column already exists")
+
+    # Check if budget_periods constraint needs update (SQLite requires table recreation)
+    print("Checking budget_periods date_range constraint...")
+    with db.engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT sql FROM sqlite_master WHERE name='budget_periods'")
+        )
+        schema = result.fetchone()[0]
+
+        if "start_date < end_date" in schema:
+            print("Updating budget_periods constraint for single-day periods...")
+            try:
+                conn.execute(text("PRAGMA foreign_keys=OFF"))
+
+                # Create new table with updated constraint
+                conn.execute(
+                    text(
+                        """
+                    CREATE TABLE budget_periods_new (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        salary_period_id INTEGER,
+                        week_number INTEGER,
+                        budget_amount INTEGER,
+                        start_date DATE NOT NULL,
+                        end_date DATE NOT NULL,
+                        period_type VARCHAR(50) NOT NULL,
+                        created_at DATETIME,
+                        CONSTRAINT check_budget_period_date_range CHECK (start_date <= end_date),
+                        CONSTRAINT check_budget_period_positive_amount CHECK (budget_amount IS NULL OR budget_amount > 0),
+                        CONSTRAINT check_budget_period_week_number CHECK (week_number IS NULL OR week_number >= 1),
+                        FOREIGN KEY(salary_period_id) REFERENCES salary_periods (id) ON DELETE CASCADE,
+                        FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
+                    )
+                """
+                    )
+                )
+
+                # Copy data
+                conn.execute(
+                    text("INSERT INTO budget_periods_new SELECT * FROM budget_periods")
+                )
+
+                # Drop old table
+                conn.execute(text("DROP TABLE budget_periods"))
+
+                # Rename new table
+                conn.execute(
+                    text("ALTER TABLE budget_periods_new RENAME TO budget_periods")
+                )
+
+                # Recreate index
+                conn.execute(
+                    text(
+                        "CREATE INDEX idx_budget_period_active ON budget_periods (user_id, start_date, end_date)"
+                    )
+                )
+
+                conn.execute(text("PRAGMA foreign_keys=ON"))
+                conn.commit()
+                print("✓ budget_periods constraint updated")
+            except Exception as e:
+                conn.execute(text("PRAGMA foreign_keys=ON"))
+                print(f"✗ Error updating constraint: {e}")
+                conn.rollback()
+                raise
+        else:
+            print("✓ budget_periods constraint already allows single-day periods")
+
+
 def run_all_migrations():
     """Run all database migrations."""
     print_header("Running Database Migrations")
@@ -286,6 +385,8 @@ def run_all_migrations():
     migrate_add_recurring_expenses()
     print()
     migrate_add_password_reset_tokens()
+    print()
+    migrate_flexible_sub_periods()
 
     print("\n✓ All migrations completed successfully!")
 

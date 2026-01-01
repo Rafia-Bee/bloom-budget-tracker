@@ -305,6 +305,10 @@ def preview_salary_period():
         credit_allowance = data.get("credit_allowance", 0)
         start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
 
+        # Flexible sub-periods support
+        end_date_str = data.get("end_date")
+        num_sub_periods = data.get("num_sub_periods", 4)
+
         # Validate credit allowance doesn't exceed available credit
         if credit_allowance > credit_balance:
             return (
@@ -341,35 +345,60 @@ def preview_salary_period():
         # Calculate budget: debit + credit allowance - fixed bills
         total_budget = debit_balance + credit_allowance - fixed_bills_total
         remaining_amount = total_budget
-        weekly_budget = remaining_amount // 4
+        weekly_budget = remaining_amount // num_sub_periods
 
         # Calculate debit vs credit portions of weekly budget
         debit_after_bills = debit_balance - fixed_bills_total
-        if debit_after_bills >= weekly_budget * 4:
+        if debit_after_bills >= weekly_budget * num_sub_periods:
             # All budget comes from debit
             weekly_debit_budget = weekly_budget
             weekly_credit_budget = 0
         else:
             # Split between debit and credit
-            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_debit_budget = max(0, debit_after_bills // num_sub_periods)
             weekly_credit_budget = weekly_budget - weekly_debit_budget
 
-        # Calculate end date (day before next salary, assuming monthly)
-        end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+        # Calculate end date (use provided or default to monthly)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        else:
+            end_date = start_date + relativedelta(months=1) - timedelta(days=1)
 
-        # Calculate 4 week dates
+        # Validate date range
+        if end_date <= start_date:
+            return (
+                jsonify({"error": "End date must be after start date"}),
+                400,
+            )
+
+        # Validate num_sub_periods
+        total_days = (end_date - start_date).days + 1
+        if num_sub_periods < 1 or num_sub_periods > total_days:
+            return (
+                jsonify(
+                    {"error": f"Number of periods must be between 1 and {total_days}"}
+                ),
+                400,
+            )
+
+        # Calculate sub-period dates (distribute days evenly)
         weeks = []
         current_start = start_date
-        for week_num in range(1, 5):
-            # Calculate week duration (7 days, except last week takes remaining days)
-            if week_num < 4:
-                week_end = current_start + timedelta(days=6)
-            else:
+        days_per_period = total_days // num_sub_periods
+        extra_days = total_days % num_sub_periods
+
+        for period_num in range(1, num_sub_periods + 1):
+            # Distribute extra days across first periods
+            period_days = days_per_period + (1 if period_num <= extra_days else 0)
+            week_end = current_start + timedelta(days=period_days - 1)
+
+            # Last period ends exactly on end_date
+            if period_num == num_sub_periods:
                 week_end = end_date
 
             weeks.append(
                 {
-                    "week_number": week_num,
+                    "week_number": period_num,
                     "start_date": current_start.isoformat(),
                     "end_date": week_end.isoformat(),
                     "budget_amount": weekly_budget,
@@ -411,7 +440,7 @@ def preview_salary_period():
 @salary_periods_bp.route("", methods=["POST"])
 @jwt_required()
 def create_salary_period():
-    """Create a new salary period with 4 weekly budget periods"""
+    """Create a new salary period with N budget periods (default 4)"""
     try:
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
@@ -423,6 +452,33 @@ def create_salary_period():
         credit_limit = data.get("credit_limit", credit_balance)
         credit_allowance = data.get("credit_allowance", 0)
         start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+
+        # Flexible sub-periods support
+        end_date_str = data.get("end_date")
+        num_sub_periods = data.get("num_sub_periods", 4)
+
+        # Calculate end date first (needed for validation)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        else:
+            end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+
+        # Validate date range
+        if end_date <= start_date:
+            return (
+                jsonify({"error": "End date must be after start date"}),
+                400,
+            )
+
+        # Validate num_sub_periods early (before any division)
+        total_days = (end_date - start_date).days + 1
+        if num_sub_periods < 1 or num_sub_periods > total_days:
+            return (
+                jsonify(
+                    {"error": f"Number of periods must be between 1 and {total_days}"}
+                ),
+                400,
+            )
 
         # Validate credit allowance
         if credit_allowance > credit_balance:
@@ -448,18 +504,16 @@ def create_salary_period():
         # Calculate budget: debit + credit allowance - fixed bills
         total_budget = debit_balance + credit_allowance - fixed_bills_total
         remaining_amount = total_budget
-        weekly_budget = remaining_amount // 4
+        weekly_budget = remaining_amount // num_sub_periods
 
         # Calculate debit vs credit portions of weekly budget
         debit_after_bills = debit_balance - fixed_bills_total
-        if debit_after_bills >= weekly_budget * 4:
+        if debit_after_bills >= weekly_budget * num_sub_periods:
             weekly_debit_budget = weekly_budget
             weekly_credit_budget = 0
         else:
-            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_debit_budget = max(0, debit_after_bills // num_sub_periods)
             weekly_credit_budget = weekly_budget - weekly_debit_budget
-
-        end_date = start_date + relativedelta(months=1) - timedelta(days=1)
 
         # Check for overlapping salary periods
         overlapping = SalaryPeriod.query.filter(
@@ -524,27 +578,35 @@ def create_salary_period():
                 start_date=start_date,
                 end_date=end_date,
                 is_active=is_active,
+                num_sub_periods=num_sub_periods,
             )
 
             db.session.add(salary_period)
             db.session.flush()  # Get salary_period.id
 
-            # Create 4 weekly budget periods
+            # Create N budget periods (distribute days evenly)
             current_start = start_date
-            for week_num in range(1, 5):
-                if week_num < 4:
-                    week_end = current_start + timedelta(days=6)
-                else:
+            total_days = (end_date - start_date).days + 1
+            days_per_period = total_days // num_sub_periods
+            extra_days = total_days % num_sub_periods
+
+            for period_num in range(1, num_sub_periods + 1):
+                # Distribute extra days across first periods
+                period_days = days_per_period + (1 if period_num <= extra_days else 0)
+                week_end = current_start + timedelta(days=period_days - 1)
+
+                # Last period ends exactly on end_date
+                if period_num == num_sub_periods:
                     week_end = end_date
 
                 budget_period = BudgetPeriod(
                     user_id=current_user_id,
                     salary_period_id=salary_period.id,
-                    week_number=week_num,
+                    week_number=period_num,
                     budget_amount=weekly_budget,
                     start_date=current_start,
                     end_date=week_end,
-                    period_type="weekly",
+                    period_type="custom" if num_sub_periods != 4 else "weekly",
                 )
 
                 db.session.add(budget_period)
@@ -586,7 +648,7 @@ def create_salary_period():
                 jsonify(
                     {
                         "id": salary_period.id,
-                        "message": "Salary period created successfully with 4 weekly budgets",
+                        "message": f"Salary period created successfully with {num_sub_periods} budget periods",
                     }
                 ),
                 201,
@@ -776,6 +838,12 @@ def update_salary_period_full(id):
         credit_allowance = data.get("credit_allowance", 0)
         start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
 
+        # Flexible sub-periods support
+        end_date_str = data.get("end_date")
+        num_sub_periods = data.get(
+            "num_sub_periods", salary_period.num_sub_periods or 4
+        )
+
         # Validate credit allowance
         if credit_allowance > credit_balance:
             return (
@@ -800,18 +868,39 @@ def update_salary_period_full(id):
         # Calculate budget: debit + credit allowance - fixed bills
         total_budget = debit_balance + credit_allowance - fixed_bills_total
         remaining_amount = total_budget
-        weekly_budget = remaining_amount // 4
+        weekly_budget = remaining_amount // num_sub_periods
 
         # Calculate debit vs credit portions of weekly budget
         debit_after_bills = debit_balance - fixed_bills_total
-        if debit_after_bills >= weekly_budget * 4:
+        if debit_after_bills >= weekly_budget * num_sub_periods:
             weekly_debit_budget = weekly_budget
             weekly_credit_budget = 0
         else:
-            weekly_debit_budget = max(0, debit_after_bills // 4)
+            weekly_debit_budget = max(0, debit_after_bills // num_sub_periods)
             weekly_credit_budget = weekly_budget - weekly_debit_budget
 
-        end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+        # Calculate end date (use provided or default to monthly)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        else:
+            end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+
+        # Validate date range
+        if end_date <= start_date:
+            return (
+                jsonify({"error": "End date must be after start date"}),
+                400,
+            )
+
+        # Validate num_sub_periods
+        total_days = (end_date - start_date).days + 1
+        if num_sub_periods < 1 or num_sub_periods > total_days:
+            return (
+                jsonify(
+                    {"error": f"Number of periods must be between 1 and {total_days}"}
+                ),
+                400,
+            )
 
         # Check for overlapping salary periods (excluding current one)
         overlapping = SalaryPeriod.query.filter(
@@ -856,36 +945,35 @@ def update_salary_period_full(id):
         salary_period.weekly_credit_budget = weekly_credit_budget
         salary_period.start_date = start_date
         salary_period.end_date = end_date
+        salary_period.num_sub_periods = num_sub_periods
 
-        # Update weekly budget periods
+        # Delete existing budget periods and recreate with new configuration
+        BudgetPeriod.query.filter_by(salary_period_id=salary_period.id).delete()
+
+        # Create N budget periods (distribute days evenly)
         current_start = start_date
-        for week_num in range(1, 5):
-            if week_num < 4:
-                week_end = current_start + timedelta(days=6)
-            else:
+        days_per_period = total_days // num_sub_periods
+        extra_days = total_days % num_sub_periods
+
+        for period_num in range(1, num_sub_periods + 1):
+            # Distribute extra days across first periods
+            period_days = days_per_period + (1 if period_num <= extra_days else 0)
+            week_end = current_start + timedelta(days=period_days - 1)
+
+            # Last period ends exactly on end_date
+            if period_num == num_sub_periods:
                 week_end = end_date
 
-            budget_period = BudgetPeriod.query.filter_by(
-                salary_period_id=salary_period.id, week_number=week_num
-            ).first()
-
-            if budget_period:
-                budget_period.budget_amount = weekly_budget
-                budget_period.start_date = current_start
-                budget_period.end_date = week_end
-            else:
-                # Create if doesn't exist
-                budget_period = BudgetPeriod(
-                    user_id=current_user_id,
-                    salary_period_id=salary_period.id,
-                    week_number=week_num,
-                    budget_amount=weekly_budget,
-                    start_date=current_start,
-                    end_date=week_end,
-                    period_type="weekly",
-                )
-                db.session.add(budget_period)
-
+            budget_period = BudgetPeriod(
+                user_id=current_user_id,
+                salary_period_id=salary_period.id,
+                week_number=period_num,
+                budget_amount=weekly_budget,
+                start_date=current_start,
+                end_date=week_end,
+                period_type="custom" if num_sub_periods != 4 else "weekly",
+            )
+            db.session.add(budget_period)
             current_start = week_end + timedelta(days=1)
 
         # Update Initial Balance income entry if it exists
@@ -1010,6 +1098,9 @@ def recalculate_salary_period(id):
         )
         new_fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
+        # Get number of sub-periods from salary period
+        num_sub_periods = salary_period.num_sub_periods or 4
+
         # Calculate new budget values
         total_budget = (
             salary_period.initial_debit_balance
@@ -1017,15 +1108,15 @@ def recalculate_salary_period(id):
             - new_fixed_bills_total
         )
         remaining_amount = total_budget
-        new_weekly_budget = remaining_amount // 4
+        new_weekly_budget = remaining_amount // num_sub_periods
 
         # Calculate debit vs credit portions
         debit_after_bills = salary_period.initial_debit_balance - new_fixed_bills_total
-        if debit_after_bills >= new_weekly_budget * 4:
+        if debit_after_bills >= new_weekly_budget * num_sub_periods:
             new_weekly_debit_budget = new_weekly_budget
             new_weekly_credit_budget = 0
         else:
-            new_weekly_debit_budget = max(0, debit_after_bills // 4)
+            new_weekly_debit_budget = max(0, debit_after_bills // num_sub_periods)
             new_weekly_credit_budget = new_weekly_budget - new_weekly_debit_budget
 
         # Store old values for response

@@ -1011,3 +1011,316 @@ class TestBudgetImpact:
             headers=auth_headers,
         )
         assert response.status_code == 404
+
+
+class TestFlexibleSubPeriods:
+    """Tests for flexible sub-periods feature (issue #9)"""
+
+    def test_create_with_custom_sub_periods(self, client, auth_headers):
+        """Creating a salary period with custom number of sub-periods"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=13)  # 14 days total
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 280000,  # €2800
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "credit_allowance": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 2,  # 2 periods of 7 days each
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        with client.application.app_context():
+            # Verify correct number of budget periods created
+            budget_periods = (
+                BudgetPeriod.query.filter_by(salary_period_id=period_id)
+                .order_by(BudgetPeriod.week_number)
+                .all()
+            )
+            assert len(budget_periods) == 2
+
+            # Verify budget is divided equally
+            salary_period = db.session.get(SalaryPeriod, period_id)
+            assert salary_period.weekly_budget == 140000  # €2800 / 2 = €1400
+            assert salary_period.num_sub_periods == 2
+
+            # Verify period dates
+            assert budget_periods[0].week_number == 1
+            assert budget_periods[1].week_number == 2
+
+    def test_create_with_single_period(self, client, auth_headers):
+        """Creating with num_sub_periods=1 should create single period"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=6)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 100000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 1,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        with client.application.app_context():
+            budget_periods = BudgetPeriod.query.filter_by(
+                salary_period_id=period_id
+            ).all()
+            assert len(budget_periods) == 1
+            assert budget_periods[0].budget_amount == 100000
+
+    def test_create_with_max_periods_equals_days(self, client, auth_headers):
+        """num_sub_periods can equal total days in range"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=4)  # 5 days total
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 50000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 5,  # 5 periods of 1 day each
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        with client.application.app_context():
+            budget_periods = BudgetPeriod.query.filter_by(
+                salary_period_id=period_id
+            ).all()
+            assert len(budget_periods) == 5
+            # Each period should have €100 budget
+            for bp in budget_periods:
+                assert bp.budget_amount == 10000
+
+    def test_create_rejects_periods_exceeding_days(self, client, auth_headers):
+        """num_sub_periods cannot exceed total days in range"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=6)  # 7 days total
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 100000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 8,  # More than 7 days!
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "between 1 and 7" in response.json["error"]
+
+    def test_create_rejects_zero_periods(self, client, auth_headers):
+        """num_sub_periods must be at least 1"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=6)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 100000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 0,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "between 1 and" in response.json["error"]
+
+    def test_create_rejects_end_before_start(self, client, auth_headers):
+        """End date must be after start date"""
+        start_date = date.today()
+        end_date = start_date - timedelta(days=1)  # End before start
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 100000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "after start date" in response.json["error"].lower()
+
+    def test_preview_with_flexible_periods(self, client, auth_headers):
+        """Preview should show correct number of periods"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=20)  # 21 days
+
+        response = client.post(
+            "/api/v1/salary-periods/preview",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 210000,
+                "credit_balance": 0,
+                "num_sub_periods": 3,
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+
+        assert len(data["weeks"]) == 3
+        assert data["weekly_budget"] == 70000  # €2100 / 3 = €700
+
+    def test_update_changes_num_sub_periods(self, client, auth_headers):
+        """Updating salary period can change number of sub-periods"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=27)  # 28 days
+
+        # Create with 4 periods
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 280000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 4,
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Update to 7 periods
+        response = client.put(
+            f"/api/v1/salary-periods/{period_id}",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 280000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 7,
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+
+        with client.application.app_context():
+            budget_periods = BudgetPeriod.query.filter_by(
+                salary_period_id=period_id
+            ).all()
+            assert len(budget_periods) == 7
+
+            salary_period = db.session.get(SalaryPeriod, period_id)
+            assert salary_period.num_sub_periods == 7
+            # €2800 / 7 = €400
+            assert salary_period.weekly_budget == 40000
+
+    def test_defaults_to_4_periods_without_param(self, client, auth_headers):
+        """Without num_sub_periods, defaults to 4"""
+        start_date = date.today()
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "debit_balance": 400000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                # No num_sub_periods - should default to 4
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        with client.application.app_context():
+            budget_periods = BudgetPeriod.query.filter_by(
+                salary_period_id=period_id
+            ).all()
+            assert len(budget_periods) == 4
+
+    def test_uneven_days_distribution(self, client, auth_headers):
+        """Extra days should be distributed across first periods"""
+        start_date = date.today()
+        end_date = start_date + timedelta(days=9)  # 10 days total
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "debit_balance": 100000,
+                "credit_balance": 0,
+                "credit_limit": 0,
+                "fixed_bills": [],
+                "num_sub_periods": 3,  # 10 days / 3 = 3+1, 3+1, 3+1+1 (wait: 3,3,4)
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        with client.application.app_context():
+            budget_periods = (
+                BudgetPeriod.query.filter_by(salary_period_id=period_id)
+                .order_by(BudgetPeriod.week_number)
+                .all()
+            )
+            assert len(budget_periods) == 3
+
+            # With 10 days and 3 periods: 10 / 3 = 3 days each, 1 extra
+            # Period 1: 4 days (3+1 extra)
+            # Period 2: 3 days
+            # Period 3: 3 days (last one gets remaining)
+            total_days = sum(
+                (bp.end_date - bp.start_date).days + 1 for bp in budget_periods
+            )
+            assert total_days == 10
+
+            # Verify continuous dates (no gaps)
+            for i in range(len(budget_periods) - 1):
+                assert budget_periods[i + 1].start_date == budget_periods[
+                    i
+                ].end_date + timedelta(days=1)

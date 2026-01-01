@@ -22,13 +22,13 @@ Internal reference for AI assistants and developers. For user-facing documentati
 
 ## Project Overview
 
-**Bloom Budget Tracker** - Balance-based weekly budget tracker with 4-week salary period planning.
+**Bloom Budget Tracker** - Balance-based budget tracker with configurable sub-period planning.
 
 ### Core Concepts
 
 -   **Balance-Based Budgeting**: Enter current balances (not income) for realistic planning
--   **4-Week Salary Periods**: Monthly pay divided into 4 weekly budgets
--   **Smart Carryover**: Overspend Week 1 → Week 2's budget adjusts
+-   **Flexible Sub-Periods**: Divide budget into 1 to N periods (default 4 weekly periods)
+-   **Smart Carryover**: Overspend Period 1 → Period 2's budget adjusts
 -   **On-Demand Recurring**: Preview and confirm scheduled expenses (user-controlled)
 
 ### Live Deployment
@@ -54,21 +54,23 @@ Frontend (React + Vite)  ←→  Backend (Flask)  ←→  Database (PostgreSQL)
 ### Two-Tier Period System (Critical)
 
 ```
-SalaryPeriod (4-week parent)
+SalaryPeriod (configurable parent)
 ├── initial_debit_balance
 ├── initial_credit_balance
 ├── credit_limit
-├── weekly_budget (calculated)
-└── BudgetPeriod × 4 (auto-created)
-    ├── Week 1
-    ├── Week 2
-    ├── Week 3
-    └── Week 4
+├── num_sub_periods (default: 4)
+├── weekly_budget (calculated: total / num_sub_periods)
+└── BudgetPeriod × N (auto-created based on num_sub_periods)
+    ├── Period 1
+    ├── Period 2
+    ├── ...
+    └── Period N
 ```
 
 -   **SalaryPeriod**: User-facing, created via wizard
 -   **BudgetPeriod**: Internal implementation, never created manually
--   Expenses/income assigned to weeks by date
+-   **num_sub_periods**: Configurable 1 to total_days (experimental feature flag)
+-   Expenses/income assigned to periods by date
 
 ### Money Convention
 
@@ -324,7 +326,7 @@ cd frontend && npm install && cd ..
 ```powershell
 bstart   # Start backend + frontend
 bstop    # Stop servers
-breset   # Reset database
+bmigrate # Run database migrations (preferred over breset)
 bformat  # Run black formatter
 ```
 
@@ -385,27 +387,35 @@ Bypass: `git push --no-verify`
 
 **3-step flow** (`SalaryPeriodWizard.jsx`):
 
-1. Enter balances (debit, credit available, limit)
+1. Enter balances (debit, credit available, limit) + optional end date and sub-periods
 2. Review fixed bills (from recurring templates)
-3. Confirm 4-week breakdown
+3. Confirm period breakdown
 
 **Calculation**:
 
 ```
 total_budget = debit + credit_allowance - fixed_bills
-weekly_budget = total_budget / 4
+period_budget = total_budget / num_sub_periods  // default: 4
 ```
+
+**Flexible Sub-Periods** (experimental feature flag: `flexibleSubPeriodsEnabled`):
+
+-   When enabled, users can specify custom end date and number of sub-periods
+-   Minimum: 1 period (entire date range)
+-   Maximum: 1 period per day in the range
+-   Days are distributed evenly across periods (extra days go to earlier periods)
 
 ### Carryover Logic
 
 ```
-Week 1: Budget - Spent = Leftover
-Week 2: (Budget + Week1_Leftover) - Spent = Leftover
-Week 3: (Budget + Week2_Leftover) - Spent = Leftover
-Week 4: (Budget + Week3_Leftover) - Spent = Final
+Period 1: Budget - Spent = Leftover
+Period 2: (Budget + Period1_Leftover) - Spent = Leftover
+Period 3: (Budget + Period2_Leftover) - Spent = Leftover
+...
+Period N: (Budget + Previous_Leftover) - Spent = Final
 ```
 
-Overspending reduces next week's available budget.
+Overspending reduces next period's available budget.
 
 ### Recurring Expenses (On-Demand Model)
 
@@ -442,6 +452,12 @@ Settings → Categories tab:
 -   Used in expense forms
 
 ---
+
+## Recent Changes (Jan 2025)
+
+| Feature              | Issue | Description                        |
+| -------------------- | ----- | ---------------------------------- |
+| Flexible Sub-Periods | #9    | Configurable 1 to N budget periods |
 
 ## Recent Changes (Dec 2024)
 

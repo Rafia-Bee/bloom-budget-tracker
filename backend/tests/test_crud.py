@@ -203,7 +203,7 @@ class TestSalaryPeriodCRUD:
     """Test salary period CRUD operations"""
 
     def test_create_salary_period(self, client, auth_headers):
-        """Should create salary period with 4 weekly budgets"""
+        """Should create salary period with budget periods"""
         response = client.post(
             "/api/v1/salary-periods",
             json={
@@ -219,10 +219,8 @@ class TestSalaryPeriodCRUD:
 
         assert response.status_code == 201
         assert "message" in response.json
-        assert (
-            response.json["message"]
-            == "Salary period created successfully with 4 weekly budgets"
-        )
+        assert "Salary period created successfully" in response.json["message"]
+        assert "4 budget periods" in response.json["message"]
         assert "id" in response.json
 
     def test_get_current_salary_period(self, client, auth_headers, salary_period):

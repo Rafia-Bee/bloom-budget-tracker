@@ -6,6 +6,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
+### Flexible Sub-Period Division (#9)
+
+**Context:** Issue #9 requested the ability to divide budget into custom number of sub-periods instead of the hardcoded 4-week structure.
+
+**Problem:**
+
+-   Original design assumed 4-week salary periods (matching monthly pay cycles)
+-   Database constraints enforced `week_number BETWEEN 1 AND 4`
+-   Single-day periods weren't possible (`start_date < end_date` constraint)
+-   Users with different pay cycles (bi-weekly, monthly, irregular) couldn't customize
+
+**Decision:** Implement flexible sub-periods behind experimental feature flag:
+
+1. Add `num_sub_periods` column to SalaryPeriod (default: 4)
+2. Allow 1 to N periods where N = total days in date range
+3. Update constraints: `start_date <= end_date`, `credit_limit >= 0`, `week_number >= 1`
+4. Hide behind `flexibleSubPeriodsEnabled` feature flag in Settings
+
+**Rationale:**
+
+-   Preserves backward compatibility (defaults to 4 periods)
+-   Experimental flag allows testing without affecting all users
+-   Supports edge cases: daily budgeting, bi-weekly pay, custom date ranges
+-   Single-day periods enable daily budget tracking
+
+**Impact:**
+
+-   New database column with migration scripts (SQLite + PostgreSQL)
+-   Updated SalaryPeriodWizard with end date picker and sub-periods input
+-   Dynamic "Period X of N" labels in WeeklyBudgetCard
+-   10 new backend tests for flexible periods
+-   UI cleanup deferred to #131
+
+---
+
 ### PR-Based Git Workflow Enforcement
 
 **Context:** Previously, development was done by pushing directly to `main`, where CI would run. This led to an incident where a Copilot agent fix was deployed to Cloudflare before CI passed (though it was only a preview deploy, not production).

@@ -161,11 +161,16 @@ class SalaryPeriod(db.Model):
     fixed_bills_total = db.Column(db.Integer, nullable=False, default=0)
     # total_budget - fixed_bills
     remaining_amount = db.Column(db.Integer, nullable=False)
-    weekly_budget = db.Column(db.Integer, nullable=False)  # remaining / 4
-    # Debit portion of weekly budget
+    # remaining / num_sub_periods (legacy name kept for compatibility)
+    weekly_budget = db.Column(db.Integer, nullable=False)
+    # Debit portion of sub-period budget
     weekly_debit_budget = db.Column(db.Integer, nullable=False)
-    # Credit portion of weekly budget
+    # Credit portion of sub-period budget
     weekly_credit_budget = db.Column(db.Integer, nullable=False, default=0)
+
+    # Flexible sub-period configuration
+    # Number of sub-periods to divide budget into (default 4 for backward compatibility)
+    num_sub_periods = db.Column(db.Integer, nullable=False, default=4)
 
     start_date = db.Column(db.Date, nullable=False)  # Period start date
     end_date = db.Column(db.Date, nullable=False)  # Period end date
@@ -193,7 +198,7 @@ class SalaryPeriod(db.Model):
             "initial_debit_balance >= 0", name="check_salary_period_debit_balance"
         ),
         db.CheckConstraint(
-            "credit_limit > 0", name="check_salary_period_positive_credit_limit"
+            "credit_limit >= 0", name="check_salary_period_positive_credit_limit"
         ),
         db.CheckConstraint(
             "credit_budget_allowance >= 0", name="check_salary_period_credit_allowance"
@@ -231,9 +236,9 @@ class BudgetPeriod(db.Model):
         db.ForeignKey("salary_periods.id", ondelete="CASCADE"),
         nullable=True,
     )
-    # 1-4 for weekly budgets
+    # Sub-period number (1-N for flexible sub-periods)
     week_number = db.Column(db.Integer, nullable=True)
-    # Weekly budget allocation
+    # Sub-period budget allocation
     budget_amount = db.Column(db.Integer, nullable=True)
     start_date = db.Column(db.Date, nullable=False, index=True)
     end_date = db.Column(db.Date, nullable=False, index=True)
@@ -244,10 +249,10 @@ class BudgetPeriod(db.Model):
     __table_args__ = (
         db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
         db.CheckConstraint(
-            "start_date < end_date", name="check_budget_period_date_range"
+            "start_date <= end_date", name="check_budget_period_date_range"
         ),
         db.CheckConstraint(
-            "week_number IS NULL OR (week_number BETWEEN 1 AND 4)",
+            "week_number IS NULL OR week_number >= 1",
             name="check_budget_period_week_number",
         ),
         db.CheckConstraint(
