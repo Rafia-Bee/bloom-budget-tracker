@@ -227,4 +227,13 @@ export const goalAPI = {
     restore: (id) => api.post(`/goals/${id}/restore`),
 };
 
+export const analyticsAPI = {
+    getSpendingByCategory: (params = {}) =>
+        api.get("/analytics/spending-by-category", { params }),
+    getSpendingTrends: (params = {}) =>
+        api.get("/analytics/spending-trends", { params }),
+    getIncomeVsExpense: (params = {}) =>
+        api.get("/analytics/income-vs-expense", { params }),
+};
+
 export default api;

@@ -16,6 +16,14 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 2. Create `/api/v1/analytics/spending-trends` - Time-series data with daily/weekly/monthly granularity
 3. Create `/api/v1/analytics/income-vs-expense` - Summary comparison with savings rate and monthly breakdown
 
+**Phase 2 - Frontend Core:**
+
+1. Install Recharts library for chart visualizations
+2. Add `reportsEnabled` feature flag (experimental)
+3. Create Reports page with date range controls and summary cards
+4. Build SpendingTrendsChart (line chart) and CategoryBreakdownChart (donut chart)
+5. Add navigation link to Header (desktop and mobile, behind feature flag)
+
 **Tech Choices:**
 
 -   Recharts library for frontend visualizations (smaller bundle than Chart.js, better React integration)
