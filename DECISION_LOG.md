@@ -6,35 +6,74 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-01
 
-### Reports & Analytics Dashboard - Phase 1 Backend (#3)
+### Reports & Analytics Dashboard - Complete Implementation (#3)
 
 **Context:** Issue #3 requested a comprehensive Reports & Analytics Dashboard with charts, trends, and category breakdowns.
 
-**Decision:** Implement in phases, starting with backend analytics API endpoints:
+**Decision:** Implemented in phases:
 
-1. Create `/api/v1/analytics/spending-by-category` - Category breakdown with totals and percentages
-2. Create `/api/v1/analytics/spending-trends` - Time-series data with daily/weekly/monthly granularity
-3. Create `/api/v1/analytics/income-vs-expense` - Summary comparison with savings rate and monthly breakdown
+**Phase 1 - Backend Analytics API:**
+
+1. Created `/api/v1/analytics/spending-by-category` - Category breakdown with totals and percentages
+2. Created `/api/v1/analytics/spending-trends` - Time-series data with daily/weekly/monthly granularity
+3. Created `/api/v1/analytics/income-vs-expense` - Summary comparison with savings rate
 
 **Phase 2 - Frontend Core:**
 
-1. Install Recharts library for chart visualizations
-2. Add `reportsEnabled` feature flag (experimental)
-3. Create Reports page with date range controls and summary cards
-4. Build SpendingTrendsChart (line chart) and CategoryBreakdownChart (donut chart)
-5. Add navigation link to Header (desktop and mobile, behind feature flag)
+1. Installed Recharts library for chart visualizations
+2. Added `reportsEnabled` feature flag (experimental)
+3. Created Reports page with date range controls (quick buttons: 7/30/90 days)
+4. Built SpendingTrendsChart (line chart) showing Total/Debit/Credit trends
+5. Built CategoryBreakdownChart (donut chart) with percentage breakdown
+6. Added navigation link to Header (desktop and mobile, behind feature flag)
+7. Added Reports toggle to Settings → Preferences → Experimental Features
+
+**Phase 3 - Bug Fixes:**
+
+1. **Payment method mismatch**: Database stores "Debit card"/"Credit card" but code checked for "debit"/"credit"
+    - Fixed using `ilike("%debit%")` for SQLAlchemy filters
+    - Fixed using `"debit" in payment_method.lower()` for Python logic
+2. **Data exclusions** for accurate analytics:
+    - Exclude "Pre-existing Credit Card Debt" expenses (not actual spending)
+    - Exclude "Initial Balance" income after the first one (avoids double counting)
+3. **Recharts dimension warnings**: Added `minWidth={0}` to ResponsiveContainer
 
 **Tech Choices:**
 
--   Recharts library for frontend visualizations (smaller bundle than Chart.js, better React integration)
+-   Recharts (smaller bundle than Chart.js, better React integration)
 -   Feature flag `reportsEnabled` for experimental rollout
--   TDD approach with 17 unit tests for analytics endpoints
+-   TDD approach with 19 unit tests (17 original + 2 for exclusions)
+-   E2E tests with Playwright
+
+**Files Created:**
+
+-   `backend/routes/analytics.py` - 3 endpoints with proper filtering
+-   `backend/tests/test_analytics.py` - 19 comprehensive tests
+-   `frontend/src/pages/Reports.jsx` - Main analytics page
+-   `frontend/src/components/reports/SpendingTrendsChart.jsx`
+-   `frontend/src/components/reports/CategoryBreakdownChart.jsx`
+-   `frontend/e2e/reports.spec.js` - E2E tests
 
 **Rationale:**
 
--   Aggregation in backend reduces frontend complexity and improves performance
+-   Aggregation in backend reduces frontend complexity
+-   Data exclusions ensure analytics reflect actual spending, not accounting entries
 -   Date range filters allow flexible time window analysis
--   Granularity options support different visualization needs
+
+---
+
+### DateNavigator Prop Mismatch Fix (#92)
+
+**Context:** Day-by-day transaction navigation was broken with error "onDateChange is not a function".
+
+**Problem:** TransactionList.jsx was passing props with wrong names:
+
+-   Passed: `dates`, `currentDate`, `onNavigate`
+-   Expected: `transactionDates`, `currentViewDate`, `onDateChange`
+
+**Decision:** Updated TransactionList.jsx to use correct prop names matching DateNavigator component.
+
+**Rationale:** Simple fix, maintains single source of truth for prop naming in DateNavigator.
 
 ---
 
