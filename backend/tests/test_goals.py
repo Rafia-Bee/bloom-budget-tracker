@@ -4,7 +4,6 @@ Bloom - Goals API Tests
 Test savings goal CRUD operations and progress tracking.
 """
 
-
 from datetime import date, timedelta
 
 

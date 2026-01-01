@@ -112,14 +112,14 @@ class CleanupService:
 
         try:
             # Cleanup expired tokens (older than 24 hours)
-            results[
-                "expired_tokens_deleted"
-            ] = CleanupService.cleanup_expired_password_reset_tokens(hours_old=24)
+            results["expired_tokens_deleted"] = (
+                CleanupService.cleanup_expired_password_reset_tokens(hours_old=24)
+            )
 
             # Cleanup used tokens (older than 7 days)
-            results[
-                "used_tokens_deleted"
-            ] = CleanupService.cleanup_used_password_reset_tokens(days_old=7)
+            results["used_tokens_deleted"] = (
+                CleanupService.cleanup_used_password_reset_tokens(days_old=7)
+            )
 
             results["total_deleted"] = (
                 results["expired_tokens_deleted"] + results["used_tokens_deleted"]
@@ -240,9 +240,9 @@ class CleanupService:
         }
 
         try:
-            results[
-                "password_reset_tokens"
-            ] = CleanupService.cleanup_all_password_reset_tokens()
+            results["password_reset_tokens"] = (
+                CleanupService.cleanup_all_password_reset_tokens()
+            )
             results["soft_deleted_records"] = CleanupService.purge_soft_deleted_records(
                 days_old=30
             )

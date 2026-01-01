@@ -8,6 +8,7 @@ This script adds:
 
 Run with: python migrate_weekly_budgets.py
 """
+
 import os
 import sys
 from pathlib import Path
