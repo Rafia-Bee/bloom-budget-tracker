@@ -23,13 +23,20 @@ describe('EditGoalModal', () => {
   const mockOnClose = vi.fn()
   const mockOnUpdate = vi.fn()
 
+  // Generate a future date for testing (6 months from now)
+  const getFutureDate = () => {
+    const date = new Date()
+    date.setMonth(date.getMonth() + 6)
+    return date.toISOString().split('T')[0]
+  }
+
   const mockGoal = {
     id: 1,
     name: 'Emergency Fund',
     description: 'For unexpected expenses',
     target_amount: 100000, // €1000.00 in cents
     initial_amount: 10000, // €100.00 in cents
-    target_date: '2025-12-31',
+    target_date: getFutureDate(), // Dynamic future date
     subcategory_name: 'Savings',
     progress: {
       current_amount: 25000, // €250.00 saved
@@ -143,7 +150,7 @@ describe('EditGoalModal', () => {
       render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
 
       const dateInput = document.querySelector('input[type="date"]')
-      expect(dateInput.value).toBe('2025-12-31')
+      expect(dateInput.value).toBe(mockGoal.target_date) // Use the dynamic future date
     })
 
     it('handles goal without optional fields', () => {
@@ -490,7 +497,7 @@ describe('EditGoalModal', () => {
           description: 'For unexpected expenses',
           target_amount: 100000, // €1000.00 in cents
           initial_amount: 10000, // €100.00 in cents
-          target_date: '2025-12-31'
+          target_date: mockGoal.target_date // Use the dynamic future date
         })
       })
     })
