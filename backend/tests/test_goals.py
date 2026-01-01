@@ -428,3 +428,122 @@ class TestGoalTransactions:
         assert response.status_code == 200
         assert response.json["pagination"]["page"] == 1
         assert response.json["pagination"]["per_page"] == 5
+
+
+class TestGoalSoftDelete:
+    """Tests for goal soft delete, restore, and deleted listing"""
+
+    def test_delete_goal_soft_deletes(self, client, auth_headers):
+        """DELETE should soft delete (set deleted_at) rather than hard delete"""
+        from backend.models.database import db, Goal
+
+        # Create goal
+        create_resp = client.post(
+            "/api/v1/goals",
+            json={"name": "Soft Delete Test Goal", "target_amount": 100000},
+            headers=auth_headers,
+        )
+        goal_id = create_resp.json["goal"]["id"]
+
+        # Delete goal
+        response = client.delete(f"/api/v1/goals/{goal_id}", headers=auth_headers)
+        assert response.status_code == 200
+
+        # Verify record still exists in DB but has deleted_at set
+        goal = db.session.get(Goal, goal_id)
+        assert goal is not None
+        assert goal.deleted_at is not None
+        assert goal.is_deleted is True
+
+        # Verify not returned by active() query
+        assert Goal.active().filter_by(id=goal_id).first() is None
+
+    def test_get_deleted_goals(self, client, auth_headers):
+        """GET /goals/deleted should return soft-deleted goals"""
+        # Create and delete two goals
+        for name in ["Deleted Goal 1", "Deleted Goal 2"]:
+            create_resp = client.post(
+                "/api/v1/goals",
+                json={"name": name, "target_amount": 50000},
+                headers=auth_headers,
+            )
+            client.delete(
+                f"/api/v1/goals/{create_resp.json['goal']['id']}", headers=auth_headers
+            )
+
+        # Create one active goal
+        client.post(
+            "/api/v1/goals",
+            json={"name": "Active Goal", "target_amount": 75000},
+            headers=auth_headers,
+        )
+
+        # Get deleted goals
+        response = client.get("/api/v1/goals/deleted", headers=auth_headers)
+        assert response.status_code == 200
+        deleted = response.json
+        assert len(deleted) == 2
+        assert all(g["deleted_at"] is not None for g in deleted)
+        assert any(g["name"] == "Deleted Goal 1" for g in deleted)
+        assert any(g["name"] == "Deleted Goal 2" for g in deleted)
+
+    def test_restore_goal(self, client, auth_headers):
+        """POST /goals/:id/restore should restore soft-deleted goal"""
+        from backend.models.database import db, Goal
+
+        # Create and delete goal
+        create_resp = client.post(
+            "/api/v1/goals",
+            json={"name": "Restore Test Goal", "target_amount": 25000},
+            headers=auth_headers,
+        )
+        goal_id = create_resp.json["goal"]["id"]
+        client.delete(f"/api/v1/goals/{goal_id}", headers=auth_headers)
+
+        # Verify it's not in active goals
+        assert Goal.active().filter_by(id=goal_id).first() is None
+
+        # Restore it
+        restore_resp = client.post(
+            f"/api/v1/goals/{goal_id}/restore", headers=auth_headers
+        )
+        assert restore_resp.status_code == 200
+        assert "restored" in restore_resp.json["message"]
+
+        # Verify deleted_at is cleared in DB
+        goal = db.session.get(Goal, goal_id)
+        assert goal.deleted_at is None
+        assert goal.is_deleted is False
+
+        # Verify it appears in GET /goals list
+        list_resp = client.get("/api/v1/goals", headers=auth_headers)
+        assert any(g["name"] == "Restore Test Goal" for g in list_resp.json["goals"])
+
+    def test_restore_nonexistent_goal_returns_404(self, client, auth_headers):
+        """POST /goals/:id/restore should return 404 for non-existent ID"""
+        response = client.post("/api/v1/goals/99999/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_restore_active_goal_returns_404(self, client, auth_headers):
+        """POST /goals/:id/restore should return 404 for non-deleted goal"""
+        # Create active goal (not deleted)
+        create_resp = client.post(
+            "/api/v1/goals",
+            json={"name": "Active Goal", "target_amount": 10000},
+            headers=auth_headers,
+        )
+        goal_id = create_resp.json["goal"]["id"]
+
+        # Try to restore active goal
+        response = client.post(f"/api/v1/goals/{goal_id}/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_get_deleted_requires_auth(self, client):
+        """GET /goals/deleted requires authentication"""
+        response = client.get("/api/v1/goals/deleted")
+        assert response.status_code == 401
+
+    def test_restore_requires_auth(self, client):
+        """POST /goals/:id/restore requires authentication"""
+        response = client.post("/api/v1/goals/1/restore")
+        assert response.status_code == 401

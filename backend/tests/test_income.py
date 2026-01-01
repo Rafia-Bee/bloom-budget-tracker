@@ -275,6 +275,76 @@ class TestIncomeCRUD:
 
         assert response.status_code == 404
 
+    def test_get_deleted_income(self, client, auth_headers, user_id):
+        """GET /income/deleted should return soft-deleted income entries"""
+        # Create and delete two income entries
+        for income_type in ["Deleted Salary", "Deleted Bonus"]:
+            income = create_income(user_id, type=income_type, amount=100000)
+            client.delete(f"/api/v1/income/{income.id}", headers=auth_headers)
+
+        # Create one active income
+        create_income(user_id, type="Active Salary", amount=200000)
+
+        # Get deleted income
+        response = client.get("/api/v1/income/deleted", headers=auth_headers)
+        assert response.status_code == 200
+        deleted = response.json
+        assert len(deleted) == 2
+        assert all(i["deleted_at"] is not None for i in deleted)
+        assert any(i["type"] == "Deleted Salary" for i in deleted)
+        assert any(i["type"] == "Deleted Bonus" for i in deleted)
+
+    def test_restore_income(self, client, auth_headers, user_id):
+        """POST /income/:id/restore should restore soft-deleted income"""
+        # Create and delete income
+        income = create_income(user_id, type="Restore Test", amount=75000)
+        client.delete(f"/api/v1/income/{income.id}", headers=auth_headers)
+
+        # Verify it's not in active income
+        assert Income.active().filter_by(id=income.id).first() is None
+
+        # Restore it
+        restore_resp = client.post(
+            f"/api/v1/income/{income.id}/restore", headers=auth_headers
+        )
+        assert restore_resp.status_code == 200
+        assert "restored" in restore_resp.json["message"]
+
+        # Verify deleted_at is cleared
+        restored_income = db.session.get(Income, income.id)
+        assert restored_income.deleted_at is None
+        assert restored_income.is_deleted is False
+
+        # Verify it appears in GET /income list
+        list_resp = client.get("/api/v1/income", headers=auth_headers)
+        assert any(i["type"] == "Restore Test" for i in list_resp.json["income"])
+
+    def test_restore_nonexistent_income_returns_404(self, client, auth_headers):
+        """POST /income/:id/restore should return 404 for non-existent ID"""
+        response = client.post("/api/v1/income/99999/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_restore_active_income_returns_404(self, client, auth_headers, user_id):
+        """POST /income/:id/restore should return 404 for non-deleted income"""
+        # Create active income (not deleted)
+        income = create_income(user_id, type="Active Income", amount=50000)
+
+        # Try to restore active income
+        response = client.post(
+            f"/api/v1/income/{income.id}/restore", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_get_deleted_requires_auth(self, client):
+        """GET /income/deleted requires authentication"""
+        response = client.get("/api/v1/income/deleted")
+        assert response.status_code == 401
+
+    def test_restore_requires_auth(self, client):
+        """POST /income/:id/restore requires authentication"""
+        response = client.post("/api/v1/income/1/restore")
+        assert response.status_code == 401
+
 
 class TestIncomeStats:
     """Tests for income statistics endpoint"""
