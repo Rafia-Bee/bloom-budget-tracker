@@ -457,6 +457,29 @@ def create_salary_period():
         end_date_str = data.get("end_date")
         num_sub_periods = data.get("num_sub_periods", 4)
 
+        # Calculate end date first (needed for validation)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        else:
+            end_date = start_date + relativedelta(months=1) - timedelta(days=1)
+
+        # Validate date range
+        if end_date <= start_date:
+            return (
+                jsonify({"error": "End date must be after start date"}),
+                400,
+            )
+
+        # Validate num_sub_periods early (before any division)
+        total_days = (end_date - start_date).days + 1
+        if num_sub_periods < 1 or num_sub_periods > total_days:
+            return (
+                jsonify(
+                    {"error": f"Number of periods must be between 1 and {total_days}"}
+                ),
+                400,
+            )
+
         # Validate credit allowance
         if credit_allowance > credit_balance:
             return (
@@ -491,29 +514,6 @@ def create_salary_period():
         else:
             weekly_debit_budget = max(0, debit_after_bills // num_sub_periods)
             weekly_credit_budget = weekly_budget - weekly_debit_budget
-
-        # Calculate end date (use provided or default to monthly)
-        if end_date_str:
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        else:
-            end_date = start_date + relativedelta(months=1) - timedelta(days=1)
-
-        # Validate date range
-        if end_date <= start_date:
-            return (
-                jsonify({"error": "End date must be after start date"}),
-                400,
-            )
-
-        # Validate num_sub_periods
-        total_days = (end_date - start_date).days + 1
-        if num_sub_periods < 1 or num_sub_periods > total_days:
-            return (
-                jsonify(
-                    {"error": f"Number of periods must be between 1 and {total_days}"}
-                ),
-                400,
-            )
 
         # Check for overlapping salary periods
         overlapping = SalaryPeriod.query.filter(

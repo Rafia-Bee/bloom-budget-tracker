@@ -2,7 +2,7 @@
 
 > Financial Habits That Grow With You
 
-A balance-based weekly budget tracker with 4-week salary period planning. Track expenses across debit and credit cards, manage debts with payoff projections, and hit your savings goals.
+A balance-based budget tracker with flexible salary period planning. Track expenses across debit and credit cards, manage debts with payoff projections, and hit your savings goals.
 
 **🌐 Live:** [https://bloom-tracker.app](https://bloom-tracker.app)
 
@@ -10,10 +10,10 @@ A balance-based weekly budget tracker with 4-week salary period planning. Track 
 
 ## ✨ Features
 
-### 💰 Balance-Based Weekly Budgeting
+### 💰 Balance-Based Budgeting
 
--   **4-Week Salary Periods**: Break monthly pay into 4 manageable weekly budgets
--   **Smart Carryover**: Overspend Week 1? Week 2's budget auto-adjusts
+-   **Flexible Sub-Periods**: Divide your budget into 1 to N periods (default 4 weekly)
+-   **Smart Carryover**: Overspend Period 1? Period 2's budget auto-adjusts
 -   **Wizard Setup**: 3-step wizard - enter balances, review fixed bills, confirm budget
 -   **Dual Card Tracking**: Separate debit and credit balance monitoring
 
@@ -136,7 +136,6 @@ Access at `http://localhost:3000`
 -   📋 Notifications & reminders (#6)
 -   📋 Multi-currency support (#7)
 -   📋 Receipt OCR scanning (#8)
--   📋 Flexible sub-period division (#9)
 -   📋 Google Calendar integration (#25)
 
 ### Technical Improvements

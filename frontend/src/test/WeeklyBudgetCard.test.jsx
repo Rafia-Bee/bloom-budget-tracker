@@ -18,7 +18,23 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { clickWithAct, selectWithAct } from './test-utils'
 import { createRef } from 'react'
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard'
+import { FeatureFlagProvider } from '../contexts/FeatureFlagContext'
+import { CurrencyProvider } from '../contexts/CurrencyContext'
 import api from '../api'
+
+// Wrapper component with required providers
+const TestWrapper = ({ children }) => (
+  <FeatureFlagProvider>
+    <CurrencyProvider>
+      {children}
+    </CurrencyProvider>
+  </FeatureFlagProvider>
+)
+
+// Helper to render component with providers
+const renderWithProviders = (component) => {
+  return render(<TestWrapper>{component}</TestWrapper>)
+}
 
 describe('WeeklyBudgetCard', () => {
   const mockOnSetupClick = vi.fn()
@@ -98,7 +114,7 @@ describe('WeeklyBudgetCard', () => {
       // Make API hang to see loading state
       api.get.mockImplementation(() => new Promise(() => {}))
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -118,7 +134,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows setup prompt when no salary period exists', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -132,7 +148,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows descriptive text about weekly budgets', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -146,7 +162,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows Get Started button', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -160,7 +176,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onSetupClick when Get Started is clicked', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -182,7 +198,7 @@ describe('WeeklyBudgetCard', () => {
     it('shows error message when API fails (non-404)', async () => {
       api.get.mockRejectedValue({ response: { status: 500 } })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -202,7 +218,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays current week number', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -216,7 +232,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays "Current" badge for current week', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -230,7 +246,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays base budget amount', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -246,7 +262,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays spent amount', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -262,7 +278,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays remaining amount', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -278,7 +294,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('displays week date range', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -298,7 +314,7 @@ describe('WeeklyBudgetCard', () => {
       // 15000/37500 = 40% (under 75%)
       api.get.mockResolvedValue({ data: mockWeeklyData })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -329,7 +345,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: highSpendData })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -360,7 +376,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: veryHighSpendData })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -391,7 +407,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: veryHighSpendData })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -411,7 +427,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows week dropdown when multiple weeks exist', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -425,7 +441,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('dropdown has options for all 4 weeks', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -442,7 +458,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onWeekChange when week is changed', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -462,7 +478,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('updates display when week changes', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -482,7 +498,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('does not show "Current" badge for non-current week', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -519,7 +535,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: dataWithNegativeCarryover })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -549,7 +565,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: dataWithPositiveCarryover })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -566,7 +582,7 @@ describe('WeeklyBudgetCard', () => {
     it('does not show carryover section when carryover is 0', async () => {
       api.get.mockResolvedValue({ data: mockWeeklyData })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -601,7 +617,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: dataWithAdjustedBudget })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -622,7 +638,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows allocate button when remaining > 0', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -636,7 +652,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('shows remaining amount in button text', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -652,7 +668,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onAllocateClick with period ID and week number', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -686,7 +702,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: dataWithNoRemaining })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -708,7 +724,7 @@ describe('WeeklyBudgetCard', () => {
     })
 
     it('calls onSetupClick when settings button clicked', async () => {
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}
@@ -734,7 +750,7 @@ describe('WeeklyBudgetCard', () => {
     it('exposes refresh method via ref', async () => {
       const ref = createRef()
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           ref={ref}
           onSetupClick={mockOnSetupClick}
@@ -754,7 +770,7 @@ describe('WeeklyBudgetCard', () => {
     it('refresh method reloads data', async () => {
       const ref = createRef()
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           ref={ref}
           onSetupClick={mockOnSetupClick}
@@ -798,7 +814,7 @@ describe('WeeklyBudgetCard', () => {
       }
       api.get.mockResolvedValue({ data: dataWithNegativeRemaining })
 
-      render(
+      renderWithProviders(
         <WeeklyBudgetCard
           onSetupClick={mockOnSetupClick}
           onAllocateClick={mockOnAllocateClick}

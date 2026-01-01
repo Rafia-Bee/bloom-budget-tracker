@@ -198,7 +198,7 @@ class SalaryPeriod(db.Model):
             "initial_debit_balance >= 0", name="check_salary_period_debit_balance"
         ),
         db.CheckConstraint(
-            "credit_limit > 0", name="check_salary_period_positive_credit_limit"
+            "credit_limit >= 0", name="check_salary_period_positive_credit_limit"
         ),
         db.CheckConstraint(
             "credit_budget_allowance >= 0", name="check_salary_period_credit_allowance"
@@ -249,7 +249,7 @@ class BudgetPeriod(db.Model):
     __table_args__ = (
         db.Index("idx_budget_period_active", "user_id", "start_date", "end_date"),
         db.CheckConstraint(
-            "start_date < end_date", name="check_budget_period_date_range"
+            "start_date <= end_date", name="check_budget_period_date_range"
         ),
         db.CheckConstraint(
             "week_number IS NULL OR week_number >= 1",
