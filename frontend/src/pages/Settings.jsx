@@ -626,6 +626,36 @@ function Settings({ setIsAuthenticated }) {
                           />
                         </button>
                       </div>
+
+                      {/* Reports & Analytics Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-500">📈</span>
+                            <span className="font-medium text-gray-900 dark:text-white">Reports & Analytics</span>
+                            <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                              NEW
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Access spending trends, category breakdowns, and income vs expense charts
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => toggleFlag('reportsEnabled')}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            flags.reportsEnabled
+                              ? 'bg-green-500 dark:bg-green-600'
+                              : 'bg-gray-300 dark:bg-gray-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              flags.reportsEnabled ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

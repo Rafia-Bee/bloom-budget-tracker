@@ -73,12 +73,17 @@ def get_spending_by_category():
             Expense.deleted_at.is_(None),
             Expense.date >= start_date,
             Expense.date <= end_date,
+            # Exclude pre-existing credit card debt entries from analytics
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
         )
         .group_by(Expense.category)
     )
 
-    if payment_method in ("debit", "credit"):
-        query = query.filter(Expense.payment_method == payment_method)
+    # Payment method stored as "Debit card" or "Credit card" in database
+    if payment_method == "debit":
+        query = query.filter(Expense.payment_method.ilike("%debit%"))
+    elif payment_method == "credit":
+        query = query.filter(Expense.payment_method.ilike("%credit%"))
 
     results = query.all()
 
@@ -146,10 +151,15 @@ def get_spending_trends():
         Expense.deleted_at.is_(None),
         Expense.date >= start_date,
         Expense.date <= end_date,
+        # Exclude pre-existing credit card debt entries from analytics
+        ~Expense.name.ilike("%pre-existing credit card debt%"),
     )
 
-    if payment_method in ("debit", "credit"):
-        base_query = base_query.filter(Expense.payment_method == payment_method)
+    # Payment method stored as "Debit card" or "Credit card" in database
+    if payment_method == "debit":
+        base_query = base_query.filter(Expense.payment_method.ilike("%debit%"))
+    elif payment_method == "credit":
+        base_query = base_query.filter(Expense.payment_method.ilike("%credit%"))
 
     expenses = base_query.all()
 
@@ -168,7 +178,8 @@ def get_spending_trends():
             trends_dict[key] = {"date": key, "total": 0, "debit": 0, "credit": 0}
 
         trends_dict[key]["total"] += expense.amount
-        if expense.payment_method == "debit":
+        # Payment method stored as "Debit card" or "Credit card" in database
+        if expense.payment_method and "debit" in expense.payment_method.lower():
             trends_dict[key]["debit"] += expense.amount
         else:
             trends_dict[key]["credit"] += expense.amount
@@ -216,6 +227,18 @@ def get_income_vs_expense():
     start_date = parse_date(request.args.get("start_date"), default_start)
     end_date = parse_date(request.args.get("end_date"), default_end)
 
+    # Find the first "Initial Balance" income for this user (to exclude later ones)
+    first_initial_balance = (
+        Income.query.filter(
+            Income.user_id == current_user_id,
+            Income.deleted_at.is_(None),
+            Income.type == "Initial Balance",
+        )
+        .order_by(Income.actual_date.asc(), Income.id.asc())
+        .first()
+    )
+    first_initial_balance_id = first_initial_balance.id if first_initial_balance else None
+
     total_expense = (
         db.session.query(func.sum(Expense.amount))
         .filter(
@@ -223,22 +246,31 @@ def get_income_vs_expense():
             Expense.deleted_at.is_(None),
             Expense.date >= start_date,
             Expense.date <= end_date,
+            # Exclude pre-existing credit card debt entries from analytics
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
         )
         .scalar()
         or 0
     )
 
-    total_income = (
-        db.session.query(func.sum(Income.amount))
-        .filter(
-            Income.user_id == current_user_id,
-            Income.deleted_at.is_(None),
-            Income.actual_date >= start_date,
-            Income.actual_date <= end_date,
-        )
-        .scalar()
-        or 0
+    # Build income query, excluding Initial Balance entries after the first one
+    income_query = db.session.query(func.sum(Income.amount)).filter(
+        Income.user_id == current_user_id,
+        Income.deleted_at.is_(None),
+        Income.actual_date >= start_date,
+        Income.actual_date <= end_date,
     )
+
+    # Exclude "Initial Balance" entries except the very first one
+    if first_initial_balance_id:
+        income_query = income_query.filter(
+            db.or_(
+                Income.type != "Initial Balance",
+                Income.id == first_initial_balance_id,
+            )
+        )
+
+    total_income = income_query.scalar() or 0
 
     net_savings = total_income - total_expense
     savings_rate = (
@@ -255,12 +287,15 @@ def get_income_vs_expense():
             Expense.deleted_at.is_(None),
             Expense.date >= start_date,
             Expense.date <= end_date,
+            # Exclude pre-existing credit card debt entries from analytics
+            ~Expense.name.ilike("%pre-existing credit card debt%"),
         )
         .group_by(func.strftime("%Y-%m", Expense.date))
         .all()
     )
 
-    income_by_month = (
+    # Build income by month query, excluding Initial Balance after the first one
+    income_by_month_query = (
         db.session.query(
             func.strftime("%Y-%m", Income.actual_date).label("month"),
             func.sum(Income.amount).label("total"),
@@ -271,9 +306,19 @@ def get_income_vs_expense():
             Income.actual_date >= start_date,
             Income.actual_date <= end_date,
         )
-        .group_by(func.strftime("%Y-%m", Income.actual_date))
-        .all()
     )
+
+    if first_initial_balance_id:
+        income_by_month_query = income_by_month_query.filter(
+            db.or_(
+                Income.type != "Initial Balance",
+                Income.id == first_initial_balance_id,
+            )
+        )
+
+    income_by_month = income_by_month_query.group_by(
+        func.strftime("%Y-%m", Income.actual_date)
+    ).all()
 
     expense_dict = {r.month: r.total for r in expenses_by_month}
     income_dict = {r.month: r.total for r in income_by_month}

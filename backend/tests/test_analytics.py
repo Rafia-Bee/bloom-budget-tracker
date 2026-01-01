@@ -45,7 +45,7 @@ class TestAnalyticsRoutes:
                     amount=5000,
                     category="Food",
                     date=today,
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
                 Expense(
                     user_id=user.id,
@@ -53,7 +53,7 @@ class TestAnalyticsRoutes:
                     amount=2500,
                     category="Food",
                     date=today,
-                    payment_method="credit",
+                    payment_method="Credit card",
                 ),
                 Expense(
                     user_id=user.id,
@@ -61,7 +61,7 @@ class TestAnalyticsRoutes:
                     amount=300,
                     category="Transport",
                     date=today,
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
             ]
             db.session.add_all(expenses)
@@ -103,7 +103,7 @@ class TestAnalyticsRoutes:
                 amount=1000,
                 category="Food",
                 date=yesterday,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             # Expense out of range
             expense2 = Expense(
@@ -112,7 +112,7 @@ class TestAnalyticsRoutes:
                 amount=2000,
                 category="Food",
                 date=last_week - timedelta(days=1),
-                payment_method="debit",
+                payment_method="Debit card",
             )
             db.session.add_all([expense1, expense2])
             db.session.commit()
@@ -143,7 +143,7 @@ class TestAnalyticsRoutes:
                 amount=1000,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             credit_expense = Expense(
                 user_id=user.id,
@@ -151,7 +151,7 @@ class TestAnalyticsRoutes:
                 amount=2000,
                 category="Food",
                 date=today,
-                payment_method="credit",
+                payment_method="Credit card",
             )
             db.session.add_all([debit_expense, credit_expense])
             db.session.commit()
@@ -200,7 +200,7 @@ class TestAnalyticsRoutes:
                     amount=1000,
                     category="Food",
                     date=today,
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
                 Expense(
                     user_id=user.id,
@@ -208,7 +208,7 @@ class TestAnalyticsRoutes:
                     amount=2000,
                     category="Food",
                     date=yesterday,
-                    payment_method="credit",
+                    payment_method="Credit card",
                 ),
             ]
             db.session.add_all(expenses)
@@ -248,7 +248,7 @@ class TestAnalyticsRoutes:
                     amount=1000,
                     category="Food",
                     date=today,
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
                 Expense(
                     user_id=user.id,
@@ -256,7 +256,7 @@ class TestAnalyticsRoutes:
                     amount=500,
                     category="Food",
                     date=today - timedelta(days=1),
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
             ]
             db.session.add_all(expenses)
@@ -286,7 +286,7 @@ class TestAnalyticsRoutes:
                     amount=3000,
                     category="Food",
                     date=today,
-                    payment_method="debit",
+                    payment_method="Debit card",
                 ),
             ]
             db.session.add_all(expenses)
@@ -343,7 +343,7 @@ class TestAnalyticsRoutes:
                 amount=5000,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             income = Income(
                 user_id=user.id,
@@ -384,7 +384,7 @@ class TestAnalyticsRoutes:
                 amount=15000,
                 category="Shopping",
                 date=today,
-                payment_method="credit",
+                payment_method="Credit card",
             )
             income = Income(
                 user_id=user.id,
@@ -418,7 +418,7 @@ class TestAnalyticsRoutes:
                 amount=1000,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             deleted_expense = Expense(
                 user_id=user.id,
@@ -426,7 +426,7 @@ class TestAnalyticsRoutes:
                 amount=5000,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             db.session.add_all([active_expense, deleted_expense])
             db.session.commit()
@@ -454,7 +454,7 @@ class TestAnalyticsRoutes:
                 amount=1000,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
 
             # Create another user and expense
@@ -469,7 +469,7 @@ class TestAnalyticsRoutes:
                 amount=9999,
                 category="Food",
                 date=today,
-                payment_method="debit",
+                payment_method="Debit card",
             )
             db.session.add_all([test_expense, other_expense])
             db.session.commit()
@@ -480,3 +480,90 @@ class TestAnalyticsRoutes:
             assert response.status_code == 200
             # Should only see test user's expense
             assert response.json["total_spending"] == 1000
+
+    def test_spending_excludes_pre_existing_credit_card_debt(
+        self, client, app, auth_headers
+    ):
+        """Pre-existing Credit Card Debt expenses should be excluded from analytics."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+
+            expenses = [
+                Expense(
+                    user_id=user.id,
+                    name="Groceries",
+                    amount=5000,
+                    category="Food",
+                    date=today,
+                    payment_method="Debit card",
+                ),
+                Expense(
+                    user_id=user.id,
+                    name="Pre-existing Credit Card Debt",
+                    amount=100000,
+                    category="Debt",
+                    date=today,
+                    payment_method="Credit card",
+                ),
+            ]
+            db.session.add_all(expenses)
+            db.session.commit()
+
+            # Check spending by category
+            response = client.get(
+                "/api/v1/analytics/spending-by-category", headers=auth_headers
+            )
+            assert response.status_code == 200
+            # Should only count groceries, not the pre-existing debt
+            assert response.json["total_spending"] == 5000
+
+            # Check spending trends
+            response = client.get(
+                "/api/v1/analytics/spending-trends", headers=auth_headers
+            )
+            assert response.status_code == 200
+            assert response.json["trends"][0]["total"] == 5000
+
+    def test_income_excludes_subsequent_initial_balances(
+        self, client, app, auth_headers
+    ):
+        """Only the first Initial Balance income should be counted."""
+        with app.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            today = datetime.now().date()
+            yesterday = today - timedelta(days=1)
+
+            incomes = [
+                Income(
+                    user_id=user.id,
+                    type="Initial Balance",
+                    amount=300000,
+                    scheduled_date=yesterday,
+                    actual_date=yesterday,
+                ),
+                Income(
+                    user_id=user.id,
+                    type="Initial Balance",
+                    amount=200000,
+                    scheduled_date=today,
+                    actual_date=today,
+                ),
+                Income(
+                    user_id=user.id,
+                    type="Salary",
+                    amount=50000,
+                    scheduled_date=today,
+                    actual_date=today,
+                ),
+            ]
+            db.session.add_all(incomes)
+            db.session.commit()
+
+            response = client.get(
+                "/api/v1/analytics/income-vs-expense", headers=auth_headers
+            )
+            assert response.status_code == 200
+            # Should count first Initial Balance (300000) + Salary (50000)
+            # but NOT the second Initial Balance (200000)
+            assert response.json["total_income"] == 350000
