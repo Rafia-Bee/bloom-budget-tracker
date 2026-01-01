@@ -227,4 +227,25 @@ export const goalAPI = {
     restore: (id) => api.post(`/goals/${id}/restore`),
 };
 
+export const analyticsAPI = {
+    getSpendingByCategory: (params = {}) =>
+        api.get("/analytics/spending-by-category", { params }),
+    getSpendingBySubcategory: (params = {}) =>
+        api.get("/analytics/spending-by-subcategory", { params }),
+    getSpendingTrends: (params = {}) =>
+        api.get("/analytics/spending-trends", { params }),
+    getIncomeVsExpense: (params = {}) =>
+        api.get("/analytics/income-vs-expense", { params }),
+    getAllTimeStats: () =>
+        api.get("/analytics/income-vs-expense", { params: { all_time: true } }),
+    getDebtPayoffProgress: (params = {}) =>
+        api.get("/analytics/debt-payoff", { params }),
+    getPeriodComparison: (params = {}) =>
+        api.get("/analytics/period-comparison", { params }),
+    getBudgetVsActual: (params = {}) =>
+        api.get("/analytics/budget-vs-actual", { params }),
+    getTopMerchants: (params = {}) =>
+        api.get("/analytics/top-merchants", { params }),
+};
+
 export default api;

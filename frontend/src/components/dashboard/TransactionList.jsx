@@ -95,9 +95,9 @@ const TransactionList = ({
 
         {transactionView === 'transactions' && (
           <DateNavigator
-            dates={transactionDates}
-            currentDate={currentViewDate}
-            onNavigate={handleDateNavigate}
+            transactionDates={transactionDates}
+            currentViewDate={currentViewDate}
+            onDateChange={handleDateNavigate}
           />
         )}
       </div>
