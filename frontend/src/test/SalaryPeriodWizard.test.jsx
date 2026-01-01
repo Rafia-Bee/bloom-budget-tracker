@@ -13,8 +13,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import SalaryPeriodWizard from '../components/SalaryPeriodWizard'
+import { FeatureFlagProvider } from '../contexts/FeatureFlagContext'
+import { CurrencyProvider } from '../contexts/CurrencyContext'
 import api from '../api'
 import { clickWithAct, changeWithAct } from './test-utils'
+
+// Wrapper component with required providers
+const TestWrapper = ({ children }) => (
+  <FeatureFlagProvider>
+    <CurrencyProvider>
+      {children}
+    </CurrencyProvider>
+  </FeatureFlagProvider>
+)
+
+// Helper to render component with providers
+const renderWithProviders = (component) => {
+  return render(<TestWrapper>{component}</TestWrapper>)
+}
 
 // Helper to find input by its label text
 const getInputByLabel = (labelText) => {
@@ -57,7 +73,7 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Step 1 - Basic Rendering', () => {
     it('renders modal with setup title when creating new', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -76,7 +92,7 @@ describe('SalaryPeriodWizard', () => {
         start_date: '2025-12-24'
       }
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard
           onClose={mockOnClose}
           onComplete={mockOnComplete}
@@ -90,7 +106,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays all step 1 form fields', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -103,7 +119,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('has default credit limit of €1500', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -116,7 +132,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays step progress indicators', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -129,7 +145,7 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Step 1 - Form Interactions', () => {
     it('updates debit balance on input', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -144,7 +160,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('updates credit available on input', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -159,7 +175,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows credit allowance slider when credit is available', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -176,7 +192,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows warning when credit card is maxed out', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -187,7 +203,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calculates and displays debt owed', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -208,7 +224,7 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Step 1 - Validation', () => {
     it('shows error when debit balance is empty', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -225,7 +241,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows error when debit balance is zero', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -254,7 +270,7 @@ describe('SalaryPeriodWizard', () => {
         start_date: '2025-12-01'
       }
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard
           onClose={mockOnClose}
           onComplete={mockOnComplete}
@@ -290,7 +306,7 @@ describe('SalaryPeriodWizard', () => {
         endDate: '2025-12-23' // Next day would be 2025-12-24
       }
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard
           onClose={mockOnClose}
           onComplete={mockOnComplete}
@@ -328,7 +344,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('navigates to step 2 after valid step 1', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -346,7 +362,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays detected fixed bills', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -367,7 +383,7 @@ describe('SalaryPeriodWizard', () => {
     it('shows empty state when no fixed bills', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -387,7 +403,7 @@ describe('SalaryPeriodWizard', () => {
     it('shows quick add presets when no fixed bills', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -412,7 +428,7 @@ describe('SalaryPeriodWizard', () => {
     it('opens quick add form when clicking preset', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -447,7 +463,7 @@ describe('SalaryPeriodWizard', () => {
       }
       api.post.mockResolvedValue({ data: responseWithBills })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -476,7 +492,7 @@ describe('SalaryPeriodWizard', () => {
       }
       api.post.mockResolvedValue({ data: responseWithBills })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -504,7 +520,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('allows navigating back to step 1', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -534,7 +550,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('navigates to step 3 and shows budget summary', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -560,7 +576,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays weekly budget breakdown', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -586,7 +602,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('displays 4-week schedule', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -609,7 +625,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('shows create button text for new period', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -641,7 +657,7 @@ describe('SalaryPeriodWizard', () => {
         start_date: '2025-12-24'
       }
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard
           onClose={mockOnClose}
           onComplete={mockOnComplete}
@@ -672,7 +688,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calls API to create new salary period', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -705,7 +721,7 @@ describe('SalaryPeriodWizard', () => {
     })
 
     it('calls onComplete after successful creation', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -745,7 +761,7 @@ describe('SalaryPeriodWizard', () => {
         start_date: '2025-12-24'
       }
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard
           onClose={mockOnClose}
           onComplete={mockOnComplete}
@@ -781,7 +797,7 @@ describe('SalaryPeriodWizard', () => {
         .mockResolvedValueOnce({ data: mockPreviewResponse }) // preview call 2
         .mockRejectedValueOnce({ response: { data: { error: 'Period overlaps existing' } } })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -812,7 +828,7 @@ describe('SalaryPeriodWizard', () => {
 
   describe('Modal Actions', () => {
     it('calls onClose when X button clicked', async () => {
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
@@ -831,7 +847,7 @@ describe('SalaryPeriodWizard', () => {
     it('handles various currency input formats', async () => {
       api.post.mockResolvedValue({ data: mockPreviewResponse })
 
-      render(
+      renderWithProviders(
         <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
       )
 
