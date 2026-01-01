@@ -266,7 +266,7 @@ function Reports({ setIsAuthenticated }) {
                       </button>
                     )}
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      🥧 {selectedCategory ? `${selectedCategory} Subcategories` : 'Spending by Category'}
+                      🌸 {selectedCategory ? `${selectedCategory} Subcategories` : 'Spending by Category'}
                     </h2>
                   </div>
                 </div>
