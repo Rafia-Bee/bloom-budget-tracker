@@ -12,6 +12,7 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import Header from '../components/Header'
 import SpendingTrendsChart from '../components/reports/SpendingTrendsChart'
 import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart'
+import DebtPayoffChart from '../components/reports/DebtPayoffChart'
 
 function Reports({ setIsAuthenticated }) {
   const [loading, setLoading] = useState(true)
@@ -54,6 +55,7 @@ function Reports({ setIsAuthenticated }) {
   const [spendingBySubcategory, setSpendingBySubcategory] = useState(null)
   const [spendingTrends, setSpendingTrends] = useState(null)
   const [incomeVsExpense, setIncomeVsExpense] = useState(null)
+  const [debtPayoffData, setDebtPayoffData] = useState(null)
 
   // Drill-down state: null = category view, 'Food' = show Food subcategories
   const [selectedCategory, setSelectedCategory] = useState(null)
@@ -80,15 +82,17 @@ function Reports({ setIsAuthenticated }) {
         end_date: dateRange.end
       }
 
-      const [categoryRes, trendsRes, incomeExpenseRes] = await Promise.all([
+      const [categoryRes, trendsRes, incomeExpenseRes, debtRes] = await Promise.all([
         analyticsAPI.getSpendingByCategory(params),
         analyticsAPI.getSpendingTrends({ ...params, granularity }),
-        analyticsAPI.getAllTimeStats() // Fetch all-time stats for summary cards
+        analyticsAPI.getAllTimeStats(), // Fetch all-time stats for summary cards
+        analyticsAPI.getDebtPayoffProgress({ all_time: true }) // Fetch all-time debt history
       ])
 
       setSpendingByCategory(categoryRes.data)
       setSpendingTrends(trendsRes.data)
       setIncomeVsExpense(incomeExpenseRes.data)
+      setDebtPayoffData(debtRes.data.data)
       // Reset drill-down when date range changes
       setSelectedCategory(null)
       setSpendingBySubcategory(null)
@@ -280,6 +284,24 @@ function Reports({ setIsAuthenticated }) {
                 )}
               </div>
             </div>
+
+            {/* Debt Payoff Progress */}
+            {debtPayoffData && debtPayoffData.length > 0 && (
+              <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    📉 Debt Payoff Progress
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Track your total debt balance over time
+                  </p>
+                </div>
+                <DebtPayoffChart
+                  data={debtPayoffData}
+                  currencyFormatter={fcEur}
+                />
+              </div>
+            )}
 
             {/* No Data State */}
             {spendingByCategory?.categories?.length === 0 && spendingTrends?.trends?.length === 0 && (

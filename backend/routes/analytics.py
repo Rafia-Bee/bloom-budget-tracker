@@ -13,7 +13,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from sqlalchemy import func, case
-from backend.models.database import db, Expense, Income
+from backend.models.database import db, Expense, Income, Debt
 
 analytics_bp = Blueprint("analytics", __name__, url_prefix="/analytics")
 
@@ -455,3 +455,153 @@ def get_income_vs_expense():
             },
         }
     )
+
+
+@analytics_bp.route("/debt-payoff", methods=["GET"])
+@jwt_required()
+def get_debt_payoff_progress():
+    """
+    Get debt payoff progress over time.
+
+    Query params:
+        start_date: YYYY-MM-DD (default: 90 days ago)
+        end_date: YYYY-MM-DD (default: today)
+
+    Returns:
+        {
+            data: [
+                { date: 'YYYY-MM-DD', total_balance: 12345, debts: { 'Visa': 5000, ... } }
+            ]
+        }
+    """
+    current_user_id = int(get_jwt_identity())
+
+    is_all_time = request.args.get("all_time") == "true"
+    end_date = parse_date(request.args.get("end_date"), datetime.now().date())
+
+    if is_all_time:
+        # Find the earliest relevant date
+        # 1. Earliest debt creation
+        earliest_debt = (
+            db.session.query(func.min(Debt.created_at))
+            .filter_by(user_id=current_user_id)
+            .scalar()
+        )
+        # 2. Earliest debt payment
+        earliest_payment = (
+            db.session.query(func.min(Expense.date))
+            .filter(
+                Expense.user_id == current_user_id, Expense.category == "Debt Payments"
+            )
+            .scalar()
+        )
+
+        start_date = datetime.now().date()  # Default fallback
+
+        if earliest_debt:
+            start_date = earliest_debt.date()
+
+        if earliest_payment:
+            # Handle string date from SQLite if necessary
+            if isinstance(earliest_payment, str):
+                try:
+                    earliest_payment = datetime.strptime(
+                        earliest_payment, "%Y-%m-%d"
+                    ).date()
+                except ValueError:
+                    pass
+
+            if isinstance(earliest_payment, datetime):
+                earliest_payment = earliest_payment.date()
+
+            if earliest_payment < start_date:
+                start_date = earliest_payment
+
+        # Add a small buffer (e.g. 1 day before)
+        start_date = start_date - timedelta(days=1)
+    else:
+        start_date = parse_date(request.args.get("start_date"))
+        if not start_date:
+            # Default to 90 days ago if not specified
+            start_date = end_date - timedelta(days=90)
+
+    # 1. Get all debts (active and archived)
+    # Note: SoftDeleteMixin filters out deleted debts automatically
+    debts = Debt.query.filter_by(user_id=current_user_id).all()
+
+    # 2. Get all debt payments
+    # We need payments from start_date to NOW to calculate history correctly
+    payments = Expense.query.filter(
+        Expense.user_id == current_user_id,
+        Expense.category == "Debt Payments",
+        Expense.date >= start_date,
+    ).all()
+
+    # Group payments by date and debt name
+    # payments_by_date[date][debt_name] = amount
+    payments_by_date = {}
+    for p in payments:
+        if not p.subcategory:
+            continue
+
+        # Ensure date is a date object (handle potential string from SQLite)
+        p_date = p.date
+        if isinstance(p_date, str):
+            try:
+                p_date = datetime.strptime(p_date, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+
+        if p_date not in payments_by_date:
+            payments_by_date[p_date] = {}
+
+        if p.subcategory not in payments_by_date[p_date]:
+            payments_by_date[p_date][p.subcategory] = 0
+
+        payments_by_date[p_date][p.subcategory] += p.amount
+
+    # 3. Initialize balances at END of today (current state)
+    current_balances = {d.name: d.current_balance for d in debts}
+
+    today = datetime.now().date()
+
+    # If end_date is in the past, roll back from today to end_date
+    temp_date = today
+    while temp_date > end_date:
+        # Add payments made on temp_date to get balance at end of temp_date - 1
+        if temp_date in payments_by_date:
+            day_payments = payments_by_date[temp_date]
+            for debt_name, amount in day_payments.items():
+                if debt_name in current_balances:
+                    current_balances[debt_name] += amount
+        temp_date -= timedelta(days=1)
+
+    # Now current_balances represents the state at the END of end_date
+
+    # 4. Generate time series backwards from end_date to start_date
+    result_data = []
+    curr = end_date
+
+    while curr >= start_date:
+        # Record state at END of curr
+        daily_data = {
+            "date": curr.strftime("%Y-%m-%d"),
+            "total_balance": sum(current_balances.values()),
+            "debts": current_balances.copy(),
+        }
+        result_data.append(daily_data)
+
+        # Prepare for next iteration (yesterday)
+        # Add payments made on curr to get balance at end of curr-1
+        if curr in payments_by_date:
+            day_payments = payments_by_date[curr]
+            for debt_name, amount in day_payments.items():
+                if debt_name in current_balances:
+                    current_balances[debt_name] += amount
+
+        curr -= timedelta(days=1)
+
+    # Reverse to get chronological order
+    result_data.reverse()
+
+    return jsonify({"data": result_data}), 200

@@ -238,6 +238,8 @@ export const analyticsAPI = {
         api.get("/analytics/income-vs-expense", { params }),
     getAllTimeStats: () =>
         api.get("/analytics/income-vs-expense", { params: { all_time: true } }),
+    getDebtPayoffProgress: (params = {}) =>
+        api.get("/analytics/debt-payoff", { params }),
 };
 
 export default api;

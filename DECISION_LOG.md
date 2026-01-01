@@ -65,6 +65,25 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 -   Drill-down provides granular insight without cluttering the main view.
 -   Salary period default is more relevant to the user's budgeting cycle.
 -   All-time totals provide a "net worth" style overview that is always useful, regardless of the specific period being analyzed.
+
+### Debt Payoff Analytics (#3)
+
+**Context:** User requested a way to track overall debt payoff progress over time.
+
+**Decision:**
+
+1.  **Backend Endpoint**: Created `/api/v1/analytics/debt-payoff` which reconstructs historical debt balances by working backwards from the current balance using "Debt Payments" expenses.
+2.  **Visualization**: Implemented a Multi-Line Chart showing:
+    -   **Total Debt**: Thick line (dynamic color for light/dark mode).
+    -   **Individual Debts**: Thinner colored lines.
+3.  **Data Filtering**: Filtered the timeline to only show dates where a payment occurred (or balance changed), creating a clean "step-like" progression without long flat lines.
+4.  **All-Time Scope**: The chart always shows the full history (All Time) regardless of the dashboard's date filter, providing complete context.
+
+**Rationale:**
+
+-   Reconstructing history allows us to show trends without having stored daily snapshots in the database.
+-   Filtering for activity dates makes the chart more readable and focuses on the user's actions (payments).
+-   All-time scope is essential for debt tracking as it's a long-term goal.
 -   `backend/tests/test_analytics.py` - 19 comprehensive tests
 -   `frontend/src/pages/Reports.jsx` - Main analytics page
 -   `frontend/src/components/reports/SpendingTrendsChart.jsx`
