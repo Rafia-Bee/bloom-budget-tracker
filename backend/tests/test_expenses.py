@@ -1068,3 +1068,156 @@ class TestExpenseUpdateFields:
             f"/api/v1/expenses/{expense_id}", headers=auth_headers
         )
         assert get_response.json["receipt_url"] == "https://example.com/receipt.jpg"
+
+
+class TestExpenseSoftDelete:
+    """Tests for expense soft delete, restore, and deleted listing"""
+
+    def test_delete_expense_soft_deletes(self, client, auth_headers, salary_period):
+        """DELETE should soft delete (set deleted_at) rather than hard delete"""
+        # Create expense
+        create_resp = client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Soft Delete Test",
+                "amount": 5000,
+                "category": "Flexible Expenses",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["expense"]["id"]
+
+        # Delete expense
+        response = client.delete(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        assert response.status_code == 200
+        assert "deleted" in response.json["message"]
+
+        # Verify record still exists in DB but has deleted_at set
+        expense = db.session.get(Expense, expense_id)
+        assert expense is not None
+        assert expense.deleted_at is not None
+        assert expense.is_deleted is True
+
+        # Verify not returned by normal GET
+        get_resp = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        assert get_resp.status_code == 404
+
+    def test_get_deleted_expenses(self, client, auth_headers, salary_period):
+        """GET /expenses/deleted should return soft-deleted expenses"""
+        # Create and delete two expenses
+        for name in ["Deleted 1", "Deleted 2"]:
+            create_resp = client.post(
+                "/api/v1/expenses",
+                json={
+                    "name": name,
+                    "amount": 1000,
+                    "category": "Flexible Expenses",
+                    "date": "2025-11-25",
+                },
+                headers=auth_headers,
+            )
+            client.delete(
+                f"/api/v1/expenses/{create_resp.json['expense']['id']}",
+                headers=auth_headers,
+            )
+
+        # Create one active expense
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Active Expense",
+                "amount": 2000,
+                "category": "Flexible Expenses",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+
+        # Get deleted expenses
+        response = client.get("/api/v1/expenses/deleted", headers=auth_headers)
+        assert response.status_code == 200
+        deleted = response.json
+        assert len(deleted) == 2
+        assert all(e["deleted_at"] is not None for e in deleted)
+        assert any(e["name"] == "Deleted 1" for e in deleted)
+        assert any(e["name"] == "Deleted 2" for e in deleted)
+
+    def test_restore_expense(self, client, auth_headers, salary_period):
+        """POST /expenses/:id/restore should restore soft-deleted expense"""
+        # Create and delete expense
+        create_resp = client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Restore Test",
+                "amount": 3000,
+                "category": "Flexible Expenses",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["expense"]["id"]
+        client.delete(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+
+        # Verify it's deleted
+        assert (
+            client.get(
+                f"/api/v1/expenses/{expense_id}", headers=auth_headers
+            ).status_code
+            == 404
+        )
+
+        # Restore it
+        restore_resp = client.post(
+            f"/api/v1/expenses/{expense_id}/restore", headers=auth_headers
+        )
+        assert restore_resp.status_code == 200
+        assert "restored" in restore_resp.json["message"]
+
+        # Verify it's accessible again
+        get_resp = client.get(f"/api/v1/expenses/{expense_id}", headers=auth_headers)
+        assert get_resp.status_code == 200
+        assert get_resp.json["name"] == "Restore Test"
+
+        # Verify deleted_at is cleared
+        expense = db.session.get(Expense, expense_id)
+        assert expense.deleted_at is None
+        assert expense.is_deleted is False
+
+    def test_restore_nonexistent_expense_returns_404(self, client, auth_headers):
+        """POST /expenses/:id/restore should return 404 for non-existent ID"""
+        response = client.post("/api/v1/expenses/99999/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_restore_active_expense_returns_404(
+        self, client, auth_headers, salary_period
+    ):
+        """POST /expenses/:id/restore should return 404 for non-deleted expense"""
+        # Create active expense (not deleted)
+        create_resp = client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Active Expense",
+                "amount": 1000,
+                "category": "Flexible Expenses",
+                "date": "2025-11-25",
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["expense"]["id"]
+
+        # Try to restore active expense
+        response = client.post(
+            f"/api/v1/expenses/{expense_id}/restore", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_get_deleted_requires_auth(self, client):
+        """GET /expenses/deleted requires authentication"""
+        response = client.get("/api/v1/expenses/deleted")
+        assert response.status_code == 401
+
+    def test_restore_requires_auth(self, client):
+        """POST /expenses/:id/restore requires authentication"""
+        response = client.post("/api/v1/expenses/1/restore")
+        assert response.status_code == 401

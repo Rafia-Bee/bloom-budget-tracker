@@ -480,3 +480,147 @@ class TestDebtAuthentication:
         """POST /debts/import requires authentication"""
         response = client.post("/api/v1/debts/import", json={})
         assert response.status_code == 401
+
+
+class TestDebtSoftDelete:
+    """Tests for debt soft delete, restore, and deleted listing"""
+
+    def test_delete_debt_soft_deletes(self, client, auth_headers):
+        """DELETE should soft delete (set deleted_at) rather than hard delete"""
+        from backend.models.database import db, Debt
+
+        # Create debt
+        create_resp = client.post(
+            "/api/v1/debts",
+            json={
+                "name": "Soft Delete Test Debt",
+                "original_amount": 50000,
+                "current_balance": 50000,
+            },
+            headers=auth_headers,
+        )
+        debt_id = create_resp.json["debt"]["id"]
+
+        # Delete debt
+        response = client.delete(f"/api/v1/debts/{debt_id}", headers=auth_headers)
+        assert response.status_code == 200
+
+        # Verify record still exists in DB but has deleted_at set
+        debt = db.session.get(Debt, debt_id)
+        assert debt is not None
+        assert debt.deleted_at is not None
+        assert debt.is_deleted is True
+
+        # Verify not returned by normal GET
+        get_resp = client.get(f"/api/v1/debts/{debt_id}", headers=auth_headers)
+        assert get_resp.status_code == 404
+
+    def test_get_deleted_debts(self, client, auth_headers):
+        """GET /debts/deleted should return soft-deleted debts"""
+        # Create and delete two debts
+        for name in ["Deleted Debt 1", "Deleted Debt 2"]:
+            create_resp = client.post(
+                "/api/v1/debts",
+                json={
+                    "name": name,
+                    "original_amount": 10000,
+                    "current_balance": 10000,
+                },
+                headers=auth_headers,
+            )
+            client.delete(
+                f"/api/v1/debts/{create_resp.json['debt']['id']}", headers=auth_headers
+            )
+
+        # Create one active debt
+        client.post(
+            "/api/v1/debts",
+            json={
+                "name": "Active Debt",
+                "original_amount": 20000,
+                "current_balance": 20000,
+            },
+            headers=auth_headers,
+        )
+
+        # Get deleted debts
+        response = client.get("/api/v1/debts/deleted", headers=auth_headers)
+        assert response.status_code == 200
+        deleted = response.json
+        assert len(deleted) == 2
+        assert all(d["deleted_at"] is not None for d in deleted)
+        assert any(d["name"] == "Deleted Debt 1" for d in deleted)
+        assert any(d["name"] == "Deleted Debt 2" for d in deleted)
+
+    def test_restore_debt(self, client, auth_headers):
+        """POST /debts/:id/restore should restore soft-deleted debt"""
+        from backend.models.database import db, Debt
+
+        # Create and delete debt
+        create_resp = client.post(
+            "/api/v1/debts",
+            json={
+                "name": "Restore Test Debt",
+                "original_amount": 30000,
+                "current_balance": 30000,
+            },
+            headers=auth_headers,
+        )
+        debt_id = create_resp.json["debt"]["id"]
+        client.delete(f"/api/v1/debts/{debt_id}", headers=auth_headers)
+
+        # Verify it's deleted
+        assert (
+            client.get(f"/api/v1/debts/{debt_id}", headers=auth_headers).status_code
+            == 404
+        )
+
+        # Restore it
+        restore_resp = client.post(
+            f"/api/v1/debts/{debt_id}/restore", headers=auth_headers
+        )
+        assert restore_resp.status_code == 200
+        assert "restored" in restore_resp.json["message"]
+
+        # Verify it's accessible again
+        get_resp = client.get(f"/api/v1/debts/{debt_id}", headers=auth_headers)
+        assert get_resp.status_code == 200
+        assert get_resp.json["name"] == "Restore Test Debt"
+
+        # Verify deleted_at is cleared
+        debt = db.session.get(Debt, debt_id)
+        assert debt.deleted_at is None
+        assert debt.is_deleted is False
+
+    def test_restore_nonexistent_debt_returns_404(self, client, auth_headers):
+        """POST /debts/:id/restore should return 404 for non-existent ID"""
+        response = client.post("/api/v1/debts/99999/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_restore_active_debt_returns_404(self, client, auth_headers):
+        """POST /debts/:id/restore should return 404 for non-deleted debt"""
+        # Create active debt (not deleted)
+        create_resp = client.post(
+            "/api/v1/debts",
+            json={
+                "name": "Active Debt",
+                "original_amount": 15000,
+                "current_balance": 15000,
+            },
+            headers=auth_headers,
+        )
+        debt_id = create_resp.json["debt"]["id"]
+
+        # Try to restore active debt
+        response = client.post(f"/api/v1/debts/{debt_id}/restore", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_get_deleted_requires_auth(self, client):
+        """GET /debts/deleted requires authentication"""
+        response = client.get("/api/v1/debts/deleted")
+        assert response.status_code == 401
+
+    def test_restore_requires_auth(self, client):
+        """POST /debts/:id/restore requires authentication"""
+        response = client.post("/api/v1/debts/1/restore")
+        assert response.status_code == 401

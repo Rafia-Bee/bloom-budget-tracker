@@ -752,3 +752,198 @@ class TestBudgetImpactInResponses:
         assert "budget_impact" in data
         assert data["budget_impact"]["new_fixed_bills_total"] == 0
         assert data["budget_impact"]["current_fixed_bills_total"] == 15000
+
+
+class TestRecurringExpenseSoftDelete:
+    """Tests for recurring expense soft delete, restore, and deleted listing"""
+
+    def test_delete_recurring_expense_soft_deletes(self, client, auth_headers):
+        """DELETE should soft delete (set deleted_at) rather than hard delete"""
+        from datetime import date
+
+        from backend.models.database import db, RecurringExpense
+
+        today = date.today()
+
+        # Create recurring expense
+        create_resp = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Soft Delete Test",
+                "amount": 5000,
+                "category": "Subscriptions",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 15,
+                "start_date": today.isoformat(),
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["id"]
+
+        # Delete recurring expense
+        response = client.delete(
+            f"/api/v1/recurring-expenses/{expense_id}", headers=auth_headers
+        )
+        assert response.status_code == 200
+
+        # Verify record still exists in DB but has deleted_at set
+        recurring = db.session.get(RecurringExpense, expense_id)
+        assert recurring is not None
+        assert recurring.deleted_at is not None
+        assert recurring.is_deleted is True
+
+        # Verify not returned by normal GET
+        get_resp = client.get(
+            f"/api/v1/recurring-expenses/{expense_id}", headers=auth_headers
+        )
+        assert get_resp.status_code == 404
+
+    def test_get_deleted_recurring_expenses(self, client, auth_headers):
+        """GET /recurring-expenses/deleted should return soft-deleted items"""
+        from datetime import date
+
+        today = date.today()
+
+        # Create and delete two recurring expenses
+        for name in ["Deleted Recurring 1", "Deleted Recurring 2"]:
+            create_resp = client.post(
+                "/api/v1/recurring-expenses",
+                json={
+                    "name": name,
+                    "amount": 1000,
+                    "category": "Subscriptions",
+                    "payment_method": "Debit card",
+                    "frequency": "monthly",
+                    "day_of_month": 10,
+                    "start_date": today.isoformat(),
+                },
+                headers=auth_headers,
+            )
+            client.delete(
+                f"/api/v1/recurring-expenses/{create_resp.json['id']}",
+                headers=auth_headers,
+            )
+
+        # Create one active recurring expense
+        client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Active Recurring",
+                "amount": 2000,
+                "category": "Subscriptions",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 20,
+                "start_date": today.isoformat(),
+            },
+            headers=auth_headers,
+        )
+
+        # Get deleted recurring expenses
+        response = client.get(
+            "/api/v1/recurring-expenses/deleted", headers=auth_headers
+        )
+        assert response.status_code == 200
+        deleted = response.json
+        assert len(deleted) == 2
+        assert all(r["deleted_at"] is not None for r in deleted)
+        assert any(r["name"] == "Deleted Recurring 1" for r in deleted)
+        assert any(r["name"] == "Deleted Recurring 2" for r in deleted)
+
+    def test_restore_recurring_expense(self, client, auth_headers):
+        """POST /recurring-expenses/:id/restore should restore soft-deleted item"""
+        from datetime import date
+
+        from backend.models.database import db, RecurringExpense
+
+        today = date.today()
+
+        # Create and delete recurring expense
+        create_resp = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Restore Test Recurring",
+                "amount": 3000,
+                "category": "Subscriptions",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 5,
+                "start_date": today.isoformat(),
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["id"]
+        client.delete(f"/api/v1/recurring-expenses/{expense_id}", headers=auth_headers)
+
+        # Verify it's deleted
+        assert (
+            client.get(
+                f"/api/v1/recurring-expenses/{expense_id}", headers=auth_headers
+            ).status_code
+            == 404
+        )
+
+        # Restore it
+        restore_resp = client.post(
+            f"/api/v1/recurring-expenses/{expense_id}/restore", headers=auth_headers
+        )
+        assert restore_resp.status_code == 200
+        assert "restored" in restore_resp.json["message"]
+
+        # Verify it's accessible again
+        get_resp = client.get(
+            f"/api/v1/recurring-expenses/{expense_id}", headers=auth_headers
+        )
+        assert get_resp.status_code == 200
+        assert get_resp.json["name"] == "Restore Test Recurring"
+
+        # Verify deleted_at is cleared
+        recurring = db.session.get(RecurringExpense, expense_id)
+        assert recurring.deleted_at is None
+        assert recurring.is_deleted is False
+
+    def test_restore_nonexistent_recurring_returns_404(self, client, auth_headers):
+        """POST /recurring-expenses/:id/restore should return 404 for non-existent ID"""
+        response = client.post(
+            "/api/v1/recurring-expenses/99999/restore", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_restore_active_recurring_returns_404(self, client, auth_headers):
+        """POST /recurring-expenses/:id/restore should return 404 for non-deleted item"""
+        from datetime import date
+
+        today = date.today()
+
+        # Create active recurring expense (not deleted)
+        create_resp = client.post(
+            "/api/v1/recurring-expenses",
+            json={
+                "name": "Active Recurring",
+                "amount": 1500,
+                "category": "Subscriptions",
+                "payment_method": "Debit card",
+                "frequency": "monthly",
+                "day_of_month": 1,
+                "start_date": today.isoformat(),
+            },
+            headers=auth_headers,
+        )
+        expense_id = create_resp.json["id"]
+
+        # Try to restore active item
+        response = client.post(
+            f"/api/v1/recurring-expenses/{expense_id}/restore", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_get_deleted_requires_auth(self, client):
+        """GET /recurring-expenses/deleted requires authentication"""
+        response = client.get("/api/v1/recurring-expenses/deleted")
+        assert response.status_code == 401
+
+    def test_restore_requires_auth(self, client):
+        """POST /recurring-expenses/:id/restore requires authentication"""
+        response = client.post("/api/v1/recurring-expenses/1/restore")
+        assert response.status_code == 401
