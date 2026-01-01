@@ -48,13 +48,24 @@ def upgrade():
             "week_number IS NULL OR week_number >= 1",
         )
 
+        # Update date range constraint to allow single-day periods (start_date == end_date)
+        try:
+            batch_op.drop_constraint("check_budget_period_date_range", type_="check")
+        except Exception:
+            pass
+
+        batch_op.create_check_constraint(
+            "check_budget_period_date_range",
+            "start_date <= end_date",
+        )
+
 
 def downgrade():
     # Remove num_sub_periods column
     with op.batch_alter_table("salary_periods", schema=None) as batch_op:
         batch_op.drop_column("num_sub_periods")
 
-    # Restore original constraint (week_number BETWEEN 1 AND 4)
+    # Restore original constraints
     with op.batch_alter_table("budget_periods", schema=None) as batch_op:
         try:
             batch_op.drop_constraint("check_budget_period_week_number", type_="check")
@@ -64,4 +75,15 @@ def downgrade():
         batch_op.create_check_constraint(
             "check_budget_period_week_number",
             "week_number IS NULL OR (week_number BETWEEN 1 AND 4)",
+        )
+
+        # Restore original date range constraint
+        try:
+            batch_op.drop_constraint("check_budget_period_date_range", type_="check")
+        except Exception:
+            pass
+
+        batch_op.create_check_constraint(
+            "check_budget_period_date_range",
+            "start_date < end_date",
         )

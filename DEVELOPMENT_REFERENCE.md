@@ -326,7 +326,7 @@ cd frontend && npm install && cd ..
 ```powershell
 bstart   # Start backend + frontend
 bstop    # Stop servers
-breset   # Reset database
+bmigrate # Run database migrations (preferred over breset)
 bformat  # Run black formatter
 ```
 
