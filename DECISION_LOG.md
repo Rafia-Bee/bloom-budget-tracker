@@ -6,6 +6,25 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-02
 
+### STASHED: Bundle Size Optimization (Restore with `git stash pop`)
+
+**Context:** Frontend build warning - main bundle was 1,553 KB (too large).
+
+**Solution Implemented (stashed for later):**
+
+1. **Vendor code-splitting** - Split recharts, jspdf, html2canvas into separate chunks
+2. **Page lazy loading** - React.lazy() for Reports, Settings, Debts, Goals, Trash, Admin
+3. **Result**: Initial bundle reduced from 1,553 KB to 258 KB (6x smaller)
+
+**Files Modified:**
+
+-   `frontend/vite.config.js` - Added `manualChunks` config for vendor splitting
+-   `frontend/src/App.jsx` - Added `React.lazy()` and `Suspense` for secondary pages
+
+**To restore:** `git stash pop`
+
+---
+
 ### CSRF Protection Disabled for Cross-Origin Setup
 
 **Context:** Production error - POST `/api/v1/salary-periods/preview` returned 401 Unauthorized even though user was authenticated. The `/auth/me` endpoint returned 200, proving the JWT cookie was valid.
