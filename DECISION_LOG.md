@@ -4,6 +4,38 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-02
+
+### CSRF Protection Disabled for Cross-Origin Setup
+
+**Context:** Production error - POST `/api/v1/salary-periods/preview` returned 401 Unauthorized even though user was authenticated. The `/auth/me` endpoint returned 200, proving the JWT cookie was valid.
+
+**Root Cause:** Cross-origin setup breaks CSRF token handling:
+
+-   Frontend hosted on `bloom-tracker.app` (Cloudflare Pages)
+-   Backend hosted on `bloom-backend-b44r.onrender.com` (Render)
+-   Flask-JWT-Extended sets `csrf_access_token` cookie on the backend's domain
+-   JavaScript on the frontend **cannot** read cookies from a different domain (browser security)
+-   Without the CSRF header, POST requests failed with 401
+
+**Decision:** Disable CSRF protection (`JWT_COOKIE_CSRF_PROTECT = False`)
+
+**Security Rationale:**
+
+1. **SameSite=Lax** prevents CSRF attacks - browsers refuse to send cookies on cross-site POST requests from third-party sites
+2. **CORS** restricts which origins can make requests (only `bloom-tracker.app` allowed)
+3. **httpOnly cookies** prevent XSS from stealing tokens
+4. The combination of SameSite=Lax + CORS provides equivalent CSRF protection for our architecture
+
+**Files Modified:**
+
+-   `backend/app.py` - Set `JWT_COOKIE_CSRF_PROTECT = False` with detailed rationale comments
+-   `frontend/src/api.js` - Removed CSRF token reading/sending code (no longer needed)
+
+**Impact:** Fixes 401 errors on all POST/PUT/DELETE requests in production. No security degradation due to SameSite + CORS protections.
+
+---
+
 ## 2026-01-01
 
 ### Top Merchants Feature (#3)
