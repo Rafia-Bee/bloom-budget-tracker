@@ -6,6 +6,30 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### Settings Page Restructure (#137)
+
+**Context:** Settings page UX needed improvement. Experimental Features were buried in Preferences, Danger Zone was too prominent, and Export/Import was in the header menu (hard to discover).
+
+**Decision:** Restructured Settings with clearer organization:
+
+**New Tab Order:**
+1. **Preferences** (now default) - Recurring lookahead, currency settings
+2. **Categories** - Subcategory management
+3. **Experimental** - Dedicated tab with feature toggles (removed master toggle)
+4. **Account** - Export/Import section + collapsible Danger Zone
+
+**Key Changes:**
+- Default tab changed from Categories → Preferences
+- Experimental Features extracted to dedicated tab
+- Removed master "Enable Experimental Features" toggle (individual toggles sufficient)
+- Fixed ⚠️ icon alignment in warning banners
+- Export/Import moved from Header user menu → Account settings tab
+- Danger Zone redesigned as collapsible `<details>` element (less prominent)
+
+**Impact:** Better discoverability of features. Export/Import now in logical location. Danger Zone less likely to be accidentally triggered.
+
+---
+
 ### AI Context Management: Streamlined Core Rules
 
 **Context:** During long TaskSync sessions, AI assistant loses track of workflow rules (creates commits on main, forgets DECISION_LOG updates, doesn't run bformat). The full copilot-instructions.md file (~450 lines) gets diluted in context.
