@@ -699,7 +699,7 @@ function Settings({ setIsAuthenticated }) {
                                 Backup your data or restore from a previous backup
                             </p>
 
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-4 md:grid-cols-3">
                                 {/* Export Card */}
                                 <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
                                     <div className="flex items-center gap-3 mb-3">
@@ -723,34 +723,47 @@ function Settings({ setIsAuthenticated }) {
                                     </button>
                                 </div>
 
-                                {/* Import Card */}
+                                {/* Import JSON Card */}
                                 <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
                                     <div className="flex items-center gap-3 mb-3">
                                         <span className="text-2xl">📥</span>
                                         <h3 className="font-semibold text-gray-900 dark:text-white">
-                                            Import Data
+                                            Import Backup
                                         </h3>
                                     </div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                        Restore from a JSON backup or import bank transactions.
+                                        Restore your data from a previously exported JSON backup
+                                        file.
                                     </p>
-                                    <div className="space-y-2">
-                                        <button
-                                            onClick={() => {
-                                                setShowExportModal(true);
-                                                setExportMode('import');
-                                            }}
-                                            className="w-full px-4 py-2 bg-gray-200 dark:bg-dark-border text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-dark-hover transition-colors font-medium"
-                                        >
-                                            Import JSON Backup
-                                        </button>
-                                        <button
-                                            onClick={() => setShowBankImportModal(true)}
-                                            className="w-full px-4 py-2 bg-gray-200 dark:bg-dark-border text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-dark-hover transition-colors font-medium"
-                                        >
-                                            Import Bank Transactions
-                                        </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowExportModal(true);
+                                            setExportMode('import');
+                                        }}
+                                        className="w-full px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                                    >
+                                        Import JSON Backup
+                                    </button>
+                                </div>
+
+                                {/* Bank Import Card */}
+                                <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-2xl">🏦</span>
+                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                            Bank Import
+                                        </h3>
                                     </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Paste transactions from your bank statement to import them
+                                        quickly.
+                                    </p>
+                                    <button
+                                        onClick={() => setShowBankImportModal(true)}
+                                        className="w-full px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                                    >
+                                        Import Bank Transactions
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -13,18 +13,20 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Decision:** Restructured Settings with clearer organization:
 
 **New Tab Order:**
+
 1. **Preferences** (now default) - Recurring lookahead, currency settings
 2. **Categories** - Subcategory management
 3. **Experimental** - Dedicated tab with feature toggles (removed master toggle)
 4. **Account** - Export/Import section + collapsible Danger Zone
 
 **Key Changes:**
-- Default tab changed from Categories → Preferences
-- Experimental Features extracted to dedicated tab
-- Removed master "Enable Experimental Features" toggle (individual toggles sufficient)
-- Fixed ⚠️ icon alignment in warning banners
-- Export/Import moved from Header user menu → Account settings tab
-- Danger Zone redesigned as collapsible `<details>` element (less prominent)
+
+-   Default tab changed from Categories → Preferences
+-   Experimental Features extracted to dedicated tab
+-   Removed master "Enable Experimental Features" toggle (individual toggles sufficient)
+-   Fixed ⚠️ icon alignment in warning banners
+-   Export/Import moved from Header user menu → Account settings tab
+-   Danger Zone redesigned as collapsible `<details>` element (less prominent)
 
 **Impact:** Better discoverability of features. Export/Import now in logical location. Danger Zone less likely to be accidentally triggered.
 
