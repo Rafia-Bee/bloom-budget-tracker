@@ -9,6 +9,7 @@ Endpoints:
 - GET /analytics/income-vs-expense: Summary comparison
 """
 
+import os
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
@@ -16,6 +17,23 @@ from sqlalchemy import func
 from backend.models.database import db, Expense, Income, Debt
 
 analytics_bp = Blueprint("analytics", __name__, url_prefix="/analytics")
+
+
+def _is_postgresql():
+    """Check if we're using PostgreSQL (production) or SQLite (dev/test)."""
+    database_url = os.getenv("DATABASE_URL", "")
+    return "postgresql" in database_url
+
+
+def _format_year_month(date_column):
+    """
+    Return a database-agnostic expression to format a date as 'YYYY-MM'.
+    Uses to_char for PostgreSQL and strftime for SQLite.
+    """
+    if _is_postgresql():
+        return func.to_char(date_column, "YYYY-MM")
+    else:
+        return func.strftime("%Y-%m", date_column)
 
 
 def parse_date(date_str, default=None):
@@ -391,7 +409,7 @@ def get_income_vs_expense():
 
     expenses_by_month = (
         db.session.query(
-            func.strftime("%Y-%m", Expense.date).label("month"),
+            _format_year_month(Expense.date).label("month"),
             func.sum(Expense.amount).label("total"),
         )
         .filter(
@@ -402,13 +420,13 @@ def get_income_vs_expense():
             # Exclude pre-existing credit card debt entries from analytics
             ~Expense.name.ilike("%pre-existing credit card debt%"),
         )
-        .group_by(func.strftime("%Y-%m", Expense.date))
+        .group_by(_format_year_month(Expense.date))
         .all()
     )
 
     # Build income by month query, excluding Initial Balance after the first one
     income_by_month_query = db.session.query(
-        func.strftime("%Y-%m", Income.actual_date).label("month"),
+        _format_year_month(Income.actual_date).label("month"),
         func.sum(Income.amount).label("total"),
     ).filter(
         Income.user_id == current_user_id,
@@ -426,7 +444,7 @@ def get_income_vs_expense():
         )
 
     income_by_month = income_by_month_query.group_by(
-        func.strftime("%Y-%m", Income.actual_date)
+        _format_year_month(Income.actual_date)
     ).all()
 
     expense_dict = {r.month: r.total for r in expenses_by_month}
