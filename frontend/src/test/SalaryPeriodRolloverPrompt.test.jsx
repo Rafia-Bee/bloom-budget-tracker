@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 /**
  * SalaryPeriodRolloverPrompt Test Suite
  *
@@ -6,478 +6,478 @@ import React from 'react'
  * Verifies loading states, messages, and rollover actions.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import { clickWithAct } from './test-utils'
-import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { clickWithAct } from './test-utils';
+import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt';
 
 // Mock the API
 vi.mock('../api', () => ({
-  salaryPeriodAPI: {
-    getCurrent: vi.fn()
-  }
-}))
+    salaryPeriodAPI: {
+        getCurrent: vi.fn(),
+    },
+}));
 
-import { salaryPeriodAPI } from '../api'
+import { salaryPeriodAPI } from '../api';
 
 describe('SalaryPeriodRolloverPrompt', () => {
-  let mockOnCreateNext
-  let mockOnDismiss
+    let mockOnCreateNext;
+    let mockOnDismiss;
 
-  beforeEach(() => {
-    mockOnCreateNext = vi.fn()
-    mockOnDismiss = vi.fn()
-    vi.clearAllMocks()
-  })
-
-  describe('Loading State', () => {
-    it('renders nothing while loading', () => {
-      salaryPeriodAPI.getCurrent.mockImplementation(() => new Promise(() => {})) // Never resolves
-
-      const { container } = render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
-
-      expect(container.firstChild).toBeNull()
-    })
-  })
-
-  describe('Error State', () => {
-    it('renders nothing when API fails', async () => {
-      salaryPeriodAPI.getCurrent.mockRejectedValue(new Error('Network error'))
-
-      const { container } = render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
-
-      await waitFor(() => {
-        expect(container.firstChild).toBeNull()
-      })
-    })
-
-    it('renders nothing when no salary period found', async () => {
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: { salary_period: null }
-      })
-
-      const { container } = render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
-
-      await waitFor(() => {
-        expect(container.firstChild).toBeNull()
-      })
-    })
-  })
-
-  describe('Ending Soon Banner (Yellow)', () => {
     beforeEach(() => {
-      // Period ending in 3 days
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 3)
+        mockOnCreateNext = vi.fn();
+        mockOnDismiss = vi.fn();
+        vi.clearAllMocks();
+    });
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 75000,
-            display_credit_available: 120000,
-            credit_limit: 150000,
-            credit_budget_allowance: 5000
-          }
-        }
-      })
-    })
+    describe('Loading State', () => {
+        it('renders nothing while loading', () => {
+            salaryPeriodAPI.getCurrent.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-    it('renders the banner with ending soon message', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+            const { container } = render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Week 4 Ending Soon')).toBeInTheDocument()
-      })
-    })
+            expect(container.firstChild).toBeNull();
+        });
+    });
 
-    it('shows days remaining in message', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+    describe('Error State', () => {
+        it('renders nothing when API fails', async () => {
+            salaryPeriodAPI.getCurrent.mockRejectedValue(new Error('Network error'));
 
-      await waitFor(() => {
-        expect(screen.getByText(/ends in \d+ day/i)).toBeInTheDocument()
-      })
-    })
+            const { container } = render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-    it('displays suggested debit balance', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+            await waitFor(() => {
+                expect(container.firstChild).toBeNull();
+            });
+        });
 
-      await waitFor(() => {
-        expect(screen.getByText(/€750\.00/)).toBeInTheDocument()
-      })
-    })
+        it('renders nothing when no salary period found', async () => {
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: { salary_period: null },
+            });
 
-    it('displays suggested credit available and limit', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+            const { container } = render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText(/€1,200\.00/)).toBeInTheDocument()
-        expect(screen.getByText(/€1,500\.00/)).toBeInTheDocument()
-      })
-    })
+            await waitFor(() => {
+                expect(container.firstChild).toBeNull();
+            });
+        });
+    });
 
-    it('has yellow background for ending soon', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+    describe('Ending Soon Banner (Yellow)', () => {
+        beforeEach(() => {
+            // Period ending in 3 days
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
 
-      await waitFor(() => {
-        const banner = document.querySelector('.rounded-xl')
-        expect(banner).toHaveClass('bg-yellow-50')
-      })
-    })
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 75000,
+                        display_credit_available: 120000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 5000,
+                    },
+                },
+            });
+        });
 
-    it('shows Create Next Period button', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('renders the banner with ending soon message', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Create Next Period')).toBeInTheDocument()
-      })
-    })
+            await waitFor(() => {
+                expect(screen.getByText('Week 4 Ending Soon')).toBeInTheDocument();
+            });
+        });
 
-    it('shows Remind Me Later button', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('shows days remaining in message', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Remind Me Later')).toBeInTheDocument()
-      })
-    })
-  })
+            await waitFor(() => {
+                expect(screen.getByText(/ends in \d+ day/i)).toBeInTheDocument();
+            });
+        });
 
-  describe('Overdue Banner (Red)', () => {
-    beforeEach(() => {
-      // Period ended 2 days ago
-      const pastDate = new Date()
-      pastDate.setDate(pastDate.getDate() - 2)
+        it('displays suggested debit balance', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: pastDate.toISOString().split('T')[0],
-            display_debit_balance: 50000,
-            display_credit_available: 100000,
-            credit_limit: 150000,
-            credit_budget_allowance: 0
-          }
-        }
-      })
-    })
+            await waitFor(() => {
+                expect(screen.getByText(/€750\.00/)).toBeInTheDocument();
+            });
+        });
 
-    it('renders the banner with overdue message', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('displays suggested credit available and limit', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Salary Period Ended')).toBeInTheDocument()
-      })
-    })
+            await waitFor(() => {
+                expect(screen.getByText(/€1,200\.00/)).toBeInTheDocument();
+                expect(screen.getByText(/€1,500\.00/)).toBeInTheDocument();
+            });
+        });
 
-    it('shows how many days ago period ended', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('has yellow background for ending soon', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText(/ended \d+ days? ago/i)).toBeInTheDocument()
-      })
-    })
+            await waitFor(() => {
+                const banner = document.querySelector('.rounded-xl');
+                expect(banner).toHaveClass('bg-yellow-50');
+            });
+        });
 
-    it('has red background for overdue', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('shows Create Next Period button', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        const banner = document.querySelector('.rounded-xl')
-        expect(banner).toHaveClass('bg-red-50')
-      })
-    })
+            await waitFor(() => {
+                expect(screen.getByText('Create Next Period')).toBeInTheDocument();
+            });
+        });
 
-    it('has red border for overdue', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('shows Remind Me Later button', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        const banner = document.querySelector('.rounded-xl')
-        expect(banner).toHaveClass('border-red-300')
-      })
-    })
-  })
+            await waitFor(() => {
+                expect(screen.getByText('Remind Me Later')).toBeInTheDocument();
+            });
+        });
+    });
 
-  describe('User Actions', () => {
-    beforeEach(() => {
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 5)
+    describe('Overdue Banner (Red)', () => {
+        beforeEach(() => {
+            // Period ended 2 days ago
+            const pastDate = new Date();
+            pastDate.setDate(pastDate.getDate() - 2);
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 80000,
-            display_credit_available: 130000,
-            credit_limit: 150000,
-            credit_budget_allowance: 10000
-          }
-        }
-      })
-    })
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: pastDate.toISOString().split('T')[0],
+                        display_debit_balance: 50000,
+                        display_credit_available: 100000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 0,
+                    },
+                },
+            });
+        });
 
-    it('calls onCreateNext with rollover data when Create Next Period clicked', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('renders the banner with overdue message', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Create Next Period')).toBeInTheDocument()
-      })
+            await waitFor(() => {
+                expect(screen.getByText('Salary Period Ended')).toBeInTheDocument();
+            });
+        });
 
-      await clickWithAct(screen.getByText('Create Next Period'))
+        it('shows how many days ago period ended', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      expect(mockOnCreateNext).toHaveBeenCalledTimes(1)
-      expect(mockOnCreateNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          suggestedDebitBalance: 80000,
-          suggestedCreditAvailable: 130000,
-          creditLimit: 150000
-        })
-      )
-    })
+            await waitFor(() => {
+                expect(screen.getByText(/ended \d+ days? ago/i)).toBeInTheDocument();
+            });
+        });
 
-    it('calls onDismiss when Remind Me Later clicked', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('has red background for overdue', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText('Remind Me Later')).toBeInTheDocument()
-      })
+            await waitFor(() => {
+                const banner = document.querySelector('.rounded-xl');
+                expect(banner).toHaveClass('bg-red-50');
+            });
+        });
 
-      await clickWithAct(screen.getByText('Remind Me Later'))
+        it('has red border for overdue', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1)
-    })
+            await waitFor(() => {
+                const banner = document.querySelector('.rounded-xl');
+                expect(banner).toHaveClass('border-red-300');
+            });
+        });
+    });
 
-    it('calls onDismiss when X button clicked', async () => {
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+    describe('User Actions', () => {
+        beforeEach(() => {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 5);
 
-      await waitFor(() => {
-        expect(screen.getByText('Create Next Period')).toBeInTheDocument()
-      })
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 80000,
+                        display_credit_available: 130000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 10000,
+                    },
+                },
+            });
+        });
 
-      const closeButton = screen.getByLabelText('Close')
-      await clickWithAct(closeButton)
+        it('calls onCreateNext with rollover data when Create Next Period clicked', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1)
-    })
-  })
+            await waitFor(() => {
+                expect(screen.getByText('Create Next Period')).toBeInTheDocument();
+            });
 
-  describe('Balance Display', () => {
-    it('formats balances from cents to euros', async () => {
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 3)
+            await clickWithAct(screen.getByText('Create Next Period'));
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 123456,
-            display_credit_available: 98765,
-            credit_limit: 200000,
-            credit_budget_allowance: 5000
-          }
-        }
-      })
+            expect(mockOnCreateNext).toHaveBeenCalledTimes(1);
+            expect(mockOnCreateNext).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    suggestedDebitBalance: 80000,
+                    suggestedCreditAvailable: 130000,
+                    creditLimit: 150000,
+                })
+            );
+        });
 
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('calls onDismiss when Remind Me Later clicked', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText(/€1,234\.56/)).toBeInTheDocument()
-        expect(screen.getByText(/€987\.65/)).toBeInTheDocument()
-        expect(screen.getByText(/€2,000\.00/)).toBeInTheDocument()
-      })
-    })
+            await waitFor(() => {
+                expect(screen.getByText('Remind Me Later')).toBeInTheDocument();
+            });
 
-    it('shows balance labels', async () => {
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 3)
+            await clickWithAct(screen.getByText('Remind Me Later'));
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 50000,
-            display_credit_available: 100000,
-            credit_limit: 150000,
-            credit_budget_allowance: 0
-          }
-        }
-      })
+            expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+        });
 
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('calls onDismiss when X button clicked', async () => {
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      await waitFor(() => {
-        expect(screen.getByText(/debit:/i)).toBeInTheDocument()
-        expect(screen.getByText(/credit available:/i)).toBeInTheDocument()
-      })
-    })
-  })
+            await waitFor(() => {
+                expect(screen.getByText('Create Next Period')).toBeInTheDocument();
+            });
 
-  describe('Icon Display', () => {
-    it('shows warning icon', async () => {
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 3)
+            const closeButton = screen.getByLabelText('Close');
+            await clickWithAct(closeButton);
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 50000,
-            display_credit_available: 100000,
-            credit_limit: 150000,
-            credit_budget_allowance: 0
-          }
-        }
-      })
+            expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+        });
+    });
 
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+    describe('Balance Display', () => {
+        it('formats balances from cents to euros', async () => {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
 
-      await waitFor(() => {
-        const svg = document.querySelector('svg.w-6.h-6')
-        expect(svg).toBeInTheDocument()
-      })
-    })
-  })
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 123456,
+                        display_credit_available: 98765,
+                        credit_limit: 200000,
+                        credit_budget_allowance: 5000,
+                    },
+                },
+            });
 
-  describe('Margin and Layout', () => {
-    it('has bottom margin for spacing', async () => {
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 3)
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
 
-      salaryPeriodAPI.getCurrent.mockResolvedValue({
-        data: {
-          salary_period: {
-            id: 1,
-            start_date: '2025-12-01',
-            end_date: futureDate.toISOString().split('T')[0],
-            display_debit_balance: 50000,
-            display_credit_available: 100000,
-            credit_limit: 150000,
-            credit_budget_allowance: 0
-          }
-        }
-      })
+            await waitFor(() => {
+                expect(screen.getByText(/€1,234\.56/)).toBeInTheDocument();
+                expect(screen.getByText(/€987\.65/)).toBeInTheDocument();
+                expect(screen.getByText(/€2,000\.00/)).toBeInTheDocument();
+            });
+        });
 
-      render(
-        <SalaryPeriodRolloverPrompt
-          onCreateNext={mockOnCreateNext}
-          onDismiss={mockOnDismiss}
-        />
-      )
+        it('shows balance labels', async () => {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
 
-      await waitFor(() => {
-        const banner = screen.getByText('Week 4 Ending Soon').closest('.rounded-xl')
-        expect(banner).toHaveClass('mb-6')
-      })
-    })
-  })
-})
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 50000,
+                        display_credit_available: 100000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 0,
+                    },
+                },
+            });
+
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
+
+            await waitFor(() => {
+                expect(screen.getByText(/debit:/i)).toBeInTheDocument();
+                expect(screen.getByText(/credit available:/i)).toBeInTheDocument();
+            });
+        });
+    });
+
+    describe('Icon Display', () => {
+        it('shows warning icon', async () => {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
+
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 50000,
+                        display_credit_available: 100000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 0,
+                    },
+                },
+            });
+
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
+
+            await waitFor(() => {
+                const svg = document.querySelector('svg.w-6.h-6');
+                expect(svg).toBeInTheDocument();
+            });
+        });
+    });
+
+    describe('Margin and Layout', () => {
+        it('has bottom margin for spacing', async () => {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 3);
+
+            salaryPeriodAPI.getCurrent.mockResolvedValue({
+                data: {
+                    salary_period: {
+                        id: 1,
+                        start_date: '2025-12-01',
+                        end_date: futureDate.toISOString().split('T')[0],
+                        display_debit_balance: 50000,
+                        display_credit_available: 100000,
+                        credit_limit: 150000,
+                        credit_budget_allowance: 0,
+                    },
+                },
+            });
+
+            render(
+                <SalaryPeriodRolloverPrompt
+                    onCreateNext={mockOnCreateNext}
+                    onDismiss={mockOnDismiss}
+                />
+            );
+
+            await waitFor(() => {
+                const banner = screen.getByText('Week 4 Ending Soon').closest('.rounded-xl');
+                expect(banner).toHaveClass('mb-6');
+            });
+        });
+    });
+});

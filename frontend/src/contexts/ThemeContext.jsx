@@ -5,40 +5,36 @@
  * Applies 'dark' class to document root for Tailwind dark mode.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext()
+const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('bloom-theme')
-    return saved || 'light'
-  })
+    const [theme, setTheme] = useState(() => {
+        const saved = localStorage.getItem('bloom-theme');
+        return saved || 'light';
+    });
 
-  useEffect(() => {
-    const root = window.document.documentElement
-    root.classList.remove('dark', 'light')
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    }
-    localStorage.setItem('bloom-theme', theme)
-  }, [theme])
+    useEffect(() => {
+        const root = window.document.documentElement;
+        root.classList.remove('dark', 'light');
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        }
+        localStorage.setItem('bloom-theme', theme);
+    }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
-  }
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    };
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+    return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider')
-  }
-  return context
+    const context = useContext(ThemeContext);
+    if (!context) {
+        throw new Error('useTheme must be used within ThemeProvider');
+    }
+    return context;
 }

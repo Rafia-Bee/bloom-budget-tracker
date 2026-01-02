@@ -6,6 +6,41 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-02
 
+### Added Prettier for Frontend Code Formatting
+
+**Context:** `bformat` only ran Black for backend Python. Frontend had no consistent formatting.
+
+**Decision:** Added Prettier for frontend JavaScript/JSX formatting.
+
+**Changes:**
+- Installed `prettier` as devDependency
+- Added `.prettierrc` config (4-space tabs, single quotes, trailing commas)
+- Added `npm run format` and `npm run format:check` scripts
+- Updated `bformat` PowerShell function to run both Black and Prettier
+- Updated DEVELOPMENT_REFERENCE.md
+
+**Impact:** Running `bformat` now formats both backend (Black) and frontend (Prettier).
+
+---
+
+### Updated Copilot Instructions with Comprehensive Skills
+
+**Context:** Needed persistent AI assistant instructions for consistent development workflow.
+
+**Decision:** Restructured `.github/copilot-instructions.md` with 8 consolidated skill areas:
+1. Conversation control (ask_user cycle)
+2. Design principles (Bloom color palette)
+3. TDD workflow (80% coverage target)
+4. Zero tolerance for warnings/errors
+5. Development workflow (bformat → docs → test → commit)
+6. Database migrations (bmigrate + Neon SQL)
+7. GitHub issues (labels + temp file pattern)
+8. Git push rules (never push unless asked)
+
+**Impact:** AI assistants will follow consistent patterns across all conversations.
+
+---
+
 ### STASHED: Bundle Size Optimization (Restore with `git stash pop`)
 
 **Context:** Frontend build warning - main bundle was 1,553 KB (too large).

@@ -15,10 +15,10 @@ const isProduction = import.meta.env.PROD;
  * @returns {Object} Sanitized error info
  */
 const sanitizeError = (error) => {
-    if (!error) return { message: "Unknown error" };
+    if (!error) return { message: 'Unknown error' };
 
     return {
-        message: error.message || "Request failed",
+        message: error.message || 'Request failed',
         status: error.response?.status,
         statusText: error.response?.statusText,
         // Intentionally excluding: headers, config, request, response.data

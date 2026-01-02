@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 /**
  * EditGoalModal Test Suite
  *
@@ -14,656 +14,702 @@ import React from 'react'
  * - Modal close actions
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import { clickWithAct, typeWithAct, clearWithAct, submitWithAct } from './test-utils'
-import EditGoalModal from '../components/EditGoalModal'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { clickWithAct, typeWithAct, clearWithAct, submitWithAct } from './test-utils';
+import EditGoalModal from '../components/EditGoalModal';
 
 describe('EditGoalModal', () => {
-  const mockOnClose = vi.fn()
-  const mockOnUpdate = vi.fn()
-
-  // Generate a future date for testing (6 months from now)
-  const getFutureDate = () => {
-    const date = new Date()
-    date.setMonth(date.getMonth() + 6)
-    return date.toISOString().split('T')[0]
-  }
-
-  const mockGoal = {
-    id: 1,
-    name: 'Emergency Fund',
-    description: 'For unexpected expenses',
-    target_amount: 100000, // €1000.00 in cents
-    initial_amount: 10000, // €100.00 in cents
-    target_date: getFutureDate(), // Dynamic future date
-    subcategory_name: 'Savings',
-    progress: {
-      current_amount: 25000, // €250.00 saved
-      percentage: 25.0,
-      contribution_count: 5
-    }
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockOnUpdate.mockResolvedValue(undefined)
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
-  describe('Rendering', () => {
-    it('renders the modal with title', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByRole('heading', { name: 'Edit Goal' })).toBeInTheDocument()
-    })
-
-    it('renders all form fields', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('Goal Name *')).toBeInTheDocument()
-      expect(screen.getByText('Target Amount (€) *')).toBeInTheDocument()
-      expect(screen.getByText('Target Date (Optional)')).toBeInTheDocument()
-      expect(screen.getByText('Description (Optional)')).toBeInTheDocument()
-    })
-
-    it('renders Update Goal and Cancel buttons', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByRole('button', { name: 'Update Goal' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
-    })
-
-    it('returns null when no goal is provided', () => {
-      const { container } = render(<EditGoalModal goal={null} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(container.firstChild).toBeNull()
-    })
-  })
-
-  describe('Current Progress Display', () => {
-    it('shows current progress section', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('Current Progress')).toBeInTheDocument()
-    })
-
-    it('displays saved amount', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('€250.00 saved')).toBeInTheDocument()
-    })
-
-    it('displays percentage progress', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('25.0%')).toBeInTheDocument()
-    })
-
-    it('displays subcategory name', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('Subcategory: Savings')).toBeInTheDocument()
-    })
-
-    it('displays contribution count', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('5 contributions')).toBeInTheDocument()
-    })
-
-    it('handles goal with no progress', () => {
-      const goalNoProgress = { ...mockGoal, progress: null }
-      render(<EditGoalModal goal={goalNoProgress} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByText('€0.00 saved')).toBeInTheDocument()
-      expect(screen.getByText('0.0%')).toBeInTheDocument()
-    })
-  })
+    const mockOnClose = vi.fn();
+    const mockOnUpdate = vi.fn();
+
+    // Generate a future date for testing (6 months from now)
+    const getFutureDate = () => {
+        const date = new Date();
+        date.setMonth(date.getMonth() + 6);
+        return date.toISOString().split('T')[0];
+    };
+
+    const mockGoal = {
+        id: 1,
+        name: 'Emergency Fund',
+        description: 'For unexpected expenses',
+        target_amount: 100000, // €1000.00 in cents
+        initial_amount: 10000, // €100.00 in cents
+        target_date: getFutureDate(), // Dynamic future date
+        subcategory_name: 'Savings',
+        progress: {
+            current_amount: 25000, // €250.00 saved
+            percentage: 25.0,
+            contribution_count: 5,
+        },
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockOnUpdate.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        cleanup();
+    });
+
+    describe('Rendering', () => {
+        it('renders the modal with title', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByRole('heading', { name: 'Edit Goal' })).toBeInTheDocument();
+        });
+
+        it('renders all form fields', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('Goal Name *')).toBeInTheDocument();
+            expect(screen.getByText('Target Amount (€) *')).toBeInTheDocument();
+            expect(screen.getByText('Target Date (Optional)')).toBeInTheDocument();
+            expect(screen.getByText('Description (Optional)')).toBeInTheDocument();
+        });
+
+        it('renders Update Goal and Cancel buttons', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByRole('button', { name: 'Update Goal' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+        });
+
+        it('returns null when no goal is provided', () => {
+            const { container } = render(
+                <EditGoalModal goal={null} onClose={mockOnClose} onUpdate={mockOnUpdate} />
+            );
+
+            expect(container.firstChild).toBeNull();
+        });
+    });
+
+    describe('Current Progress Display', () => {
+        it('shows current progress section', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('Current Progress')).toBeInTheDocument();
+        });
+
+        it('displays saved amount', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('€250.00 saved')).toBeInTheDocument();
+        });
+
+        it('displays percentage progress', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('25.0%')).toBeInTheDocument();
+        });
+
+        it('displays subcategory name', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('Subcategory: Savings')).toBeInTheDocument();
+        });
+
+        it('displays contribution count', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            expect(screen.getByText('5 contributions')).toBeInTheDocument();
+        });
+
+        it('handles goal with no progress', () => {
+            const goalNoProgress = { ...mockGoal, progress: null };
+            render(
+                <EditGoalModal
+                    goal={goalNoProgress}
+                    onClose={mockOnClose}
+                    onUpdate={mockOnUpdate}
+                />
+            );
+
+            expect(screen.getByText('€0.00 saved')).toBeInTheDocument();
+            expect(screen.getByText('0.0%')).toBeInTheDocument();
+        });
+    });
+
+    describe('Pre-filled Values', () => {
+        it('pre-fills name field', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            expect(nameInput).toBeInTheDocument();
+        });
+
+        it('pre-fills description field', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const descriptionInput = screen.getByDisplayValue('For unexpected expenses');
+            expect(descriptionInput).toBeInTheDocument();
+        });
+
+        it('pre-fills target amount in euros', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const amountInput = screen.getByDisplayValue('1000.00');
+            expect(amountInput).toBeInTheDocument();
+        });
+
+        it('pre-fills target date', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const dateInput = document.querySelector('input[type="date"]');
+            expect(dateInput.value).toBe(mockGoal.target_date); // Use the dynamic future date
+        });
+
+        it('handles goal without optional fields', () => {
+            const minimalGoal = {
+                id: 2,
+                name: 'Vacation',
+                target_amount: 50000,
+                progress: { current_amount: 0, percentage: 0, contribution_count: 0 },
+            };
+            render(
+                <EditGoalModal goal={minimalGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />
+            );
+
+            expect(screen.getByDisplayValue('Vacation')).toBeInTheDocument();
+            expect(screen.getByDisplayValue('500.00')).toBeInTheDocument();
+        });
+
+        it('pre-fills initial amount in euros', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const initialAmountInput = screen.getByDisplayValue('100.00');
+            expect(initialAmountInput).toBeInTheDocument();
+        });
+
+        it('handles goal without initial amount', () => {
+            const goalNoInitial = { ...mockGoal, initial_amount: 0 };
+            render(
+                <EditGoalModal goal={goalNoInitial} onClose={mockOnClose} onUpdate={mockOnUpdate} />
+            );
 
-  describe('Pre-filled Values', () => {
-    it('pre-fills name field', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            // Should render empty field for 0 initial amount
+            const initialAmountInputs = screen.getAllByRole('textbox');
+            const hasEmptyInitial = initialAmountInputs.some((input) => input.value === '');
+            expect(hasEmptyInitial).toBe(true);
+        });
+    });
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      expect(nameInput).toBeInTheDocument()
-    })
+    describe('Form Interactions', () => {
+        it('allows editing the name', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-    it('pre-fills description field', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
+            await typeWithAct(nameInput, 'New Emergency Fund');
 
-      const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      expect(descriptionInput).toBeInTheDocument()
-    })
+            expect(nameInput.value).toBe('New Emergency Fund');
+        });
 
-    it('pre-fills target amount in euros', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('allows editing the target amount', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      expect(amountInput).toBeInTheDocument()
-    })
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '2000');
 
-    it('pre-fills target date', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(amountInput.value).toBe('2000');
+        });
 
-      const dateInput = document.querySelector('input[type="date"]')
-      expect(dateInput.value).toBe(mockGoal.target_date) // Use the dynamic future date
-    })
+        it('allows editing the description', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-    it('handles goal without optional fields', () => {
-      const minimalGoal = {
-        id: 2,
-        name: 'Vacation',
-        target_amount: 50000,
-        progress: { current_amount: 0, percentage: 0, contribution_count: 0 }
-      }
-      render(<EditGoalModal goal={minimalGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const descriptionInput = screen.getByDisplayValue('For unexpected expenses');
+            await clearWithAct(descriptionInput);
+            await typeWithAct(descriptionInput, 'Updated description');
 
-      expect(screen.getByDisplayValue('Vacation')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('500.00')).toBeInTheDocument()
-    })
+            expect(descriptionInput.value).toBe('Updated description');
+        });
 
-    it('pre-fills initial amount in euros', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('allows editing the target date', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const initialAmountInput = screen.getByDisplayValue('100.00')
-      expect(initialAmountInput).toBeInTheDocument()
-    })
+            const dateInput = document.querySelector('input[type="date"]');
+            await clearWithAct(dateInput);
+            await typeWithAct(dateInput, '2026-06-15');
 
-    it('handles goal without initial amount', () => {
-      const goalNoInitial = { ...mockGoal, initial_amount: 0 }
-      render(<EditGoalModal goal={goalNoInitial} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(dateInput.value).toBe('2026-06-15');
+        });
+    });
 
-      // Should render empty field for 0 initial amount
-      const initialAmountInputs = screen.getAllByRole('textbox')
-      const hasEmptyInitial = initialAmountInputs.some(input => input.value === '')
-      expect(hasEmptyInitial).toBe(true)
-    })
-  })
+    describe('Character Counts', () => {
+        it('shows name character count', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-  describe('Form Interactions', () => {
-    it('allows editing the name', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(screen.getByText(/14.*\/50 characters/)).toBeInTheDocument();
+        });
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
-      await typeWithAct(nameInput, 'New Emergency Fund')
+        it('shows description character count', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      expect(nameInput.value).toBe('New Emergency Fund')
-    })
+            // Description is "For unexpected expenses" = 23 chars (trimmed in textarea)
+            expect(screen.getByText(/\d+.*\/200 characters/)).toBeInTheDocument();
+        });
 
-    it('allows editing the target amount', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('updates name character count on input', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '2000')
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
+            await typeWithAct(nameInput, 'Test');
 
-      expect(amountInput.value).toBe('2000')
-    })
+            expect(screen.getByText(/4.*\/50 characters/)).toBeInTheDocument();
+        });
 
-    it('allows editing the description', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('updates description character count on input', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      await clearWithAct(descriptionInput)
-      await typeWithAct(descriptionInput, 'Updated description')
+            const descriptionInput = screen.getByDisplayValue('For unexpected expenses');
+            await clearWithAct(descriptionInput);
+            await typeWithAct(descriptionInput, 'Hi');
 
-      expect(descriptionInput.value).toBe('Updated description')
-    })
+            expect(screen.getByText(/2.*\/200 characters/)).toBeInTheDocument();
+        });
+    });
 
-    it('allows editing the target date', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+    describe('Amount Formatting', () => {
+        it('formats amount with two decimal places', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const dateInput = document.querySelector('input[type="date"]')
-      await clearWithAct(dateInput)
-      await typeWithAct(dateInput, '2026-06-15')
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '99.99');
 
-      expect(dateInput.value).toBe('2026-06-15')
-    })
-  })
+            expect(amountInput.value).toBe('99.99');
+        });
 
-  describe('Character Counts', () => {
-    it('shows name character count', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('strips non-numeric characters', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      expect(screen.getByText(/14.*\/50 characters/)).toBeInTheDocument()
-    })
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, 'abc123def');
 
-    it('shows description character count', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(amountInput.value).toBe('123');
+        });
 
-      // Description is "For unexpected expenses" = 23 chars (trimmed in textarea)
-      expect(screen.getByText(/\d+.*\/200 characters/)).toBeInTheDocument()
-    })
+        it('limits to two decimal places', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-    it('updates name character count on input', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '100.999');
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
-      await typeWithAct(nameInput, 'Test')
+            expect(amountInput.value).toBe('100.99');
+        });
 
-      expect(screen.getByText(/4.*\/50 characters/)).toBeInTheDocument()
-    })
+        it('handles only one decimal point', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-    it('updates description character count on input', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '100.50');
 
-      const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      await clearWithAct(descriptionInput)
-      await typeWithAct(descriptionInput, 'Hi')
+            // The formatter keeps the first decimal point and limits to 2 places
+            expect(amountInput.value).toBe('100.50');
+        });
+    });
 
-      expect(screen.getByText(/2.*\/200 characters/)).toBeInTheDocument()
-    })
-  })
+    describe('Validation - Name', () => {
+        it('shows error when name is empty', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-  describe('Amount Formatting', () => {
-    it('formats amount with two decimal places', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '99.99')
+            // Use submitWithAct on the form for reliable form submission after input changes
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-      expect(amountInput.value).toBe('99.99')
-    })
+            expect(screen.getByText('Goal name is required')).toBeInTheDocument();
+            expect(mockOnUpdate).not.toHaveBeenCalled();
+        });
 
-    it('strips non-numeric characters', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+        it('shows error when name is only whitespace', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, 'abc123def')
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
+            await typeWithAct(nameInput, '   ');
 
-      expect(amountInput.value).toBe('123')
-    })
+            // Use submitWithAct on the form for reliable form submission after input changes
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-    it('limits to two decimal places', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(screen.getByText('Goal name is required')).toBeInTheDocument();
+        });
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '100.999')
+        it('name field has maxLength attribute', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      expect(amountInput.value).toBe('100.99')
-    })
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            expect(nameInput).toHaveAttribute('maxLength', '50');
+        });
+    });
 
-    it('handles only one decimal point', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+    describe('Validation - Target Amount', () => {
+        it('shows error when amount is empty', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '100.50')
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
 
-      // The formatter keeps the first decimal point and limits to 2 places
-      expect(amountInput.value).toBe('100.50')
-    })
-  })
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-  describe('Validation - Name', () => {
-    it('shows error when name is empty', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument();
+        });
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
+        it('shows error when amount is 0', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      // Use submitWithAct on the form for reliable form submission after input changes
-      const form = document.querySelector('form')
-      await submitWithAct(form)
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '0');
 
-      expect(screen.getByText('Goal name is required')).toBeInTheDocument()
-      expect(mockOnUpdate).not.toHaveBeenCalled()
-    })
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-    it('shows error when name is only whitespace', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument();
+        });
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
-      await typeWithAct(nameInput, '   ')
+        it('shows error when amount exceeds 1 million', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-      // Use submitWithAct on the form for reliable form submission after input changes
-      const form = document.querySelector('form')
-      await submitWithAct(form)
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '1000001');
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-      expect(screen.getByText('Goal name is required')).toBeInTheDocument()
-    })
+            expect(
+                screen.getByText('Target amount must be less than 1,000,000')
+            ).toBeInTheDocument();
+        });
+
+        it('clears amount error on input change', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
 
-    it('name field has maxLength attribute', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
 
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      expect(nameInput).toHaveAttribute('maxLength', '50')
-    })
-  })
+            const form = document.querySelector('form');
+            await submitWithAct(form);
 
-  describe('Validation - Target Amount', () => {
-    it('shows error when amount is empty', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
+            expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument();
 
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
+            await typeWithAct(amountInput, '500');
 
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
-    })
-
-    it('shows error when amount is 0', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '0')
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
-    })
-
-    it('shows error when amount exceeds 1 million', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '1000001')
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Target amount must be less than 1,000,000')).toBeInTheDocument()
-    })
-
-    it('clears amount error on input change', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
-
-      await typeWithAct(amountInput, '500')
-
-      expect(screen.queryByText('Target amount must be greater than 0')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Validation - Target Date', () => {
-    it('date input has min attribute set to tomorrow', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const dateInput = document.querySelector('input[type="date"]')
-      expect(dateInput).toHaveAttribute('min')
-      // The min attribute is set to tomorrow's date
-      const minDate = new Date(dateInput.getAttribute('min'))
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      expect(minDate > today).toBe(true)
-    })
-
-    it('allows empty date (optional field)', async () => {
-      const goalNoDate = { ...mockGoal, target_date: '' }
-      render(<EditGoalModal goal={goalNoDate} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
-
-      expect(screen.queryByText('Target date must be in the future')).not.toBeInTheDocument()
-      expect(mockOnUpdate).toHaveBeenCalled()
-    })
-  })
-
-  describe('Validation - Description', () => {
-    it('description field has maxLength attribute', () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const descriptionInput = screen.getByDisplayValue('For unexpected expenses')
-      expect(descriptionInput).toHaveAttribute('maxLength', '200')
-    })
-  })
-
-  describe('Target Reduction Warning', () => {
-    it('shows warning when target is set below current savings', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      // Current savings is €250, set target to €200
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '200')
-
-      expect(screen.getByText(/Warning:/)).toBeInTheDocument()
-      expect(screen.getByText(/Setting the target below your current savings/)).toBeInTheDocument()
-    })
-
-    it('does not show warning when target is above current savings', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      // Current savings is €250, set target to €500
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '500')
-
-      expect(screen.queryByText(/Warning:/)).not.toBeInTheDocument()
-    })
-
-    it('does not show warning when goal has no progress', () => {
-      const goalNoProgress = { ...mockGoal, progress: { current_amount: 0, percentage: 0, contribution_count: 0 } }
-      render(<EditGoalModal goal={goalNoProgress} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      expect(screen.queryByText(/Warning:/)).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Modal Actions', () => {
-    it('calls onClose when Cancel is clicked', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' })
-      await clickWithAct(cancelButton)
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
-
-    it('calls onClose when X button is clicked', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const buttons = screen.getAllByRole('button')
-      const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Update') && !btn.textContent.includes('Cancel'))
-      await clickWithAct(xButton)
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('Form Submission', () => {
-    it('calls onUpdate with correct data on successful submission', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      await waitFor(() => {
-        expect(mockOnUpdate).toHaveBeenCalledWith({
-          name: 'Emergency Fund',
-          description: 'For unexpected expenses',
-          target_amount: 100000, // €1000.00 in cents
-          initial_amount: 10000, // €100.00 in cents
-          target_date: mockGoal.target_date // Use the dynamic future date
-        })
-      })
-    })
-
-    it('converts amount to cents on submission', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-      await typeWithAct(amountInput, '1500.50')
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      await waitFor(() => {
-        expect(mockOnUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            target_amount: 150050 // €1500.50 in cents
-          })
-        )
-      })
-    })
-
-    it('trims name and description on submission', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
-      await typeWithAct(nameInput, '  Trimmed Name  ')
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      await waitFor(() => {
-        expect(mockOnUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            name: 'Trimmed Name'
-          })
-        )
-      })
-    })
-
-    it('sends null for empty optional fields', async () => {
-      const goalNoOptionals = {
-        id: 3,
-        name: 'Test',
-        target_amount: 10000,
-        description: '',
-        target_date: '',
-        progress: { current_amount: 0, percentage: 0, contribution_count: 0 }
-      }
-      render(<EditGoalModal goal={goalNoOptionals} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
-
-      await waitFor(() => {
-        expect(mockOnUpdate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            description: null,
-            target_date: null
-          })
-        )
-      })
-    })
-  })
-
-  describe('Loading State', () => {
-    it('shows loading spinner during submission', async () => {
-      mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Updating...')).toBeInTheDocument()
-    })
-
-    it('disables submit button during loading', async () => {
-      mockOnUpdate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      // Button text changes to "Updating..." during loading
-      const submitButton = screen.getByRole('button', { name: /Updating/i })
-      expect(submitButton).toBeDisabled()
-    })
-
-    it('re-enables submit button after submission completes', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled()
-      })
-    })
-  })
-
-  describe('Error Handling', () => {
-    it('handles error from onUpdate gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-      mockOnUpdate.mockRejectedValue(new Error('Update failed'))
-
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      await waitFor(() => {
-        // Logger uses format: [operation] Error:
-        expect(consoleError).toHaveBeenCalledWith('[updateGoal] Error:', expect.any(Error))
-      })
-
-      consoleError.mockRestore()
-    })
-
-    it('re-enables submit button after error', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {})
-      mockOnUpdate.mockRejectedValue(new Error('Update failed'))
-
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const submitButton = screen.getByRole('button', { name: 'Update Goal' })
-      await clickWithAct(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled()
-      })
-    })
-  })
-
-  describe('Error Clearing', () => {
-    it('clears name error when user types', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const nameInput = screen.getByDisplayValue('Emergency Fund')
-      await clearWithAct(nameInput)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Goal name is required')).toBeInTheDocument()
-
-      await typeWithAct(nameInput, 'N')
-
-      expect(screen.queryByText('Goal name is required')).not.toBeInTheDocument()
-    })
-
-    it('clears amount error when user types', async () => {
-      render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />)
-
-      const amountInput = screen.getByDisplayValue('1000.00')
-      await clearWithAct(amountInput)
-
-      const form = document.querySelector('form')
-      await submitWithAct(form)
-
-      expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument()
-
-      await typeWithAct(amountInput, '100')
-
-      expect(screen.queryByText('Target amount must be greater than 0')).not.toBeInTheDocument()
-    })
-  })
-})
+            expect(
+                screen.queryByText('Target amount must be greater than 0')
+            ).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Validation - Target Date', () => {
+        it('date input has min attribute set to tomorrow', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const dateInput = document.querySelector('input[type="date"]');
+            expect(dateInput).toHaveAttribute('min');
+            // The min attribute is set to tomorrow's date
+            const minDate = new Date(dateInput.getAttribute('min'));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            expect(minDate > today).toBe(true);
+        });
+
+        it('allows empty date (optional field)', async () => {
+            const goalNoDate = { ...mockGoal, target_date: '' };
+            render(
+                <EditGoalModal goal={goalNoDate} onClose={mockOnClose} onUpdate={mockOnUpdate} />
+            );
+
+            const submitButton = screen.getByRole('button', { name: 'Update Goal' });
+            await clickWithAct(submitButton);
+
+            expect(screen.queryByText('Target date must be in the future')).not.toBeInTheDocument();
+            expect(mockOnUpdate).toHaveBeenCalled();
+        });
+    });
+
+    describe('Validation - Description', () => {
+        it('description field has maxLength attribute', () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const descriptionInput = screen.getByDisplayValue('For unexpected expenses');
+            expect(descriptionInput).toHaveAttribute('maxLength', '200');
+        });
+    });
+
+    describe('Target Reduction Warning', () => {
+        it('shows warning when target is set below current savings', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            // Current savings is €250, set target to €200
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '200');
+
+            expect(screen.getByText(/Warning:/)).toBeInTheDocument();
+            expect(
+                screen.getByText(/Setting the target below your current savings/)
+            ).toBeInTheDocument();
+        });
+
+        it('does not show warning when target is above current savings', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            // Current savings is €250, set target to €500
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '500');
+
+            expect(screen.queryByText(/Warning:/)).not.toBeInTheDocument();
+        });
+
+        it('does not show warning when goal has no progress', () => {
+            const goalNoProgress = {
+                ...mockGoal,
+                progress: { current_amount: 0, percentage: 0, contribution_count: 0 },
+            };
+            render(
+                <EditGoalModal
+                    goal={goalNoProgress}
+                    onClose={mockOnClose}
+                    onUpdate={mockOnUpdate}
+                />
+            );
+
+            expect(screen.queryByText(/Warning:/)).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Modal Actions', () => {
+        it('calls onClose when Cancel is clicked', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+            await clickWithAct(cancelButton);
+
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('calls onClose when X button is clicked', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const buttons = screen.getAllByRole('button');
+            const xButton = buttons.find(
+                (btn) =>
+                    btn.querySelector('svg') &&
+                    !btn.textContent.includes('Update') &&
+                    !btn.textContent.includes('Cancel')
+            );
+            await clickWithAct(xButton);
+
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Form Submission', () => {
+        it('calls onUpdate with correct data on successful submission', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            await waitFor(() => {
+                expect(mockOnUpdate).toHaveBeenCalledWith({
+                    name: 'Emergency Fund',
+                    description: 'For unexpected expenses',
+                    target_amount: 100000, // €1000.00 in cents
+                    initial_amount: 10000, // €100.00 in cents
+                    target_date: mockGoal.target_date, // Use the dynamic future date
+                });
+            });
+        });
+
+        it('converts amount to cents on submission', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+            await typeWithAct(amountInput, '1500.50');
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            await waitFor(() => {
+                expect(mockOnUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        target_amount: 150050, // €1500.50 in cents
+                    })
+                );
+            });
+        });
+
+        it('trims name and description on submission', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
+            await typeWithAct(nameInput, '  Trimmed Name  ');
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            await waitFor(() => {
+                expect(mockOnUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        name: 'Trimmed Name',
+                    })
+                );
+            });
+        });
+
+        it('sends null for empty optional fields', async () => {
+            const goalNoOptionals = {
+                id: 3,
+                name: 'Test',
+                target_amount: 10000,
+                description: '',
+                target_date: '',
+                progress: { current_amount: 0, percentage: 0, contribution_count: 0 },
+            };
+            render(
+                <EditGoalModal
+                    goal={goalNoOptionals}
+                    onClose={mockOnClose}
+                    onUpdate={mockOnUpdate}
+                />
+            );
+
+            const submitButton = screen.getByRole('button', { name: 'Update Goal' });
+            await clickWithAct(submitButton);
+
+            await waitFor(() => {
+                expect(mockOnUpdate).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        description: null,
+                        target_date: null,
+                    })
+                );
+            });
+        });
+    });
+
+    describe('Loading State', () => {
+        it('shows loading spinner during submission', async () => {
+            mockOnUpdate.mockImplementation(
+                () => new Promise((resolve) => setTimeout(resolve, 100))
+            );
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            expect(screen.getByText('Updating...')).toBeInTheDocument();
+        });
+
+        it('disables submit button during loading', async () => {
+            mockOnUpdate.mockImplementation(
+                () => new Promise((resolve) => setTimeout(resolve, 100))
+            );
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            // Button text changes to "Updating..." during loading
+            const submitButton = screen.getByRole('button', { name: /Updating/i });
+            expect(submitButton).toBeDisabled();
+        });
+
+        it('re-enables submit button after submission completes', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const submitButton = screen.getByRole('button', { name: 'Update Goal' });
+            await clickWithAct(submitButton);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled();
+            });
+        });
+    });
+
+    describe('Error Handling', () => {
+        it('handles error from onUpdate gracefully', async () => {
+            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+            mockOnUpdate.mockRejectedValue(new Error('Update failed'));
+
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            await waitFor(() => {
+                // Logger uses format: [operation] Error:
+                expect(consoleError).toHaveBeenCalledWith('[updateGoal] Error:', expect.any(Error));
+            });
+
+            consoleError.mockRestore();
+        });
+
+        it('re-enables submit button after error', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            mockOnUpdate.mockRejectedValue(new Error('Update failed'));
+
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const submitButton = screen.getByRole('button', { name: 'Update Goal' });
+            await clickWithAct(submitButton);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: 'Update Goal' })).not.toBeDisabled();
+            });
+        });
+    });
+
+    describe('Error Clearing', () => {
+        it('clears name error when user types', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const nameInput = screen.getByDisplayValue('Emergency Fund');
+            await clearWithAct(nameInput);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            expect(screen.getByText('Goal name is required')).toBeInTheDocument();
+
+            await typeWithAct(nameInput, 'N');
+
+            expect(screen.queryByText('Goal name is required')).not.toBeInTheDocument();
+        });
+
+        it('clears amount error when user types', async () => {
+            render(<EditGoalModal goal={mockGoal} onClose={mockOnClose} onUpdate={mockOnUpdate} />);
+
+            const amountInput = screen.getByDisplayValue('1000.00');
+            await clearWithAct(amountInput);
+
+            const form = document.querySelector('form');
+            await submitWithAct(form);
+
+            expect(screen.getByText('Target amount must be greater than 0')).toBeInTheDocument();
+
+            await typeWithAct(amountInput, '100');
+
+            expect(
+                screen.queryByText('Target amount must be greater than 0')
+            ).not.toBeInTheDocument();
+        });
+    });
+});

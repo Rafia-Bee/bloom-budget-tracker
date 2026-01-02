@@ -5,55 +5,53 @@
  * Provides useFeatureFlag hook for checking if features are enabled.
  */
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react';
 
-const FeatureFlagContext = createContext()
+const FeatureFlagContext = createContext();
 
 export function FeatureFlagProvider({ children }) {
-  const [flags, setFlags] = useState(() => {
-    const stored = localStorage.getItem('feature_flags')
-    return stored ? JSON.parse(stored) : {
-      experimentalFeaturesEnabled: false,
-      multiCurrencyEnabled: false,
-      budgetRecalculationEnabled: false,
-      flexibleSubPeriodsEnabled: false,
-      reportsEnabled: false
-    }
-  })
+    const [flags, setFlags] = useState(() => {
+        const stored = localStorage.getItem('feature_flags');
+        return stored
+            ? JSON.parse(stored)
+            : {
+                  experimentalFeaturesEnabled: false,
+                  multiCurrencyEnabled: false,
+                  budgetRecalculationEnabled: false,
+                  flexibleSubPeriodsEnabled: false,
+                  reportsEnabled: false,
+              };
+    });
 
-  useEffect(() => {
-    localStorage.setItem('feature_flags', JSON.stringify(flags))
-  }, [flags])
+    useEffect(() => {
+        localStorage.setItem('feature_flags', JSON.stringify(flags));
+    }, [flags]);
 
-  const toggleFlag = (flagName) => {
-    setFlags(prev => ({
-      ...prev,
-      [flagName]: !prev[flagName]
-    }))
-  }
+    const toggleFlag = (flagName) => {
+        setFlags((prev) => ({
+            ...prev,
+            [flagName]: !prev[flagName],
+        }));
+    };
 
-  const isEnabled = (flagName) => {
-    return flags[flagName] || false
-  }
+    const isEnabled = (flagName) => {
+        return flags[flagName] || false;
+    };
 
-  const value = {
-    flags,
-    toggleFlag,
-    isEnabled,
-    experimentalEnabled: flags.experimentalFeaturesEnabled
-  }
+    const value = {
+        flags,
+        toggleFlag,
+        isEnabled,
+        experimentalEnabled: flags.experimentalFeaturesEnabled,
+    };
 
-  return (
-    <FeatureFlagContext.Provider value={value}>
-      {children}
-    </FeatureFlagContext.Provider>
-  )
+    return <FeatureFlagContext.Provider value={value}>{children}</FeatureFlagContext.Provider>;
 }
 
 export function useFeatureFlag() {
-  const context = useContext(FeatureFlagContext)
-  if (!context) {
-    throw new Error('useFeatureFlag must be used within FeatureFlagProvider')
-  }
-  return context
+    const context = useContext(FeatureFlagContext);
+    if (!context) {
+        throw new Error('useFeatureFlag must be used within FeatureFlagProvider');
+    }
+    return context;
 }

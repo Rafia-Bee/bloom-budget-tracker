@@ -5,303 +5,309 @@
  * name input validation, and form submission.
  */
 
-import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import CreateSubcategoryModal from '../components/CreateSubcategoryModal'
-import { clickWithAct, selectWithAct, typeWithAct } from './test-utils'
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import CreateSubcategoryModal from '../components/CreateSubcategoryModal';
+import { clickWithAct, selectWithAct, typeWithAct } from './test-utils';
 
 describe('CreateSubcategoryModal', () => {
-  let mockOnClose
-  let mockOnCreate
+    let mockOnClose;
+    let mockOnCreate;
 
-  beforeEach(() => {
-    mockOnClose = vi.fn()
-    mockOnCreate = vi.fn().mockResolvedValue({})
-    vi.clearAllMocks()
-  })
+    beforeEach(() => {
+        mockOnClose = vi.fn();
+        mockOnCreate = vi.fn().mockResolvedValue({});
+        vi.clearAllMocks();
+    });
 
-  describe('Rendering', () => {
-    it('renders the modal with title', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+    describe('Rendering', () => {
+        it('renders the modal with title', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByText('Create Subcategory')).toBeInTheDocument()
-    })
+            expect(screen.getByText('Create Subcategory')).toBeInTheDocument();
+        });
 
-    it('renders all form fields', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('renders all form fields', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByText('Category')).toBeInTheDocument()
-      expect(screen.getByText('Subcategory Name')).toBeInTheDocument()
-    })
+            expect(screen.getByText('Category')).toBeInTheDocument();
+            expect(screen.getByText('Subcategory Name')).toBeInTheDocument();
+        });
 
-    it('renders Create and Cancel buttons', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('renders Create and Cancel buttons', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
-    })
+            expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+        });
 
-    it('renders close X button', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('renders close X button', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByRole('button', { name: '✕' })).toBeInTheDocument()
-    })
+            expect(screen.getByRole('button', { name: '✕' })).toBeInTheDocument();
+        });
 
-    it('renders all category options in dropdown', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('renders all category options in dropdown', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByRole('option', { name: 'Fixed Expenses' })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Flexible Expenses' })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Savings & Investments' })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: 'Debt Payments' })).toBeInTheDocument()
-    })
+            expect(screen.getByRole('option', { name: 'Fixed Expenses' })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: 'Flexible Expenses' })).toBeInTheDocument();
+            expect(
+                screen.getByRole('option', { name: 'Savings & Investments' })
+            ).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: 'Debt Payments' })).toBeInTheDocument();
+        });
 
-    it('renders name input with placeholder', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('renders name input with placeholder', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      expect(screen.getByPlaceholderText('e.g., Streaming Services')).toBeInTheDocument()
-    })
-  })
+            expect(screen.getByPlaceholderText('e.g., Streaming Services')).toBeInTheDocument();
+        });
+    });
 
-  describe('Initial State', () => {
-    it('defaults category to Fixed Expenses when no initialCategory', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+    describe('Initial State', () => {
+        it('defaults category to Fixed Expenses when no initialCategory', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      const categorySelect = screen.getByRole('combobox')
-      expect(categorySelect).toHaveValue('Fixed Expenses')
-    })
+            const categorySelect = screen.getByRole('combobox');
+            expect(categorySelect).toHaveValue('Fixed Expenses');
+        });
 
-    it('uses initialCategory when provided', () => {
-      render(
-        <CreateSubcategoryModal
-          onClose={mockOnClose}
-          onCreate={mockOnCreate}
-          initialCategory="Flexible Expenses"
-        />
-      )
+        it('uses initialCategory when provided', () => {
+            render(
+                <CreateSubcategoryModal
+                    onClose={mockOnClose}
+                    onCreate={mockOnCreate}
+                    initialCategory="Flexible Expenses"
+                />
+            );
 
-      const categorySelect = screen.getByRole('combobox')
-      expect(categorySelect).toHaveValue('Flexible Expenses')
-    })
+            const categorySelect = screen.getByRole('combobox');
+            expect(categorySelect).toHaveValue('Flexible Expenses');
+        });
 
-    it('starts with empty name field', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('starts with empty name field', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      expect(nameInput).toHaveValue('')
-    })
-  })
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            expect(nameInput).toHaveValue('');
+        });
+    });
 
-  describe('User Interactions', () => {
-    it('allows category selection', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+    describe('User Interactions', () => {
+        it('allows category selection', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      const categorySelect = screen.getByRole('combobox')
-      await selectWithAct(categorySelect, 'Debt Payments')
+            const categorySelect = screen.getByRole('combobox');
+            await selectWithAct(categorySelect, 'Debt Payments');
 
-      expect(categorySelect).toHaveValue('Debt Payments')
-    })
+            expect(categorySelect).toHaveValue('Debt Payments');
+        });
 
-    it('allows name input', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('allows name input', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Gym Membership')
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Gym Membership');
 
-      expect(nameInput).toHaveValue('Gym Membership')
-    })
+            expect(nameInput).toHaveValue('Gym Membership');
+        });
 
-    it('calls onClose when Cancel button clicked', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+        it('calls onClose when Cancel button clicked', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
+            await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
 
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('calls onClose when X button clicked', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
 
-    it('calls onClose when X button clicked', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
+            await clickWithAct(screen.getByRole('button', { name: '✕' }));
 
-      await clickWithAct(screen.getByRole('button', { name: '✕' }))
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('Form Submission', () => {
-    it('submits form with correct data', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const categorySelect = screen.getByRole('combobox')
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-
-      await selectWithAct(categorySelect, 'Flexible Expenses')
-      await typeWithAct(nameInput, 'Coffee Shops')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).toHaveBeenCalledWith({
-        name: 'Coffee Shops',
-        category: 'Flexible Expenses'
-      })
-    })
-
-    it('trims whitespace from name', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, '  Groceries  ')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).toHaveBeenCalledWith({
-        name: 'Groceries',
-        category: 'Fixed Expenses'
-      })
-    })
-
-    it('shows loading state during submission', async () => {
-      mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Test Category')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument()
-    })
-
-    it('disables submit button during loading', async () => {
-      mockOnCreate.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Test')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      const submitButton = screen.getByRole('button', { name: 'Creating...' })
-      expect(submitButton).toBeDisabled()
-    })
-  })
-
-  describe('Validation', () => {
-    it('has required attribute on name input', () => {
-      // Browser handles empty validation via required attribute
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      expect(nameInput).toBeRequired()
-    })
-
-    it('does not call onCreate when submitting empty form', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      // Browser's required validation prevents submit
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).not.toHaveBeenCalled()
-    })
-
-    it('has maxLength attribute on name input', () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      expect(nameInput).toHaveAttribute('maxLength', '100')
-    })
-  })
-
-  describe('Error Handling', () => {
-    it('displays API error message', async () => {
-      mockOnCreate.mockRejectedValue({
-        response: { data: { error: 'Subcategory already exists' } }
-      })
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Duplicate')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      await waitFor(() => {
-        expect(screen.getByText('Subcategory already exists')).toBeInTheDocument()
-      })
-    })
-
-    it('displays generic error for unknown errors', async () => {
-      mockOnCreate.mockRejectedValue(new Error('Network error'))
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Test')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      await waitFor(() => {
-        expect(screen.getByText('Failed to create subcategory')).toBeInTheDocument()
-      })
-    })
-
-    it('re-enables submit button after error', async () => {
-      mockOnCreate.mockRejectedValue(new Error('Error'))
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Test')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Create' })).not.toBeDisabled()
-      })
-    })
-  })
-
-  describe('All Categories', () => {
-    it('can create subcategory for Fixed Expenses', async () => {
-      render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />)
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Rent')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).toHaveBeenCalledWith({
-        name: 'Rent',
-        category: 'Fixed Expenses'
-      })
-    })
-
-    it('can create subcategory for Savings & Investments', async () => {
-      render(
-        <CreateSubcategoryModal
-          onClose={mockOnClose}
-          onCreate={mockOnCreate}
-          initialCategory="Savings & Investments"
-        />
-      )
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Emergency Fund')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).toHaveBeenCalledWith({
-        name: 'Emergency Fund',
-        category: 'Savings & Investments'
-      })
-    })
-
-    it('can create subcategory for Debt Payments', async () => {
-      render(
-        <CreateSubcategoryModal
-          onClose={mockOnClose}
-          onCreate={mockOnCreate}
-          initialCategory="Debt Payments"
-        />
-      )
-
-      const nameInput = screen.getByPlaceholderText('e.g., Streaming Services')
-      await typeWithAct(nameInput, 'Student Loans')
-      await clickWithAct(screen.getByRole('button', { name: 'Create' }))
-
-      expect(mockOnCreate).toHaveBeenCalledWith({
-        name: 'Student Loans',
-        category: 'Debt Payments'
-      })
-    })
-  })
-})
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Form Submission', () => {
+        it('submits form with correct data', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const categorySelect = screen.getByRole('combobox');
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+
+            await selectWithAct(categorySelect, 'Flexible Expenses');
+            await typeWithAct(nameInput, 'Coffee Shops');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).toHaveBeenCalledWith({
+                name: 'Coffee Shops',
+                category: 'Flexible Expenses',
+            });
+        });
+
+        it('trims whitespace from name', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, '  Groceries  ');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).toHaveBeenCalledWith({
+                name: 'Groceries',
+                category: 'Fixed Expenses',
+            });
+        });
+
+        it('shows loading state during submission', async () => {
+            mockOnCreate.mockImplementation(
+                () => new Promise((resolve) => setTimeout(resolve, 100))
+            );
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Test Category');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument();
+        });
+
+        it('disables submit button during loading', async () => {
+            mockOnCreate.mockImplementation(
+                () => new Promise((resolve) => setTimeout(resolve, 100))
+            );
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Test');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            const submitButton = screen.getByRole('button', { name: 'Creating...' });
+            expect(submitButton).toBeDisabled();
+        });
+    });
+
+    describe('Validation', () => {
+        it('has required attribute on name input', () => {
+            // Browser handles empty validation via required attribute
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            expect(nameInput).toBeRequired();
+        });
+
+        it('does not call onCreate when submitting empty form', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            // Browser's required validation prevents submit
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).not.toHaveBeenCalled();
+        });
+
+        it('has maxLength attribute on name input', () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            expect(nameInput).toHaveAttribute('maxLength', '100');
+        });
+    });
+
+    describe('Error Handling', () => {
+        it('displays API error message', async () => {
+            mockOnCreate.mockRejectedValue({
+                response: { data: { error: 'Subcategory already exists' } },
+            });
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Duplicate');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            await waitFor(() => {
+                expect(screen.getByText('Subcategory already exists')).toBeInTheDocument();
+            });
+        });
+
+        it('displays generic error for unknown errors', async () => {
+            mockOnCreate.mockRejectedValue(new Error('Network error'));
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Test');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            await waitFor(() => {
+                expect(screen.getByText('Failed to create subcategory')).toBeInTheDocument();
+            });
+        });
+
+        it('re-enables submit button after error', async () => {
+            mockOnCreate.mockRejectedValue(new Error('Error'));
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Test');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: 'Create' })).not.toBeDisabled();
+            });
+        });
+    });
+
+    describe('All Categories', () => {
+        it('can create subcategory for Fixed Expenses', async () => {
+            render(<CreateSubcategoryModal onClose={mockOnClose} onCreate={mockOnCreate} />);
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Rent');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).toHaveBeenCalledWith({
+                name: 'Rent',
+                category: 'Fixed Expenses',
+            });
+        });
+
+        it('can create subcategory for Savings & Investments', async () => {
+            render(
+                <CreateSubcategoryModal
+                    onClose={mockOnClose}
+                    onCreate={mockOnCreate}
+                    initialCategory="Savings & Investments"
+                />
+            );
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Emergency Fund');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).toHaveBeenCalledWith({
+                name: 'Emergency Fund',
+                category: 'Savings & Investments',
+            });
+        });
+
+        it('can create subcategory for Debt Payments', async () => {
+            render(
+                <CreateSubcategoryModal
+                    onClose={mockOnClose}
+                    onCreate={mockOnCreate}
+                    initialCategory="Debt Payments"
+                />
+            );
+
+            const nameInput = screen.getByPlaceholderText('e.g., Streaming Services');
+            await typeWithAct(nameInput, 'Student Loans');
+            await clickWithAct(screen.getByRole('button', { name: 'Create' }));
+
+            expect(mockOnCreate).toHaveBeenCalledWith({
+                name: 'Student Loans',
+                category: 'Debt Payments',
+            });
+        });
+    });
+});

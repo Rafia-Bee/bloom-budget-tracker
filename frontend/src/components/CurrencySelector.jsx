@@ -5,18 +5,18 @@
  * Shows currency code and name (text only, no flags).
  */
 
-import { useState, useEffect } from "react";
-import { currencyAPI } from "../api";
-import { logWarn } from "../utils/logger";
-import { CURRENCY_INFO } from "../utils/formatters";
+import { useState, useEffect } from 'react';
+import { currencyAPI } from '../api';
+import { logWarn } from '../utils/logger';
+import { CURRENCY_INFO } from '../utils/formatters';
 
 function CurrencySelector({
-    value = "EUR",
+    value = 'EUR',
     onChange,
     disabled = false,
-    className = "",
+    className = '',
     showLabel = true,
-    label = "Currency",
+    label = 'Currency',
     compact = false,
 }) {
     const [currencies, setCurrencies] = useState([]);
@@ -32,7 +32,7 @@ function CurrencySelector({
             setCurrencies(response.data.currencies || []);
         } catch (err) {
             // Fallback to local currency info if API fails
-            logWarn("Failed to load currencies from API, using fallback", err);
+            logWarn('Failed to load currencies from API, using fallback', err);
             setCurrencies(
                 Object.keys(CURRENCY_INFO).map((code) => ({
                     code,

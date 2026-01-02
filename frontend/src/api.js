@@ -5,10 +5,10 @@
  * Manages authentication headers and automatic token refresh.
  */
 
-import axios from "axios";
+import axios from 'axios';
 
 // Use environment variable for API URL in production, proxy in development
-const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 let loadingCallback = null;
 
@@ -62,71 +62,70 @@ api.interceptors.response.use(
         // Let the calling code handle authentication failures
         if (
             error.response?.status === 401 &&
-            !originalRequest.url.includes("/auth/login") &&
-            !originalRequest.url.includes("/auth/register") &&
-            !originalRequest.url.includes("/auth/me")
+            !originalRequest.url.includes('/auth/login') &&
+            !originalRequest.url.includes('/auth/register') &&
+            !originalRequest.url.includes('/auth/me')
         ) {
             // No need to clear localStorage - cookies are cleared by server (#80 security fix)
-            window.location.href = "/login";
+            window.location.href = '/login';
         }
         return Promise.reject(error);
     }
 );
 
 export const authAPI = {
-    register: (data) => api.post("/auth/register", data),
-    login: (data) => api.post("/auth/login", data),
-    logout: () => api.post("/auth/logout"), // New logout endpoint (#80)
-    getCurrentUser: () => api.get("/auth/me"),
+    register: (data) => api.post('/auth/register', data),
+    login: (data) => api.post('/auth/login', data),
+    logout: () => api.post('/auth/logout'), // New logout endpoint (#80)
+    getCurrentUser: () => api.get('/auth/me'),
 };
 
 export const expenseAPI = {
-    getAll: (params) => api.get("/expenses", { params }),
-    create: (data) => api.post("/expenses", data),
+    getAll: (params) => api.get('/expenses', { params }),
+    create: (data) => api.post('/expenses', data),
     update: (id, data) => api.put(`/expenses/${id}`, data),
     delete: (id) => api.delete(`/expenses/${id}`),
-    getDatesWithTransactions: () =>
-        api.get("/expenses/dates-with-transactions"),
+    getDatesWithTransactions: () => api.get('/expenses/dates-with-transactions'),
     // Soft delete endpoints
-    getDeleted: () => api.get("/expenses/deleted"),
+    getDeleted: () => api.get('/expenses/deleted'),
     restore: (id) => api.post(`/expenses/${id}/restore`),
 };
 
 export const incomeAPI = {
-    getAll: (params) => api.get("/income", { params }),
-    create: (data) => api.post("/income", data),
+    getAll: (params) => api.get('/income', { params }),
+    create: (data) => api.post('/income', data),
     update: (id, data) => api.put(`/income/${id}`, data),
     delete: (id) => api.delete(`/income/${id}`),
-    getStats: () => api.get("/income/stats"),
+    getStats: () => api.get('/income/stats'),
     // Soft delete endpoints
-    getDeleted: () => api.get("/income/deleted"),
+    getDeleted: () => api.get('/income/deleted'),
     restore: (id) => api.post(`/income/${id}/restore`),
 };
 
 export const budgetPeriodAPI = {
-    getAll: () => api.get("/budget-periods"),
-    getActive: () => api.get("/budget-periods/active"),
+    getAll: () => api.get('/budget-periods'),
+    getActive: () => api.get('/budget-periods/active'),
     getById: (id) => api.get(`/budget-periods/${id}`),
-    create: (data) => api.post("/budget-periods", data),
+    create: (data) => api.post('/budget-periods', data),
     update: (id, data) => api.put(`/budget-periods/${id}`, data),
     delete: (id) => api.delete(`/budget-periods/${id}`),
 };
 
 export const debtAPI = {
-    getAll: (params = {}) => api.get("/debts", { params }),
+    getAll: (params = {}) => api.get('/debts', { params }),
     getById: (id) => api.get(`/debts/${id}`),
-    create: (data) => api.post("/debts", data),
+    create: (data) => api.post('/debts', data),
     update: (id, data) => api.put(`/debts/${id}`, data),
     delete: (id) => api.delete(`/debts/${id}`),
     // Soft delete endpoints
-    getDeleted: () => api.get("/debts/deleted"),
+    getDeleted: () => api.get('/debts/deleted'),
     restore: (id) => api.post(`/debts/${id}/restore`),
 };
 
 export const recurringExpenseAPI = {
-    getAll: (params = {}) => api.get("/recurring-expenses", { params }),
+    getAll: (params = {}) => api.get('/recurring-expenses', { params }),
     getById: (id) => api.get(`/recurring-expenses/${id}`),
-    create: (data) => api.post("/recurring-expenses", data),
+    create: (data) => api.post('/recurring-expenses', data),
     update: (id, data) => api.put(`/recurring-expenses/${id}`, data),
     delete: (id) => api.delete(`/recurring-expenses/${id}`),
     toggleActive: (id) => api.put(`/recurring-expenses/${id}/toggle`),
@@ -150,40 +149,38 @@ export const recurringExpenseAPI = {
             params: days ? { days } : {},
         }),
     // Soft delete endpoints
-    getDeleted: () => api.get("/recurring-expenses/deleted"),
+    getDeleted: () => api.get('/recurring-expenses/deleted'),
     restore: (id) => api.post(`/recurring-expenses/${id}/restore`),
 };
 
 export const salaryPeriodAPI = {
-    getCurrent: () => api.get("/salary-periods/current"),
-    getAll: () => api.get("/salary-periods"),
+    getCurrent: () => api.get('/salary-periods/current'),
+    getAll: () => api.get('/salary-periods'),
     delete: (id) => api.delete(`/salary-periods/${id}`),
     recalculate: (id) => api.post(`/salary-periods/${id}/recalculate`),
     getBudgetImpact: (id) => api.get(`/salary-periods/${id}/budget-impact`),
 };
 
 export const userAPI = {
-    deleteAllData: (confirmation) =>
-        api.post("/user-data/delete-all", { confirmation }),
-    getRecurringLookahead: () =>
-        api.get("/user-data/settings/recurring-lookahead"),
+    deleteAllData: (confirmation) => api.post('/user-data/delete-all', { confirmation }),
+    getRecurringLookahead: () => api.get('/user-data/settings/recurring-lookahead'),
     updateRecurringLookahead: (days) =>
-        api.put("/user-data/settings/recurring-lookahead", {
+        api.put('/user-data/settings/recurring-lookahead', {
             recurring_lookahead_days: days,
         }),
-    getDefaultCurrency: () => api.get("/user-data/settings/default-currency"),
+    getDefaultCurrency: () => api.get('/user-data/settings/default-currency'),
     updateDefaultCurrency: (currency) =>
-        api.put("/user-data/settings/default-currency", {
+        api.put('/user-data/settings/default-currency', {
             default_currency: currency,
         }),
 };
 
 export const currencyAPI = {
-    getSupportedCurrencies: () => api.get("/currencies"),
-    getRates: (baseCurrency = "EUR") =>
-        api.get("/currencies/rates", { params: { base: baseCurrency } }),
+    getSupportedCurrencies: () => api.get('/currencies'),
+    getRates: (baseCurrency = 'EUR') =>
+        api.get('/currencies/rates', { params: { base: baseCurrency } }),
     convert: (amount, fromCurrency, toCurrency, date = null) =>
-        api.post("/currencies/convert", {
+        api.post('/currencies/convert', {
             amount,
             from_currency: fromCurrency,
             to_currency: toCurrency,
@@ -193,47 +190,37 @@ export const currencyAPI = {
 
 export const subcategoryAPI = {
     getAll: (category = null) =>
-        api.get("/subcategories", { params: category ? { category } : {} }),
-    create: (data) => api.post("/subcategories", data),
+        api.get('/subcategories', { params: category ? { category } : {} }),
+    create: (data) => api.post('/subcategories', data),
     update: (id, data) => api.put(`/subcategories/${id}`, data),
-    delete: (id, force = false) =>
-        api.delete(`/subcategories/${id}`, { params: { force } }),
+    delete: (id, force = false) => api.delete(`/subcategories/${id}`, { params: { force } }),
 };
 
 export const goalAPI = {
-    getAll: () => api.get("/goals"),
-    create: (data) => api.post("/goals", data),
+    getAll: () => api.get('/goals'),
+    create: (data) => api.post('/goals', data),
     update: (id, data) => api.put(`/goals/${id}`, data),
-    delete: (id, force = false) =>
-        api.delete(`/goals/${id}`, { params: { force } }),
+    delete: (id, force = false) => api.delete(`/goals/${id}`, { params: { force } }),
     getProgress: (id) => api.get(`/goals/${id}/progress`),
     getTransactions: (id, page = 1, perPage = 20) =>
         api.get(`/goals/${id}/transactions`, {
             params: { page, per_page: perPage },
         }),
-    getDeleted: () => api.get("/goals/deleted"),
+    getDeleted: () => api.get('/goals/deleted'),
     restore: (id) => api.post(`/goals/${id}/restore`),
 };
 
 export const analyticsAPI = {
-    getSpendingByCategory: (params = {}) =>
-        api.get("/analytics/spending-by-category", { params }),
+    getSpendingByCategory: (params = {}) => api.get('/analytics/spending-by-category', { params }),
     getSpendingBySubcategory: (params = {}) =>
-        api.get("/analytics/spending-by-subcategory", { params }),
-    getSpendingTrends: (params = {}) =>
-        api.get("/analytics/spending-trends", { params }),
-    getIncomeVsExpense: (params = {}) =>
-        api.get("/analytics/income-vs-expense", { params }),
-    getAllTimeStats: () =>
-        api.get("/analytics/income-vs-expense", { params: { all_time: true } }),
-    getDebtPayoffProgress: (params = {}) =>
-        api.get("/analytics/debt-payoff", { params }),
-    getPeriodComparison: (params = {}) =>
-        api.get("/analytics/period-comparison", { params }),
-    getBudgetVsActual: (params = {}) =>
-        api.get("/analytics/budget-vs-actual", { params }),
-    getTopMerchants: (params = {}) =>
-        api.get("/analytics/top-merchants", { params }),
+        api.get('/analytics/spending-by-subcategory', { params }),
+    getSpendingTrends: (params = {}) => api.get('/analytics/spending-trends', { params }),
+    getIncomeVsExpense: (params = {}) => api.get('/analytics/income-vs-expense', { params }),
+    getAllTimeStats: () => api.get('/analytics/income-vs-expense', { params: { all_time: true } }),
+    getDebtPayoffProgress: (params = {}) => api.get('/analytics/debt-payoff', { params }),
+    getPeriodComparison: (params = {}) => api.get('/analytics/period-comparison', { params }),
+    getBudgetVsActual: (params = {}) => api.get('/analytics/budget-vs-actual', { params }),
+    getTopMerchants: (params = {}) => api.get('/analytics/top-merchants', { params }),
 };
 
 export default api;

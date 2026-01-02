@@ -5,7 +5,7 @@
  * Provides act()-wrapped event handlers to prevent React act() warnings.
  */
 
-import { act, fireEvent, waitFor } from "@testing-library/react";
+import { act, fireEvent, waitFor } from '@testing-library/react';
 
 /**
  * Wait for async effects to complete after render.
@@ -82,7 +82,7 @@ export const selectWithAct = async (selectElement, value) => {
  */
 export const clearWithAct = async (element) => {
     await act(async () => {
-        fireEvent.change(element, { target: { value: "" } });
+        fireEvent.change(element, { target: { value: '' } });
     });
 };
 
@@ -171,6 +171,6 @@ export const uploadWithAct = async (inputElement, file) => {
  */
 export const keydownWithAct = async (element, key) => {
     await act(async () => {
-        fireEvent.keyDown(element, { key, code: key === " " ? "Space" : key });
+        fireEvent.keyDown(element, { key, code: key === ' ' ? 'Space' : key });
     });
 };
