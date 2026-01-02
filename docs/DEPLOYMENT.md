@@ -225,8 +225,9 @@ Option A - Via API (Recommended for Render free tier):
 
 ```bash
 # Use curl or Postman to call the admin endpoint
+# Replace <your-token> with your actual JWT token from login
 curl -X POST https://bloom-backend-b44r.onrender.com/admin/remove-duplicate-initial-balances \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer <your-token>"
 ```
 
 Option B - Via Script (Requires Render shell access):
