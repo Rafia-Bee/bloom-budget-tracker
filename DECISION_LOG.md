@@ -4,6 +4,27 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-03
+
+### AI Context Management: Streamlined Core Rules
+
+**Context:** During long TaskSync sessions, AI assistant loses track of workflow rules (creates commits on main, forgets DECISION_LOG updates, doesn't run bformat). The full copilot-instructions.md file (~450 lines) gets diluted in context.
+
+**Decision:** Created a tiered instruction system:
+
+1. **CORE_RULES.md** (~50 lines) - Critical rules that must always be enforced
+2. **PROMPT_TEMPLATES.md** - Task-specific templates with built-in reminders
+3. **VS Code setting** - `github.copilot.chat.codeGeneration.instructions` auto-loads CORE_RULES.md
+
+**Files Added:**
+
+-   `.github/CORE_RULES.md` - TaskSync control, git workflow, pre-commit checklist, doc updates, testing, zero tolerance for errors
+-   `.github/PROMPT_TEMPLATES.md` - Templates for: Create GH Issue, Implement Issue, Bug Report
+
+**Impact:** Core workflow rules stay prominent even in long sessions. Full copilot-instructions.md remains available for complex decisions.
+
+---
+
 ## 2026-01-02
 
 ### Added Prettier for Frontend Code Formatting
@@ -13,11 +34,12 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Decision:** Added Prettier for frontend JavaScript/JSX formatting.
 
 **Changes:**
-- Installed `prettier` as devDependency
-- Added `.prettierrc` config (4-space tabs, single quotes, trailing commas)
-- Added `npm run format` and `npm run format:check` scripts
-- Updated `bformat` PowerShell function to run both Black and Prettier
-- Updated DEVELOPMENT_REFERENCE.md
+
+-   Installed `prettier` as devDependency
+-   Added `.prettierrc` config (4-space tabs, single quotes, trailing commas)
+-   Added `npm run format` and `npm run format:check` scripts
+-   Updated `bformat` PowerShell function to run both Black and Prettier
+-   Updated DEVELOPMENT_REFERENCE.md
 
 **Impact:** Running `bformat` now formats both backend (Black) and frontend (Prettier).
 
@@ -28,6 +50,7 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 **Context:** Needed persistent AI assistant instructions for consistent development workflow.
 
 **Decision:** Restructured `.github/copilot-instructions.md` with 8 consolidated skill areas:
+
 1. Conversation control (ask_user cycle)
 2. Design principles (Bloom color palette)
 3. TDD workflow (80% coverage target)

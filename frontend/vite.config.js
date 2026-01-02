@@ -3,6 +3,23 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+    build: {
+        // Vendor chunks are intentionally large but loaded on-demand
+        chunkSizeWarningLimit: 600,
+        rollupOptions: {
+            output: {
+                // Code-split large vendor libraries into separate chunks
+                manualChunks: {
+                    // Charts library (recharts) - ~500KB, only used on Reports/Dashboard
+                    "vendor-charts": ["recharts"],
+                    // PDF export libraries - ~600KB, only used when exporting
+                    "vendor-pdf": ["jspdf", "html2canvas"],
+                    // React core - stable, cacheable
+                    "vendor-react": ["react", "react-dom", "react-router-dom"],
+                },
+            },
+        },
+    },
     plugins: [
         react(),
         VitePWA({
