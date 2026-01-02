@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 /**
  * AddIncomeModal Test Suite
  *
@@ -11,360 +11,388 @@ import React from 'react'
  * - Modal close actions
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
-import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils'
-import AddIncomeModal from '../components/AddIncomeModal'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils';
+import AddIncomeModal from '../components/AddIncomeModal';
 
 describe('AddIncomeModal', () => {
-  const mockOnClose = vi.fn()
-  const mockOnAdd = vi.fn()
+    const mockOnClose = vi.fn();
+    const mockOnAdd = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockOnAdd.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        cleanup();
+    });
+
+    describe('Rendering', () => {
+        it('renders the modal with title', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockOnAdd.mockResolvedValue(undefined)
-  })
+            expect(screen.getByRole('heading', { name: 'Add Income' })).toBeInTheDocument();
+        });
 
-  afterEach(() => {
-    cleanup()
-  })
+        it('renders type select field', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-  describe('Rendering', () => {
-    it('renders the modal with title', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            expect(screen.getByText('Type')).toBeInTheDocument();
+            expect(screen.getAllByRole('combobox')[0]).toBeInTheDocument();
+        });
+
+        it('renders amount input field', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.getByRole('heading', { name: 'Add Income' })).toBeInTheDocument()
-    })
+            expect(screen.getByText('Amount')).toBeInTheDocument();
+            expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+        });
 
-    it('renders type select field', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+        it('renders date input field', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.getByText('Type')).toBeInTheDocument()
-      expect(screen.getAllByRole('combobox')[0]).toBeInTheDocument()
-    })
+            expect(screen.getByText('Date')).toBeInTheDocument();
+        });
 
-    it('renders amount input field', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+        it('renders Add and Cancel buttons', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.getByText('Amount')).toBeInTheDocument()
-      expect(screen.getByRole('spinbutton')).toBeInTheDocument()
-    })
+            expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+        });
 
-    it('renders date input field', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+        it('renders X close button', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.getByText('Date')).toBeInTheDocument()
-    })
+            const buttons = screen.getAllByRole('button');
+            const xButton = buttons.find(
+                (btn) =>
+                    btn.querySelector('svg') &&
+                    !btn.textContent.includes('Add') &&
+                    !btn.textContent.includes('Cancel')
+            );
+            expect(xButton).toBeInTheDocument();
+        });
+    });
 
-    it('renders Add and Cancel buttons', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+    describe('Default Values', () => {
+        it('has Salary selected by default', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
-    })
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            expect(typeSelect).toHaveValue('Salary');
+        });
 
-    it('renders X close button', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+        it('has today date selected by default', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const buttons = screen.getAllByRole('button')
-      const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Add') && !btn.textContent.includes('Cancel'))
-      expect(xButton).toBeInTheDocument()
-    })
-  })
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = screen.getByDisplayValue(today);
+            expect(dateInput).toBeInTheDocument();
+        });
 
-  describe('Default Values', () => {
-    it('has Salary selected by default', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+        it('has empty amount by default', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      expect(typeSelect).toHaveValue('Salary')
-    })
+            const amountInput = screen.getByRole('spinbutton');
+            expect(amountInput).toHaveValue(null);
+        });
+    });
 
-    it('has today date selected by default', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+    describe('Income Type Options', () => {
+        it('has all income type options', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const today = new Date().toISOString().split('T')[0]
-      const dateInput = screen.getByDisplayValue(today)
-      expect(dateInput).toBeInTheDocument()
-    })
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            const options = typeSelect.querySelectorAll('option');
+            const optionValues = Array.from(options).map((o) => o.value);
 
-    it('has empty amount by default', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            expect(optionValues).toContain('Salary');
+            expect(optionValues).toContain('Bonus');
+            expect(optionValues).toContain('Freelance');
+            expect(optionValues).toContain('Other');
+        });
 
-      const amountInput = screen.getByRole('spinbutton')
-      expect(amountInput).toHaveValue(null)
-    })
-  })
+        it('allows changing income type', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-  describe('Income Type Options', () => {
-    it('has all income type options', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            await selectWithAct(typeSelect, 'Bonus');
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      const options = typeSelect.querySelectorAll('option')
-      const optionValues = Array.from(options).map(o => o.value)
+            expect(typeSelect).toHaveValue('Bonus');
+        });
+    });
 
-      expect(optionValues).toContain('Salary')
-      expect(optionValues).toContain('Bonus')
-      expect(optionValues).toContain('Freelance')
-      expect(optionValues).toContain('Other')
-    })
+    describe('Form Interactions', () => {
+        it('allows entering amount', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-    it('allows changing income type', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1500.50');
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      await selectWithAct(typeSelect, 'Bonus')
+            expect(amountInput).toHaveValue(1500.5);
+        });
 
-      expect(typeSelect).toHaveValue('Bonus')
-    })
-  })
+        it('allows changing date', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-  describe('Form Interactions', () => {
-    it('allows entering amount', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = screen.getByDisplayValue(today);
+            await clearWithAct(dateInput);
+            await typeWithAct(dateInput, '2025-12-25');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1500.50')
+            expect(dateInput).toHaveValue('2025-12-25');
+        });
 
-      expect(amountInput).toHaveValue(1500.5)
-    })
+        it('allows selecting Freelance type', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-    it('allows changing date', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            await selectWithAct(typeSelect, 'Freelance');
 
-      const today = new Date().toISOString().split('T')[0]
-      const dateInput = screen.getByDisplayValue(today)
-      await clearWithAct(dateInput)
-      await typeWithAct(dateInput, '2025-12-25')
+            expect(typeSelect).toHaveValue('Freelance');
+        });
 
-      expect(dateInput).toHaveValue('2025-12-25')
-    })
+        it('allows selecting Other type', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-    it('allows selecting Freelance type', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            await selectWithAct(typeSelect, 'Other');
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      await selectWithAct(typeSelect, 'Freelance')
+            expect(typeSelect).toHaveValue('Other');
+        });
+    });
 
-      expect(typeSelect).toHaveValue('Freelance')
-    })
+    describe('Modal Close Actions', () => {
+        it('calls onClose when Cancel button is clicked', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-    it('allows selecting Other type', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      await selectWithAct(typeSelect, 'Other')
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
 
-      expect(typeSelect).toHaveValue('Other')
-    })
-  })
+        it('calls onClose when X button is clicked', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+
+            const buttons = screen.getAllByRole('button');
+            const xButton = buttons.find(
+                (btn) =>
+                    btn.querySelector('svg') &&
+                    !btn.textContent.includes('Add') &&
+                    !btn.textContent.includes('Cancel')
+            );
+            await clickWithAct(xButton);
 
-  describe('Modal Close Actions', () => {
-    it('calls onClose when Cancel button is clicked', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            expect(mockOnClose).toHaveBeenCalledTimes(1);
+        });
+    });
 
-      await clickWithAct(screen.getByRole('button', { name: 'Cancel' }))
+    describe('Form Submission', () => {
+        it('calls onAdd with income data on submit', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '2500');
 
-    it('calls onClose when X button is clicked', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const addButton = screen.getByRole('button', { name: 'Add' });
+            await clickWithAct(addButton);
+
+            await waitFor(() => {
+                expect(mockOnAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'Salary',
+                        amount: 250000, // 2500 * 100 cents
+                    })
+                );
+            });
+        });
 
-      const buttons = screen.getAllByRole('button')
-      const xButton = buttons.find(btn => btn.querySelector('svg') && !btn.textContent.includes('Add') && !btn.textContent.includes('Cancel'))
-      await clickWithAct(xButton)
+        it('converts amount to cents before submission', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(mockOnClose).toHaveBeenCalledTimes(1)
-    })
-  })
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '123.45');
 
-  describe('Form Submission', () => {
-    it('calls onAdd with income data on submit', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '2500')
+            await waitFor(() => {
+                expect(mockOnAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        amount: 12345, // 123.45 * 100
+                    })
+                );
+            });
+        });
 
-      const addButton = screen.getByRole('button', { name: 'Add' })
-      await clickWithAct(addButton)
+        it('includes selected type in submission', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      await waitFor(() => {
-        expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
-          type: 'Salary',
-          amount: 250000, // 2500 * 100 cents
-        }))
-      })
-    })
+            const typeSelect = screen.getAllByRole('combobox')[0];
+            await selectWithAct(typeSelect, 'Bonus');
 
-    it('converts amount to cents before submission', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '500');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '123.45')
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            await waitFor(() => {
+                expect(mockOnAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'Bonus',
+                    })
+                );
+            });
+        });
 
-      await waitFor(() => {
-        expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
-          amount: 12345 // 123.45 * 100
-        }))
-      })
-    })
+        it('includes date in submission', async () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-    it('includes selected type in submission', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = screen.getByDisplayValue(today);
+            await clearWithAct(dateInput);
+            await typeWithAct(dateInput, '2025-12-25');
 
-      const typeSelect = screen.getAllByRole('combobox')[0]
-      await selectWithAct(typeSelect, 'Bonus')
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '500')
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            await waitFor(() => {
+                expect(mockOnAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        date: '2025-12-25',
+                    })
+                );
+            });
+        });
 
-      await waitFor(() => {
-        expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
-          type: 'Bonus'
-        }))
-      })
-    })
+        it('shows loading state during submission', async () => {
+            let resolvePromise;
+            mockOnAdd.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolvePromise = resolve;
+                    })
+            );
 
-    it('includes date in submission', async () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const today = new Date().toISOString().split('T')[0]
-      const dateInput = screen.getByDisplayValue(today)
-      await clearWithAct(dateInput)
-      await typeWithAct(dateInput, '2025-12-25')
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            expect(screen.getByText('Adding...')).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
-          date: '2025-12-25'
-        }))
-      })
-    })
+            // Cleanup
+            resolvePromise();
+        });
 
-    it('shows loading state during submission', async () => {
-      let resolvePromise
-      mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
+        it('disables Add button while loading', async () => {
+            let resolvePromise;
+            mockOnAdd.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolvePromise = resolve;
+                    })
+            );
 
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            const addButton = screen.getByRole('button', { name: 'Add' });
+            await clickWithAct(addButton);
 
-      expect(screen.getByText('Adding...')).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled();
 
-      // Cleanup
-      resolvePromise()
-    })
+            // Cleanup
+            resolvePromise();
+        });
+    });
 
-    it('disables Add button while loading', async () => {
-      let resolvePromise
-      mockOnAdd.mockImplementation(() => new Promise(resolve => { resolvePromise = resolve }))
+    describe('Error Handling', () => {
+        it('displays error message when submission fails', async () => {
+            mockOnAdd.mockRejectedValueOnce({
+                response: { data: { error: 'Invalid income data' } },
+            });
 
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      const addButton = screen.getByRole('button', { name: 'Add' })
-      await clickWithAct(addButton)
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled()
+            await waitFor(() => {
+                expect(screen.getByText('Invalid income data')).toBeInTheDocument();
+            });
+        });
 
-      // Cleanup
-      resolvePromise()
-    })
-  })
+        it('shows generic error when no response error message', async () => {
+            mockOnAdd.mockRejectedValueOnce(new Error('Network error'));
 
-  describe('Error Handling', () => {
-    it('displays error message when submission fails', async () => {
-      mockOnAdd.mockRejectedValueOnce({
-        response: { data: { error: 'Invalid income data' } }
-      })
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            await waitFor(() => {
+                expect(screen.getByText('Failed to add income')).toBeInTheDocument();
+            });
+        });
 
-      await waitFor(() => {
-        expect(screen.getByText('Invalid income data')).toBeInTheDocument()
-      })
-    })
+        it('error message is dismissible', async () => {
+            mockOnAdd.mockRejectedValueOnce({
+                response: { data: { error: 'Test error' } },
+            });
 
-    it('shows generic error when no response error message', async () => {
-      mockOnAdd.mockRejectedValueOnce(new Error('Network error'))
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+            const amountInput = screen.getByRole('spinbutton');
+            await typeWithAct(amountInput, '1000');
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            await clickWithAct(screen.getByRole('button', { name: 'Add' }));
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+            await waitFor(() => {
+                expect(screen.getByText('Test error')).toBeInTheDocument();
+            });
 
-      await waitFor(() => {
-        expect(screen.getByText('Failed to add income')).toBeInTheDocument()
-      })
-    })
+            // Find dismiss button in error area
+            const errorDiv = screen.getByText('Test error').closest('div');
+            const dismissButton = errorDiv.querySelector('button');
+            await clickWithAct(dismissButton);
 
-    it('error message is dismissible', async () => {
-      mockOnAdd.mockRejectedValueOnce({
-        response: { data: { error: 'Test error' } }
-      })
+            expect(screen.queryByText('Test error')).not.toBeInTheDocument();
+        });
+    });
 
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
+    describe('Amount Validation', () => {
+        it('amount input has min value of 0.01', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      const amountInput = screen.getByRole('spinbutton')
-      await typeWithAct(amountInput, '1000')
+            const amountInput = screen.getByRole('spinbutton');
+            expect(amountInput).toHaveAttribute('min', '0.01');
+        });
 
-      await clickWithAct(screen.getByRole('button', { name: 'Add' }))
+        it('amount input has step of 0.01', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Test error')).toBeInTheDocument()
-      })
+            const amountInput = screen.getByRole('spinbutton');
+            expect(amountInput).toHaveAttribute('step', '0.01');
+        });
 
-      // Find dismiss button in error area
-      const errorDiv = screen.getByText('Test error').closest('div')
-      const dismissButton = errorDiv.querySelector('button')
-      await clickWithAct(dismissButton)
+        it('amount input is required', () => {
+            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
-      expect(screen.queryByText('Test error')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Amount Validation', () => {
-    it('amount input has min value of 0.01', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-
-      const amountInput = screen.getByRole('spinbutton')
-      expect(amountInput).toHaveAttribute('min', '0.01')
-    })
-
-    it('amount input has step of 0.01', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-
-      const amountInput = screen.getByRole('spinbutton')
-      expect(amountInput).toHaveAttribute('step', '0.01')
-    })
-
-    it('amount input is required', () => {
-      render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />)
-
-      const amountInput = screen.getByRole('spinbutton')
-      expect(amountInput).toBeRequired()
-    })
-  })
-})
+            const amountInput = screen.getByRole('spinbutton');
+            expect(amountInput).toBeRequired();
+        });
+    });
+});

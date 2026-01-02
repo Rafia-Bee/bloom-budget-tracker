@@ -12,26 +12,26 @@
  * Note: Flag emojis removed for better cross-platform compatibility
  */
 export const CURRENCY_INFO = {
-    EUR: { name: "Euro", symbol: "€", locale: "de-DE" },
-    USD: { name: "US Dollar", symbol: "$", locale: "en-US" },
-    GBP: { name: "British Pound", symbol: "£", locale: "en-GB" },
-    PLN: { name: "Polish Złoty", symbol: "zł", locale: "pl-PL" },
-    SEK: { name: "Swedish Krona", symbol: "kr", locale: "sv-SE" },
-    NOK: { name: "Norwegian Krone", symbol: "kr", locale: "nb-NO" },
-    CHF: { name: "Swiss Franc", symbol: "CHF", locale: "de-CH" },
-    DKK: { name: "Danish Krone", symbol: "kr", locale: "da-DK" },
-    BDT: { name: "Bangladeshi Taka", symbol: "৳", locale: "bn-BD" },
-    CAD: { name: "Canadian Dollar", symbol: "CA$", locale: "en-CA" },
-    AUD: { name: "Australian Dollar", symbol: "A$", locale: "en-AU" },
-    JPY: { name: "Japanese Yen", symbol: "¥", locale: "ja-JP" },
-    CNY: { name: "Chinese Renminbi", symbol: "¥", locale: "zh-CN" },
-    INR: { name: "Indian Rupee", symbol: "₹", locale: "en-IN" },
+    EUR: { name: 'Euro', symbol: '€', locale: 'de-DE' },
+    USD: { name: 'US Dollar', symbol: '$', locale: 'en-US' },
+    GBP: { name: 'British Pound', symbol: '£', locale: 'en-GB' },
+    PLN: { name: 'Polish Złoty', symbol: 'zł', locale: 'pl-PL' },
+    SEK: { name: 'Swedish Krona', symbol: 'kr', locale: 'sv-SE' },
+    NOK: { name: 'Norwegian Krone', symbol: 'kr', locale: 'nb-NO' },
+    CHF: { name: 'Swiss Franc', symbol: 'CHF', locale: 'de-CH' },
+    DKK: { name: 'Danish Krone', symbol: 'kr', locale: 'da-DK' },
+    BDT: { name: 'Bangladeshi Taka', symbol: '৳', locale: 'bn-BD' },
+    CAD: { name: 'Canadian Dollar', symbol: 'CA$', locale: 'en-CA' },
+    AUD: { name: 'Australian Dollar', symbol: 'A$', locale: 'en-AU' },
+    JPY: { name: 'Japanese Yen', symbol: '¥', locale: 'ja-JP' },
+    CNY: { name: 'Chinese Renminbi', symbol: '¥', locale: 'zh-CN' },
+    INR: { name: 'Indian Rupee', symbol: '₹', locale: 'en-IN' },
 };
 
 /**
  * Default locale for number formatting
  */
-const DEFAULT_LOCALE = "en-GB";
+const DEFAULT_LOCALE = 'en-GB';
 
 /**
  * Format amount in cents to currency display string
@@ -43,11 +43,11 @@ const DEFAULT_LOCALE = "en-GB";
  * @param {boolean} options.compact - Use compact notation for large numbers (default: false)
  * @returns {string} Formatted currency string (e.g., "€15.00")
  */
-export const formatCurrency = (cents, currency = "EUR", options = {}) => {
+export const formatCurrency = (cents, currency = 'EUR', options = {}) => {
     const { showSymbol = true, compact = false } = options;
 
     if (cents === null || cents === undefined || isNaN(cents)) {
-        return showSymbol ? `${getCurrencySymbol(currency)}0.00` : "0.00";
+        return showSymbol ? `${getCurrencySymbol(currency)}0.00` : '0.00';
     }
 
     const euros = cents / 100;
@@ -61,12 +61,12 @@ export const formatCurrency = (cents, currency = "EUR", options = {}) => {
     };
 
     if (showSymbol) {
-        formatOptions.style = "currency";
+        formatOptions.style = 'currency';
         formatOptions.currency = currency;
     }
 
     if (compact && Math.abs(euros) >= 10000) {
-        formatOptions.notation = "compact";
+        formatOptions.notation = 'compact';
         formatOptions.maximumFractionDigits = 1;
     }
 
@@ -87,7 +87,7 @@ export const formatWithConversion = (
     originalCents,
     originalCurrency,
     convertedCents = null,
-    baseCurrency = "EUR"
+    baseCurrency = 'EUR'
 ) => {
     if (originalCurrency === baseCurrency || !convertedCents) {
         return formatCurrency(originalCents, originalCurrency);
@@ -108,13 +108,9 @@ export const formatWithConversion = (
  * @param {function} convertFn - Currency conversion function from CurrencyContext
  * @returns {Object} { display: string, converted: number|null }
  */
-export const formatTransactionAmount = (
-    transaction,
-    userCurrency,
-    convertFn
-) => {
+export const formatTransactionAmount = (transaction, userCurrency, convertFn) => {
     const amount = transaction.amount;
-    const txCurrency = transaction.currency || "EUR";
+    const txCurrency = transaction.currency || 'EUR';
 
     // Same currency - no conversion needed
     if (txCurrency === userCurrency) {
@@ -126,9 +122,7 @@ export const formatTransactionAmount = (
     }
 
     // Different currency - convert and show both
-    const convertedAmount = convertFn
-        ? convertFn(amount, txCurrency, userCurrency)
-        : amount;
+    const convertedAmount = convertFn ? convertFn(amount, txCurrency, userCurrency) : amount;
 
     return {
         display: formatCurrency(amount, txCurrency),
@@ -183,16 +177,16 @@ export const parseCurrencyInput = (value) => {
     // Remove currency symbols and whitespace
     let cleaned = value
         .toString()
-        .replace(/[€$£¥₹kr\s]/gi, "")
+        .replace(/[€$£¥₹kr\s]/gi, '')
         .trim();
 
     // Handle European format (comma as decimal separator)
     // If there's a comma followed by exactly 2 digits at the end, treat as decimal
     if (/,\d{2}$/.test(cleaned)) {
-        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
     } else {
         // Remove any commas used as thousand separators
-        cleaned = cleaned.replace(/,/g, "");
+        cleaned = cleaned.replace(/,/g, '');
     }
 
     const parsed = parseFloat(cleaned);
@@ -211,7 +205,7 @@ export const parseCurrencyInput = (value) => {
  */
 export const formatCentsForInput = (cents) => {
     if (cents === null || cents === undefined || isNaN(cents)) {
-        return "";
+        return '';
     }
     return (cents / 100).toFixed(2);
 };

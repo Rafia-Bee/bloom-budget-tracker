@@ -11,17 +11,17 @@
  * These utilities ensure consistent display formatting throughout the app.
  */
 
-const LOCALE = "en-GB";
+const LOCALE = 'en-GB';
 
 /**
  * Format date as "24 Dec, 2025" (with comma before year)
  * This is the standard format used throughout the app
  */
 export const formatDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return '';
     const date = new Date(dateString);
     const day = date.getDate();
-    const month = date.toLocaleDateString(LOCALE, { month: "short" });
+    const month = date.toLocaleDateString(LOCALE, { month: 'short' });
     const year = date.getFullYear();
     return `${day} ${month}, ${year}`;
 };
@@ -30,10 +30,10 @@ export const formatDate = (dateString) => {
  * Format date as "24 Dec" (without year)
  */
 export const formatShortDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return '';
     const date = new Date(dateString);
     const day = date.getDate();
-    const month = date.toLocaleDateString(LOCALE, { month: "short" });
+    const month = date.toLocaleDateString(LOCALE, { month: 'short' });
     return `${day} ${month}`;
 };
 
@@ -41,12 +41,12 @@ export const formatShortDate = (dateString) => {
  * Format date as "24/12/2025"
  */
 export const formatNumericDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString(LOCALE, {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
     });
 };
 
@@ -54,13 +54,13 @@ export const formatNumericDate = (dateString) => {
  * Format date as "Tuesday, 24 December 2025"
  */
 export const formatLongDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString(LOCALE, {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
     });
 };
 
@@ -68,7 +68,7 @@ export const formatLongDate = (dateString) => {
  * Format date range as "24 Dec - 30 Dec 2025"
  */
 export const formatDateRange = (startDate, endDate) => {
-    if (!startDate || !endDate) return "";
+    if (!startDate || !endDate) return '';
     return `${formatShortDate(startDate)} - ${formatDate(endDate)}`;
 };
 
@@ -76,7 +76,7 @@ export const formatDateRange = (startDate, endDate) => {
  * Get relative date description ("Today", "Yesterday", "Tomorrow", or formatted date)
  */
 export const formatRelativeDate = (dateString) => {
-    if (!dateString) return "";
+    if (!dateString) return '';
 
     const date = new Date(dateString);
     const today = new Date();
@@ -85,9 +85,9 @@ export const formatRelativeDate = (dateString) => {
 
     const diffDays = Math.round((date - today) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays === -1) return "Yesterday";
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
 
     return formatDate(dateString);
 };

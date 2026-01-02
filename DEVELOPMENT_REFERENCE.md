@@ -327,7 +327,7 @@ cd frontend && npm install && cd ..
 bstart   # Start backend + frontend
 bstop    # Stop servers
 bmigrate # Run database migrations (preferred over breset)
-bformat  # Run black formatter
+bformat  # Format all code (Black for backend, Prettier for frontend)
 ```
 
 ### PR-Based Workflow (Required)

@@ -21,7 +21,7 @@
  *   }, [debouncedSearchTerm])
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 function useDebounce(value, delay = 500) {
     const [debouncedValue, setDebouncedValue] = useState(value);

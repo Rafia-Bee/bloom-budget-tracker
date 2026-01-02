@@ -5,9 +5,9 @@
  * Includes API mocking to prevent network errors during component tests.
  */
 
-import { afterEach, vi, beforeAll, afterAll } from "vitest";
-import { cleanup, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
+import { afterEach, vi, beforeAll, afterAll } from 'vitest';
+import { cleanup, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
 // Store original console.error
 const originalConsoleError = console.error;
@@ -18,11 +18,7 @@ const originalConsoleError = console.error;
 beforeAll(() => {
     console.error = (...args) => {
         // Suppress act() warnings
-        if (
-            args[0] &&
-            typeof args[0] === "string" &&
-            args[0].includes("not wrapped in act")
-        ) {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('not wrapped in act')) {
             return;
         }
         originalConsoleError.apply(console, args);
@@ -39,9 +35,9 @@ const flushPromises = async () => {
 };
 
 // Mock the CurrencyContext to provide default values in tests
-vi.mock("../contexts/CurrencyContext", () => ({
+vi.mock('../contexts/CurrencyContext', () => ({
     useCurrency: () => ({
-        defaultCurrency: "EUR",
+        defaultCurrency: 'EUR',
         exchangeRates: {},
         loading: false,
         ratesLoading: false,
@@ -52,7 +48,7 @@ vi.mock("../contexts/CurrencyContext", () => ({
 }));
 
 // Mock the API module to prevent network requests in tests
-vi.mock("../api", () => ({
+vi.mock('../api', () => ({
     default: {
         get: vi.fn(() => Promise.resolve({ data: {} })),
         post: vi.fn(() => Promise.resolve({ data: {} })),
@@ -78,17 +74,10 @@ vi.mock("../api", () => ({
             Promise.resolve({
                 data: {
                     subcategories: {
-                        "Fixed Expenses": ["Rent", "Utilities", "Insurance"],
-                        "Flexible Expenses": [
-                            "Food",
-                            "Transport",
-                            "Entertainment",
-                        ],
-                        "Savings & Investments": [
-                            "Emergency Fund",
-                            "Retirement",
-                        ],
-                        "Debt Payments": ["Credit Card", "Loan"],
+                        'Fixed Expenses': ['Rent', 'Utilities', 'Insurance'],
+                        'Flexible Expenses': ['Food', 'Transport', 'Entertainment'],
+                        'Savings & Investments': ['Emergency Fund', 'Retirement'],
+                        'Debt Payments': ['Credit Card', 'Loan'],
                     },
                 },
             })
@@ -139,9 +128,7 @@ vi.mock("../api", () => ({
             Promise.resolve({ data: { recurring_lookahead_days: 14 } })
         ),
         updateRecurringLookahead: vi.fn(() => Promise.resolve({ data: {} })),
-        getDefaultCurrency: vi.fn(() =>
-            Promise.resolve({ data: { default_currency: "EUR" } })
-        ),
+        getDefaultCurrency: vi.fn(() => Promise.resolve({ data: { default_currency: 'EUR' } })),
         setDefaultCurrency: vi.fn(() => Promise.resolve({ data: {} })),
     },
     currencyAPI: {
