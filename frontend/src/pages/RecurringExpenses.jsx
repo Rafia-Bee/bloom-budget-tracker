@@ -186,7 +186,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
     const inactiveExpenses = recurringExpenses.filter((e) => !e.is_active);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-green-50 dark:from-dark-base dark:via-dark-surface dark:to-dark-base">
+        <div className="min-h-screen bg-gradient-to-br from-bloom-light to-white dark:from-dark-base dark:to-dark-surface">
             {/* Header */}
             <Header
                 setIsAuthenticated={setIsAuthenticated}
@@ -196,7 +196,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
             />
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
                         {/* View Toggle Buttons */}

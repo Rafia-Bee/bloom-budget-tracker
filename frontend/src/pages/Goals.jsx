@@ -198,7 +198,7 @@ function Goals({ setIsAuthenticated }) {
                 onBankImport={() => setShowBankImportModal(true)}
             />
 
-            <div className="container mx-auto px-6 py-8">
+            <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
                         <div>
@@ -691,7 +691,7 @@ function Goals({ setIsAuthenticated }) {
                         onClose={() => setShowBankImportModal(false)}
                     />
                 )}
-            </div>
+            </main>
         </div>
     );
 }

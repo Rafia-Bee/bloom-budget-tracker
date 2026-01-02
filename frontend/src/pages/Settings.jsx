@@ -239,7 +239,7 @@ function Settings({ setIsAuthenticated }) {
                 onBankImport={() => setShowBankImportModal(true)}
             />
 
-            <div className="container mx-auto px-6 py-8">
+            <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                         Settings
@@ -840,7 +840,7 @@ function Settings({ setIsAuthenticated }) {
                         </div>
                     </div>
                 )}
-            </div>
+            </main>
 
             {/* Delete All Data Confirmation Modal */}
             {showDeleteConfirmDialog && (
