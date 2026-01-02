@@ -1,0 +1,17 @@
+# Gitleaks Ignore File
+
+# These are false positives - documentation examples and placeholders, not real secrets
+
+# DEPLOYMENT.md - curl example with placeholder token
+
+3b6e6ccf8300e48d7e9a418cc33dfef16d60215f:docs/DEPLOYMENT.md:curl-auth-header:227
+
+# API.md - Truncated JWT examples in API documentation (historical commits)
+
+# These were example responses showing token format, not real tokens
+
+fb793c9fb3d35fc8b823ff1d6ab0d6a5a4229025:docs/API.md:generic-api-key:47
+fb793c9fb3d35fc8b823ff1d6ab0d6a5a4229025:docs/API.md:generic-api-key:48
+fb793c9fb3d35fc8b823ff1d6ab0d6a5a4229025:docs/API.md:generic-api-key:75
+fb793c9fb3d35fc8b823ff1d6ab0d6a5a4229025:docs/API.md:generic-api-key:76
+fb793c9fb3d35fc8b823ff1d6ab0d6a5a4229025:docs/API.md:generic-api-key:100
