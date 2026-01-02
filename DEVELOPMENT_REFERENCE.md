@@ -334,15 +334,17 @@ bformat  # Format all code (Black for backend, Prettier for frontend)
 
 **⚠️ IMPORTANT: Always use Pull Requests. Never push directly to `main`.**
 
+**⚠️ CRITICAL: Create the feature branch FIRST, before making any code changes!**
+
 ```powershell
-# 1. Create feature branch
+# 1. FIRST: Create branch before ANY changes
 git checkout -b feat/my-feature
 
-# 2. Make changes, then format and commit
+# 2. Make changes...
+
+# 3. Format, test, commit
 bformat
 git add . && git commit -m "feat: description (#XX)"
-
-# 3. Push branch
 git push -u origin feat/my-feature
 
 # 4. Create PR
@@ -357,6 +359,8 @@ gh pr merge --squash --delete-branch
 # 7. Update local main
 git checkout main && git pull
 ```
+
+**Why branch first?** When a PR is squash-merged, your local changes on `main` would conflict with the merged commit.
 
 ### Pre-Merge Checklist
 

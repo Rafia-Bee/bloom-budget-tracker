@@ -21,6 +21,7 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       e2e-relevant: ${{ steps.filter.outputs.e2e-relevant }}
+      docs-only: ${{ steps.filter.outputs.docs-only }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,14 +37,20 @@ jobs:
               - 'run.py'
               - 'pytest.ini'
             frontend:
-              - 'frontend/**'
-              - '!frontend/e2e/**'
-              - '!frontend/playwright.config.js'
+              - 'frontend/src/**'
+              - 'frontend/public/**'
+              - 'frontend/package.json'
+              - 'frontend/vite.config.js'
+              - 'frontend/tailwind.config.js'
+              - 'frontend/index.html'
             e2e-relevant:
               - 'backend/**'
-              - 'frontend/**'
+              - 'frontend/src/**'
               - 'requirements.txt'
               - 'run.py'
+            docs-only:
+              - '**/*.md'
+              - 'docs/**'
 
   backend-checks:
     name: Backend - Lint, Format & Test
