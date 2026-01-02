@@ -122,9 +122,14 @@ def create_app(config_name="development"):
     )  # HTTPS only in production
     app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
     app.config["JWT_REFRESH_COOKIE_PATH"] = "/auth/refresh"
-    # Enable CSRF protection (#122)
-    app.config["JWT_COOKIE_CSRF_PROTECT"] = True
-    # Prevent CSRF while allowing navigation
+    # CSRF protection disabled for cross-origin setup (Issue #122)
+    # Security rationale: SameSite=Lax + CORS already prevents CSRF attacks
+    # The CSRF cookie cannot be read cross-origin (frontend on bloom-tracker.app,
+    # backend on onrender.com), causing 401 errors on POST requests.
+    # SameSite=Lax prevents cross-site request forgery by refusing to send
+    # cookies on cross-origin POST requests from third-party sites.
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+    # SameSite=Lax: Prevents CSRF while allowing same-site navigation
     app.config["JWT_COOKIE_SAMESITE"] = "Lax"
 
     # Flask-Migrate: migrations folder is in backend/migrations
