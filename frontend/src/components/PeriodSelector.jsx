@@ -334,7 +334,8 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                                 </svg>
                                                             </button>
                                                         )}
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                                        {/* Edit/Delete buttons: always visible on mobile, hover-reveal on desktop */}
+                                                        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();

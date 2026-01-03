@@ -3,11 +3,12 @@
  *
  * A draggable floating action button that can be repositioned by the user.
  * Persists position in localStorage. Shows menu of quick actions.
+ * When disabled (e.g., modal open): hidden on mobile, unclickable on desktop.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 
-function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
+function DraggableFloatingButton({ showMenu, onToggleMenu, children, disabled = false }) {
     const [position, setPosition] = useState(() => {
         // Load saved position from localStorage
         const saved = localStorage.getItem('floatingButtonPosition');
@@ -160,6 +161,36 @@ function DraggableFloatingButton({ showMenu, onToggleMenu, children }) {
     const menuBottom = showMenuBelow
         ? position.bottom - menuHeight - 10 // Below button
         : position.bottom + buttonHeight + 10; // Above button
+
+    // When disabled: hidden on mobile (sm:), visible but unclickable on desktop
+    // This prevents FAB from interfering with modals
+    if (disabled) {
+        return (
+            <div
+                ref={buttonRef}
+                className="fixed add-menu z-[9999] hidden sm:block"
+                style={{
+                    bottom: `${position.bottom}px`,
+                    right: '32px',
+                    touchAction: 'none',
+                }}
+            >
+                <div
+                    className="bg-gray-400 dark:bg-gray-600 text-white/50 rounded-full w-16 h-16 flex items-center justify-center shadow-lg cursor-not-allowed opacity-50"
+                    style={{ touchAction: 'none' }}
+                >
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                        />
+                    </svg>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

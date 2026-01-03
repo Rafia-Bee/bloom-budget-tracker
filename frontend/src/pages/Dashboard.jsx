@@ -1176,10 +1176,24 @@ function Dashboard({ setIsAuthenticated }) {
             </main>
 
             {/* Floating Add Button with Menu - Only show if period exists */}
+            {/* Disabled when any modal is open: hidden on mobile, unclickable on desktop */}
             {currentPeriod && (
                 <DraggableFloatingButton
                     showMenu={showAddMenu}
                     onToggleMenu={() => setShowAddMenu(!showAddMenu)}
+                    disabled={
+                        showAddModal ||
+                        showEditModal ||
+                        showExportModal ||
+                        showBankImportModal ||
+                        showLeftoverModal ||
+                        showFilterModal ||
+                        showSalaryWizard ||
+                        showRolloverPrompt ||
+                        showBulkDeleteConfirm ||
+                        !!warningModal ||
+                        !!deleteConfirmation
+                    }
                 >
                     <button
                         onClick={() => {
