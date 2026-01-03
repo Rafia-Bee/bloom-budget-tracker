@@ -40,6 +40,9 @@ def get_budget_periods():
                     "start_date": p.start_date.strftime("%Y-%m-%d"),
                     "end_date": p.end_date.strftime("%Y-%m-%d"),
                     "period_type": p.period_type,
+                    "salary_period_id": p.salary_period_id,
+                    "week_number": p.week_number,
+                    "budget_amount": p.budget_amount,
                     "created_at": p.created_at.isoformat(),
                 }
                 for p in periods
@@ -72,6 +75,9 @@ def get_active_period():
                 "start_date": active_period.start_date.strftime("%Y-%m-%d"),
                 "end_date": active_period.end_date.strftime("%Y-%m-%d"),
                 "period_type": active_period.period_type,
+                "salary_period_id": active_period.salary_period_id,
+                "week_number": active_period.week_number,
+                "budget_amount": active_period.budget_amount,
                 "created_at": active_period.created_at.isoformat(),
             }
         ),

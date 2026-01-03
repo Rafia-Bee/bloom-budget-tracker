@@ -354,10 +354,15 @@ function Dashboard({ setIsAuthenticated }) {
 
             setAllPeriods(allPeriodsRes.data);
 
-            // Combine salary periods with standalone budget periods (for historical data access)
-            // Filter out budget periods that belong to salary periods (they have salary_period_id)
+            // Combine salary periods with all budget periods (including sub-periods)
+            // PeriodSelector needs sub-periods (with salary_period_id) for collapsible display
             const standalonePeriods = allPeriodsRes.data.filter((p) => !p.salary_period_id);
-            const combinedPeriods = [...(salaryPeriodsListRes.data || []), ...standalonePeriods];
+            const subPeriods = allPeriodsRes.data.filter((p) => p.salary_period_id);
+            const combinedPeriods = [
+                ...(salaryPeriodsListRes.data || []),
+                ...standalonePeriods,
+                ...subPeriods,
+            ];
             // Sort by start date descending (most recent first)
             combinedPeriods.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
             setSalaryPeriods(combinedPeriods);

@@ -33,6 +33,15 @@ function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Listen for period selection events from PeriodSelector to close mobile menu
+    useEffect(() => {
+        const handlePeriodSelected = () => {
+            setShowMobileMenu(false);
+        };
+        window.addEventListener('periodSelected', handlePeriodSelected);
+        return () => window.removeEventListener('periodSelected', handlePeriodSelected);
+    }, []);
+
     const handleLogout = async () => {
         try {
             await authAPI.logout(); // Clear httpOnly cookies on server (#80 security fix)
