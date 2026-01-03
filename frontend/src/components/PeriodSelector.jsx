@@ -31,21 +31,8 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
         return `${day} ${month}`;
     };
 
-    // Compact date format for sub-periods: DD.MM.YY
-    const formatCompactDate = (dateStr) => {
-        const date = new Date(dateStr + 'T00:00:00');
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2);
-        return `${day}.${month}.${year}`;
-    };
-
     const getPeriodLabel = (period) => {
         return `${formatDate(period.start_date)} - ${formatDate(period.end_date)}`;
-    };
-
-    const getPeriodShortLabel = (period) => {
-        return `${formatShortDate(period.start_date)} - ${formatShortDate(period.end_date)}`;
     };
 
     const getPeriodTypeLabel = (period) => {
