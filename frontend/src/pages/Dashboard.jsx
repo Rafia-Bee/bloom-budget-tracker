@@ -53,6 +53,7 @@ function Dashboard({ setIsAuthenticated }) {
     const [debitBalance, setDebitBalance] = useState(0);
     const [creditAvailable, setCreditAvailable] = useState(0);
     const [totalIncome, setTotalIncome] = useState(0);
+    const [allTimeSpent, setAllTimeSpent] = useState(0);
     const [currentPeriodDebitSpent, setCurrentPeriodDebitSpent] = useState(0);
     const [currentPeriodCreditSpent, setCurrentPeriodCreditSpent] = useState(0);
     const [currentPeriodIncome, setCurrentPeriodIncome] = useState(0);
@@ -68,6 +69,8 @@ function Dashboard({ setIsAuthenticated }) {
     const [currentWeekPeriod, setCurrentWeekPeriod] = useState(null); // Current week from salary period
     const [creditLimit, setCreditLimit] = useState(null); // Load from salary period
     const [isInitialLoading, setIsInitialLoading] = useState(true); // Prevent flickering on initial load
+    const [viewingSalaryPeriodId, setViewingSalaryPeriodId] = useState(null); // Track which salary period we're viewing
+    const [isViewingCurrentPeriod, setIsViewingCurrentPeriod] = useState(true); // Track if viewing current period
     const weeklyBudgetCardRef = useRef(null);
 
     // Currency context for multi-currency support
@@ -392,10 +395,23 @@ function Dashboard({ setIsAuthenticated }) {
                 if (salaryPeriod.period_credit_spent !== undefined) {
                     setCurrentPeriodCreditSpent(salaryPeriod.period_credit_spent / 100); // Convert cents to euros
                 }
+                // Set period income
+                if (salaryPeriod.period_income !== undefined) {
+                    setCurrentPeriodIncome(salaryPeriod.period_income / 100);
+                }
+                // Set all-time spent
+                if (salaryPeriod.all_time_spent !== undefined) {
+                    setAllTimeSpent(salaryPeriod.all_time_spent / 100);
+                }
+
+                // Track that we're viewing the current salary period
+                setViewingSalaryPeriodId(salaryPeriod.id);
+                setIsViewingCurrentPeriod(true);
 
                 // Create a budget period object from current week data
                 const weekPeriod = {
                     id: currentWeek.id, // Use actual budget_period ID from database
+                    salary_period_id: salaryPeriod.id, // Include parent salary period ID
                     start_date: currentWeek.start_date,
                     end_date: currentWeek.end_date,
                     period_type: 'weekly',
@@ -408,6 +424,8 @@ function Dashboard({ setIsAuthenticated }) {
             } else {
                 // Fall back to old system if no salary period
                 setCurrentWeekPeriod(null);
+                setViewingSalaryPeriodId(null);
+                setIsViewingCurrentPeriod(true);
                 if (activeRes?.data) {
                     setCurrentPeriod(activeRes.data);
                 } else if (allPeriodsRes.data.length > 0) {
@@ -504,8 +522,61 @@ function Dashboard({ setIsAuthenticated }) {
         }
     };
 
-    const handlePeriodChange = (period) => {
+    const handlePeriodChange = async (period) => {
         setCurrentPeriod(period);
+
+        // Determine the salary period ID to load data for
+        // If this is a sub-period (budget period), get its parent salary_period_id
+        // If this is a salary period (has weekly_budget field), use its own ID
+        const salaryPeriodId =
+            period.weekly_budget !== undefined ? period.id : period.salary_period_id;
+
+        if (salaryPeriodId && salaryPeriodId !== viewingSalaryPeriodId) {
+            setViewingSalaryPeriodId(salaryPeriodId);
+            await loadSalaryPeriodData(salaryPeriodId);
+        }
+    };
+
+    const loadSalaryPeriodData = async (salaryPeriodId) => {
+        try {
+            const response = await salaryPeriodAPI.getById(salaryPeriodId);
+            const salaryPeriod = response.data.salary_period;
+
+            // Update balances from the selected period
+            if (salaryPeriod.credit_limit) {
+                setCreditLimit(salaryPeriod.credit_limit / 100);
+            }
+            if (salaryPeriod.display_debit_balance !== undefined) {
+                setDebitBalance(salaryPeriod.display_debit_balance / 100);
+            }
+            if (salaryPeriod.display_credit_available !== undefined) {
+                setCreditAvailable(salaryPeriod.display_credit_available / 100);
+            }
+            if (salaryPeriod.period_debit_spent !== undefined) {
+                setCurrentPeriodDebitSpent(salaryPeriod.period_debit_spent / 100);
+            }
+            if (salaryPeriod.period_credit_spent !== undefined) {
+                setCurrentPeriodCreditSpent(salaryPeriod.period_credit_spent / 100);
+            }
+            // Update period income
+            if (salaryPeriod.period_income !== undefined) {
+                setCurrentPeriodIncome(salaryPeriod.period_income / 100);
+            }
+            // Update all-time spent (shown as totalIncome in BalanceCards for "Total spent")
+            if (salaryPeriod.all_time_spent !== undefined) {
+                setAllTimeSpent(salaryPeriod.all_time_spent / 100);
+            }
+
+            // Track if we're viewing the current period
+            setIsViewingCurrentPeriod(salaryPeriod.is_current || false);
+        } catch (error) {
+            logError('loadSalaryPeriodData', error);
+        }
+    };
+
+    const handleReturnToCurrentPeriod = async () => {
+        // Reload current period data
+        await loadPeriodsAndCurrentWeek();
     };
 
     const handleDeletePeriod = async (id) => {
@@ -571,6 +642,50 @@ function Dashboard({ setIsAuthenticated }) {
     const getCreditDebt = () => {
         // Debt = limit - available
         return creditLimit - creditAvailable;
+    };
+
+    // Format date for display in the viewing indicator
+    const formatDateRange = (startDate, endDate) => {
+        const start = new Date(startDate + 'T00:00:00');
+        const end = new Date(endDate + 'T00:00:00');
+        const options = { day: 'numeric', month: 'short' };
+        return `${start.toLocaleDateString('en-GB', options)} - ${end.toLocaleDateString('en-GB', options)}`;
+    };
+
+    // Determine if we're viewing the "today" period
+    // Show indicator when viewing ANY period other than the current sub-period
+    const isViewingTodaysPeriod = () => {
+        if (!currentPeriod || !currentWeekPeriod) return true;
+
+        // If selected is a sub-period (has week_number), compare with currentWeekPeriod
+        if (currentPeriod.week_number) {
+            return currentPeriod.id === currentWeekPeriod.id;
+        }
+
+        // If selected is a salary period, it's not today's period unless we're at salary period level
+        // (which shouldn't normally happen - we usually select sub-periods)
+        return false;
+    };
+
+    // Get current period info for the viewing indicator
+    const getViewingPeriodInfo = () => {
+        if (!currentPeriod) return null;
+
+        // Check if viewing a sub-period (has week_number) or a salary period (has weekly_budget)
+        if (currentPeriod.week_number) {
+            return {
+                type: 'sub-period',
+                label: `Period ${currentPeriod.week_number}`,
+                dateRange: formatDateRange(currentPeriod.start_date, currentPeriod.end_date),
+            };
+        } else if (currentPeriod.weekly_budget !== undefined) {
+            return {
+                type: 'salary-period',
+                label: 'Salary Period',
+                dateRange: formatDateRange(currentPeriod.start_date, currentPeriod.end_date),
+            };
+        }
+        return null;
     };
 
     const handleAddExpense = async (expenseData) => {
@@ -945,10 +1060,44 @@ function Dashboard({ setIsAuthenticated }) {
                             />
                         )}
 
+                        {/* Viewing Past/Future Period Indicator */}
+                        {!isViewingTodaysPeriod() && currentPeriod && (
+                            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                                    <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                    <span className="font-medium">
+                                        Viewing {getViewingPeriodInfo()?.label}:{' '}
+                                        <span className="font-normal">
+                                            {getViewingPeriodInfo()?.dateRange}
+                                        </span>
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={handleReturnToCurrentPeriod}
+                                    className="text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 underline"
+                                >
+                                    Return to Today
+                                </button>
+                            </div>
+                        )}
+
                         {/* Balance Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             {/* Weekly Budget Card */}
                             <WeeklyBudgetCard
+                                key={viewingSalaryPeriodId || 'current'}
                                 ref={weeklyBudgetCardRef}
                                 onSetupClick={async () => {
                                     // Check if there's an active salary period to edit
@@ -973,6 +1122,7 @@ function Dashboard({ setIsAuthenticated }) {
                                     setCurrentPeriod(weekPeriod);
                                     loadTransactionsAndBalances();
                                 }}
+                                selectedPeriod={currentPeriod}
                             />
 
                             <BalanceCards
@@ -980,6 +1130,7 @@ function Dashboard({ setIsAuthenticated }) {
                                 debitAvailable={getDebitAvailable()}
                                 currentPeriodIncome={currentPeriodIncome}
                                 totalIncome={totalIncome}
+                                allTimeSpent={allTimeSpent}
                                 creditLimit={creditLimit}
                                 currentPeriodCreditSpent={currentPeriodCreditSpent}
                                 creditAvailable={getCreditAvailable()}
@@ -1018,6 +1169,7 @@ function Dashboard({ setIsAuthenticated }) {
                             loadTransactionsAndBalances={loadTransactionsAndBalances}
                             defaultCurrency={defaultCurrency}
                             convertAmount={convertAmount}
+                            currentPeriod={currentPeriod}
                         />
                     </>
                 )}

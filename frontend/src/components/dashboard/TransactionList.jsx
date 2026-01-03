@@ -34,6 +34,7 @@ const TransactionList = ({
     loadTransactionsAndBalances,
     defaultCurrency,
     convertAmount,
+    currentPeriod,
 }) => {
     // Convert EUR cents (from DB) to user's currency and format
     const fcEur = (cents) => {
@@ -112,6 +113,7 @@ const TransactionList = ({
                         transactionDates={transactionDates}
                         currentViewDate={currentViewDate}
                         onDateChange={handleDateNavigate}
+                        selectedPeriod={currentPeriod}
                     />
                 )}
             </div>

@@ -6,6 +6,29 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### Dashboard: Period-Specific Data Loading When Viewing Past Periods (#140)
+
+**Context:** When selecting a past salary period or sub-period from PeriodSelector, the Dashboard's balance cards (Debit/Credit/Weekly Budget) showed data from the current period instead of the selected period. Transactions filtered correctly but balances didn't update.
+
+**Decision:** Added backend API endpoint and frontend state management to load period-specific balance data.
+
+**Changes:**
+
+1. **Backend**: New `GET /salary-periods/<id>` endpoint returns same structure as `/current` but for any salary period
+2. **Frontend**: Dashboard tracks `viewingSalaryPeriodId` and `isViewingCurrentPeriod` state
+3. **Frontend**: `handlePeriodChange()` now loads period-specific balance data via `salaryPeriodAPI.getById()`
+4. **Frontend**: Visual indicator banner shows "Viewing [period label]: [date range]" with "Return to Today" button
+
+**Files Modified:**
+
+-   `backend/routes/salary_periods.py` - New GET by ID endpoint
+-   `frontend/src/api.js` - Added `salaryPeriodAPI.getById()`
+-   `frontend/src/pages/Dashboard.jsx` - Period state tracking, visual indicator, balance loading
+
+**Impact:** Full historical period viewing - balances and transactions now both reflect selected period.
+
+---
+
 ### PeriodSelector: Remove Grid View, Add List-Only with Collapsible Sub-Periods (#140)
 
 **Context:** The PeriodSelector had a grid/list toggle that reset to grid on page refresh (state not persisted). Users with many sub-periods found the grid view overwhelming, and the toggle was confusing UX.

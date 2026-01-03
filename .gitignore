@@ -85,4 +85,7 @@ e2e-tests.txt
 # Design resources and working files
 docs/resources/
 
+# Local development reference (PowerShell profile shortcuts)
+POWERSHELL_SHORTCUTS.md
+
 *copilot-instructions.md

@@ -7,6 +7,7 @@ const BalanceCards = ({
     debitAvailable,
     currentPeriodIncome,
     totalIncome,
+    allTimeSpent,
     creditLimit,
     currentPeriodCreditSpent,
     creditAvailable,
@@ -61,17 +62,13 @@ const BalanceCards = ({
                 <div className="mt-4">
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
                         <span>Period income: {fcEur(currentPeriodIncome * 100)}</span>
-                        {/* Note: Original code used debitBalance here for 'Total spent', which seemed to be the available amount.
-                Preserving behavior by using debitAvailable. */}
-                        <span>Total spent: {fcEur(debitAvailable * 100)}</span>
+                        <span>Total spent: {fcEur(allTimeSpent * 100)}</span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                         <span>All-time income: {fcEur(totalIncome * 100)}</span>
                         <span>
-                            {totalIncome > 0
-                                ? ((debitAvailable / totalIncome) * 100).toFixed(0)
-                                : 0}
-                            % of total
+                            {totalIncome > 0 ? ((allTimeSpent / totalIncome) * 100).toFixed(0) : 0}%
+                            spent
                         </span>
                     </div>
                 </div>

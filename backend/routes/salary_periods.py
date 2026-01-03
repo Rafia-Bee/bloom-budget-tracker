@@ -227,6 +227,60 @@ def get_current_salary_period():
             or 0
         )
 
+        # Calculate period income (excluding 'Initial Balance' unless this is first period)
+        first_salary_period = (
+            SalaryPeriod.query.filter_by(user_id=current_user_id)
+            .order_by(SalaryPeriod.start_date.asc())
+            .first()
+        )
+        is_first_period = (
+            first_salary_period and first_salary_period.id == salary_period.id
+        )
+
+        period_income_query = db.session.query(
+            func.coalesce(func.sum(Income.amount), 0)
+        ).filter(
+            and_(
+                Income.user_id == current_user_id,
+                Income.deleted_at.is_(None),
+                or_(
+                    and_(
+                        Income.actual_date.isnot(None),
+                        Income.actual_date >= salary_period.start_date,
+                        Income.actual_date <= salary_period.end_date,
+                    ),
+                    and_(
+                        Income.actual_date.is_(None),
+                        Income.scheduled_date >= salary_period.start_date,
+                        Income.scheduled_date <= salary_period.end_date,
+                    ),
+                ),
+            )
+        )
+
+        # Exclude 'Initial Balance' type unless this is the first period
+        if not is_first_period:
+            period_income_query = period_income_query.filter(
+                Income.type != "Initial Balance"
+            )
+
+        period_income = period_income_query.scalar() or 0
+
+        # Calculate all-time spent (total debit expenses for this user, excluding fixed bills)
+        all_time_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.payment_method == "Debit card",
+                    Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
         # Get real-time balances using balance service
         real_balances = get_display_balances(salary_period.id, current_user_id)
 
@@ -252,6 +306,10 @@ def get_current_salary_period():
                         # Add period-level spending by payment method (in cents)
                         "period_debit_spent": period_debit_spent,
                         "period_credit_spent": period_credit_spent,
+                        # Add period income (in cents)
+                        "period_income": period_income,
+                        # Add all-time spent for this user (in cents)
+                        "all_time_spent": all_time_spent,
                         "credit_budget_allowance": salary_period.credit_budget_allowance,
                         "num_sub_periods": salary_period.num_sub_periods,
                         "start_date": salary_period.start_date.isoformat(),
@@ -291,6 +349,255 @@ def get_current_salary_period():
             exc_info=True,
         )
         return jsonify({"error": "Failed to retrieve current salary period"}), 500
+
+
+@salary_periods_bp.route("/<int:id>", methods=["GET"])
+@jwt_required()
+def get_salary_period_by_id(id):
+    """Get a specific salary period by ID with calculated balances and week data"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        today = datetime.now().date()
+
+        # Find the salary period
+        salary_period = SalaryPeriod.query.filter_by(
+            id=id, user_id=current_user_id
+        ).first()
+
+        if not salary_period:
+            return jsonify({"error": "Salary period not found"}), 404
+
+        # Get all weeks with their spending using single aggregation query
+        week_sums = (
+            db.session.query(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.start_date,
+                BudgetPeriod.end_date,
+                func.coalesce(func.sum(Expense.amount), 0).label("total_spent"),
+            )
+            .outerjoin(
+                Expense,
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= BudgetPeriod.start_date,
+                    Expense.date <= BudgetPeriod.end_date,
+                    Expense.is_fixed_bill == False,
+                ),
+            )
+            .filter(BudgetPeriod.salary_period_id == salary_period.id)
+            .group_by(
+                BudgetPeriod.id,
+                BudgetPeriod.week_number,
+                BudgetPeriod.budget_amount,
+                BudgetPeriod.start_date,
+                BudgetPeriod.end_date,
+            )
+            .order_by(BudgetPeriod.week_number)
+            .all()
+        )
+
+        # Convert query results to WeekData and calculate carryover
+        week_data_list = [
+            WeekData(
+                week_id=row[0],
+                week_number=row[1],
+                budget_amount=row[2],
+                start_date=row[3],
+                end_date=row[4],
+                spent=row[5],
+            )
+            for row in week_sums
+        ]
+        calculated_weeks = calculate_weeks_with_carryover(week_data_list, today)
+        weeks_data = weeks_to_dict(calculated_weeks)
+
+        # Calculate period-level spending by payment method (excluding fixed bills)
+        period_debit_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= salary_period.start_date,
+                    Expense.date <= salary_period.end_date,
+                    Expense.is_fixed_bill == False,
+                    Expense.payment_method == "Debit card",
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        period_credit_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.date >= salary_period.start_date,
+                    Expense.date <= salary_period.end_date,
+                    Expense.is_fixed_bill == False,
+                    Expense.payment_method == "Credit card",
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Calculate period income (excluding 'Initial Balance' unless this is first period)
+        first_salary_period = (
+            SalaryPeriod.query.filter_by(user_id=current_user_id)
+            .order_by(SalaryPeriod.start_date.asc())
+            .first()
+        )
+        is_first_period = (
+            first_salary_period and first_salary_period.id == salary_period.id
+        )
+
+        period_income_query = db.session.query(
+            func.coalesce(func.sum(Income.amount), 0)
+        ).filter(
+            and_(
+                Income.user_id == current_user_id,
+                Income.deleted_at.is_(None),
+                or_(
+                    and_(
+                        Income.actual_date.isnot(None),
+                        Income.actual_date >= salary_period.start_date,
+                        Income.actual_date <= salary_period.end_date,
+                    ),
+                    and_(
+                        Income.actual_date.is_(None),
+                        Income.scheduled_date >= salary_period.start_date,
+                        Income.scheduled_date <= salary_period.end_date,
+                    ),
+                ),
+            )
+        )
+
+        # Exclude 'Initial Balance' type unless this is the first period
+        if not is_first_period:
+            period_income_query = period_income_query.filter(
+                Income.type != "Initial Balance"
+            )
+
+        period_income = period_income_query.scalar() or 0
+
+        # Calculate all-time spent (total debit expenses for this user, excluding fixed bills)
+        all_time_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.payment_method == "Debit card",
+                    Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Get real-time balances using balance service
+        real_balances = get_display_balances(salary_period.id, current_user_id)
+
+        # Check if this period contains today (is_current)
+        is_current = salary_period.start_date <= today <= salary_period.end_date
+
+        # Find current week within this period (if applicable)
+        current_week = None
+        if is_current:
+            current_week = BudgetPeriod.query.filter(
+                and_(
+                    BudgetPeriod.salary_period_id == salary_period.id,
+                    BudgetPeriod.start_date <= today,
+                    BudgetPeriod.end_date >= today,
+                )
+            ).first()
+
+        # Calculate week_spent for current week
+        week_spent = 0
+        if current_week:
+            week_spent = (
+                db.session.query(func.sum(Expense.amount))
+                .filter(
+                    and_(
+                        Expense.user_id == current_user_id,
+                        Expense.date >= current_week.start_date,
+                        Expense.date <= current_week.end_date,
+                        Expense.is_fixed_bill == False,
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+        return (
+            jsonify(
+                {
+                    "salary_period": {
+                        "id": salary_period.id,
+                        "salary_amount": salary_period.salary_amount,
+                        "fixed_bills_total": salary_period.fixed_bills_total,
+                        "remaining_amount": salary_period.remaining_amount,
+                        "weekly_budget": salary_period.weekly_budget,
+                        "credit_limit": salary_period.credit_limit,
+                        "initial_debit_balance": salary_period.initial_debit_balance,
+                        "initial_credit_balance": salary_period.initial_credit_balance,
+                        # Add real-time balances (in cents)
+                        "display_debit_balance": int(
+                            real_balances["debit_balance"] * 100
+                        ),
+                        "display_credit_available": int(
+                            real_balances["credit_available"] * 100
+                        ),
+                        # Add period-level spending by payment method (in cents)
+                        "period_debit_spent": period_debit_spent,
+                        "period_credit_spent": period_credit_spent,
+                        # Add period income (in cents)
+                        "period_income": period_income,
+                        # Add all-time spent for this user (in cents)
+                        "all_time_spent": all_time_spent,
+                        "credit_budget_allowance": salary_period.credit_budget_allowance,
+                        "num_sub_periods": salary_period.num_sub_periods,
+                        "start_date": salary_period.start_date.isoformat(),
+                        "end_date": salary_period.end_date.isoformat(),
+                        "is_current": is_current,
+                        "weeks": weeks_data,
+                    },
+                    "current_week": {
+                        "id": current_week.id if current_week else None,
+                        "week_number": (
+                            current_week.week_number if current_week else None
+                        ),
+                        "budget_amount": (
+                            current_week.budget_amount if current_week else None
+                        ),
+                        "spent": week_spent,
+                        "remaining": (
+                            (current_week.budget_amount - week_spent)
+                            if current_week
+                            else 0
+                        ),
+                        "start_date": (
+                            current_week.start_date.isoformat()
+                            if current_week
+                            else None
+                        ),
+                        "end_date": (
+                            current_week.end_date.isoformat() if current_week else None
+                        ),
+                    },
+                }
+            ),
+            200,
+        )
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"Database error fetching salary period {id}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"error": "Failed to retrieve salary period"}), 500
 
 
 @salary_periods_bp.route("/preview", methods=["POST"])
