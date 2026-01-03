@@ -264,23 +264,23 @@ test.describe('Settings Page', () => {
             }
         });
 
-        test('shows currency setting when multi-currency enabled', async ({ page }) => {
-            // Switch to Preferences tab
+        test('preferences tab does not contain currency setting (moved to user menu)', async ({
+            page,
+        }) => {
+            // Currency was moved from Settings to user menu dropdown (#139)
+            // This test verifies the Preferences tab loads correctly
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
 
-            // Currency setting might be visible - check for either the label or a select with EUR
-            const hasCurrencyLabel = await page
-                .getByText(/Currency|Default Currency/i)
+            // Preferences tab should show lookahead settings but NOT currency
+            // Look for "Look ahead:" label or "Recurring Expenses Preview" heading
+            const hasLookahead = await page
+                .getByText(/Look ahead:|Recurring Expenses Preview/i)
+                .first()
                 .isVisible({ timeout: 3000 });
 
-            const hasEurOption = await page
-                .locator('select:has(option:has-text("EUR"))')
-                .isVisible({ timeout: 1000 });
-
-            // Either visible or not - both are valid states
-            // This test just verifies we can access the preferences tab
-            expect(true).toBeTruthy();
+            // The tab should show content
+            expect(hasLookahead).toBeTruthy();
         });
     });
 

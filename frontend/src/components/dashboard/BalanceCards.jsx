@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 const BalanceCards = ({
     currentPeriodDebitSpent,
@@ -11,7 +12,13 @@ const BalanceCards = ({
     creditAvailable,
     creditDebt,
 }) => {
-    const fcEur = (cents) => formatCurrency(cents);
+    const { defaultCurrency, convertAmount } = useCurrency();
+
+    // Convert EUR cents (from DB) to user's currency and format
+    const fcEur = (cents) => {
+        const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents;
+        return formatCurrency(converted, defaultCurrency);
+    };
 
     return (
         <>

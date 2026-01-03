@@ -6,6 +6,56 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### Currency Settings Overhaul (#139) - Phase 2: Backend API Migration
+
+**Context:** The existing exchange rate API (open.er-api.com) works but has slower response times. The fawazahmed0/exchange-api offers CDN-backed delivery with no rate limits and supports historical rates.
+
+**Decision:** Migrated backend to fawazahmed0/exchange-api:
+
+**Changes:**
+
+1. **New API Endpoints** - Primary: cdn.jsdelivr.net, Fallback: currency-api.pages.dev
+2. **Response Format** - Adapted to lowercase currency codes and `{date, currency: {rates}}` structure
+3. **Historical Rates** - Now supports historical date queries (YYYY-MM-DD format)
+4. **Fallback Mechanism** - Tries primary endpoint first, falls back to Cloudflare if primary fails
+
+**Files Modified:**
+
+-   `backend/services/currency_service.py` - Updated API endpoints and parsing logic
+-   `backend/tests/test_currency_routes.py` - Updated mocks for new API format
+
+**Impact:** Faster exchange rate fetches via CDN. Better reliability with fallback endpoint. Historical rates now work properly.
+
+---
+
+### Currency Settings Overhaul (#139) - Phase 1: Frontend
+
+**Context:** Currency support was buried under Experimental Features, requiring users to enable the master toggle first. This made a useful feature hard to discover and use.
+
+**Decision:** Promoted currency to a first-class feature with dedicated UI:
+
+**Changes:**
+
+1. **New Currency Menu Item** - Added "Currency" option to user dropdown menu (both desktop and mobile)
+2. **CurrencySettingsModal** - Dedicated modal for selecting default currency
+3. **Always-On Currency** - Removed `multiCurrencyEnabled` feature flag; currency selector now always visible in expense/income forms
+4. **Removed from Experimental** - Multi-currency toggle removed from ExperimentalFeaturesModal and Settings experimental tab
+
+**Files Modified:**
+
+-   `frontend/src/components/CurrencySettingsModal.jsx` (new)
+-   `frontend/src/components/Header.jsx` - Added Currency menu item
+-   `frontend/src/contexts/CurrencyContext.jsx` - Removed feature flag dependency
+-   `frontend/src/contexts/FeatureFlagContext.jsx` - Removed multiCurrencyEnabled flag
+-   `frontend/src/pages/Settings.jsx` - Removed currency sections
+-   `frontend/src/components/ExperimentalFeaturesModal.jsx` - Removed multi-currency toggle
+-   `frontend/src/components/AddExpenseModal.jsx` - Currency selector always shown
+-   `frontend/src/components/AddIncomeModal.jsx` - Currency selector always shown
+
+**Impact:** Currency is now easily accessible from the user menu. Users no longer need to navigate to Settings → Experimental to enable it. Phase 2 will migrate to a faster exchange rate API.
+
+---
+
 ### Settings Page Restructure (#137)
 
 **Context:** Settings page UX needed improvement. Experimental Features were buried in Preferences, Danger Zone was too prominent, and Export/Import was in the header menu (hard to discover).

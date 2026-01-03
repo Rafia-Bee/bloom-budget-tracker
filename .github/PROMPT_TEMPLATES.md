@@ -44,6 +44,9 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
 - Reference issue in commit: "feat: description (#XX)"
 - Close with: fixes #XX in PR description (do NOT close unless explicitly told)
 - NEVER push unless explicitly told to do so
+
+**For Bug Report Issues**
+- Create e2e test to reproduce issue first for easier debugging.
 ```
 
 ---
@@ -64,9 +67,9 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
    - Pros and cons of potential fixes
    - Design notes (if user-facing)
    - Any questions about the bug
+   - How to create e2e test to reproduce
 3. Write report to temp file, create issue using --body-file
 4. Apply priority label and effort label
-5. **For UI bugs:** Note in issue if E2E test should be created to reproduce the bug (especially if not fixing immediately)
 ```
 
 ---
