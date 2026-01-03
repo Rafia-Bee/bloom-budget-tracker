@@ -32,10 +32,14 @@ function DateNavigator({
     }, [selectedPeriod]);
 
     // Current date in ISO format for comparison
+    // If viewing a period (currentViewDate is null) and we have period boundaries,
+    // use the period's start date as the reference point for navigation
     const currentDateISO = useMemo(() => {
-        if (!currentViewDate) return today;
-        return currentViewDate;
-    }, [currentViewDate, today]);
+        if (currentViewDate) return currentViewDate;
+        // If no specific date selected but viewing a period, use period's start date
+        if (periodBoundaries) return periodBoundaries.start;
+        return today;
+    }, [currentViewDate, periodBoundaries, today]);
 
     // Find previous and next dates with transactions
     const { prevDate, nextDate, isOnToday } = useMemo(() => {
