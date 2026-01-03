@@ -20,7 +20,7 @@ import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Settings({ setIsAuthenticated }) {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('subcategories');
+    const [activeTab, setActiveTab] = useState('preferences');
     const [subcategoriesData, setSubcategoriesData] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -69,7 +69,7 @@ function Settings({ setIsAuthenticated }) {
 
     useEffect(() => {
         loadSubcategories();
-        if (activeTab === 'preferences') {
+        if (activeTab === 'preferences' || activeTab === 'experimental') {
             loadPreferences();
         }
     }, [activeTab]);
@@ -219,8 +219,9 @@ function Settings({ setIsAuthenticated }) {
     };
 
     const tabs = [
-        { id: 'subcategories', label: 'Categories', icon: '🏷️' },
         { id: 'preferences', label: 'Preferences', icon: '⚙️' },
+        { id: 'subcategories', label: 'Categories', icon: '🏷️' },
+        { id: 'experimental', label: 'Experimental', icon: '🧪' },
         { id: 'account', label: 'Account', icon: '👤' },
     ];
 
@@ -521,255 +522,257 @@ function Settings({ setIsAuthenticated }) {
                                     </p>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
 
-                            {/* Experimental Features Section */}
-                            <div className="pt-4">
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
-                                    <svg
-                                        className="w-5 h-5 text-yellow-500"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                                        />
-                                    </svg>
-                                    Experimental Features
-                                </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                    Enable features that are under active development. These may be
-                                    unstable or change without notice.
+                {/* Experimental Features Tab */}
+                {activeTab === 'experimental' && (
+                    <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                            Experimental Features
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">
+                            Enable features that are under active development. These may be unstable
+                            or change without notice.
+                        </p>
+
+                        {/* Warning Banner - fixed alignment */}
+                        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl flex-shrink-0">⚠️</span>
+                                <p className="text-sm text-amber-800 dark:text-amber-300">
+                                    Experimental features may have bugs, change without notice, or
+                                    affect your data in unexpected ways. Use at your own risk!
                                 </p>
+                            </div>
+                        </div>
 
-                                {/* Warning Banner */}
-                                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                    <div className="flex gap-3">
-                                        <span className="text-xl">⚠️</span>
-                                        <div>
-                                            <p className="text-sm text-amber-800 dark:text-amber-300">
-                                                Experimental features may have bugs, change without
-                                                notice, or affect your data in unexpected ways. Use
-                                                at your own risk!
-                                            </p>
-                                        </div>
+                        <div className="space-y-3">
+                            {/* Multi-Currency Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-purple-500">💱</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Multi-Currency Support
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded">
+                                            NEW
+                                        </span>
                                     </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Enable currency selection for expenses and income
+                                    </p>
                                 </div>
+                                <button
+                                    onClick={() => toggleFlag('multiCurrencyEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.multiCurrencyEnabled
+                                            ? 'bg-purple-500 dark:bg-purple-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.multiCurrencyEnabled
+                                                ? 'translate-x-6'
+                                                : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
 
-                                <div className="space-y-3">
-                                    {/* Master Toggle */}
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-medium text-gray-900 dark:text-white">
-                                                    Enable Experimental Features
-                                                </span>
-                                                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded">
-                                                    BETA
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                Turn on to access all experimental features below
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                toggleFlag('experimentalFeaturesEnabled')
-                                            }
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                flags.experimentalFeaturesEnabled
-                                                    ? 'bg-bloom-pink dark:bg-dark-pink'
-                                                    : 'bg-gray-300 dark:bg-gray-600'
-                                            }`}
-                                        >
-                                            <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                    flags.experimentalFeaturesEnabled
-                                                        ? 'translate-x-6'
-                                                        : 'translate-x-1'
-                                                }`}
-                                            />
-                                        </button>
+                            {/* Budget Recalculation Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-amber-500">📊</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Budget Recalculation
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded">
+                                            NEW
+                                        </span>
                                     </div>
-
-                                    {/* Experimental Feature Toggles - only shown when experimental is enabled */}
-                                    {flags.experimentalFeaturesEnabled && (
-                                        <>
-                                            {/* Multi-Currency Toggle */}
-                                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-purple-500">💱</span>
-                                                        <span className="font-medium text-gray-900 dark:text-white">
-                                                            Multi-Currency Support
-                                                        </span>
-                                                        <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded">
-                                                            NEW
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                        Enable currency selection for expenses and
-                                                        income
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        toggleFlag('multiCurrencyEnabled')
-                                                    }
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                        flags.multiCurrencyEnabled
-                                                            ? 'bg-purple-500 dark:bg-purple-600'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                            flags.multiCurrencyEnabled
-                                                                ? 'translate-x-6'
-                                                                : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-
-                                            {/* Budget Recalculation Toggle */}
-                                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-amber-500">📊</span>
-                                                        <span className="font-medium text-gray-900 dark:text-white">
-                                                            Budget Recalculation
-                                                        </span>
-                                                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded">
-                                                            NEW
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                        Auto-prompt to update weekly budget when
-                                                        fixed bills change
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        toggleFlag('budgetRecalculationEnabled')
-                                                    }
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                        flags.budgetRecalculationEnabled
-                                                            ? 'bg-amber-500 dark:bg-amber-600'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                            flags.budgetRecalculationEnabled
-                                                                ? 'translate-x-6'
-                                                                : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-
-                                            {/* Flexible Sub-Periods Toggle */}
-                                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-cyan-500">📅</span>
-                                                        <span className="font-medium text-gray-900 dark:text-white">
-                                                            Flexible Sub-Periods
-                                                        </span>
-                                                        <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 text-xs font-medium rounded">
-                                                            NEW
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                        Choose custom budget duration and number of
-                                                        sub-periods
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        toggleFlag('flexibleSubPeriodsEnabled')
-                                                    }
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                        flags.flexibleSubPeriodsEnabled
-                                                            ? 'bg-cyan-500 dark:bg-cyan-600'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                            flags.flexibleSubPeriodsEnabled
-                                                                ? 'translate-x-6'
-                                                                : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-
-                                            {/* Reports & Analytics Toggle */}
-                                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border ml-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-green-500">📈</span>
-                                                        <span className="font-medium text-gray-900 dark:text-white">
-                                                            Reports & Analytics
-                                                        </span>
-                                                        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
-                                                            NEW
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                        Access spending trends, category breakdowns,
-                                                        and income vs expense charts
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => toggleFlag('reportsEnabled')}
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                        flags.reportsEnabled
-                                                            ? 'bg-green-500 dark:bg-green-600'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                            flags.reportsEnabled
-                                                                ? 'translate-x-6'
-                                                                : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Auto-prompt to update weekly budget when fixed bills change
+                                    </p>
                                 </div>
+                                <button
+                                    onClick={() => toggleFlag('budgetRecalculationEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.budgetRecalculationEnabled
+                                            ? 'bg-amber-500 dark:bg-amber-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.budgetRecalculationEnabled
+                                                ? 'translate-x-6'
+                                                : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Flexible Sub-Periods Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-cyan-500">📅</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Flexible Sub-Periods
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 text-xs font-medium rounded">
+                                            NEW
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Choose custom budget duration and number of sub-periods
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => toggleFlag('flexibleSubPeriodsEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.flexibleSubPeriodsEnabled
+                                            ? 'bg-cyan-500 dark:bg-cyan-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.flexibleSubPeriodsEnabled
+                                                ? 'translate-x-6'
+                                                : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Reports & Analytics Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-green-500">📈</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Reports & Analytics
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                                            NEW
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Access spending trends, category breakdowns, and income vs
+                                        expense charts
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => toggleFlag('reportsEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.reportsEnabled
+                                            ? 'bg-green-500 dark:bg-green-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.reportsEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Account Tab */}
+                {/* Account Tab - keeping original structure from here */}
                 {activeTab === 'account' && (
                     <div className="space-y-6">
+                        {/* Export & Import Section */}
                         <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                                Account
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                Export & Import
                             </h2>
-                            <div className="space-y-6">
-                                <div className="text-gray-600 dark:text-gray-300">
-                                    <p>Account settings coming soon...</p>
+                            <p className="text-gray-600 dark:text-gray-300 mb-6">
+                                Backup your data or restore from a previous backup
+                            </p>
+
+                            <div className="grid gap-4 md:grid-cols-3">
+                                {/* Export Card */}
+                                <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-2xl">📤</span>
+                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                            Export Data
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Download your financial data as JSON or CSV for backup or
+                                        analysis.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            setShowExportModal(true);
+                                            setExportMode('export');
+                                        }}
+                                        className="w-full px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                                    >
+                                        Export Financial Data
+                                    </button>
+                                </div>
+
+                                {/* Import JSON Card */}
+                                <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-2xl">📥</span>
+                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                            Import Backup
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Restore your data from a previously exported JSON backup
+                                        file.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            setShowExportModal(true);
+                                            setExportMode('import');
+                                        }}
+                                        className="w-full px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                                    >
+                                        Import JSON Backup
+                                    </button>
+                                </div>
+
+                                {/* Bank Import Card */}
+                                <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-2xl">🏦</span>
+                                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                                            Bank Import
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Paste transactions from your bank statement to import them
+                                        quickly.
+                                    </p>
+                                    <button
+                                        onClick={() => setShowBankImportModal(true)}
+                                        className="w-full px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                                    >
+                                        Import Bank Transactions
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Danger Zone */}
-                        <div className="border-2 border-red-300 dark:border-red-800 rounded-2xl p-6 bg-red-50 dark:bg-red-950/20">
-                            <div className="flex items-start gap-3 mb-4">
+                        {/* Danger Zone - De-emphasized collapsible design */}
+                        <details className="group">
+                            <summary className="flex items-center gap-2 cursor-pointer list-none p-4 bg-white dark:bg-dark-elevated rounded-xl shadow-sm border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors">
                                 <svg
-                                    className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5"
+                                    className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-90"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -778,66 +781,38 @@ function Settings({ setIsAuthenticated }) {
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        d="M9 5l7 7-7 7"
                                     />
                                 </svg>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-red-900 dark:text-red-400 text-xl">
-                                        ⚠️ Danger Zone
-                                    </h3>
-                                    <p className="text-sm text-red-800 dark:text-red-300 mt-1">
-                                        Irreversible actions that will permanently affect your data
-                                    </p>
-                                </div>
-                            </div>
+                                <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                                    Danger Zone
+                                </span>
+                            </summary>
 
-                            <div className="bg-white dark:bg-dark-elevated rounded-lg p-4 border border-red-200 dark:border-red-800">
-                                {/* Export reminder */}
-                                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-amber-500 text-lg flex-shrink-0">
-                                            💡
-                                        </span>
-                                        <p className="text-amber-800 dark:text-amber-300 text-sm">
-                                            <strong>Tip:</strong> Before deleting, export your data
-                                            using the <strong>Export Financial Data</strong> option
-                                            in the user menu (top-right corner).
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="mt-2 p-4 border border-red-200 dark:border-red-900 rounded-xl bg-red-50/50 dark:bg-red-950/10">
+                                <p className="text-xs text-red-700 dark:text-red-400 mb-4">
+                                    ⚠️ Actions in this section are permanent and cannot be undone.
+                                </p>
 
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-dark-elevated rounded-lg border border-red-200 dark:border-red-800">
                                     <div>
-                                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                                        <h4 className="font-medium text-gray-900 dark:text-white text-sm">
                                             Delete All Financial Data
                                         </h4>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            Permanently delete all expenses, income, periods, debts,
-                                            and recurring expenses. Your account will remain.
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            Removes all expenses, income, periods, debts, and goals.
+                                            Your account will remain.
                                         </p>
                                     </div>
                                     <button
                                         onClick={() => setShowDeleteConfirmDialog(true)}
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors font-medium whitespace-nowrap"
                                     >
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                        Delete All Data
+                                        Delete All
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </details>
                     </div>
                 )}
             </main>

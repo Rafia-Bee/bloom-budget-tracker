@@ -12,49 +12,57 @@
  * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect, loginAsTestUser } from "./fixtures.js";
+import { test, expect, loginAsTestUser } from './fixtures.js';
 
-test.describe("Settings Page", () => {
+test.describe('Settings Page', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to settings page (cookies are auto-restored by fixture)
-        await page.goto("/settings");
-        await page.waitForLoadState("networkidle");
+        await page.goto('/settings');
+        await page.waitForLoadState('networkidle');
 
         // If redirected to login, perform manual login
-        if (page.url().includes("/login")) {
+        if (page.url().includes('/login')) {
             await loginAsTestUser(page);
-            await page.goto("/settings");
-            await page.waitForLoadState("networkidle");
+            await page.goto('/settings');
+            await page.waitForLoadState('networkidle');
         }
     });
 
-    test.describe("Navigation", () => {
-        test("can access Settings page", async ({ page }) => {
+    test.describe('Navigation', () => {
+        test('can access Settings page', async ({ page }) => {
             // Should be on settings page (not login)
-            expect(page.url()).toContain("/settings");
+            expect(page.url()).toContain('/settings');
 
             // Look for the Categories tab which should be visible on Settings page
-            await expect(
-                page.locator("button:has-text('Categories')")
-            ).toBeVisible({
+            await expect(page.locator("button:has-text('Categories')")).toBeVisible({
                 timeout: 5000,
             });
         });
 
-        test("Settings page shows tab navigation when authenticated", async ({
-            page,
-        }) => {
+        test('Settings page defaults to Preferences tab', async ({ page }) => {
             // Check if we're on the settings page (not redirected)
-            if (page.url().includes("/login")) {
+            if (page.url().includes('/login')) {
+                test.skip();
+                return;
+            }
+
+            // Preferences tab should be active by default (new behavior)
+            // Look for Preferences-specific content like recurring lookahead or currency
+            await expect(
+                page.locator('text=/Recurring Lookahead|Currency|Preferences/i').first()
+            ).toBeVisible({ timeout: 5000 });
+        });
+
+        test('Settings page shows tab navigation when authenticated', async ({ page }) => {
+            // Check if we're on the settings page (not redirected)
+            if (page.url().includes('/login')) {
                 test.skip();
                 return;
             }
 
             // Tab labels are: Categories (🏷️), Preferences (⚙️), Account (👤)
             const categoriesTab = page.locator("button:has-text('Categories')");
-            const preferencesTab = page.locator(
-                "button:has-text('Preferences')"
-            );
+            const preferencesTab = page.locator("button:has-text('Preferences')");
             const accountTab = page.locator("button:has-text('Account')");
 
             await expect(categoriesTab).toBeVisible();
@@ -63,17 +71,21 @@ test.describe("Settings Page", () => {
         });
     });
 
-    test.describe("Subcategories Tab", () => {
-        test("subcategories tab is default view", async ({ page }) => {
-            // Should show subcategory content by default
+    test.describe('Subcategories Tab', () => {
+        test.beforeEach(async ({ page }) => {
+            // Navigate to Categories tab (Settings now defaults to Preferences)
+            await page.locator("button:has-text('Categories')").click();
+            await page.waitForTimeout(500);
+        });
+
+        test('categories tab shows subcategory content', async ({ page }) => {
+            // Should show subcategory content
             await expect(
-                page
-                    .locator("text=/Subcategories|Categories|Add Subcategory/i")
-                    .first()
+                page.locator('text=/Subcategories|Categories|Add Subcategory/i').first()
             ).toBeVisible();
         });
 
-        test("shows category selector", async ({ page }) => {
+        test('shows category selector', async ({ page }) => {
             // Should have category buttons or dropdown
             const categorySelector = page.locator(
                 'button:has-text("Fixed Expenses"), button:has-text("Flexible"), select:has(option:has-text("Fixed"))'
@@ -83,7 +95,7 @@ test.describe("Settings Page", () => {
             });
         });
 
-        test("can open Create Subcategory modal", async ({ page }) => {
+        test('can open Create Subcategory modal', async ({ page }) => {
             // Look for add subcategory button
             const addButton = page.locator(
                 'button:has-text("Add Subcategory"), button:has-text("Add"), button:has-text("Create")'
@@ -93,47 +105,33 @@ test.describe("Settings Page", () => {
 
             // Modal should open
             await expect(
-                page
-                    .locator(
-                        "text=/Create Subcategory|Add Subcategory|New Subcategory/i"
-                    )
-                    .first()
+                page.locator('text=/Create Subcategory|Add Subcategory|New Subcategory/i').first()
             ).toBeVisible({ timeout: 3000 });
         });
 
-        test("Create Subcategory modal has required fields", async ({
-            page,
-        }) => {
+        test('Create Subcategory modal has required fields', async ({ page }) => {
             // Open create modal
-            const addButton = page.locator(
-                'button:has-text("Add Subcategory")'
-            );
+            const addButton = page.locator('button:has-text("Add Subcategory")');
             await addButton.click();
             await page.waitForTimeout(500);
 
             // Should have name input (by placeholder text)
-            const nameInput = page.locator(
-                'input[placeholder*="Streaming Services"]'
-            );
+            const nameInput = page.locator('input[placeholder*="Streaming Services"]');
             await expect(nameInput).toBeVisible();
 
             // Category selector should be visible
-            const categorySelector = page.locator("select");
+            const categorySelector = page.locator('select');
             await expect(categorySelector.first()).toBeVisible();
         });
 
-        test("can create a new subcategory", async ({ page }) => {
+        test('can create a new subcategory', async ({ page }) => {
             // Open create modal
-            const addButton = page.locator(
-                'button:has-text("Add Subcategory")'
-            );
+            const addButton = page.locator('button:has-text("Add Subcategory")');
             await addButton.click();
             await page.waitForTimeout(500);
 
             // Fill in name using placeholder selector
-            const nameInput = page.locator(
-                'input[placeholder*="Streaming Services"]'
-            );
+            const nameInput = page.locator('input[placeholder*="Streaming Services"]');
             const testName = `E2E Test Sub ${Date.now()}`;
             await nameInput.fill(testName);
 
@@ -150,7 +148,7 @@ test.describe("Settings Page", () => {
             });
         });
 
-        test("can edit existing subcategory", async ({ page }) => {
+        test('can edit existing subcategory', async ({ page }) => {
             // Look for edit button on a subcategory
             const editButton = page.locator(
                 'button:has-text("Edit"), button[aria-label*="edit" i], [data-testid*="edit"]'
@@ -161,16 +159,16 @@ test.describe("Settings Page", () => {
                 await page.waitForTimeout(500);
 
                 // Edit modal should open
-                await expect(
-                    page.locator("text=/Edit Subcategory|Update/i").first()
-                ).toBeVisible({ timeout: 3000 });
+                await expect(page.locator('text=/Edit Subcategory|Update/i').first()).toBeVisible({
+                    timeout: 3000,
+                });
             } else {
                 // No subcategories to edit
                 test.skip();
             }
         });
 
-        test("delete subcategory shows confirmation", async ({ page }) => {
+        test('delete subcategory shows confirmation', async ({ page }) => {
             // Look for delete button
             const deleteButton = page.locator(
                 'button:has-text("Delete"), button[aria-label*="delete" i], [data-testid*="delete"]'
@@ -181,9 +179,7 @@ test.describe("Settings Page", () => {
                 await page.waitForTimeout(500);
 
                 // Should show confirmation
-                const confirmDialog = page.locator(
-                    "text=/Are you sure|Confirm|Delete this/i"
-                );
+                const confirmDialog = page.locator('text=/Are you sure|Confirm|Delete this/i');
                 await expect(confirmDialog.first()).toBeVisible({
                     timeout: 3000,
                 });
@@ -200,7 +196,7 @@ test.describe("Settings Page", () => {
             }
         });
 
-        test("can switch between category tabs", async ({ page }) => {
+        test('can switch between category tabs', async ({ page }) => {
             // Click different category buttons
             const categoryButtons = page.locator(
                 'button:has-text("Fixed Expenses"), button:has-text("Flexible"), button:has-text("Savings"), button:has-text("Debt")'
@@ -215,61 +211,51 @@ test.describe("Settings Page", () => {
         });
     });
 
-    test.describe("Preferences Tab", () => {
-        test("can switch to Preferences tab", async ({ page }) => {
-            const preferencesTab = page.locator(
-                "button:has-text('Preferences')"
-            );
+    test.describe('Preferences Tab', () => {
+        test('can switch to Preferences tab', async ({ page }) => {
+            const preferencesTab = page.locator("button:has-text('Preferences')");
             await preferencesTab.click();
             await page.waitForTimeout(500);
 
             // Should show preferences content
             await expect(
-                page.locator("text=/Preferences|Lookahead|Currency/i").first()
+                page.locator('text=/Preferences|Lookahead|Currency/i').first()
             ).toBeVisible();
         });
 
-        test("shows recurring lookahead setting", async ({ page }) => {
+        test('shows recurring lookahead setting', async ({ page }) => {
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
 
             // Should show lookahead setting
-            const lookaheadSetting = page.locator(
-                "text=/lookahead|days ahead|preview/i"
-            );
+            const lookaheadSetting = page.locator('text=/lookahead|days ahead|preview/i');
             await expect(lookaheadSetting.first()).toBeVisible({
                 timeout: 5000,
             });
         });
 
-        test("can change recurring lookahead days", async ({ page }) => {
+        test('can change recurring lookahead days', async ({ page }) => {
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
 
             // Find lookahead input
-            const lookaheadInput = page.locator(
-                'input[type="number"], input[name*="lookahead" i]'
-            );
+            const lookaheadInput = page.locator('input[type="number"], input[name*="lookahead" i]');
 
             if (await lookaheadInput.first().isVisible({ timeout: 3000 })) {
-                await lookaheadInput.first().fill("30");
+                await lookaheadInput.first().fill('30');
 
                 // Save button
                 const saveButton = page
-                    .locator(
-                        'button:has-text("Save"), button:has-text("Update")'
-                    )
+                    .locator('button:has-text("Save"), button:has-text("Update")')
                     .first();
                 if (await saveButton.isVisible({ timeout: 1000 })) {
                     await saveButton.click();
                     await page.waitForTimeout(1000);
 
                     // Should show success message
-                    const successMessage = page.locator(
-                        "text=/saved|success|updated/i"
-                    );
+                    const successMessage = page.locator('text=/saved|success|updated/i');
                     // Success might appear briefly
                 }
             } else {
@@ -278,9 +264,7 @@ test.describe("Settings Page", () => {
             }
         });
 
-        test("shows currency setting when multi-currency enabled", async ({
-            page,
-        }) => {
+        test('shows currency setting when multi-currency enabled', async ({ page }) => {
             // Switch to Preferences tab
             await page.locator("button:has-text('Preferences')").click();
             await page.waitForTimeout(500);
@@ -300,29 +284,27 @@ test.describe("Settings Page", () => {
         });
     });
 
-    test.describe("Account Tab", () => {
-        test("can switch to Account tab", async ({ page }) => {
+    test.describe('Account Tab', () => {
+        test('can switch to Account tab', async ({ page }) => {
             const accountTab = page.locator("button:has-text('Account')");
             await accountTab.click();
             await page.waitForTimeout(500);
 
             // Should show account content
-            await expect(
-                page.locator("text=/Account|Danger Zone|Delete/i").first()
-            ).toBeVisible();
+            await expect(page.locator('text=/Account|Danger Zone|Delete/i').first()).toBeVisible();
         });
 
-        test("shows danger zone with delete option", async ({ page }) => {
+        test('shows danger zone with delete option', async ({ page }) => {
             // Switch to Account tab
             await page.locator("button:has-text('Account')").click();
             await page.waitForTimeout(500);
 
             // Should show danger zone
-            const dangerZone = page.locator("text=/Danger Zone|Delete.*Data/i");
+            const dangerZone = page.locator('text=/Danger Zone|Delete.*Data/i');
             await expect(dangerZone.first()).toBeVisible({ timeout: 5000 });
         });
 
-        test("delete all data requires confirmation text", async ({ page }) => {
+        test('delete all data requires confirmation text', async ({ page }) => {
             // Switch to Account tab
             await page.locator("button:has-text('Account')").click();
             await page.waitForTimeout(500);
@@ -349,120 +331,57 @@ test.describe("Settings Page", () => {
                 if (await cancelButton.isVisible({ timeout: 1000 })) {
                     await cancelButton.click();
                 } else {
-                    await page.keyboard.press("Escape");
+                    await page.keyboard.press('Escape');
                 }
             }
         });
     });
 
-    test.describe("Data Export/Import", () => {
-        test("export option is accessible from header", async ({ page }) => {
-            // Check if mobile hamburger menu is visible
-            const hamburgerButton = page.locator('button[aria-label="Menu"]');
-            const userMenuButton = page.locator('button[title="User menu"]');
+    test.describe('Data Export/Import', () => {
+        test('export option is accessible from Account tab', async ({ page }) => {
+            // Navigate to Account tab where Export/Import now lives
+            await page.locator("button:has-text('Account')").click();
+            await page.waitForTimeout(500);
 
-            if (await hamburgerButton.isVisible()) {
-                // Mobile: Open hamburger menu
-                await hamburgerButton.click();
-                await page.waitForTimeout(300);
-
-                // Click Export Data in mobile menu
-                const exportButton = page.locator(
-                    'button:has-text("Export Data")'
-                );
-                await exportButton.click();
-            } else {
-                // Desktop: Open user menu
-                await userMenuButton.click();
-                await page.waitForTimeout(300);
-
-                // Open Import/Export submenu
-                const importExportSubmenu = page.locator(
-                    'button:has-text("Import/Export")'
-                );
-                await importExportSubmenu.click();
-                await page.waitForTimeout(300);
-
-                // Click Export Financial Data
-                const exportButton = page.locator(
-                    'button:has-text("Export Financial Data")'
-                );
-                await exportButton.click();
-            }
+            // Click Export Financial Data button in Account tab
+            const exportButton = page.locator('button:has-text("Export Financial Data")');
+            await exportButton.click();
 
             // Export modal should open
-            await expect(
-                page.locator("text=/Export|Download|Backup/i").first()
-            ).toBeVisible({ timeout: 3000 });
+            await expect(page.locator('text=/Export|Download|Backup/i').first()).toBeVisible({
+                timeout: 3000,
+            });
         });
 
-        test("import option is accessible from header", async ({ page }) => {
-            // Check if mobile hamburger menu is visible
-            const hamburgerButton = page.locator('button[aria-label="Menu"]');
-            const userMenuButton = page.locator('button[title="User menu"]');
+        test('import option is accessible from Account tab', async ({ page }) => {
+            // Navigate to Account tab where Export/Import now lives
+            await page.locator("button:has-text('Account')").click();
+            await page.waitForTimeout(500);
 
-            if (await hamburgerButton.isVisible()) {
-                // Mobile: Open hamburger menu
-                await hamburgerButton.click();
-                await page.waitForTimeout(300);
-
-                // Click Import Data in mobile menu
-                const importButton = page.locator(
-                    'button:has-text("Import Data")'
-                );
-                await importButton.click();
-            } else {
-                // Desktop: Open user menu
-                await userMenuButton.click();
-                await page.waitForTimeout(300);
-
-                // Open Import/Export submenu
-                const importExportSubmenu = page.locator(
-                    'button:has-text("Import/Export")'
-                );
-                await importExportSubmenu.click();
-                await page.waitForTimeout(300);
-
-                // Click Import Financial Data
-                const importButton = page.locator(
-                    'button:has-text("Import Financial Data")'
-                );
-                await importButton.click();
-            }
+            // Click Import JSON Backup button in Account tab
+            const importButton = page.locator('button:has-text("Import JSON Backup")');
+            await importButton.click();
 
             // Import modal should open
-            await expect(
-                page.locator("text=/Import|Upload|Restore/i").first()
-            ).toBeVisible({ timeout: 3000 });
+            await expect(page.locator('text=/Import|Upload|Restore/i').first()).toBeVisible({
+                timeout: 3000,
+            });
         });
 
-        test("export modal shows format options", async ({ page }) => {
-            // Open export modal (reuse logic)
-            const hamburgerButton = page.locator('button[aria-label="Menu"]');
-            const userMenuButton = page.locator('button[title="User menu"]');
-
-            if (await hamburgerButton.isVisible()) {
-                await hamburgerButton.click();
-                await page.waitForTimeout(300);
-                await page.locator('button:has-text("Export Data")').click();
-            } else {
-                await userMenuButton.click();
-                await page.waitForTimeout(300);
-                await page.locator('button:has-text("Import/Export")').click();
-                await page.waitForTimeout(300);
-                await page
-                    .locator('button:has-text("Export Financial Data")')
-                    .click();
-            }
+        test('export modal shows format options', async ({ page }) => {
+            // Navigate to Account tab and open export modal
+            await page.locator("button:has-text('Account')").click();
+            await page.waitForTimeout(500);
+            await page.locator('button:has-text("Export Financial Data")').click();
 
             await page.waitForTimeout(500);
 
             // Should show JSON and CSV options (use separate locators, not combined regex)
             const jsonOption = page
-                .locator("text=/JSON/i")
+                .locator('text=/JSON/i')
                 .or(page.locator('button:has-text("JSON")'));
             const csvOption = page
-                .locator("text=/CSV/i")
+                .locator('text=/CSV/i')
                 .or(page.locator('button:has-text("CSV")'));
 
             const hasJson = await jsonOption
@@ -479,24 +398,17 @@ test.describe("Settings Page", () => {
         });
     });
 
-    test.describe("Feature Flags", () => {
-        test("feature flags section visible in preferences", async ({
-            page,
-        }) => {
-            // Switch to Preferences tab
-            await page.locator("button:has-text('Preferences')").click();
+    test.describe('Feature Flags', () => {
+        test('experimental features accessible in dedicated tab', async ({ page }) => {
+            // Switch to Experimental tab (new dedicated tab)
+            await page.locator("button:has-text('Experimental')").click();
             await page.waitForTimeout(500);
 
-            // Feature flags might be in preferences
-            const featureFlags = page.locator(
-                "text=/Feature.*Flag|Experimental|Beta/i"
-            );
+            // Experimental features should be visible
+            const experimentalSection = page.locator('text=/Experimental|Beta|Feature/i');
 
-            // This might or might not be visible depending on implementation
-            const isVisible = await featureFlags
-                .first()
-                .isVisible({ timeout: 2000 });
-            // Either state is valid
+            const isVisible = await experimentalSection.first().isVisible({ timeout: 2000 });
+            expect(isVisible).toBeTruthy();
         });
     });
 });

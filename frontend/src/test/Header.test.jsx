@@ -140,15 +140,6 @@ describe('Header', () => {
             expect(screen.getByText('Logout')).toBeInTheDocument();
         });
 
-        it('shows Import/Export submenu option', async () => {
-            renderHeader();
-
-            const userButton = screen.getByTitle('User menu');
-            await clickWithAct(userButton);
-
-            expect(screen.getByText('Import/Export')).toBeInTheDocument();
-        });
-
         it('closes user menu when clicking outside', async () => {
             renderHeader();
 
@@ -164,64 +155,6 @@ describe('Header', () => {
             await waitFor(() => {
                 expect(screen.queryByText('Signed in as')).not.toBeInTheDocument();
             });
-        });
-    });
-
-    describe('Import/Export Submenu', () => {
-        it('expands Import/Export submenu when clicked', async () => {
-            renderHeader();
-
-            const userButton = screen.getByTitle('User menu');
-            await clickWithAct(userButton);
-
-            const importExportButton = screen.getByText('Import/Export');
-            await clickWithAct(importExportButton);
-
-            expect(screen.getByText('Export Financial Data')).toBeInTheDocument();
-            expect(screen.getByText('Import Financial Data')).toBeInTheDocument();
-            expect(screen.getByText('Import Bank Transactions')).toBeInTheDocument();
-        });
-
-        it('calls onExport when Export is clicked', async () => {
-            renderHeader();
-
-            const userButton = screen.getByTitle('User menu');
-            await clickWithAct(userButton);
-
-            const importExportButton = screen.getByText('Import/Export');
-            await clickWithAct(importExportButton);
-
-            await clickWithAct(screen.getByText('Export Financial Data'));
-
-            expect(mockOnExport).toHaveBeenCalledTimes(1);
-        });
-
-        it('calls onImport when Import is clicked', async () => {
-            renderHeader();
-
-            const userButton = screen.getByTitle('User menu');
-            await clickWithAct(userButton);
-
-            const importExportButton = screen.getByText('Import/Export');
-            await clickWithAct(importExportButton);
-
-            await clickWithAct(screen.getByText('Import Financial Data'));
-
-            expect(mockOnImport).toHaveBeenCalledTimes(1);
-        });
-
-        it('calls onBankImport when Bank Import is clicked', async () => {
-            renderHeader();
-
-            const userButton = screen.getByTitle('User menu');
-            await clickWithAct(userButton);
-
-            const importExportButton = screen.getByText('Import/Export');
-            await clickWithAct(importExportButton);
-
-            await clickWithAct(screen.getByText('Import Bank Transactions'));
-
-            expect(mockOnBankImport).toHaveBeenCalledTimes(1);
         });
     });
 

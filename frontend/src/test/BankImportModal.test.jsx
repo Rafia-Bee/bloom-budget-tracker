@@ -559,11 +559,9 @@ describe('BankImportModal', () => {
         });
 
         it('shows error when import fails', async () => {
-            api.post
-                .mockResolvedValueOnce({ data: mockPreviewResponse })
-                .mockRejectedValueOnce({
-                    response: { data: { error: 'Import failed - database error' } },
-                });
+            api.post.mockResolvedValueOnce({ data: mockPreviewResponse }).mockRejectedValueOnce({
+                response: { data: { error: 'Import failed - database error' } },
+            });
 
             render(<BankImportModal onClose={mockOnClose} />);
 
