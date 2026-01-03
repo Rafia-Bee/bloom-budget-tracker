@@ -24,7 +24,7 @@ export default function CatLoading({ message = 'Waking up the server...' }) {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-bloom-light dark:bg-dark-base">
-            <div className="text-center">
+            <div className="text-center max-w-md px-4">
                 <div className="mb-6 inline-block">
                     <video
                         src={catAnimation}
@@ -38,8 +38,13 @@ export default function CatLoading({ message = 'Waking up the server...' }) {
                 <div className="text-bloom-pink dark:text-dark-pink text-2xl font-semibold mb-2">
                     {message}
                 </div>
-                <div className="text-gray-600 dark:text-dark-text-secondary text-sm">
+                <div className="text-gray-600 dark:text-dark-text-secondary text-sm mb-3">
                     Please wait while we fetch your data... 🐱
+                </div>
+                <div className="text-gray-500 dark:text-dark-text-secondary text-xs">
+                    We use free hosting tiers, so the first request may take up to 30 seconds.
+                    <br />
+                    Thank you for your patience! 🌸
                 </div>
                 <div className="mt-4">
                     <div className="inline-flex space-x-2">
