@@ -35,7 +35,11 @@ const TransactionList = ({
     defaultCurrency,
     convertAmount,
 }) => {
-    const fcEur = (cents) => formatCurrency(cents);
+    // Convert EUR cents (from DB) to user's currency and format
+    const fcEur = (cents) => {
+        const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents;
+        return formatCurrency(converted, defaultCurrency);
+    };
 
     // Helper to group transactions by date
     const groupedTransactions = transactions.reduce((groups, transaction) => {

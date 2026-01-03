@@ -4,6 +4,8 @@
  * Provides the user's default currency and exchange rates to all components.
  * Components can use this to format amounts in the user's preferred currency.
  * Only fetches user settings when authenticated to prevent 401 spam.
+ *
+ * Uses localStorage to cache currency preference for instant display on refresh.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -12,9 +14,26 @@ import { logError, logWarn } from '../utils/logger';
 
 const CurrencyContext = createContext();
 
+const CURRENCY_STORAGE_KEY = 'bloom_default_currency';
+const RATES_STORAGE_KEY = 'bloom_exchange_rates';
+
 export function CurrencyProvider({ children, isAuthenticated = false }) {
-    const [defaultCurrency, setDefaultCurrency] = useState('EUR');
-    const [exchangeRates, setExchangeRates] = useState({});
+    // Initialize from localStorage for instant display, fallback to EUR
+    const [defaultCurrency, setDefaultCurrency] = useState(() => {
+        try {
+            return localStorage.getItem(CURRENCY_STORAGE_KEY) || 'EUR';
+        } catch {
+            return 'EUR';
+        }
+    });
+    const [exchangeRates, setExchangeRates] = useState(() => {
+        try {
+            const cached = localStorage.getItem(RATES_STORAGE_KEY);
+            return cached ? JSON.parse(cached) : {};
+        } catch {
+            return {};
+        }
+    });
     const [loading, setLoading] = useState(true);
     const [ratesLoading, setRatesLoading] = useState(false);
 
@@ -36,13 +55,34 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
         }
     }, [defaultCurrency]);
 
+    // Persist currency to localStorage when it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem(CURRENCY_STORAGE_KEY, defaultCurrency);
+        } catch {
+            // localStorage might be unavailable (private browsing, etc.)
+        }
+    }, [defaultCurrency]);
+
+    // Persist rates to localStorage when they change
+    useEffect(() => {
+        try {
+            if (Object.keys(exchangeRates).length > 0) {
+                localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(exchangeRates));
+            }
+        } catch {
+            // localStorage might be unavailable
+        }
+    }, [exchangeRates]);
+
     const loadDefaultCurrency = async () => {
         try {
             const response = await userAPI.getDefaultCurrency();
-            setDefaultCurrency(response.data.default_currency || 'EUR');
+            const currency = response.data.default_currency || 'EUR';
+            setDefaultCurrency(currency);
         } catch (err) {
-            logWarn('Failed to load default currency, using EUR', err);
-            setDefaultCurrency('EUR');
+            logWarn('Failed to load default currency, using cached or EUR', err);
+            // Keep current value (from localStorage) instead of resetting to EUR
         } finally {
             setLoading(false);
         }
@@ -55,7 +95,7 @@ export function CurrencyProvider({ children, isAuthenticated = false }) {
             setExchangeRates(response.data.rates || {});
         } catch (err) {
             logWarn('Failed to load exchange rates', err);
-            setExchangeRates({});
+            // Keep cached rates instead of clearing
         } finally {
             setRatesLoading(false);
         }
