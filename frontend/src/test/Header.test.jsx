@@ -140,6 +140,16 @@ describe('Header', () => {
             expect(screen.getByText('Logout')).toBeInTheDocument();
         });
 
+        it('shows Currency option in user menu', async () => {
+            renderHeader();
+
+            const userButton = screen.getByTitle('User menu');
+            await clickWithAct(userButton);
+
+            // Currency option should be visible (desktop menu doesn't have emoji)
+            expect(screen.getByText('Currency')).toBeInTheDocument();
+        });
+
         it('closes user menu when clicking outside', async () => {
             renderHeader();
 

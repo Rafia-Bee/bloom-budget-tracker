@@ -8,18 +8,44 @@
 #   e       - E2E tests only (auto-starts servers)
 #   bf      - Backend + Frontend (skip E2E)
 #
+# Filter: Use -Filter to run only tests matching a pattern
+# List Mode: Use "list" as second argument to list tests without running
+#
 # Examples:
 #   .\scripts\run_all_tests.ps1           # All tests
 #   .\scripts\run_all_tests.ps1 b         # Backend only
 #   .\scripts\run_all_tests.ps1 bf        # Backend + Frontend
 #   .\scripts\run_all_tests.ps1 e -VerboseOutput # E2E with verbose output
+#   .\scripts\run_all_tests.ps1 e -Filter "currency" # E2E tests matching "currency"
+#   .\scripts\run_all_tests.ps1 f -Filter "Modal"    # Frontend tests matching "Modal"
+#   .\scripts\run_all_tests.ps1 b -Filter "auth"     # Backend tests matching "auth"
+#   .\scripts\run_all_tests.ps1 e "currency" list    # List E2E tests matching "currency"
+#   .\scripts\run_all_tests.ps1 f list               # List all frontend tests
+#   .\scripts\run_all_tests.ps1 b "auth" list        # List backend tests matching "auth"
 
 param(
     [Parameter(Position=0)]
     [ValidateSet("", "b", "f", "e", "bf", "fe", "be", "bfe", "all")]
     [string]$Suite = "",
-    [switch]$VerboseOutputOutput
+    [Parameter(Position=1)]
+    [string]$FilterOrList = "",
+    [Parameter(Position=2)]
+    [string]$ListMode = "",
+    [switch]$VerboseOutput
 )
+
+# Parse filter and list mode from positional parameters
+$Filter = ""
+$ListOnly = $false
+
+if ($FilterOrList -eq "list") {
+    $ListOnly = $true
+} elseif ($FilterOrList) {
+    $Filter = $FilterOrList
+    if ($ListMode -eq "list") {
+        $ListOnly = $true
+    }
+}
 
 $ErrorActionPreference = "Continue"
 $startTime = Get-Date
@@ -72,6 +98,12 @@ $e2eLogFile = Join-Path $projectRoot "e2e-tests.txt"
 Write-Header "RUNNING TESTS"
 Write-Host "Project: $projectRoot"
 Write-Host "Suites:  Backend=$runBackend, Frontend=$runFrontend, E2E=$runE2E"
+if ($Filter) {
+    Write-Host "Filter:  $Filter" -ForegroundColor Cyan
+}
+if ($ListOnly) {
+    Write-Host "Mode:    LIST ONLY (tests will not be executed)" -ForegroundColor Magenta
+}
 Write-Host ""
 
 # -----------------------------------------------------------------------------
@@ -82,49 +114,61 @@ if ($runBackend) {
     $backendStart = Get-Date
 
     try {
-        if ($VerboseOutput) {
+        if ($ListOnly) {
+            Write-Info "Listing backend tests..."
+            if ($Filter) {
+                & .\.venv\Scripts\pytest.exe backend/tests --collect-only -q -k "$Filter" 2>&1 | Tee-Object -Variable backendOutput
+            } else {
+                & .\.venv\Scripts\pytest.exe backend/tests --collect-only -q 2>&1 | Tee-Object -Variable backendOutput
+            }
+            $backendExitCode = $LASTEXITCODE
+            $results.Backend.Status = "listed"
+        } elseif ($Filter) {
+            Write-Info "Running backend tests matching: $Filter"
+            & .\.venv\Scripts\pytest.exe backend/tests -v --tb=short --cov=backend --cov-report=term-missing -k "$Filter" 2>&1 | Tee-Object -Variable backendOutput
+            $backendExitCode = $LASTEXITCODE
+        } elseif ($VerboseOutput) {
             & .\.venv\Scripts\pytest.exe backend/tests -v --tb=short --cov=backend --cov-report=term-missing 2>&1 | Tee-Object -Variable backendOutput
+            $backendExitCode = $LASTEXITCODE
         } else {
             # Use -v to show test names as requested
             & .\.venv\Scripts\pytest.exe backend/tests -v --tb=line --cov=backend --cov-report=term 2>&1 | Tee-Object -Variable backendOutput
+            $backendExitCode = $LASTEXITCODE
         }
-        $backendExitCode = $LASTEXITCODE
 
         # Save full output to log file
         ($backendOutput | ForEach-Object { Remove-AnsiCodes $_ }) | Out-File -FilePath $backendLogFile -Encoding UTF8
         Write-Info "Full output saved to: $backendLogFile"
 
-        # Parse results from output
-        $summaryLine = $backendOutput | Select-String -Pattern "(\d+) passed" | Select-Object -Last 1
-        if ($summaryLine) {
-            $passed = [regex]::Match($summaryLine.Line, "(\d+) passed").Groups[1].Value
-            $failed = [regex]::Match($summaryLine.Line, "(\d+) failed")
-            $results.Backend.Passed = [int]$passed
-            if ($failed.Success) { $results.Backend.Failed = [int]$failed.Groups[1].Value }
-            $results.Backend.Tests = $results.Backend.Passed + $results.Backend.Failed
-        }
+        if (-not $ListOnly) {
+            # Parse results from output
+            $summaryLine = $backendOutput | Select-String -Pattern "(\d+) passed" | Select-Object -Last 1
+            if ($summaryLine) {
+                $passed = [regex]::Match($summaryLine.Line, "(\d+) passed").Groups[1].Value
+                $failed = [regex]::Match($summaryLine.Line, "(\d+) failed")
+                $results.Backend.Passed = [int]$passed
+                if ($failed.Success) { $results.Backend.Failed = [int]$failed.Groups[1].Value }
+                $results.Backend.Tests = $results.Backend.Passed + $results.Backend.Failed
+            }
 
-        # Parse coverage
-        $coverageLine = $backendOutput | Select-String -Pattern "TOTAL\s+\d+\s+\d+\s+(\d+%)" | Select-Object -Last 1
-        if ($coverageLine) {
-            $results.Backend.Coverage = [regex]::Match($coverageLine.Line, "(\d+%)").Groups[1].Value
-        }
+            # Parse coverage
+            $coverageLine = $backendOutput | Select-String -Pattern "TOTAL\s+\d+\s+\d+\s+(\d+%)" | Select-Object -Last 1
+            if ($coverageLine) {
+                $results.Backend.Coverage = [regex]::Match($coverageLine.Line, "(\d+%)").Groups[1].Value
+            }
 
-        $results.Backend.Status = if ($backendExitCode -eq 0) { "passed" } else { "failed" }
-        $results.Backend.Time = ((Get-Date) - $backendStart).TotalSeconds
+            $results.Backend.Status = if ($backendExitCode -eq 0) { "passed" } else { "failed" }
+            $results.Backend.Time = ((Get-Date) - $backendStart).TotalSeconds
 
-        # Output already shown via Tee-Object
-        # if ($VerboseOutput -or $backendExitCode -ne 0) {
-        #     $backendOutput | ForEach-Object { Write-Host $_ }
-        # } else {
-        #     # Show just the summary
-        #     $backendOutput | Select-String -Pattern "(PASSED|FAILED|ERROR|passed|failed|error|warning|TOTAL)" | ForEach-Object { Write-Host $_.Line }
-        # }
-
-        if ($backendExitCode -eq 0) {
-            Write-Success "Backend tests passed!"
+            if ($backendExitCode -eq 0) {
+                Write-Success "Backend tests passed!"
+            } else {
+                Write-Failure "Backend tests failed!"
+            }
         } else {
-            Write-Failure "Backend tests failed!"
+            # For list mode, count the tests listed
+            $testCount = ($backendOutput | Select-String -Pattern "^backend/tests" | Measure-Object).Count
+            Write-Info "Found $testCount backend tests"
         }
     } catch {
         Write-Failure "Backend tests errored: $_"
@@ -142,13 +186,30 @@ if ($runFrontend) {
     try {
         Push-Location frontend
 
-        if ($VerboseOutput) {
+        if ($ListOnly) {
+            Write-Info "Listing frontend tests..."
+            if ($Filter) {
+                # Vitest doesn't have a direct --list flag, but we can use --reporter=json --run and parse
+                # Alternative: use --passWithNoTests to just show matched files
+                npm test -- --run --reporter=verbose $Filter 2>&1 | Select-String -Pattern "^\s*[✓✗]|PASS|FAIL|\.test\.(jsx?|tsx?):" | Tee-Object -Variable frontendOutput
+            } else {
+                npm test -- --run --reporter=verbose 2>&1 | Select-String -Pattern "^\s*[✓✗]|PASS|FAIL|\.test\.(jsx?|tsx?):" | Tee-Object -Variable frontendOutput
+            }
+            $frontendExitCode = $LASTEXITCODE
+            $results.Frontend.Status = "listed"
+            Write-Info "Test names shown above (Vitest doesn't support list-only mode)"
+        } elseif ($Filter) {
+            Write-Info "Running frontend tests matching: $Filter"
+            npm test -- --run --reporter=verbose --coverage $Filter 2>&1 | Tee-Object -Variable frontendOutput
+            $frontendExitCode = $LASTEXITCODE
+        } elseif ($VerboseOutput) {
             npm test -- --run --reporter=verbose --coverage 2>&1 | Tee-Object -Variable frontendOutput
+            $frontendExitCode = $LASTEXITCODE
         } else {
             # Use verbose reporter to show test names
             npm test -- --run --reporter=verbose --coverage 2>&1 | Tee-Object -Variable frontendOutput
+            $frontendExitCode = $LASTEXITCODE
         }
-        $frontendExitCode = $LASTEXITCODE
 
         Pop-Location
 
@@ -156,37 +217,32 @@ if ($runFrontend) {
         ($frontendOutput | ForEach-Object { Remove-AnsiCodes $_ }) | Out-File -FilePath $frontendLogFile -Encoding UTF8
         Write-Info "Full output saved to: $frontendLogFile"
 
-        # Parse results
-        $testLine = $frontendOutput | Select-String -Pattern "Tests\s+(\d+)\s+(passed|failed)" | Select-Object -Last 1
-        if ($testLine) {
-            $passed = [regex]::Match($testLine.Line, "(\d+)\s+passed")
-            $failed = [regex]::Match($testLine.Line, "(\d+)\s+failed")
-            if ($passed.Success) { $results.Frontend.Passed = [int]$passed.Groups[1].Value }
-            if ($failed.Success) { $results.Frontend.Failed = [int]$failed.Groups[1].Value }
-            $results.Frontend.Tests = $results.Frontend.Passed + $results.Frontend.Failed
-        }
+        if (-not $ListOnly) {
+            # Parse results
+            $testLine = $frontendOutput | Select-String -Pattern "Tests\s+(\d+)\s+(passed|failed)" | Select-Object -Last 1
+            if ($testLine) {
+                $passed = [regex]::Match($testLine.Line, "(\d+)\s+passed")
+                $failed = [regex]::Match($testLine.Line, "(\d+)\s+failed")
+                if ($passed.Success) { $results.Frontend.Passed = [int]$passed.Groups[1].Value }
+                if ($failed.Success) { $results.Frontend.Failed = [int]$failed.Groups[1].Value }
+                $results.Frontend.Tests = $results.Frontend.Passed + $results.Frontend.Failed
+            }
 
-        # Parse coverage from "All files" line
-        $coverageLine = $frontendOutput | Select-String -Pattern "All files\s*\|\s*[\d.]+\s*\|" | Select-Object -Last 1
-        if ($coverageLine) {
-            $coverage = [regex]::Match($coverageLine.Line, "All files\s*\|\s*([\d.]+)").Groups[1].Value
-            $results.Frontend.Coverage = "$coverage%"
-        }
+            # Parse coverage from "All files" line
+            $coverageLine = $frontendOutput | Select-String -Pattern "All files\s*\|\s*[\d.]+\s*\|" | Select-Object -Last 1
+            if ($coverageLine) {
+                $coverage = [regex]::Match($coverageLine.Line, "All files\s*\|\s*([\d.]+)").Groups[1].Value
+                $results.Frontend.Coverage = "$coverage%"
+            }
 
-        $results.Frontend.Status = if ($frontendExitCode -eq 0) { "passed" } else { "failed" }
-        $results.Frontend.Time = ((Get-Date) - $frontendStart).TotalSeconds
+            $results.Frontend.Status = if ($frontendExitCode -eq 0) { "passed" } else { "failed" }
+            $results.Frontend.Time = ((Get-Date) - $frontendStart).TotalSeconds
 
-        # Output already shown via Tee-Object
-        # if ($VerboseOutput -or $frontendExitCode -ne 0) {
-        #     $frontendOutput | ForEach-Object { Write-Host $_ }
-        # } else {
-        #     $frontendOutput | Select-String -Pattern "(Tests|PASS|FAIL|Coverage|All files)" | ForEach-Object { Write-Host $_.Line }
-        # }
-
-        if ($frontendExitCode -eq 0) {
-            Write-Success "Frontend tests passed!"
-        } else {
-            Write-Failure "Frontend tests failed!"
+            if ($frontendExitCode -eq 0) {
+                Write-Success "Frontend tests passed!"
+            } else {
+                Write-Failure "Frontend tests failed!"
+            }
         }
     } catch {
         Write-Failure "Frontend tests errored: $_"
@@ -200,15 +256,34 @@ if ($runFrontend) {
 # -----------------------------------------------------------------------------
 if ($runE2E) {
     Write-Header "E2E TESTS (playwright)"
-    Write-Info "Playwright will auto-start servers if needed (reuseExistingServer enabled)"
     $e2eStart = Get-Date
 
     try {
         Push-Location frontend
         # Use playwright.cmd directly to avoid PowerShell npx.ps1 parsing issues
-        # Use list reporter to show [1/N] progress
-        & .\node_modules\.bin\playwright.cmd test --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
-        $e2eExitCode = $LASTEXITCODE
+
+        if ($ListOnly) {
+            Write-Info "Listing E2E tests..."
+            if ($Filter) {
+                & .\node_modules\.bin\playwright.cmd test $Filter --list 2>&1 | Tee-Object -Variable e2eOutput
+            } else {
+                & .\node_modules\.bin\playwright.cmd test --list 2>&1 | Tee-Object -Variable e2eOutput
+            }
+            $e2eExitCode = $LASTEXITCODE
+            $results.E2E.Status = "listed"
+            # Count tests from output
+            $testCount = ($e2eOutput | Select-String -Pattern "^\s+[✓◯›]|\.spec\.(js|ts):" | Measure-Object).Count
+            Write-Info "Found tests listed above"
+        } elseif ($Filter) {
+            Write-Info "Playwright will auto-start servers if needed (reuseExistingServer enabled)"
+            Write-Info "Running E2E tests matching: $Filter"
+            & .\node_modules\.bin\playwright.cmd test $Filter --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
+            $e2eExitCode = $LASTEXITCODE
+        } else {
+            Write-Info "Playwright will auto-start servers if needed (reuseExistingServer enabled)"
+            & .\node_modules\.bin\playwright.cmd test --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
+            $e2eExitCode = $LASTEXITCODE
+        }
 
         Pop-Location
 
@@ -216,30 +291,25 @@ if ($runE2E) {
         ($e2eOutput | ForEach-Object { Remove-AnsiCodes $_ }) | Out-File -FilePath $e2eLogFile -Encoding UTF8
         Write-Info "Full output saved to: $e2eLogFile"
 
-        # Parse results
-        $resultLine = $e2eOutput | Select-String -Pattern "(\d+) passed|(\d+) failed" | Select-Object -Last 1
-        if ($resultLine) {
-            $passed = [regex]::Match($resultLine.Line, "(\d+) passed")
-            $failed = [regex]::Match($resultLine.Line, "(\d+) failed")
-            if ($passed.Success) { $results.E2E.Passed = [int]$passed.Groups[1].Value }
-            if ($failed.Success) { $results.E2E.Failed = [int]$failed.Groups[1].Value }
-            $results.E2E.Tests = $results.E2E.Passed + $results.E2E.Failed
-        }
+        if (-not $ListOnly) {
+            # Parse results
+            $resultLine = $e2eOutput | Select-String -Pattern "(\d+) passed|(\d+) failed" | Select-Object -Last 1
+            if ($resultLine) {
+                $passed = [regex]::Match($resultLine.Line, "(\d+) passed")
+                $failed = [regex]::Match($resultLine.Line, "(\d+) failed")
+                if ($passed.Success) { $results.E2E.Passed = [int]$passed.Groups[1].Value }
+                if ($failed.Success) { $results.E2E.Failed = [int]$failed.Groups[1].Value }
+                $results.E2E.Tests = $results.E2E.Passed + $results.E2E.Failed
+            }
 
-        $results.E2E.Status = if ($e2eExitCode -eq 0) { "passed" } else { "failed" }
-        $results.E2E.Time = ((Get-Date) - $e2eStart).TotalSeconds
+            $results.E2E.Status = if ($e2eExitCode -eq 0) { "passed" } else { "failed" }
+            $results.E2E.Time = ((Get-Date) - $e2eStart).TotalSeconds
 
-        # Output already shown via Tee-Object
-        # if ($VerboseOutput -or $e2eExitCode -ne 0) {
-        #     $e2eOutput | ForEach-Object { Write-Host $_ }
-        # } else {
-        #     $e2eOutput | Select-String -Pattern "(passed|failed|error)" | ForEach-Object { Write-Host $_.Line }
-        # }
-
-        if ($e2eExitCode -eq 0) {
-            Write-Success "E2E tests passed!"
-        } else {
-            Write-Failure "E2E tests failed!"
+            if ($e2eExitCode -eq 0) {
+                Write-Success "E2E tests passed!"
+            } else {
+                Write-Failure "E2E tests failed!"
+            }
         }
     } catch {
         Write-Failure "E2E tests errored: $_"
@@ -252,6 +322,16 @@ if ($runE2E) {
 # SUMMARY
 # -----------------------------------------------------------------------------
 $totalTime = ((Get-Date) - $startTime).TotalSeconds
+
+# For list mode, just show a simple summary
+if ($ListOnly) {
+    Write-Header "LIST COMPLETE"
+    Write-Host ""
+    Write-Host "Tests were listed but NOT executed." -ForegroundColor Magenta
+    Write-Host "Remove 'list' argument to run the tests."
+    Write-Host ""
+    exit 0
+}
 
 # Determine overall pass/fail based on what was run
 $allPassed = $true
