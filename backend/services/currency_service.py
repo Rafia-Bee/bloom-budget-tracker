@@ -1,12 +1,13 @@
 """
 Currency Service - Exchange rate management and currency conversion.
 
-Provides exchange rate fetching from ExchangeRate-API (open access),
-rate caching, and currency conversion utilities for multi-currency
-transaction support.
+Provides exchange rate fetching, rate caching, and currency conversion
+utilities for multi-currency transaction support.
 
-API: open.er-api.com (165 currencies, free, no API key required)
-Attribution: Rates By Exchange Rate API (https://www.exchangerate-api.com)
+API: fawazahmed0/exchange-api (200+ currencies, CDN-backed, no rate limits)
+- Primary: cdn.jsdelivr.net
+- Fallback: currency-api.pages.dev
+Source: https://github.com/fawazahmed0/exchange-api
 """
 
 from datetime import date, datetime, timedelta, timezone
@@ -351,8 +352,11 @@ CURRENCY_INFO = {
     "ZWL": {"name": "Zimbabwean Dollar", "symbol": "$"},
 }
 
-# ExchangeRate-API open access endpoint
-EXCHANGERATE_API = "https://open.er-api.com/v6/latest"
+# Exchange rate API configuration (fawazahmed0/exchange-api)
+# Primary CDN-backed endpoint (faster, no rate limits)
+EXCHANGE_API_PRIMARY = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api"
+# Cloudflare fallback endpoint
+EXCHANGE_API_FALLBACK = "https://{date}.currency-api.pages.dev"
 
 # Cache expiry: rates are considered stale after this many hours
 CACHE_EXPIRY_HOURS = 24
@@ -447,7 +451,7 @@ def refresh_rates(base_currency: str = "EUR") -> bool:
     Refresh exchange rates from API for all supported currencies.
 
     Called periodically (e.g., daily) to keep cache fresh.
-    Uses ExchangeRate-API open access endpoint (no API key required).
+    Uses fawazahmed0/exchange-api (CDN-backed, no rate limits).
 
     Args:
         base_currency: Base currency to fetch rates for
@@ -455,26 +459,53 @@ def refresh_rates(base_currency: str = "EUR") -> bool:
     Returns:
         True if refresh succeeded, False otherwise
     """
+    base_lower = base_currency.lower()
+
+    # Build URLs for primary and fallback endpoints
+    primary_url = f"{EXCHANGE_API_PRIMARY}@latest/v1/currencies/{base_lower}.min.json"
+    fallback_url = (
+        f"{EXCHANGE_API_FALLBACK.format(date='latest')}/v1/currencies/"
+        f"{base_lower}.min.json"
+    )
+
+    data = None
+
+    # Try primary endpoint first
     try:
-        # Fetch latest rates for base currency
-        url = f"{EXCHANGERATE_API}/{base_currency}"
-
-        response = requests.get(url, timeout=10)
+        response = requests.get(primary_url, timeout=10)
         response.raise_for_status()
-
         data = response.json()
+    except Exception as e:
+        print(f"Primary API failed, trying fallback: {e}")
 
-        # Check if API returned success
-        if data.get("result") != "success":
-            print(f"API returned non-success result: {data.get('result')}")
+    # Try fallback if primary failed
+    if data is None:
+        try:
+            response = requests.get(fallback_url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"Fallback API also failed: {e}")
             return False
 
-        # Parse date from unix timestamp
-        rate_date = datetime.fromtimestamp(data["time_last_update_unix"]).date()
-        rates = data["rates"]
+    try:
+        # Parse date from response
+        rate_date_str = data.get("date")
+        if rate_date_str:
+            rate_date = datetime.strptime(rate_date_str, "%Y-%m-%d").date()
+        else:
+            rate_date = date.today()
 
-        # Cache all rates (rates dict contains all currencies)
-        for target, rate in rates.items():
+        # Get rates (key is lowercase currency code)
+        rates = data.get(base_lower, {})
+
+        if not rates:
+            print(f"No rates found for {base_currency}")
+            return False
+
+        # Cache all rates (API returns lowercase keys)
+        for target_lower, rate in rates.items():
+            target = target_lower.upper()
             if target in SUPPORTED_CURRENCIES:
                 _cache_rate(base_currency, target, rate_date, rate)
                 # Also cache inverse rate
@@ -484,7 +515,7 @@ def refresh_rates(base_currency: str = "EUR") -> bool:
         return True
 
     except Exception as e:
-        print(f"Failed to refresh exchange rates: {e}")
+        print(f"Failed to parse exchange rates: {e}")
         return False
 
 
@@ -578,29 +609,52 @@ def _cache_rate(base: str, target: str, rate_date: date, rate: float) -> None:
 
 def _fetch_rate_from_api(base: str, target: str, rate_date: date) -> Optional[float]:
     """
-    Fetch exchange rate from ExchangeRate-API open access endpoint.
+    Fetch exchange rate from fawazahmed0/exchange-api.
 
-    Note: ExchangeRate-API updates once per day, so historical dates
-    will return the same data as the current day's rate.
+    Supports historical dates (YYYY-MM-DD format) and has fallback endpoint.
     """
+    base_lower = base.lower()
+    target_lower = target.lower()
+
+    # Use "latest" for today, otherwise use the specific date
+    date_str = "latest" if rate_date >= date.today() else rate_date.strftime("%Y-%m-%d")
+
+    # Build URLs for primary and fallback endpoints
+    primary_url = (
+        f"{EXCHANGE_API_PRIMARY}@{date_str}/v1/currencies/{base_lower}.min.json"
+    )
+    fallback_url = (
+        f"{EXCHANGE_API_FALLBACK.format(date=date_str)}/v1/currencies/"
+        f"{base_lower}.min.json"
+    )
+
+    data = None
+
+    # Try primary endpoint first
     try:
-        # ExchangeRate-API only provides current rates in open access version
-        # Historical rates require paid plan, so we fetch latest for all dates
-        url = f"{EXCHANGERATE_API}/{base}"
-
-        response = requests.get(url, timeout=10)
+        response = requests.get(primary_url, timeout=10)
         response.raise_for_status()
-
         data = response.json()
+    except Exception as e:
+        print(f"Primary API failed for {base}/{target}: {e}")
 
-        # Check if API returned success
-        if data.get("result") != "success":
+    # Try fallback if primary failed
+    if data is None:
+        try:
+            response = requests.get(fallback_url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"Fallback API also failed for {base}/{target}: {e}")
             return None
 
-        return data["rates"].get(target)
+    try:
+        # Get rates (key is lowercase currency code)
+        rates = data.get(base_lower, {})
+        return rates.get(target_lower)
 
     except Exception as e:
-        print(f"Failed to fetch exchange rate: {e}")
+        print(f"Failed to parse exchange rate: {e}")
         return None
 
 

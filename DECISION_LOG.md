@@ -6,6 +6,28 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### Currency Settings Overhaul (#139) - Phase 2: Backend API Migration
+
+**Context:** The existing exchange rate API (open.er-api.com) works but has slower response times. The fawazahmed0/exchange-api offers CDN-backed delivery with no rate limits and supports historical rates.
+
+**Decision:** Migrated backend to fawazahmed0/exchange-api:
+
+**Changes:**
+
+1. **New API Endpoints** - Primary: cdn.jsdelivr.net, Fallback: currency-api.pages.dev
+2. **Response Format** - Adapted to lowercase currency codes and `{date, currency: {rates}}` structure
+3. **Historical Rates** - Now supports historical date queries (YYYY-MM-DD format)
+4. **Fallback Mechanism** - Tries primary endpoint first, falls back to Cloudflare if primary fails
+
+**Files Modified:**
+
+-   `backend/services/currency_service.py` - Updated API endpoints and parsing logic
+-   `backend/tests/test_currency_routes.py` - Updated mocks for new API format
+
+**Impact:** Faster exchange rate fetches via CDN. Better reliability with fallback endpoint. Historical rates now work properly.
+
+---
+
 ### Currency Settings Overhaul (#139) - Phase 1: Frontend
 
 **Context:** Currency support was buried under Experimental Features, requiring users to enable the master toggle first. This made a useful feature hard to discover and use.
