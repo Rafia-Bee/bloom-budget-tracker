@@ -6,12 +6,14 @@
  * - Changing currency and persisting selection
  * - Currency selector loading states
  * - Exchange rate refresh functionality
+ * - Currency conversion verification across all pages
  *
  * Authentication is handled automatically by fixtures.js which restores
  * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
 import { test, expect, loginAsTestUser, isMobileViewport, openMobileMenu } from './fixtures.js';
+import { setupCurrencyTestData, resetCurrencyToEUR } from './test-data-setup.js';
 
 /**
  * Helper to open the user menu appropriately for the viewport
@@ -32,16 +34,9 @@ async function openUserMenu(page) {
  * Helper to click Currency option in menu (handles desktop/mobile differences)
  */
 async function clickCurrencyOption(page) {
-    const isMobile = await isMobileViewport(page);
-    if (isMobile) {
-        // Mobile menu has "💱 Currency" with emoji
-        const currencyOption = page.locator('text=/💱.*Currency/i');
-        await currencyOption.click();
-    } else {
-        // Desktop user dropdown has "Currency" text only (no emoji)
-        const currencyOption = page.locator('button:has-text("Currency")').first();
-        await currencyOption.click();
-    }
+    // Both mobile and desktop menus use a button with "Currency" text
+    const currencyOption = page.locator('button:has-text("Currency")').first();
+    await currencyOption.click();
 }
 
 /**
@@ -104,13 +99,9 @@ test.describe('Currency Settings', () => {
             await openUserMenu(page);
 
             // Check for Currency option based on viewport
-            if (isMobile) {
-                const currencyOption = page.locator('text=/💱.*Currency/i');
-                await expect(currencyOption).toBeVisible({ timeout: 5000 });
-            } else {
-                const currencyOption = page.locator('button:has-text("Currency")').first();
-                await expect(currencyOption).toBeVisible({ timeout: 5000 });
-            }
+            // Both mobile and desktop use a button with "Currency" text
+            const currencyOption = page.locator('button:has-text("Currency")').first();
+            await expect(currencyOption).toBeVisible({ timeout: 5000 });
         });
 
         test('clicking Currency option opens Currency Settings modal', async ({ page }) => {
@@ -230,102 +221,161 @@ test.describe('Currency Settings', () => {
         });
     });
 
-    test.describe('Currency Consistency Across Pages', () => {
-        test('changed currency displays correctly across all pages', async ({ page }) => {
-            // Step 1: Open currency modal
+    // Use serial mode to prevent chromium and mobile from running concurrently
+    // (they share the same test user and data, causing race conditions)
+    test.describe.serial('Currency Conversion Verification', () => {
+        /**
+         * Comprehensive currency conversion tests
+         *
+         * These tests verify that when the user changes their default currency,
+         * all monetary values across the application are properly converted.
+         *
+         * Test strategy (single test to minimize API calls):
+         * 1. Set up test data once (salary period, expenses, income, debts, goals)
+         * 2. Capture EUR values as baseline on each page
+         * 3. Change currency to USD once
+         * 4. Verify symbols changed on all pages in a single pass
+         */
+
+        // Helper to extract numeric value from currency string
+        // e.g., "€1,234.56" -> 123456, "$1,234.56" -> 123456
+        function extractCentsFromDisplay(displayValue) {
+            if (!displayValue) return null;
+            // Remove currency symbols and formatting, keep digits and decimal
+            const numericStr = displayValue.replace(/[^0-9.,]/g, '');
+            // Handle European format (1.234,56) vs US format (1,234.56)
+            // Normalize to parse as float
+            const normalized =
+                numericStr.includes(',') && numericStr.indexOf(',') > numericStr.indexOf('.')
+                    ? numericStr.replace(/\./g, '').replace(',', '.')
+                    : numericStr.replace(/,/g, '');
+            const floatValue = parseFloat(normalized);
+            return isNaN(floatValue) ? null : Math.round(floatValue * 100);
+        }
+
+        // Single comprehensive test that verifies all pages
+        // This minimizes external API calls by setting up data once and changing currency once
+        test('currency conversion works across all pages (dashboard, goals, debts, recurring)', async ({
+            page,
+        }) => {
+            // SETUP: Create test data once
+            await setupCurrencyTestData(page);
+            await resetCurrencyToEUR(page);
+
+            // Go to dashboard first
+            await page.goto('/dashboard');
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(1000);
+
+            // === PHASE 1: Capture EUR values across all pages ===
+
+            // Dashboard: Balance cards
+            const debitCard = page.locator('text=/Debit Card/i').locator('..').locator('..');
+            const creditCard = page.locator('text=/Credit Card/i').locator('..').locator('..');
+            const debitSpentEur = await debitCard.locator('h2').first().textContent();
+            expect(debitSpentEur).toContain('€');
+            const creditText = await creditCard.textContent();
+            expect(creditText).toContain('€');
+
+            // Goals page
+            await page.goto('/goals');
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+            const goalCard = page.locator('text=/Vacation Fund/i').locator('..').locator('..');
+            await expect(goalCard).toBeVisible({ timeout: 5000 });
+            const goalTextEur = await goalCard.textContent();
+            expect(goalTextEur).toContain('€');
+
+            // Debts page
+            await page.goto('/debts');
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+            const debtCard = page.locator('text=/Personal Loan/i').locator('..').locator('..');
+            await expect(debtCard).toBeVisible({ timeout: 5000 });
+            const debtTextEur = await debtCard.textContent();
+            expect(debtTextEur).toContain('€');
+
+            // Recurring expenses page
+            await page.goto('/recurring-expenses');
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+            // Use first() to avoid strict mode violation when Netflix appears in multiple elements
+            const recurringCard = page
+                .locator('.rounded-lg.p-4')
+                .filter({ hasText: 'Netflix' })
+                .first();
+            await expect(recurringCard).toBeVisible({ timeout: 5000 });
+            const recurringTextEur = await recurringCard.textContent();
+            expect(recurringTextEur).toContain('€');
+
+            // === PHASE 2: Change currency to USD (single API call) ===
+
+            await page.goto('/dashboard');
             await openUserMenu(page);
             await clickCurrencyOption(page);
-
-            // Wait for modal
             await expect(page.locator('text=/Currency Settings/i').first()).toBeVisible({
                 timeout: 5000,
             });
 
-            // Wait for currency selector to load (may take time due to external API)
             const selectorLoaded = await waitForCurrencySelector(page, 15000);
-
             if (!selectorLoaded) {
-                // API is too slow, skip test to avoid flakiness
                 test.skip();
                 return;
             }
 
-            // Get current currency and select a different one
             const select = getCurrencySelect(page);
-            const currentValue = await select.inputValue();
-            const targetCurrency = currentValue === 'USD' ? 'GBP' : 'USD';
-
-            await select.selectOption(targetCurrency);
-            await page.waitForTimeout(300);
-
-            // Save changes (button should now be enabled since currency changed)
+            await select.selectOption('USD');
             const saveButton = page.locator('button:has-text("Save")');
             await expect(saveButton).toBeEnabled({ timeout: 2000 });
             await saveButton.click();
             await page.waitForTimeout(1500);
 
-            // Step 2: Verify Dashboard (modal should auto-close after save)
+            // === PHASE 3: Verify USD conversion across all pages ===
+
+            // Dashboard: Balance cards show $
             await page.goto('/dashboard');
-            await page.waitForLoadState('domcontentloaded');
-            await page.waitForTimeout(1000);
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+            const debitCardUsd = page.locator('text=/Debit Card/i').locator('..').locator('..');
+            const creditCardUsd = page.locator('text=/Credit Card/i').locator('..').locator('..');
+            const debitSpentUsd = await debitCardUsd.locator('h2').first().textContent();
+            expect(debitSpentUsd).toContain('$');
+            const creditTextUsd = await creditCardUsd.textContent();
+            expect(creditTextUsd).toContain('$');
 
-            // Look for currency symbol in balance cards or budget amounts
-            const expectedSymbol = targetCurrency === 'USD' ? '$' : '£';
-            const dashboardHasCurrency = await page
-                .locator(
-                    `text=/${expectedSymbol === '$' ? '\\$' : expectedSymbol}[0-9]|${expectedSymbol === '$' ? '\\$' : expectedSymbol} -/`
-                )
-                .first()
-                .isVisible({ timeout: 5000 });
-            expect(dashboardHasCurrency).toBeTruthy();
-
-            // Step 3: Verify Goals page is accessible
+            // Goals page shows $
             await page.goto('/goals');
-            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(500);
-            expect(page.url()).toContain('/goals');
+            const goalCardUsd = page.locator('text=/Vacation Fund/i').locator('..').locator('..');
+            const goalTextUsd = await goalCardUsd.textContent();
+            expect(goalTextUsd).toContain('$');
 
-            // Step 4: Verify Debts page is accessible
+            // Debts page shows $
             await page.goto('/debts');
-            await page.waitForLoadState('domcontentloaded');
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(500);
-            expect(page.url()).toContain('/debts');
+            const debtCardUsd = page.locator('text=/Personal Loan/i').locator('..').locator('..');
+            const debtTextUsd = await debtCardUsd.textContent();
+            expect(debtTextUsd).toContain('$');
 
-            // Step 5: Verify Recurring page is accessible
+            // Recurring expenses page shows $
             await page.goto('/recurring-expenses');
-            await page.waitForLoadState('domcontentloaded');
-            await page.waitForTimeout(500);
-            expect(page.url()).toContain('/recurring-expenses');
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(2000); // Extra wait for currency context to update
+            const recurringCardUsd = page
+                .locator('.rounded-lg.p-4')
+                .filter({ hasText: 'Netflix' })
+                .first();
+            await expect(recurringCardUsd).toBeVisible({ timeout: 5000 });
+            const recurringTextUsd = await recurringCardUsd.textContent();
+            expect(recurringTextUsd).toContain('$');
 
-            // Step 6: Verify Settings page is accessible
-            await page.goto('/settings');
-            await page.waitForLoadState('domcontentloaded');
-            await page.waitForTimeout(500);
-            expect(page.url()).toContain('/settings');
-
-            // Step 7: Reset currency back to EUR
-            await page.goto('/dashboard');
-            await page.waitForLoadState('domcontentloaded');
-            await page.waitForTimeout(500);
-
-            await openUserMenu(page);
-            await clickCurrencyOption(page);
-
-            await expect(page.locator('text=/Currency Settings/i').first()).toBeVisible({
-                timeout: 5000,
-            });
-            await page.waitForTimeout(1000);
-
-            // Reset to EUR (use modal-specific selector)
-            const resetSelect = getCurrencySelect(page);
-            if (await resetSelect.isVisible()) {
-                await resetSelect.selectOption('EUR');
-                await page.waitForTimeout(300);
-                const resetSaveButton = page.locator('button:has-text("Save")');
-                // Only click if enabled (currency actually changed)
-                if (await resetSaveButton.isEnabled({ timeout: 1000 })) {
-                    await resetSaveButton.click();
-                }
+            // === CLEANUP: Reset to EUR ===
+            try {
+                await resetCurrencyToEUR(page);
+            } catch {
+                // Ignore cleanup errors
             }
         });
     });

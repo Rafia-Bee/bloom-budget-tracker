@@ -265,7 +265,15 @@ if ($runE2E) {
         if ($ListOnly) {
             Write-Info "Listing E2E tests..."
             if ($Filter) {
-                & .\node_modules\.bin\playwright.cmd test $Filter --list 2>&1 | Tee-Object -Variable e2eOutput
+                # Determine if filter is a file pattern (contains . or /) or test name
+                $isFilePattern = $Filter -match '[\./]' -or $Filter -match '\.spec\.(js|ts)$'
+                if ($isFilePattern) {
+                    # File pattern - use as positional argument
+                    & .\node_modules\.bin\playwright.cmd test $Filter --list 2>&1 | Tee-Object -Variable e2eOutput
+                } else {
+                    # Test name pattern - use --grep
+                    & .\node_modules\.bin\playwright.cmd test --grep "$Filter" --list 2>&1 | Tee-Object -Variable e2eOutput
+                }
             } else {
                 & .\node_modules\.bin\playwright.cmd test --list 2>&1 | Tee-Object -Variable e2eOutput
             }
@@ -277,7 +285,15 @@ if ($runE2E) {
         } elseif ($Filter) {
             Write-Info "Playwright will auto-start servers if needed (reuseExistingServer enabled)"
             Write-Info "Running E2E tests matching: $Filter"
-            & .\node_modules\.bin\playwright.cmd test $Filter --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
+            # Determine if filter is a file pattern (contains . or /) or test name
+            $isFilePattern = $Filter -match '[\./]' -or $Filter -match '\.spec\.(js|ts)$'
+            if ($isFilePattern) {
+                # File pattern - use as positional argument
+                & .\node_modules\.bin\playwright.cmd test $Filter --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
+            } else {
+                # Test name pattern - use --grep
+                & .\node_modules\.bin\playwright.cmd test --grep "$Filter" --reporter=list 2>&1 | Tee-Object -Variable e2eOutput
+            }
             $e2eExitCode = $LASTEXITCODE
         } else {
             Write-Info "Playwright will auto-start servers if needed (reuseExistingServer enabled)"
