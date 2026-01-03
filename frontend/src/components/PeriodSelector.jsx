@@ -36,17 +36,47 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
     };
 
     const getPeriodTypeLabel = (period) => {
-        // Salary periods don't have period_type field - they're always 4-week periods
+        // Salary periods have weekly_budget field and optional num_sub_periods
         if (period.weekly_budget !== undefined) {
-            return '4-Week Salary Period';
+            const numPeriods = period.num_sub_periods || 4;
+            if (numPeriods === 1) {
+                return 'Single Period';
+            } else if (numPeriods === 4) {
+                return '4-Week Salary Period';
+            } else {
+                return `${numPeriods}-Period Salary Cycle`;
+            }
         }
         // Budget periods with week number
         if (period.week_number) {
-            return `Week ${period.week_number}`;
+            return `Period ${period.week_number}`;
         }
         // Budget periods (old system)
         if (!period.period_type) return 'Weekly';
         return period.period_type.charAt(0).toUpperCase() + period.period_type.slice(1);
+    };
+
+    // Helper to get human-readable sub-period description
+    const getSubPeriodDescription = () => {
+        if (!currentPeriod) return 'Each period has 4 weekly budgets';
+
+        // Find the salary period that matches (either current is salary period or its parent)
+        const salaryPeriod =
+            currentPeriod.weekly_budget !== undefined
+                ? currentPeriod
+                : periods.find(
+                      (p) =>
+                          p.id === currentPeriod.salary_period_id && p.weekly_budget !== undefined
+                  );
+
+        const numPeriods = salaryPeriod?.num_sub_periods || 4;
+        if (numPeriods === 1) {
+            return 'Single budget period';
+        } else if (numPeriods === 4) {
+            return 'Each period has 4 weekly budgets';
+        } else {
+            return `Each period has ${numPeriods} sub-periods`;
+        }
     };
 
     const isPeriodCurrent = (period) => {
@@ -155,7 +185,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                     Salary Periods
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-0.5">
-                                    Each period has 4 weekly budgets
+                                    {getSubPeriodDescription()}
                                 </p>
                             </div>
                             <div className="flex gap-2">
@@ -249,32 +279,35 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                     {getPeriodShortLabel(period)}
                                                 </p>
                                             </button>
-                                            <div className="flex gap-1 px-2 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onEdit(period);
-                                                        setShowCalendar(false);
-                                                    }}
-                                                    className="flex-1 text-xs py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/30 rounded transition"
-                                                    title="Edit"
-                                                >
-                                                    ✎ Edit
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDeleteConfirm({
-                                                            period,
-                                                            closeCalendar: true,
-                                                        });
-                                                    }}
-                                                    className="flex-1 text-xs py-1 text-red-600 dark:text-dark-danger hover:bg-red-100 dark:hover:bg-red-950/30 rounded transition"
-                                                    title="Delete"
-                                                >
-                                                    ✕ Delete
-                                                </button>
-                                            </div>
+                                            {/* Only show edit/delete for salary periods, not auto-generated sub-periods */}
+                                            {period.weekly_budget !== undefined && (
+                                                <div className="flex gap-1 px-2 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onEdit(period);
+                                                            setShowCalendar(false);
+                                                        }}
+                                                        className="flex-1 text-xs py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/30 rounded transition"
+                                                        title="Edit"
+                                                    >
+                                                        ✎ Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setDeleteConfirm({
+                                                                period,
+                                                                closeCalendar: true,
+                                                            });
+                                                        }}
+                                                        className="flex-1 text-xs py-1 text-red-600 dark:text-dark-danger hover:bg-red-100 dark:hover:bg-red-950/30 rounded transition"
+                                                        title="Delete"
+                                                    >
+                                                        ✕ Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

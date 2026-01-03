@@ -415,7 +415,8 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            expect(screen.getByText('Week 1')).toBeInTheDocument();
+            // Budget periods with week_number now show "Period N" instead of "Week N"
+            expect(screen.getByText('Period 1')).toBeInTheDocument();
         });
     });
 
