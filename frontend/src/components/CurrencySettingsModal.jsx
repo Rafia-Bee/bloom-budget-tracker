@@ -114,28 +114,37 @@ export default function CurrencySettingsModal({ onClose }) {
                         />
 
                         {ratesLoading && (
-                            <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-2 flex items-center gap-2">
-                                <svg
-                                    className="animate-spin h-4 w-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    />
-                                </svg>
-                                Loading exchange rates...
-                            </p>
+                            <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                    <svg
+                                        className="animate-spin h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
+                                    <div className="text-sm text-amber-700 dark:text-amber-300">
+                                        <p className="font-medium">Fetching exchange rates...</p>
+                                        <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">
+                                            This may take a moment. We use free hosting and currency
+                                            APIs, which can cause slight delays. Thank you for your
+                                            patience! 🌸
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
 
@@ -146,8 +155,8 @@ export default function CurrencySettingsModal({ onClose }) {
                             <div className="text-sm text-blue-700 dark:text-blue-300">
                                 <p className="font-medium mb-1">About exchange rates</p>
                                 <p>
-                                    Exchange rates are updated daily and used to convert
-                                    transactions entered in different currencies.
+                                    Exchange rates are updated daily. Changing your currency may
+                                    cause a brief delay while we fetch the latest rates.
                                 </p>
                             </div>
                         </div>
