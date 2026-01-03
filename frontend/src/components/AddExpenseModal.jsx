@@ -10,10 +10,8 @@ import { debtAPI, recurringExpenseAPI, subcategoryAPI, goalAPI } from '../api';
 import { logError } from '../utils/logger';
 import PropTypes from 'prop-types';
 import CurrencySelector from './CurrencySelector';
-import { useCurrency } from '../contexts/CurrencyContext';
 
 function AddExpenseModal({ onClose, onAdd }) {
-    const { multiCurrencyEnabled } = useCurrency();
     const [name, setName] = useState('Wolt');
     const [amount, setAmount] = useState('');
     const [currency, setCurrency] = useState('EUR');
@@ -257,15 +255,13 @@ function AddExpenseModal({ onClose, onAdd }) {
                             Amount
                         </label>
                         <div className="flex gap-2">
-                            {multiCurrencyEnabled && (
-                                <CurrencySelector
-                                    value={currency}
-                                    onChange={setCurrency}
-                                    compact={true}
-                                    showLabel={false}
-                                    className="w-24 flex-shrink-0"
-                                />
-                            )}
+                            <CurrencySelector
+                                value={currency}
+                                onChange={setCurrency}
+                                compact={true}
+                                showLabel={false}
+                                className="w-24 flex-shrink-0"
+                            />
                             <input
                                 type="number"
                                 step="0.01"

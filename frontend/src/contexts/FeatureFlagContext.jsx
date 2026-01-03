@@ -16,7 +16,6 @@ export function FeatureFlagProvider({ children }) {
             ? JSON.parse(stored)
             : {
                   experimentalFeaturesEnabled: false,
-                  multiCurrencyEnabled: false,
                   budgetRecalculationEnabled: false,
                   flexibleSubPeriodsEnabled: false,
                   reportsEnabled: false,
