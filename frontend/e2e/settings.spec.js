@@ -39,6 +39,20 @@ test.describe('Settings Page', () => {
             });
         });
 
+        test('Settings page defaults to Preferences tab', async ({ page }) => {
+            // Check if we're on the settings page (not redirected)
+            if (page.url().includes('/login')) {
+                test.skip();
+                return;
+            }
+
+            // Preferences tab should be active by default (new behavior)
+            // Look for Preferences-specific content like recurring lookahead or currency
+            await expect(
+                page.locator('text=/Recurring Lookahead|Currency|Preferences/i').first()
+            ).toBeVisible({ timeout: 5000 });
+        });
+
         test('Settings page shows tab navigation when authenticated', async ({ page }) => {
             // Check if we're on the settings page (not redirected)
             if (page.url().includes('/login')) {
@@ -58,8 +72,14 @@ test.describe('Settings Page', () => {
     });
 
     test.describe('Subcategories Tab', () => {
-        test('subcategories tab is default view', async ({ page }) => {
-            // Should show subcategory content by default
+        test.beforeEach(async ({ page }) => {
+            // Navigate to Categories tab (Settings now defaults to Preferences)
+            await page.locator("button:has-text('Categories')").click();
+            await page.waitForTimeout(500);
+        });
+
+        test('categories tab shows subcategory content', async ({ page }) => {
+            // Should show subcategory content
             await expect(
                 page.locator('text=/Subcategories|Categories|Add Subcategory/i').first()
             ).toBeVisible();
