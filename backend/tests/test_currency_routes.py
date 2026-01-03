@@ -12,25 +12,24 @@ from flask import json
 from unittest.mock import patch, MagicMock
 
 
-# Mock responses for exchange rate API
+# Mock responses for fawazahmed0/exchange-api (new API format)
+# Uses lowercase currency codes and {currency: {rates}} structure
 MOCK_RATES_EUR = {
-    "result": "success",
-    "base_code": "EUR",
-    "rates": {
-        "EUR": 1.0,
-        "USD": 1.08,
-        "GBP": 0.86,
-        "AED": 3.97,
+    "date": "2024-01-15",
+    "eur": {
+        "eur": 1.0,
+        "usd": 1.08,
+        "gbp": 0.86,
+        "aed": 3.97,
     },
 }
 
 MOCK_RATES_USD = {
-    "result": "success",
-    "base_code": "USD",
-    "rates": {
-        "EUR": 0.93,
-        "USD": 1.0,
-        "GBP": 0.80,
+    "date": "2024-01-15",
+    "usd": {
+        "eur": 0.93,
+        "usd": 1.0,
+        "gbp": 0.80,
     },
 }
 
@@ -43,7 +42,9 @@ def mock_currency_api():
         def mock_response(url, **kwargs):
             response = MagicMock()
             response.status_code = 200
-            if "USD" in url:
+            response.raise_for_status = MagicMock()
+            # New API uses lowercase currency codes in URL
+            if "/usd." in url.lower():
                 response.json.return_value = MOCK_RATES_USD
             else:
                 response.json.return_value = MOCK_RATES_EUR

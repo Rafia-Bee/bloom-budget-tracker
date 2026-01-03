@@ -14,8 +14,6 @@ import CreateSubcategoryModal from '../components/CreateSubcategoryModal';
 import EditSubcategoryModal from '../components/EditSubcategoryModal';
 import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
-import CurrencySelector from '../components/CurrencySelector';
-import { useCurrency } from '../contexts/CurrencyContext';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Settings({ setIsAuthenticated }) {
@@ -48,12 +46,6 @@ function Settings({ setIsAuthenticated }) {
     const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14);
     const [savingLookahead, setSavingLookahead] = useState(false);
     const [lookaheadSuccess, setLookaheadSuccess] = useState('');
-    const [savingCurrency, setSavingCurrency] = useState(false);
-    const [currencySuccess, setCurrencySuccess] = useState('');
-
-    // Use CurrencyContext for global currency state
-    const { defaultCurrency, updateDefaultCurrency, multiCurrencyEnabled } = useCurrency();
-    const [localCurrency, setLocalCurrency] = useState(defaultCurrency);
 
     const categories = [
         'Fixed Expenses',
@@ -61,11 +53,6 @@ function Settings({ setIsAuthenticated }) {
         'Savings & Investments',
         'Debt Payments',
     ];
-
-    // Sync local currency state when context changes
-    useEffect(() => {
-        setLocalCurrency(defaultCurrency);
-    }, [defaultCurrency]);
 
     useEffect(() => {
         loadSubcategories();
@@ -164,21 +151,6 @@ function Settings({ setIsAuthenticated }) {
             setError(err.response?.data?.error || 'Failed to save setting');
         } finally {
             setSavingLookahead(false);
-        }
-    };
-
-    const handleSaveCurrency = async () => {
-        setSavingCurrency(true);
-        setCurrencySuccess('');
-        setError('');
-        try {
-            await updateDefaultCurrency(localCurrency);
-            setCurrencySuccess('Default currency saved successfully!');
-            setTimeout(() => setCurrencySuccess(''), 3000);
-        } catch (err) {
-            setError(err.response?.data?.error || 'Failed to save currency');
-        } finally {
-            setSavingCurrency(false);
         }
     };
 
@@ -453,75 +425,6 @@ function Settings({ setIsAuthenticated }) {
                                     </div>
                                 )}
                             </div>
-
-                            {/* Default Currency Setting - only shown when multi-currency is enabled */}
-                            {multiCurrencyEnabled && (
-                                <div className="border-b dark:border-gray-700 pb-4">
-                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                                        Default Currency
-                                    </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                        Set your preferred currency for displaying balances and
-                                        totals.
-                                    </p>
-
-                                    {/* Warning about API delay */}
-                                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-amber-500 text-lg flex-shrink-0">
-                                                ⚠️
-                                            </span>
-                                            <p className="text-amber-700 dark:text-amber-400 text-sm">
-                                                Changing currency may take up to a minute while
-                                                exchange rates are fetched. The app may appear
-                                                unresponsive during this time.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-4">
-                                        <label
-                                            htmlFor="default-currency"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
-                                        >
-                                            Currency:
-                                        </label>
-                                        <CurrencySelector
-                                            value={localCurrency}
-                                            onChange={setLocalCurrency}
-                                            showLabel={false}
-                                            className="flex-1 max-w-xs"
-                                        />
-                                        <button
-                                            onClick={handleSaveCurrency}
-                                            disabled={savingCurrency}
-                                            className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                        >
-                                            {savingCurrency ? 'Saving...' : 'Save'}
-                                        </button>
-                                    </div>
-
-                                    {currencySuccess && (
-                                        <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                            <p className="text-green-700 dark:text-green-400 text-sm">
-                                                {currencySuccess}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                                        Rates by{' '}
-                                        <a
-                                            href="https://www.exchangerate-api.com"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="underline hover:text-gray-600 dark:hover:text-gray-400"
-                                        >
-                                            Exchange Rate API
-                                        </a>
-                                    </p>
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
@@ -549,40 +452,6 @@ function Settings({ setIsAuthenticated }) {
                         </div>
 
                         <div className="space-y-3">
-                            {/* Multi-Currency Toggle */}
-                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-purple-500">💱</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">
-                                            Multi-Currency Support
-                                        </span>
-                                        <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded">
-                                            NEW
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                        Enable currency selection for expenses and income
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => toggleFlag('multiCurrencyEnabled')}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                        flags.multiCurrencyEnabled
-                                            ? 'bg-purple-500 dark:bg-purple-600'
-                                            : 'bg-gray-300 dark:bg-gray-600'
-                                    }`}
-                                >
-                                    <span
-                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                            flags.multiCurrencyEnabled
-                                                ? 'translate-x-6'
-                                                : 'translate-x-1'
-                                        }`}
-                                    />
-                                </button>
-                            </div>
-
                             {/* Budget Recalculation Toggle */}
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">

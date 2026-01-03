@@ -9,12 +9,14 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { logError } from '../utils/logger';
 import ThemeToggle from './ThemeToggle';
+import CurrencySettingsModal from './CurrencySettingsModal';
 import { authAPI } from '../api';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
 function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children }) {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const [expandedSubmenu, setExpandedSubmenu] = useState(null); // 'import-export' | null
     const navigate = useNavigate();
     const { isEnabled, experimentalEnabled } = useFeatureFlag();
@@ -263,6 +265,30 @@ function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children
                         Settings
                     </button>
 
+                    {/* Currency */}
+                    <button
+                        onClick={() => {
+                            setShowCurrencyModal(true);
+                            setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center gap-2"
+                    >
+                        <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                        Currency
+                    </button>
+
                     {/* Trash */}
                     <button
                         onClick={() => {
@@ -418,6 +444,30 @@ function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children
                                             e.preventDefault();
                                             e.stopPropagation();
                                             setShowMobileMenu(false);
+                                            setShowCurrencyModal(true);
+                                        }}
+                                        className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
+                                    >
+                                        <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                        💱 Currency
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setShowMobileMenu(false);
                                             navigate('/trash');
                                         }}
                                         className="w-full text-left px-4 py-3 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition rounded-lg flex items-center gap-2 font-semibold"
@@ -482,6 +532,11 @@ function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children
                     </div>
                 </div>
             </div>
+
+            {/* Currency Settings Modal */}
+            {showCurrencyModal && (
+                <CurrencySettingsModal onClose={() => setShowCurrencyModal(false)} />
+            )}
         </header>
     );
 }
