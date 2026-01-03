@@ -6,6 +6,25 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### PeriodSelector: Remove Grid View, Add List-Only with Collapsible Sub-Periods (#140)
+
+**Context:** The PeriodSelector had a grid/list toggle that reset to grid on page refresh (state not persisted). Users with many sub-periods found the grid view overwhelming, and the toggle was confusing UX.
+
+**Decision:** Removed grid view entirely, keeping only list view with collapsible sub-periods per salary period.
+
+**Changes:**
+- Removed `viewMode` state and grid/list toggle button
+- Added `expandedPeriods` state for collapsible behavior
+- Each salary period now has an expand/collapse chevron button
+- Sub-periods (budget periods) hidden by default, shown when expanded
+- Updated tests to remove view mode toggle test coverage
+
+**Known Issue:** Collapsible sub-periods feature not fully working - needs investigation. Sub-period expand/collapse button added but functionality may need debugging.
+
+**Impact:** Cleaner UX with no state reset on refresh. Component reduced from 587 lines to 522 lines (-65 lines).
+
+---
+
 ### Settings Page Restructure (#137)
 
 **Context:** Settings page UX needed improvement. Experimental Features were buried in Preferences, Danger Zone was too prominent, and Export/Import was in the header menu (hard to discover).
