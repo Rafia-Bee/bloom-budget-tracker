@@ -1119,8 +1119,8 @@ function Dashboard({ setIsAuthenticated }) {
                                     setShowLeftoverModal(true);
                                 }}
                                 onWeekChange={(weekPeriod) => {
+                                    // Just set the period - useEffect will handle loading
                                     setCurrentPeriod(weekPeriod);
-                                    loadTransactionsAndBalances();
                                 }}
                                 selectedPeriod={currentPeriod}
                             />

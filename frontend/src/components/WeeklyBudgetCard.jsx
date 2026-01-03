@@ -86,8 +86,16 @@ const WeeklyBudgetCard = forwardRef(
         }, [selectedPeriod, weeklyData?.salary_period?.id]);
 
         // Expose refresh method to parent via ref
+        // Smart refresh: reload currently viewed period, not always current
         useImperativeHandle(ref, () => ({
-            refresh: loadWeeklyData,
+            refresh: () => {
+                // If we're viewing a specific salary period, reload that one
+                if (weeklyData?.salary_period?.id) {
+                    loadSalaryPeriodData(weeklyData.salary_period.id);
+                } else {
+                    loadWeeklyData();
+                }
+            },
         }));
 
         const loadWeeklyData = async () => {
@@ -146,7 +154,11 @@ const WeeklyBudgetCard = forwardRef(
                     (w) => w.week_number === weekNumber
                 );
                 if (weekPeriod) {
-                    onWeekChange(weekPeriod);
+                    // Include salary_period_id so parent knows which salary period this belongs to
+                    onWeekChange({
+                        ...weekPeriod,
+                        salary_period_id: weeklyData.salary_period.id,
+                    });
                 }
             }
         };
