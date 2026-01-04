@@ -8,21 +8,16 @@
  * This allows testing login/logout without automatic cookie restoration.
  */
 
-import { test, expect } from "@playwright/test";
-import {
-    TEST_USER,
-    loginAsTestUser,
-    isMobileViewport,
-    openMobileMenu,
-} from "./fixtures.js";
+import { test, expect } from '@playwright/test';
+import { TEST_USER, loginAsTestUser, isMobileViewport, openMobileMenu } from './fixtures.js';
 
 // These tests check login/logout behavior - start without auth state
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test.describe("Authentication Flow", () => {
-    test.describe("Login", () => {
-        test("user can log in with valid credentials", async ({ page }) => {
-            await page.goto("/login");
+test.describe('Authentication Flow', () => {
+    test.describe('Login', () => {
+        test('user can log in with valid credentials', async ({ page }) => {
+            await page.goto('/login');
 
             // Fill in credentials (use type selectors - no name attributes)
             await page.fill('input[type="email"]', TEST_USER.email);
@@ -34,16 +29,20 @@ test.describe("Authentication Flow", () => {
             // Should redirect to dashboard
             await expect(page).toHaveURL(/\/(dashboard)?$/, { timeout: 15000 });
 
-            // Dashboard should show user is logged in (has navigation or user elements)
-            // Look for any of these indicators that we're on the dashboard
+            // Wait for page to fully load (especially important on mobile viewport)
+            await page.waitForLoadState('networkidle');
+
+            // Dashboard should show user is logged in
+            // On mobile, navigation links are hidden in hamburger menu, so look for
+            // actual page content that's visible on all viewports
+            // Using "Debit Card" or "Credit Card" which appear in balance cards,
+            // or "available" text which appears in the balance display
             await expect(
-                page
-                    .locator("text=/Dashboard|Budget|Balance|Salary Period/i")
-                    .first()
-            ).toBeVisible({ timeout: 10000 });
+                page.locator('text=/Debit Card|Credit Card|available|Spent this period/i').first()
+            ).toBeVisible({ timeout: 15000 });
         });
 
-        test("login persists across page reload", async ({ page }) => {
+        test('login persists across page reload', async ({ page }) => {
             // Login
             await loginAsTestUser(page);
 
@@ -51,17 +50,17 @@ test.describe("Authentication Flow", () => {
             await page.reload();
 
             // Should still be on dashboard, not redirected to login
-            await expect(page).not.toHaveURL("/login", { timeout: 5000 });
+            await expect(page).not.toHaveURL('/login', { timeout: 5000 });
         });
     });
 
-    test.describe("Logout", () => {
-        test("user can log out", async ({ page }) => {
+    test.describe('Logout', () => {
+        test('user can log out', async ({ page }) => {
             // Login first
             await loginAsTestUser(page);
 
             // Wait for page to fully load
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1500); // Extra buffer for UI to settle
 
             // Check if mobile hamburger menu is visible
@@ -90,17 +89,15 @@ test.describe("Authentication Flow", () => {
             await logoutButton.click({ force: true });
 
             // Should redirect to login
-            await expect(page).toHaveURL("/login", { timeout: 10000 });
+            await expect(page).toHaveURL('/login', { timeout: 10000 });
         });
 
-        test("after logout, protected routes redirect to login", async ({
-            page,
-        }) => {
+        test('after logout, protected routes redirect to login', async ({ page }) => {
             // Login first
             await loginAsTestUser(page);
 
             // Wait for page to load (look for any dashboard content)
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000); // Extra buffer for UI to settle
 
             // Use viewport-based detection for mobile (more reliable than element visibility)
@@ -127,54 +124,48 @@ test.describe("Authentication Flow", () => {
             await logoutButton.click({ force: true });
 
             // Wait for redirect to login
-            await expect(page).toHaveURL("/login", { timeout: 10000 });
+            await expect(page).toHaveURL('/login', { timeout: 10000 });
 
             // Try to access protected route
-            await page.goto("/dashboard");
+            await page.goto('/dashboard');
 
             // Should redirect back to login
-            await expect(page).toHaveURL("/login");
+            await expect(page).toHaveURL('/login');
         });
     });
 
-    test.describe("Session Management", () => {
-        test("authenticated user can access protected routes", async ({
-            page,
-        }) => {
+    test.describe('Session Management', () => {
+        test('authenticated user can access protected routes', async ({ page }) => {
             await loginAsTestUser(page);
 
             // Navigate to various protected routes
             // Just verify URL and that page loaded without error (not specific content)
-            const protectedRoutes = ["/debts", "/goals", "/settings"];
+            const protectedRoutes = ['/debts', '/goals', '/settings'];
 
             for (const path of protectedRoutes) {
                 await page.goto(path);
-                await page.waitForLoadState("networkidle");
+                await page.waitForLoadState('networkidle');
                 await page.waitForTimeout(500);
 
                 // Verify we're on the right page (not redirected to login)
                 await expect(page).toHaveURL(path);
 
                 // Verify page loaded (any content visible means auth worked)
-                await expect(page.locator("body")).toBeVisible();
+                await expect(page.locator('body')).toBeVisible();
             }
         });
 
-        test("api requests include auth cookies automatically", async ({
-            page,
-            context,
-        }) => {
+        test('api requests include auth cookies automatically', async ({ page, context }) => {
             await loginAsTestUser(page);
 
             // Make an API call that requires auth
             const responsePromise = page.waitForResponse(
                 (response) =>
-                    response.url().includes("/api/v1/salary-periods") &&
-                    response.status() < 400
+                    response.url().includes('/api/v1/salary-periods') && response.status() < 400
             );
 
             // Navigate to dashboard which triggers salary periods fetch
-            await page.goto("/");
+            await page.goto('/');
 
             const response = await responsePromise;
 

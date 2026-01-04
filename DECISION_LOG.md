@@ -4,6 +4,63 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-04
+
+### E2E Test Flakiness Mitigation (#153)
+
+**Context:** Several E2E tests were flaky, particularly on mobile viewport. Failures were caused by timing issues and mobile-specific rendering problems, not actual code bugs.
+
+**Decision:** Implement multiple strategies to reduce test flakiness without hiding real failures.
+
+**Changes:**
+
+1. **fixtures.js - Improved `openMobileMenu()` helper:**
+
+    - Added retry logic (max 3 attempts with configurable delay)
+    - Better wait conditions: wait for menu items to be visible AND clickable
+    - Fallback handling if menu partially opens
+    - Verifies menu is fully interactive before returning
+
+2. **debts.spec.js - API response waiting:**
+
+    - Replaced `waitForTimeout(1000)` with `waitForResponse()` for API calls
+    - Increased timeout for modal close detection
+    - More resilient assertion pattern
+
+3. **currency.spec.js - Mobile menu handling:**
+
+    - Updated `openUserMenu()` to use improved `openMobileMenu()`
+    - Added fallback for when menu fails to open
+    - Added explicit wait for Currency button visibility
+
+4. **settings.spec.js - Page render timing:**
+
+    - Added `networkidle` wait before checking content
+    - Broadened selector to catch "Look ahead:" text variations
+    - Increased timeout from 5s to 8s for mobile render
+
+5. **playwright.config.js - Global settings:**
+
+    - Added 1 retry for local development (was 0, CI has 2)
+    - Increased `actionTimeout` from 10s to 15s
+    - Increased `timeout` from 30s to 45s
+    - Increased `expect.timeout` from 5s to 8s
+
+6. **fixtures.js - New helper functions:**
+    - `waitForNetworkSettled()` - non-blocking network wait
+    - `waitForElement()` - flexible element visibility wait
+
+**Rationale:**
+
+-   Fixed timeouts prevent tests from hanging on slow external APIs (currency rates ~2s)
+-   Retry logic catches transient rendering issues
+-   Better wait conditions ensure UI is stable before interactions
+-   Helpers promote consistent patterns across test files
+
+**Impact:** Tests should pass more consistently on both desktop and mobile viewports while still catching real failures.
+
+---
+
 ## 2026-01-03
 
 ### Dashboard: Period-Specific Data Loading When Viewing Past Periods (#140)
