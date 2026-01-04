@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ResetPassword from './pages/ResetPassword';
-import CatLoading from './components/CatLoading';
+import Loading from './components/Loading';
 import OfflineIndicator from './components/OfflineIndicator';
 import { setLoadingCallback, authAPI } from './api';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
@@ -74,7 +74,7 @@ function App() {
     }, []);
 
     if (loading) {
-        return <CatLoading message="Loading your budget..." />;
+        return <Loading />;
     }
 
     return (
@@ -84,11 +84,11 @@ function App() {
                     <OfflineIndicator />
                     {apiLoading && (
                         <div className="fixed inset-0 z-50">
-                            <CatLoading message="Waking up the server..." />
+                            <Loading />
                         </div>
                     )}
                     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                        <Suspense fallback={<CatLoading message="Loading page..." />}>
+                        <Suspense fallback={<Loading />}>
                             <Routes>
                                 <Route
                                     path="/login"

@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import SafeResponsiveContainer from './SafeResponsiveContainer';
 
 // Color palette for categories
 const COLORS = [
@@ -128,13 +129,7 @@ function CategoryBreakdownChart({
 
     return (
         <div style={{ height: `${totalHeight}px`, minHeight: '320px', width: '100%' }}>
-            <ResponsiveContainer
-                width="100%"
-                height="100%"
-                minWidth={100}
-                minHeight={100}
-                debounce={50}
-            >
+            <SafeResponsiveContainer>
                 <PieChart>
                     <Pie
                         data={chartData}
@@ -185,7 +180,7 @@ function CategoryBreakdownChart({
                         </tspan>
                     </text>
                 </PieChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
         </div>
     );
 }

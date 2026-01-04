@@ -21,7 +21,7 @@ import PeriodSelector from '../components/PeriodSelector';
 import WeeklyBudgetCard from '../components/WeeklyBudgetCard';
 import DraggableFloatingButton from '../components/DraggableFloatingButton';
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt';
-import CatLoading from '../components/CatLoading';
+import Loading from '../components/Loading';
 
 // Refactored Components
 import BalanceCards from '../components/dashboard/BalanceCards';
@@ -943,7 +943,7 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     if (isInitialLoading) {
-        return <CatLoading message="Loading your budget..." />;
+        return <Loading />;
     }
 
     return (
