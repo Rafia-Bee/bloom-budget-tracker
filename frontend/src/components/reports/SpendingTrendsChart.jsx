@@ -5,16 +5,8 @@
  * Uses Recharts library for visualization.
  */
 
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import SafeResponsiveContainer from './SafeResponsiveContainer';
 
 function SpendingTrendsChart({ data, granularity, currencyFormatter }) {
     // Format date labels based on granularity
@@ -62,15 +54,10 @@ function SpendingTrendsChart({ data, granularity, currencyFormatter }) {
         displayDate: formatDateLabel(item.date),
     }));
 
+    // Don't render until container is ready
     return (
         <div className="h-64 min-h-[256px] w-full">
-            <ResponsiveContainer
-                width="100%"
-                height="100%"
-                minWidth={100}
-                minHeight={100}
-                debounce={50}
-            >
+            <SafeResponsiveContainer>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                     <XAxis dataKey="displayDate" stroke="#9CA3AF" fontSize={12} tickLine={false} />
@@ -108,7 +95,7 @@ function SpendingTrendsChart({ data, granularity, currencyFormatter }) {
                         dot={{ fill: '#6366F1', strokeWidth: 2, r: 3 }}
                     />
                 </LineChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
         </div>
     );
 }

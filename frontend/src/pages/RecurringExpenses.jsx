@@ -12,7 +12,7 @@ import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal';
 import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
 import BudgetRecalculationModal from '../components/BudgetRecalculationModal';
-import CatLoading from '../components/CatLoading';
+import Loading from '../components/Loading';
 import Header from '../components/Header';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
@@ -306,7 +306,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                 )}
 
                 {loading ? (
-                    <CatLoading message="Loading recurring expenses..." />
+                    <Loading />
                 ) : (
                     <div className="space-y-6">
                         {/* Active View - Show active/inactive recurring expenses */}

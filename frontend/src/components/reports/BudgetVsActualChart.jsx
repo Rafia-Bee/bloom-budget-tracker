@@ -7,7 +7,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import SafeResponsiveContainer from './SafeResponsiveContainer';
 
 // Color palette matching CategoryBreakdownChart
 const COLORS = [
@@ -168,13 +169,7 @@ function BudgetVsActualChart({ data, currencyFormatter }) {
 
             {/* Category Breakdown Pie Chart */}
             <div className="h-64 min-h-[256px] w-full">
-                <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                    minWidth={100}
-                    minHeight={100}
-                    debounce={50}
-                >
+                <SafeResponsiveContainer>
                     <PieChart>
                         <Pie
                             data={chartData}
@@ -204,7 +199,7 @@ function BudgetVsActualChart({ data, currencyFormatter }) {
                         <Tooltip content={<CustomTooltip />} />
                         <Legend content={renderLegend} />
                     </PieChart>
-                </ResponsiveContainer>
+                </SafeResponsiveContainer>
             </div>
         </div>
     );

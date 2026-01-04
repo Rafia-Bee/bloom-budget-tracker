@@ -5,17 +5,9 @@
  * Uses Recharts library for visualization.
  */
 
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext';
+import SafeResponsiveContainer from './SafeResponsiveContainer';
 
 function DebtPayoffChart({ data, currencyFormatter }) {
     const { theme } = useTheme();
@@ -124,8 +116,8 @@ function DebtPayoffChart({ data, currencyFormatter }) {
     };
 
     return (
-        <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <div className="h-80 min-h-[320px] w-full">
+            <SafeResponsiveContainer>
                 <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
                     <XAxis
@@ -172,7 +164,7 @@ function DebtPayoffChart({ data, currencyFormatter }) {
                         />
                     ))}
                 </LineChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
         </div>
     );
 }
