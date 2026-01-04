@@ -155,6 +155,7 @@ export const recurringExpenseAPI = {
 
 export const salaryPeriodAPI = {
     getCurrent: () => api.get('/salary-periods/current'),
+    getById: (id) => api.get(`/salary-periods/${id}`),
     getAll: () => api.get('/salary-periods'),
     delete: (id) => api.delete(`/salary-periods/${id}`),
     recalculate: (id) => api.post(`/salary-periods/${id}/recalculate`),

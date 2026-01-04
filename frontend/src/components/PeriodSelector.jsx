@@ -1,16 +1,20 @@
 /**
  * Bloom - Period Selector
  *
- * Calendar-like component for selecting and switching between budget periods.
- * Shows periods in a visual grid layout with navigation controls.
+ * Component for selecting and switching between budget periods.
+ * Shows salary periods in a list with expandable sub-periods.
  */
 
 import { useState, useEffect } from 'react';
 
 function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, onEdit, onDelete }) {
     const [showCalendar, setShowCalendar] = useState(false);
-    const [viewMode, setViewMode] = useState('grid'); // 'list' or 'grid'
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [expandedPeriods, setExpandedPeriods] = useState({});
+    const [showAllSubPeriods, setShowAllSubPeriods] = useState({}); // Track "show all" per salary period
+
+    // Maximum sub-periods to show before "Show all" button
+    const MAX_VISIBLE_SUBPERIODS = 6;
 
     const formatDate = (dateStr) => {
         const date = new Date(dateStr + 'T00:00:00');
@@ -31,22 +35,48 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
         return `${formatDate(period.start_date)} - ${formatDate(period.end_date)}`;
     };
 
-    const getPeriodShortLabel = (period) => {
-        return `${formatShortDate(period.start_date)} - ${formatShortDate(period.end_date)}`;
-    };
-
     const getPeriodTypeLabel = (period) => {
-        // Salary periods don't have period_type field - they're always 4-week periods
+        // Salary periods have weekly_budget field and optional num_sub_periods
         if (period.weekly_budget !== undefined) {
-            return '4-Week Salary Period';
+            const numPeriods = period.num_sub_periods || 4;
+            if (numPeriods === 1) {
+                return 'Single Period';
+            } else if (numPeriods === 4) {
+                return '4-Week Salary Period';
+            } else {
+                return `${numPeriods}-Period Salary Cycle`;
+            }
         }
         // Budget periods with week number
         if (period.week_number) {
-            return `Week ${period.week_number}`;
+            return `Period ${period.week_number}`;
         }
         // Budget periods (old system)
         if (!period.period_type) return 'Weekly';
         return period.period_type.charAt(0).toUpperCase() + period.period_type.slice(1);
+    };
+
+    // Helper to get human-readable sub-period description
+    const getSubPeriodDescription = () => {
+        if (!currentPeriod) return 'Each period has 4 weekly budgets';
+
+        // Find the salary period that matches (either current is salary period or its parent)
+        const salaryPeriod =
+            currentPeriod.weekly_budget !== undefined
+                ? currentPeriod
+                : periods.find(
+                      (p) =>
+                          p.id === currentPeriod.salary_period_id && p.weekly_budget !== undefined
+                  );
+
+        const numPeriods = salaryPeriod?.num_sub_periods || 4;
+        if (numPeriods === 1) {
+            return 'Single budget period';
+        } else if (numPeriods === 4) {
+            return 'Each period has 4 weekly budgets';
+        } else {
+            return `Each period has ${numPeriods} sub-periods`;
+        }
     };
 
     const isPeriodCurrent = (period) => {
@@ -75,11 +105,20 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
         return periods.find((p) => isPeriodCurrent(p));
     };
 
+    // Reset expanded state when closing the calendar
+    const closeCalendar = () => {
+        setShowCalendar(false);
+        setExpandedPeriods({});
+        setShowAllSubPeriods({});
+        // Dispatch event to close parent menus (e.g., mobile hamburger menu)
+        window.dispatchEvent(new Event('periodSelected'));
+    };
+
     // Close calendar when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (!e.target.closest('.period-selector')) {
-                setShowCalendar(false);
+                closeCalendar();
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -147,233 +186,161 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
             {showCalendar && (
                 <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-white dark:bg-dark-surface rounded-lg shadow-xl border border-gray-200 dark:border-dark-border w-[95vw] sm:w-auto sm:min-w-[500px] max-w-[500px] z-50">
-                    {/* Header with view toggle and quick actions */}
+                    {/* Header with quick actions */}
                     <div className="p-4 border-b border-gray-200 dark:border-dark-border">
-                        <div className="flex justify-between items-center mb-3">
+                        <div className="flex justify-between items-center">
                             <div>
                                 <h3 className="font-semibold text-gray-800 dark:text-dark-text">
                                     Salary Periods
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-0.5">
-                                    Each period has 4 weekly budgets
+                                    {getSubPeriodDescription()}
                                 </p>
                             </div>
-                            <div className="flex gap-2">
+                            {/* Show "Current Period" button only when viewing a non-current period */}
+                            {getCurrentPeriodFromList() && !isPeriodCurrent(currentPeriod) && (
                                 <button
-                                    onClick={() =>
-                                        setViewMode(viewMode === 'list' ? 'grid' : 'list')
-                                    }
-                                    className="text-xs text-gray-600 hover:text-bloom-pink transition px-2 py-1 rounded border border-gray-300 hover:border-bloom-pink"
+                                    onClick={() => {
+                                        onPeriodChange(getCurrentPeriodFromList());
+                                        closeCalendar();
+                                    }}
+                                    className="text-xs text-white bg-green-600 hover:bg-green-700 transition px-3 py-1 rounded"
                                 >
-                                    {viewMode === 'list' ? '⊞ Grid' : '☰ List'}
+                                    ← Current Period
                                 </button>
-                                {getCurrentPeriodFromList() &&
-                                    currentPeriod.id !== getCurrentPeriodFromList().id && (
-                                        <button
-                                            onClick={() => {
-                                                onPeriodChange(getCurrentPeriodFromList());
-                                                setShowCalendar(false);
-                                            }}
-                                            className="text-xs text-white bg-green-600 hover:bg-green-700 transition px-3 py-1 rounded"
-                                        >
-                                            ← Current Period
-                                        </button>
-                                    )}
-                            </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Period grid/list */}
+                    {/* Period list */}
                     <div className="p-2 max-h-[400px] overflow-y-auto">
-                        {viewMode === 'grid' ? (
-                            <div className="grid grid-cols-2 gap-2">
-                                {periods.map((period) => {
-                                    const isCurrent = isPeriodCurrent(period);
-                                    const isPast = isPeriodPast(period);
-                                    const isFuture = isPeriodFuture(period);
-                                    const isSelected = currentPeriod.id === period.id;
-                                    const keyPrefix =
-                                        period.weekly_budget !== undefined ? 'salary' : 'week';
+                        <div className="space-y-3">
+                            {/* Group by salary periods - only show salary periods, not weeks */}
+                            {periods
+                                .filter((p) => p.weekly_budget !== undefined)
+                                .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+                                .map((salaryPeriod) => {
+                                    const isCurrent = isPeriodCurrent(salaryPeriod);
+                                    const isPast = isPeriodPast(salaryPeriod);
+                                    const isFuture = isPeriodFuture(salaryPeriod);
+                                    const isSelected = currentPeriod.id === salaryPeriod.id;
+
+                                    // Find weeks that belong to this salary period
+                                    const relatedWeeks = periods
+                                        .filter(
+                                            (p) =>
+                                                p.salary_period_id === salaryPeriod.id &&
+                                                p.week_number
+                                        )
+                                        .sort((a, b) => a.week_number - b.week_number);
 
                                     return (
                                         <div
-                                            key={`${keyPrefix}-${period.id}`}
-                                            className={`group rounded-lg border-2 transition ${
-                                                isSelected
-                                                    ? 'border-bloom-pink dark:border-dark-pink bg-pink-50 dark:bg-dark-pink/20'
-                                                    : isCurrent
-                                                      ? 'border-gray-300 dark:border-gray-600 bg-green-50 dark:bg-green-950/30 hover:border-gray-400 dark:hover:border-gray-500'
-                                                      : isPast
-                                                        ? 'border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-elevated hover:border-gray-300 dark:hover:border-dark-text-secondary'
-                                                        : 'border-gray-300 dark:border-gray-700 bg-blue-50 dark:bg-blue-950/30 hover:border-gray-400 dark:hover:border-gray-600'
-                                            }`}
+                                            key={`salary-${salaryPeriod.id}`}
+                                            className="border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden"
                                         >
-                                            <button
-                                                onClick={() => {
-                                                    onPeriodChange(period);
-                                                    setShowCalendar(false);
-                                                }}
-                                                className="w-full text-left p-3"
-                                            >
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span
-                                                        className={`text-xs font-semibold uppercase ${
-                                                            isSelected
-                                                                ? 'text-bloom-pink dark:text-dark-pink'
-                                                                : isCurrent
-                                                                  ? 'text-green-700 dark:text-green-400'
-                                                                  : isPast
-                                                                    ? 'text-gray-600 dark:text-dark-text-secondary'
-                                                                    : 'text-blue-700 dark:text-blue-400'
-                                                        }`}
-                                                    >
-                                                        {getPeriodTypeLabel(period)}
-                                                    </span>
-                                                    {isCurrent && (
-                                                        <span className="text-xs bg-green-600 dark:bg-green-700 text-white px-2 py-0.5 rounded-full font-medium">
-                                                            Now
-                                                        </span>
-                                                    )}
-                                                    {isPast && (
-                                                        <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">
-                                                            Past
-                                                        </span>
-                                                    )}
-                                                    {isFuture && (
-                                                        <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">
-                                                            Future
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-sm font-medium text-gray-800 dark:text-dark-text">
-                                                    {getPeriodShortLabel(period)}
-                                                </p>
-                                            </button>
-                                            <div className="flex gap-1 px-2 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onEdit(period);
-                                                        setShowCalendar(false);
-                                                    }}
-                                                    className="flex-1 text-xs py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/30 rounded transition"
-                                                    title="Edit"
-                                                >
-                                                    ✎ Edit
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDeleteConfirm({
-                                                            period,
-                                                            closeCalendar: true,
-                                                        });
-                                                    }}
-                                                    className="flex-1 text-xs py-1 text-red-600 dark:text-dark-danger hover:bg-red-100 dark:hover:bg-red-950/30 rounded transition"
-                                                    title="Delete"
-                                                >
-                                                    ✕ Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {/* Group by salary periods - only show salary periods, not weeks */}
-                                {periods
-                                    .filter((p) => p.weekly_budget !== undefined)
-                                    .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
-                                    .map((salaryPeriod) => {
-                                        const isCurrent = isPeriodCurrent(salaryPeriod);
-                                        const isPast = isPeriodPast(salaryPeriod);
-                                        const isFuture = isPeriodFuture(salaryPeriod);
-                                        const isSelected = currentPeriod.id === salaryPeriod.id;
-
-                                        // Find weeks that belong to this salary period
-                                        const relatedWeeks = periods
-                                            .filter(
-                                                (p) =>
-                                                    p.salary_period_id === salaryPeriod.id &&
-                                                    p.week_number
-                                            )
-                                            .sort((a, b) => a.week_number - b.week_number);
-
-                                        return (
+                                            {/* Salary Period Header */}
                                             <div
-                                                key={`salary-${salaryPeriod.id}`}
-                                                className="border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden"
+                                                className={`group transition ${
+                                                    isSelected
+                                                        ? 'bg-pink-100 dark:bg-dark-pink/20 border-b-2 border-pink-300 dark:border-dark-pink'
+                                                        : isCurrent
+                                                          ? 'bg-green-100 dark:bg-green-950/30 border-b-2 border-green-300 dark:border-green-700 hover:bg-green-150'
+                                                          : 'bg-gray-50 dark:bg-dark-elevated border-b border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-dark-elevated/80'
+                                                }`}
                                             >
-                                                {/* Salary Period Header */}
-                                                <div
-                                                    className={`group transition ${
-                                                        isSelected
-                                                            ? 'bg-pink-100 dark:bg-dark-pink/20 border-b-2 border-pink-300 dark:border-dark-pink'
-                                                            : isCurrent
-                                                              ? 'bg-green-100 dark:bg-green-950/30 border-b-2 border-green-300 dark:border-green-700 hover:bg-green-150'
-                                                              : 'bg-gray-50 dark:bg-dark-elevated border-b border-gray-200 dark:border-dark-border hover:bg-gray-100 dark:hover:bg-dark-elevated/80'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center justify-between px-4 py-3">
-                                                        <button
-                                                            onClick={() => {
-                                                                onPeriodChange(salaryPeriod);
-                                                                setShowCalendar(false);
-                                                            }}
-                                                            className="flex-1 text-left"
-                                                        >
-                                                            <div className="flex justify-between items-center">
-                                                                <div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className="text-xs font-bold text-bloom-pink dark:text-dark-pink uppercase">
-                                                                            {getPeriodTypeLabel(
-                                                                                salaryPeriod
-                                                                            )}
-                                                                        </p>
-                                                                        {isCurrent && (
-                                                                            <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full font-semibold">
-                                                                                Now
-                                                                            </span>
-                                                                        )}
-                                                                        {isPast && (
-                                                                            <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">
-                                                                                Past
-                                                                            </span>
-                                                                        )}
-                                                                        {isFuture && (
-                                                                            <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">
-                                                                                Future
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="font-bold text-gray-900 dark:text-dark-text">
-                                                                        {getPeriodLabel(
+                                                <div className="flex items-center justify-between px-4 py-3">
+                                                    <button
+                                                        onClick={() => {
+                                                            onPeriodChange(salaryPeriod);
+                                                            closeCalendar();
+                                                        }}
+                                                        className="flex-1 text-left"
+                                                    >
+                                                        <div className="flex justify-between items-center">
+                                                            <div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-xs font-bold text-bloom-pink dark:text-dark-pink uppercase">
+                                                                        {getPeriodTypeLabel(
                                                                             salaryPeriod
                                                                         )}
                                                                     </p>
+                                                                    {isCurrent && (
+                                                                        <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full font-semibold">
+                                                                            Now
+                                                                        </span>
+                                                                    )}
+                                                                    {isPast && (
+                                                                        <span className="text-xs bg-gray-400 dark:bg-gray-700 text-white px-2 py-0.5 rounded-full">
+                                                                            Past
+                                                                        </span>
+                                                                    )}
+                                                                    {isFuture && (
+                                                                        <span className="text-xs bg-blue-600 dark:bg-blue-800 text-white px-2 py-0.5 rounded-full">
+                                                                            Future
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-                                                                {isSelected && (
-                                                                    <svg
-                                                                        className="w-5 h-5 text-bloom-pink"
-                                                                        fill="currentColor"
-                                                                        viewBox="0 0 20 20"
-                                                                    >
-                                                                        <path
-                                                                            fillRule="evenodd"
-                                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                            clipRule="evenodd"
-                                                                        />
-                                                                    </svg>
-                                                                )}
+                                                                <p className="font-bold text-gray-900 dark:text-dark-text">
+                                                                    {getPeriodLabel(salaryPeriod)}
+                                                                </p>
                                                             </div>
-                                                        </button>
-                                                        <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {isSelected && (
+                                                                <svg
+                                                                    className="w-5 h-5 text-bloom-pink"
+                                                                    fill="currentColor"
+                                                                    viewBox="0 0 20 20"
+                                                                >
+                                                                    <path
+                                                                        fillRule="evenodd"
+                                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                        clipRule="evenodd"
+                                                                    />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                    <div className="flex gap-1 ml-2">
+                                                        {/* Expand/collapse button */}
+                                                        {relatedWeeks.length > 0 && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setExpandedPeriods((prev) => ({
+                                                                        ...prev,
+                                                                        [salaryPeriod.id]:
+                                                                            !prev[salaryPeriod.id],
+                                                                    }));
+                                                                }}
+                                                                className="p-1 text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text transition"
+                                                                title={
+                                                                    expandedPeriods[salaryPeriod.id]
+                                                                        ? 'Collapse sub-periods'
+                                                                        : 'Expand sub-periods'
+                                                                }
+                                                            >
+                                                                <svg
+                                                                    className={`w-4 h-4 transition-transform ${expandedPeriods[salaryPeriod.id] ? 'rotate-180' : ''}`}
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M19 9l-7 7-7-7"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                        {/* Edit/Delete buttons: always visible on mobile, hover-reveal on desktop */}
+                                                        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     onEdit(salaryPeriod);
-                                                                    setShowCalendar(false);
+                                                                    closeCalendar();
                                                                 }}
                                                                 className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
                                                                 title="Edit salary period"
@@ -420,85 +387,99 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Weekly Budget Periods */}
-                                                {relatedWeeks.length > 0 && (
-                                                    <div className="bg-white dark:bg-dark-surface">
-                                                        {relatedWeeks.map((week) => {
-                                                            const weekCurrent =
-                                                                isPeriodCurrent(week);
-                                                            const weekSelected =
-                                                                currentPeriod.id === week.id;
+                                            {/* Weekly Budget Periods - compact grid */}
+                                            {relatedWeeks.length > 0 &&
+                                                expandedPeriods[salaryPeriod.id] && (
+                                                    <div className="bg-white dark:bg-dark-surface border-t border-gray-100 dark:border-dark-border p-2">
+                                                        {/* Grid of sub-periods */}
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                                                            {(showAllSubPeriods[salaryPeriod.id]
+                                                                ? relatedWeeks
+                                                                : relatedWeeks.slice(
+                                                                      0,
+                                                                      MAX_VISIBLE_SUBPERIODS
+                                                                  )
+                                                            ).map((week) => {
+                                                                const weekCurrent =
+                                                                    isPeriodCurrent(week);
+                                                                const weekSelected =
+                                                                    currentPeriod.id === week.id;
 
-                                                            return (
-                                                                <div
-                                                                    key={`week-${week.id}`}
-                                                                    className={`group border-t border-gray-100 dark:border-dark-border transition ${
-                                                                        weekSelected
-                                                                            ? 'bg-pink-50 dark:bg-dark-pink/20'
-                                                                            : weekCurrent
-                                                                              ? 'bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-950/40'
-                                                                              : 'hover:bg-gray-50 dark:hover:bg-dark-elevated/50'
-                                                                    }`}
+                                                                return (
+                                                                    <button
+                                                                        key={`week-${week.id}`}
+                                                                        onClick={() => {
+                                                                            onPeriodChange(week);
+                                                                            closeCalendar();
+                                                                        }}
+                                                                        className={`px-2 py-1.5 rounded text-xs font-medium transition text-left ${
+                                                                            weekSelected &&
+                                                                            weekCurrent
+                                                                                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 ring-2 ring-green-400 dark:ring-green-600'
+                                                                                : weekSelected
+                                                                                  ? 'bg-pink-100 dark:bg-dark-pink/30 text-pink-700 dark:text-dark-pink ring-1 ring-pink-300 dark:ring-dark-pink'
+                                                                                  : weekCurrent
+                                                                                    ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 ring-1 ring-green-300 dark:ring-green-700'
+                                                                                    : 'bg-gray-50 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-elevated/80'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="flex items-center justify-between gap-1">
+                                                                            <span className="font-bold">
+                                                                                Period{' '}
+                                                                                {week.week_number}
+                                                                            </span>
+                                                                            {weekSelected && (
+                                                                                <svg
+                                                                                    className={`w-3 h-3 ${weekCurrent ? 'text-green-600 dark:text-green-400' : 'text-pink-600 dark:text-dark-pink'}`}
+                                                                                    fill="currentColor"
+                                                                                    viewBox="0 0 20 20"
+                                                                                >
+                                                                                    <path
+                                                                                        fillRule="evenodd"
+                                                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                                        clipRule="evenodd"
+                                                                                    />
+                                                                                </svg>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-[10px] opacity-75">
+                                                                            {formatShortDate(
+                                                                                week.start_date
+                                                                            )}
+                                                                        </div>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {/* Show all button */}
+                                                        {relatedWeeks.length >
+                                                            MAX_VISIBLE_SUBPERIODS &&
+                                                            !showAllSubPeriods[salaryPeriod.id] && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setShowAllSubPeriods(
+                                                                            (prev) => ({
+                                                                                ...prev,
+                                                                                [salaryPeriod.id]: true,
+                                                                            })
+                                                                        );
+                                                                    }}
+                                                                    className="w-full mt-2 py-1.5 text-xs text-bloom-pink dark:text-dark-pink font-medium hover:bg-pink-50 dark:hover:bg-dark-pink/10 rounded transition"
                                                                 >
-                                                                    <div className="flex items-center justify-between px-4 py-2 pl-8">
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                onPeriodChange(
-                                                                                    week
-                                                                                );
-                                                                                setShowCalendar(
-                                                                                    false
-                                                                                );
-                                                                            }}
-                                                                            className="flex-1 text-left"
-                                                                        >
-                                                                            <div className="flex justify-between items-center">
-                                                                                <div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="text-xs text-gray-600 dark:text-dark-text-secondary font-semibold">
-                                                                                            {getPeriodTypeLabel(
-                                                                                                week
-                                                                                            )}
-                                                                                        </span>
-                                                                                        {weekCurrent && (
-                                                                                            <span className="text-xs bg-bloom-mint text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">
-                                                                                                Now
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <p className="text-sm text-gray-700 dark:text-dark-text">
-                                                                                        {getPeriodLabel(
-                                                                                            week
-                                                                                        )}
-                                                                                    </p>
-                                                                                </div>
-                                                                                {weekSelected && (
-                                                                                    <svg
-                                                                                        className="w-4 h-4 text-bloom-pink"
-                                                                                        fill="currentColor"
-                                                                                        viewBox="0 0 20 20"
-                                                                                    >
-                                                                                        <path
-                                                                                            fillRule="evenodd"
-                                                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                                            clipRule="evenodd"
-                                                                                        />
-                                                                                    </svg>
-                                                                                )}
-                                                                            </div>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                    Show all {relatedWeeks.length}{' '}
+                                                                    periods
+                                                                </button>
+                                                            )}
                                                     </div>
                                                 )}
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        )}
+                                        </div>
+                                    );
+                                })}
+                        </div>
                     </div>
 
                     {/* Footer with create button */}
@@ -506,7 +487,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                         <button
                             onClick={() => {
                                 onCreateNew();
-                                setShowCalendar(false);
+                                closeCalendar();
                             }}
                             className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated transition text-bloom-pink dark:text-dark-pink font-semibold"
                         >
@@ -544,7 +525,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                 onClick={() => {
                                     onDelete(deleteConfirm.period.id);
                                     if (deleteConfirm.closeCalendar) {
-                                        setShowCalendar(false);
+                                        closeCalendar();
                                     }
                                     setDeleteConfirm(null);
                                 }}

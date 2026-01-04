@@ -3,22 +3,43 @@
  *
  * Provides day-by-day navigation for browsing transactions.
  * Shows Previous/Today/Next buttons to jump between dates that have transactions.
+ * When a period is selected, Previous navigates to transactions before the period's start,
+ * and Next navigates to transactions after the period's end.
  */
 
 import { useMemo } from 'react';
 
-function DateNavigator({ transactionDates = [], currentViewDate, onDateChange, className = '' }) {
+function DateNavigator({
+    transactionDates = [],
+    currentViewDate,
+    onDateChange,
+    className = '',
+    selectedPeriod = null,
+}) {
     // Get today's date in ISO format
     const today = useMemo(() => {
         const now = new Date();
         return now.toISOString().split('T')[0];
     }, []);
 
+    // Get period boundaries if a period is selected
+    const periodBoundaries = useMemo(() => {
+        if (!selectedPeriod) return null;
+        return {
+            start: selectedPeriod.start_date,
+            end: selectedPeriod.end_date,
+        };
+    }, [selectedPeriod]);
+
     // Current date in ISO format for comparison
+    // If viewing a period (currentViewDate is null) and we have period boundaries,
+    // use the period's start date as the reference point for navigation
     const currentDateISO = useMemo(() => {
-        if (!currentViewDate) return today;
-        return currentViewDate;
-    }, [currentViewDate, today]);
+        if (currentViewDate) return currentViewDate;
+        // If no specific date selected but viewing a period, use period's start date
+        if (periodBoundaries) return periodBoundaries.start;
+        return today;
+    }, [currentViewDate, periodBoundaries, today]);
 
     // Find previous and next dates with transactions
     const { prevDate, nextDate, isOnToday } = useMemo(() => {
@@ -34,10 +55,20 @@ function DateNavigator({ transactionDates = [], currentViewDate, onDateChange, c
             prev = sortedDates[currentIndex - 1];
         } else if (currentIndex === -1) {
             // Current date not in list - find the closest previous date
-            for (let i = sortedDates.length - 1; i >= 0; i--) {
-                if (sortedDates[i] < currentDateISO) {
-                    prev = sortedDates[i];
-                    break;
+            // If we have period boundaries and are before/at start, find date before period start
+            if (periodBoundaries && currentDateISO <= periodBoundaries.start) {
+                for (let i = sortedDates.length - 1; i >= 0; i--) {
+                    if (sortedDates[i] < periodBoundaries.start) {
+                        prev = sortedDates[i];
+                        break;
+                    }
+                }
+            } else {
+                for (let i = sortedDates.length - 1; i >= 0; i--) {
+                    if (sortedDates[i] < currentDateISO) {
+                        prev = sortedDates[i];
+                        break;
+                    }
                 }
             }
         }
@@ -48,10 +79,20 @@ function DateNavigator({ transactionDates = [], currentViewDate, onDateChange, c
             next = sortedDates[currentIndex + 1];
         } else if (currentIndex === -1) {
             // Current date not in list - find the closest next date
-            for (let i = 0; i < sortedDates.length; i++) {
-                if (sortedDates[i] > currentDateISO) {
-                    next = sortedDates[i];
-                    break;
+            // If we have period boundaries and are at/after end, find date after period end
+            if (periodBoundaries && currentDateISO >= periodBoundaries.end) {
+                for (let i = 0; i < sortedDates.length; i++) {
+                    if (sortedDates[i] > periodBoundaries.end) {
+                        next = sortedDates[i];
+                        break;
+                    }
+                }
+            } else {
+                for (let i = 0; i < sortedDates.length; i++) {
+                    if (sortedDates[i] > currentDateISO) {
+                        next = sortedDates[i];
+                        break;
+                    }
                 }
             }
         }
@@ -61,7 +102,7 @@ function DateNavigator({ transactionDates = [], currentViewDate, onDateChange, c
             nextDate: next,
             isOnToday: viewingToday,
         };
-    }, [transactionDates, currentDateISO, today]);
+    }, [transactionDates, currentDateISO, today, periodBoundaries]);
 
     // Format date for display
     const formatDisplayDate = (dateStr) => {

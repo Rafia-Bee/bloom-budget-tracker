@@ -34,6 +34,7 @@ const TransactionList = ({
     loadTransactionsAndBalances,
     defaultCurrency,
     convertAmount,
+    currentPeriod,
 }) => {
     // Convert EUR cents (from DB) to user's currency and format
     const fcEur = (cents) => {
@@ -112,6 +113,7 @@ const TransactionList = ({
                         transactionDates={transactionDates}
                         currentViewDate={currentViewDate}
                         onDateChange={handleDateNavigate}
+                        selectedPeriod={currentPeriod}
                     />
                 )}
             </div>
@@ -174,7 +176,7 @@ const TransactionList = ({
                             ) : (
                                 <button
                                     onClick={() => setSelectionMode(true)}
-                                    className="text-sm font-semibold text-gray-500 dark:text-dark-text-tertiary hover:text-gray-700 dark:hover:text-dark-text-secondary"
+                                    className="px-3 py-1.5 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary bg-gray-100 dark:bg-dark-elevated border border-gray-300 dark:border-dark-border rounded-full hover:bg-gray-200 dark:hover:bg-dark-border hover:border-gray-400 dark:hover:border-dark-text-tertiary transition"
                                 >
                                     Select Multiple
                                 </button>

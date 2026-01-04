@@ -6,6 +6,54 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-03
 
+### Dashboard: Period-Specific Data Loading When Viewing Past Periods (#140)
+
+**Context:** When selecting a past salary period or sub-period from PeriodSelector, the Dashboard's balance cards (Debit/Credit/Weekly Budget) showed data from the current period instead of the selected period. Transactions filtered correctly but balances didn't update.
+
+**Decision:** Added backend API endpoint and frontend state management to load period-specific balance data.
+
+**Changes:**
+
+1. **Backend**: New `GET /salary-periods/<id>` endpoint returns same structure as `/current` but for any salary period
+2. **Frontend**: Dashboard tracks `viewingSalaryPeriodId` and `isViewingCurrentPeriod` state
+3. **Frontend**: `handlePeriodChange()` now loads period-specific balance data via `salaryPeriodAPI.getById()`
+4. **Frontend**: Visual indicator banner shows "Viewing [period label]: [date range]" with "Return to Today" button
+
+**Files Modified:**
+
+-   `backend/routes/salary_periods.py` - New GET by ID endpoint
+-   `frontend/src/api.js` - Added `salaryPeriodAPI.getById()`
+-   `frontend/src/pages/Dashboard.jsx` - Period state tracking, visual indicator, balance loading
+
+**Impact:** Full historical period viewing - balances and transactions now both reflect selected period.
+
+---
+
+### PeriodSelector: Remove Grid View, Add List-Only with Collapsible Sub-Periods (#140)
+
+**Context:** The PeriodSelector had a grid/list toggle that reset to grid on page refresh (state not persisted). Users with many sub-periods found the grid view overwhelming, and the toggle was confusing UX.
+
+**Decision:** Removed grid view entirely, keeping only list view with collapsible sub-periods per salary period.
+
+**Changes:**
+
+-   Removed `viewMode` state and grid/list toggle button
+-   Added `expandedPeriods` state for collapsible behavior
+-   Each salary period now has an expand/collapse chevron button
+-   Sub-periods (budget periods) hidden by default, shown when expanded
+-   Updated tests to remove view mode toggle test coverage
+-   Fixed Dashboard.jsx to include sub-periods in `periods` prop (was filtering them out)
+-   Fixed backend API to return `salary_period_id`, `week_number`, `budget_amount` fields
+-   **Compact grid layout** for sub-periods (2-3 columns) with "Show all N periods" button
+-   Sub-periods show "Period N" label with short date format (e.g., "3 Jan")
+-   Current sub-period highlighted green (ring + background) instead of "Now" label
+-   "← Current Period" button only shows when viewing non-current period
+-   Selecting sub-period closes both period selector AND mobile hamburger menu
+
+**Impact:** Cleaner UX with no state reset on refresh. Supports large sub-period counts (31+) without excessive scrolling.
+
+---
+
 ### Currency Settings Overhaul (#139) - Phase 2: Backend API Migration
 
 **Context:** The existing exchange rate API (open.er-api.com) works but has slower response times. The fawazahmed0/exchange-api offers CDN-backed delivery with no rate limits and supports historical rates.

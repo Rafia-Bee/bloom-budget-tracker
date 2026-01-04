@@ -204,7 +204,7 @@ describe('PeriodSelector', () => {
             expect(screen.getByText(/each period has 4 weekly budgets/i)).toBeInTheDocument();
         });
 
-        it('shows view mode toggle button', async () => {
+        it('shows salary periods header in dropdown', async () => {
             render(
                 <PeriodSelector
                     currentPeriod={mockCurrentPeriod}
@@ -220,7 +220,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText(/list/i)).toBeInTheDocument();
+            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
         });
 
         it('shows create new salary period button in dropdown', async () => {
@@ -269,56 +269,6 @@ describe('PeriodSelector', () => {
             });
 
             expect(screen.queryByText('Salary Periods')).not.toBeInTheDocument();
-        });
-    });
-
-    describe('View Mode Toggle', () => {
-        it('starts in grid view by default', async () => {
-            render(
-                <PeriodSelector
-                    currentPeriod={mockCurrentPeriod}
-                    periods={mockPeriods}
-                    onPeriodChange={mockOnPeriodChange}
-                    onCreateNew={mockOnCreateNew}
-                    onEdit={mockOnEdit}
-                    onDelete={mockOnDelete}
-                />
-            );
-
-            await act(async () => {
-                fireEvent.click(screen.getByRole('button'));
-            });
-
-            // Grid view shows "List" toggle option
-            expect(screen.getByText(/list/i)).toBeInTheDocument();
-        });
-
-        it('toggles to list view when clicked', async () => {
-            render(
-                <PeriodSelector
-                    currentPeriod={mockCurrentPeriod}
-                    periods={mockPeriods}
-                    onPeriodChange={mockOnPeriodChange}
-                    onCreateNew={mockOnCreateNew}
-                    onEdit={mockOnEdit}
-                    onDelete={mockOnDelete}
-                />
-            );
-
-            await act(async () => {
-                fireEvent.click(screen.getByRole('button'));
-            });
-
-            expect(screen.getByText(/list/i)).toBeInTheDocument();
-
-            // Toggle to list view
-            const toggleButton = screen.getByText(/list/i);
-            await act(async () => {
-                fireEvent.click(toggleButton);
-            });
-
-            // List view shows "Grid" toggle option
-            expect(screen.getByText(/grid/i)).toBeInTheDocument();
         });
     });
 
@@ -415,7 +365,8 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            expect(screen.getByText('Week 1')).toBeInTheDocument();
+            // Budget periods with week_number now show "Period N" instead of "Week N"
+            expect(screen.getByText('Period 1')).toBeInTheDocument();
         });
     });
 
