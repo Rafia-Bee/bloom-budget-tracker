@@ -17,11 +17,18 @@ import { setupCurrencyTestData, resetCurrencyToEUR } from './test-data-setup.js'
 
 /**
  * Helper to open the user menu appropriately for the viewport
+ * Uses improved openMobileMenu with retry logic for mobile viewport
  */
 async function openUserMenu(page) {
     const isMobile = await isMobileViewport(page);
     if (isMobile) {
-        await openMobileMenu(page);
+        const menuOpened = await openMobileMenu(page);
+        if (!menuOpened) {
+            // Fallback: try clicking hamburger directly with extended wait
+            const hamburgerButton = page.locator('button[aria-label="Menu"]');
+            await hamburgerButton.click({ timeout: 5000 });
+            await page.waitForTimeout(800);
+        }
     } else {
         // Desktop: click user menu button
         const userMenuButton = page.locator('button[title="User menu"]');
@@ -32,10 +39,13 @@ async function openUserMenu(page) {
 
 /**
  * Helper to click Currency option in menu (handles desktop/mobile differences)
+ * With improved wait conditions for menu items to be clickable
  */
 async function clickCurrencyOption(page) {
     // Both mobile and desktop menus use a button with "Currency" text
+    // Wait for the button to be visible and enabled before clicking
     const currencyOption = page.locator('button:has-text("Currency")').first();
+    await currencyOption.waitFor({ state: 'visible', timeout: 5000 });
     await currencyOption.click();
 }
 

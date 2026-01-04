@@ -33,6 +33,9 @@ test.describe('Settings Page', () => {
             // Should be on settings page (not login)
             expect(page.url()).toContain('/settings');
 
+            // Wait for page content to stabilize (important for mobile)
+            await page.waitForTimeout(500);
+
             // Look for the Categories tab which should be visible on Settings page
             await expect(page.locator("button:has-text('Categories')")).toBeVisible({
                 timeout: 5000,
@@ -46,11 +49,20 @@ test.describe('Settings Page', () => {
                 return;
             }
 
+            // Wait for page to fully render (especially important on mobile viewport)
+            await page.waitForLoadState('networkidle');
+            await page.waitForTimeout(500);
+
             // Preferences tab should be active by default (new behavior)
-            // Look for Preferences-specific content like recurring lookahead or currency
-            await expect(
-                page.locator('text=/Recurring Lookahead|Currency|Preferences/i').first()
-            ).toBeVisible({ timeout: 5000 });
+            // Look for Preferences-specific content like recurring lookahead settings
+            // The text "Look ahead:" appears in the Preferences tab
+            const preferencesContent = page
+                .locator(
+                    'text=/Look ahead:|Recurring Lookahead|Recurring Expenses Preview|Preferences/i'
+                )
+                .first();
+
+            await expect(preferencesContent).toBeVisible({ timeout: 8000 });
         });
 
         test('Settings page shows tab navigation when authenticated', async ({ page }) => {
@@ -59,6 +71,9 @@ test.describe('Settings Page', () => {
                 test.skip();
                 return;
             }
+
+            // Wait for tabs to render
+            await page.waitForTimeout(300);
 
             // Tab labels are: Categories (🏷️), Preferences (⚙️), Account (👤)
             const categoriesTab = page.locator("button:has-text('Categories')");

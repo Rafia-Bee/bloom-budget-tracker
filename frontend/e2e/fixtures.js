@@ -9,17 +9,17 @@
  * Tests must restore these cookies via context.addCookies() before navigating.
  */
 
-import { test as base, expect } from "@playwright/test";
-import fs from "fs";
+import { test as base, expect } from '@playwright/test';
+import fs from 'fs';
 
-const COOKIES_PATH = "e2e/.auth/cookies.json";
+const COOKIES_PATH = 'e2e/.auth/cookies.json';
 
 /**
  * Test credentials for the test account
  */
 export const TEST_USER = {
-    email: "test@test.com",
-    password: "test123",
+    email: 'test@test.com',
+    password: 'test123',
 };
 
 /**
@@ -29,11 +29,11 @@ export const TEST_USER = {
 function loadSavedCookies() {
     try {
         if (fs.existsSync(COOKIES_PATH)) {
-            const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, "utf-8"));
+            const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, 'utf-8'));
             return cookies;
         }
     } catch (error) {
-        console.warn("Could not load saved cookies:", error.message);
+        console.warn('Could not load saved cookies:', error.message);
     }
     return [];
 }
@@ -74,7 +74,7 @@ export const test = base.extend({
             }
 
             // Navigate to dashboard
-            await page.goto("/dashboard");
+            await page.goto('/dashboard');
 
             // Check if we're authenticated
             const isAuthenticated = await page
@@ -98,10 +98,10 @@ export const test = base.extend({
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function loginAsTestUser(page) {
-    await page.goto("/login");
+    await page.goto('/login');
 
     // Wait for form to be ready
-    await page.waitForSelector('input[type="email"]', { state: "visible" });
+    await page.waitForSelector('input[type="email"]', { state: 'visible' });
 
     // Clear and fill email
     await page.locator('input[type="email"]').clear();
@@ -135,10 +135,10 @@ export async function ensureAuthenticated(page, context) {
     }
 
     // Navigate and check auth
-    await page.goto("/dashboard");
+    await page.goto('/dashboard');
 
     // If redirected to login, do manual login
-    if (page.url().includes("/login")) {
+    if (page.url().includes('/login')) {
         await loginAsTestUser(page);
     }
 }
@@ -154,25 +154,76 @@ export async function isMobileViewport(page) {
 }
 
 /**
- * Open the mobile hamburger menu
+ * Open the mobile hamburger menu with robust retry logic
  * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {object} options - Options for opening the menu
+ * @param {number} options.maxRetries - Maximum number of retry attempts (default: 3)
+ * @param {number} options.retryDelay - Delay between retries in ms (default: 500)
  * @returns {Promise<boolean>} True if menu was opened successfully
  */
-export async function openMobileMenu(page) {
+export async function openMobileMenu(page, options = {}) {
+    const { maxRetries = 3, retryDelay = 500 } = options;
     const hamburgerButton = page.locator('button[aria-label="Menu"]');
-    // Wait for hamburger to be visible first (page must be loaded)
-    try {
-        await hamburgerButton.waitFor({ state: "visible", timeout: 5000 });
-        await hamburgerButton.click();
-        // Wait for menu animation and content to be visible
-        await page.waitForTimeout(500);
-        // Verify menu is open by checking for a nav element or button in the menu
-        const menuContent = page.locator(".mobile-menu-container nav");
-        await menuContent.waitFor({ state: "visible", timeout: 3000 });
-        return true;
-    } catch {
-        return false;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            // Wait for hamburger to be visible and stable
+            await hamburgerButton.waitFor({ state: 'visible', timeout: 5000 });
+
+            // Ensure button is clickable (not covered by other elements)
+            await hamburgerButton.click({ timeout: 3000 });
+
+            // Wait for menu animation to complete
+            await page.waitForTimeout(300);
+
+            // Verify menu is open by checking multiple indicators
+            const menuContainer = page.locator('.mobile-menu-container');
+            const menuNav = menuContainer.locator('nav');
+
+            // Wait for the menu container and nav to be visible
+            await menuContainer.waitFor({ state: 'visible', timeout: 3000 });
+            await menuNav.waitFor({ state: 'visible', timeout: 2000 });
+
+            // Additional check: verify a menu item is actually visible and clickable
+            // Look for common menu items (Dashboard, Debts, Goals, Settings, etc.)
+            const menuItemVisible = await page
+                .locator(
+                    '.mobile-menu-container button:has-text("Dashboard"), ' +
+                        '.mobile-menu-container button:has-text("Debts"), ' +
+                        '.mobile-menu-container button:has-text("Goals"), ' +
+                        '.mobile-menu-container button:has-text("Currency")'
+                )
+                .first()
+                .isVisible({ timeout: 2000 });
+
+            if (menuItemVisible) {
+                return true;
+            }
+
+            // Menu opened but items not visible yet - wait and continue
+            if (attempt < maxRetries) {
+                await page.waitForTimeout(retryDelay);
+            }
+        } catch (error) {
+            if (attempt < maxRetries) {
+                // Close menu if partially opened (click elsewhere)
+                try {
+                    const overlay = page.locator(
+                        ".mobile-menu-container + div, [class*='overlay']"
+                    );
+                    if (await overlay.isVisible({ timeout: 500 })) {
+                        await overlay.click();
+                        await page.waitForTimeout(200);
+                    }
+                } catch {
+                    // Ignore cleanup errors
+                }
+                await page.waitForTimeout(retryDelay);
+            }
+        }
     }
+
+    return false;
 }
 
 /**
@@ -204,7 +255,7 @@ export async function logout(page) {
     const logoutButton = page.locator('button:has-text("Logout")');
     await expect(logoutButton).toBeVisible({ timeout: 5000 });
     await logoutButton.click();
-    await expect(page).toHaveURL("/login");
+    await expect(page).toHaveURL('/login');
 }
 
 /**
@@ -220,9 +271,7 @@ export async function navigateToPage(page, path, linkText) {
         // Mobile: Use hamburger menu
         await openMobileMenu(page);
         // Look for link in mobile menu
-        const mobileLink = page.locator(
-            `a[href="${path}"], button:has-text("${linkText}")`
-        );
+        const mobileLink = page.locator(`a[href="${path}"], button:has-text("${linkText}")`);
         if (await mobileLink.first().isVisible({ timeout: 2000 })) {
             await mobileLink.first().click();
         } else {
@@ -231,9 +280,7 @@ export async function navigateToPage(page, path, linkText) {
         }
     } else {
         // Desktop: Try direct link first, then user menu
-        const directLink = page.locator(
-            `a[href="${path}"], nav a:has-text("${linkText}")`
-        );
+        const directLink = page.locator(`a[href="${path}"], nav a:has-text("${linkText}")`);
         if (await directLink.first().isVisible({ timeout: 2000 })) {
             await directLink.first().click();
         } else {
@@ -252,9 +299,48 @@ export async function navigateToPage(page, path, linkText) {
  */
 export async function waitForAPI(page, urlPattern) {
     return page.waitForResponse(
-        (response) =>
-            response.url().includes(urlPattern) && response.status() === 200
+        (response) => response.url().includes(urlPattern) && response.status() === 200
     );
+}
+
+/**
+ * Wait for any pending API calls to complete (with timeout)
+ * More reliable than waitForTimeout for API-dependent operations
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {number} timeout - Maximum time to wait in ms (default: 5000)
+ */
+export async function waitForNetworkSettled(page, timeout = 5000) {
+    try {
+        await page.waitForLoadState('networkidle', { timeout });
+    } catch {
+        // Network didn't settle in time - continue anyway
+        // This prevents tests from hanging on slow API responses
+    }
+}
+
+/**
+ * Wait for an element to appear after an action (e.g., form submission)
+ * More reliable than waitForTimeout for UI state changes
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string} selector - Element selector to wait for
+ * @param {object} options - Options for waiting
+ * @param {number} options.timeout - Maximum time to wait (default: 10000)
+ * @param {boolean} options.shouldNotExist - Wait for element to disappear (default: false)
+ * @returns {Promise<boolean>} True if condition was met
+ */
+export async function waitForElement(page, selector, options = {}) {
+    const { timeout = 10000, shouldNotExist = false } = options;
+    try {
+        const locator = page.locator(selector).first();
+        if (shouldNotExist) {
+            await locator.waitFor({ state: 'hidden', timeout });
+        } else {
+            await locator.waitFor({ state: 'visible', timeout });
+        }
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -271,7 +357,7 @@ export function formatCurrency(cents) {
  * @param {import('@playwright/test').Page} page - Playwright page object
  */
 export async function waitForPageLoad(page) {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState('networkidle');
 }
 
 // Re-export expect for convenience
