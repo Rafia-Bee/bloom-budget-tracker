@@ -1,7 +1,7 @@
 -- Migration: Populate User balance fields from Income/Expense markers
 -- Date: 2026-01-05
 -- Issue: #149 - Phase 2: Data migration
--- 
+--
 -- Description:
 --   Migrates balance tracking data from Income/Expense marker records
 --   to the new User model fields added in Phase 1.
@@ -47,7 +47,7 @@ WITH earliest_initial_balance AS (
     ORDER BY user_id, actual_date ASC
 )
 UPDATE users u
-SET 
+SET
     balance_start_date = eib.actual_date,
     user_initial_debit_balance = eib.amount
 FROM earliest_initial_balance eib
@@ -68,7 +68,7 @@ WITH earliest_salary_period AS (
     ORDER BY user_id, start_date ASC
 )
 UPDATE users u
-SET 
+SET
     user_initial_credit_limit = esp.credit_limit,
     -- If balance_start_date wasn't set (no Initial Balance), use salary period date
     balance_start_date = COALESCE(u.balance_start_date, esp.start_date)
@@ -129,14 +129,14 @@ WHERE balance_mode IS NULL OR balance_mode = '';
 -- ============================================================
 
 -- 6a. Check how many users were migrated
-SELECT 
+SELECT
     COUNT(*) as total_users,
     COUNT(balance_start_date) as migrated_users,
     COUNT(*) - COUNT(balance_start_date) as not_migrated
 FROM users;
 
 -- 6b. View migrated user data (sample)
-SELECT 
+SELECT
     id,
     email,
     balance_start_date,
@@ -150,7 +150,7 @@ ORDER BY id
 LIMIT 10;
 
 -- 6c. Verify data matches original income records
-SELECT 
+SELECT
     u.id,
     u.email,
     u.user_initial_debit_balance as user_amount,
@@ -173,7 +173,7 @@ GROUP BY balance_mode;
 
 /*
 UPDATE users
-SET 
+SET
     balance_start_date = NULL,
     user_initial_debit_balance = 0,
     user_initial_credit_limit = 0,
@@ -184,7 +184,7 @@ SET
 -- ============================================================
 -- NOTES
 -- ============================================================
--- 
+--
 -- After running this migration:
 -- 1. The original Income/Expense marker records are NOT deleted
 -- 2. They will be removed in Phase 6 after verifying the new system works

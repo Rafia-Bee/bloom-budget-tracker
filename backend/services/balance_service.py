@@ -20,6 +20,7 @@ from backend.models.database import (
     BudgetPeriod,
     Expense,
     Income,
+    User,
 )
 from sqlalchemy import and_
 
@@ -81,16 +82,14 @@ def _calculate_debit_balance(user_id: int) -> float:
 
     Periods are cosmetic filters only - balance reflects actual account state.
 
-    Method:
-    1. Find earliest "Initial Balance" income entry (starting money when user began tracking)
-    2. Exclude subsequent "Initial Balance" entries (they would cause double-counting
-       since salary income is already included in the bank balance when user enters it)
-    3. Sum all other income since that date
+    Method (Issue #149 Phase 3 - Updated):
+    1. Get starting balance from User.user_initial_debit_balance (set once at first period)
+    2. Get tracking start date from User.balance_start_date
+    3. Sum all NON-initial-balance income since that date
     4. Subtract all debit expenses since that date
 
-    Note (Issue #149): Only the FIRST Initial Balance counts as the starting point.
-    Subsequent salary periods' initial_debit_balance values are snapshots, not additional
-    money - the salary income is already included in those values.
+    The User fields are populated in Phase 2 migration and when creating first salary period.
+    Falls back to legacy Income table lookup if User fields not populated yet.
 
     Args:
         user_id: User ID to scope all transaction queries
@@ -102,41 +101,49 @@ def _calculate_debit_balance(user_id: int) -> float:
 
     today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Find earliest "Initial Balance" entry for this user
-    # This is the ONLY initial balance that should count - it represents
-    # what the user had when they first started using the app
-    earliest_initial_balance = (
-        db.session.query(Income)
-        .filter(
-            and_(
-                Income.user_id == user_id,
-                Income.type == "Initial Balance",
-                Income.deleted_at.is_(None),
-            )
-        )
-        .order_by(Income.actual_date)
-        .first()
-    )
+    # Get user with their balance tracking fields
+    user = User.query.get(user_id)
+    if not user:
+        return 0.0
 
-    if not earliest_initial_balance:
-        # No initial balance, use earliest income instead
-        earliest_income = (
+    # Check if user has migrated balance data
+    if user.balance_start_date is not None:
+        # Use new User fields (Issue #149 Phase 3)
+        start_from_date = user.balance_start_date
+        starting_balance = user.user_initial_debit_balance
+    else:
+        # Fallback to legacy: find earliest "Initial Balance" income entry
+        earliest_initial_balance = (
             db.session.query(Income)
-            .filter(and_(Income.user_id == user_id, Income.deleted_at.is_(None)))
+            .filter(
+                and_(
+                    Income.user_id == user_id,
+                    Income.type == "Initial Balance",
+                    Income.deleted_at.is_(None),
+                )
+            )
             .order_by(Income.actual_date)
             .first()
         )
-        if not earliest_income:
-            return 0.0
-        start_from_date = earliest_income.actual_date
-        starting_balance = 0
-    else:
-        start_from_date = earliest_initial_balance.actual_date
-        starting_balance = earliest_initial_balance.amount
+
+        if not earliest_initial_balance:
+            # No initial balance, use earliest income instead
+            earliest_income = (
+                db.session.query(Income)
+                .filter(and_(Income.user_id == user_id, Income.deleted_at.is_(None)))
+                .order_by(Income.actual_date)
+                .first()
+            )
+            if not earliest_income:
+                return 0.0
+            start_from_date = earliest_income.actual_date
+            starting_balance = 0
+        else:
+            start_from_date = earliest_initial_balance.actual_date
+            starting_balance = earliest_initial_balance.amount
 
     # Get all NON-initial-balance income since tracking started (up to today)
-    # Exclude ALL "Initial Balance" entries - only the first one was counted above
-    # Subsequent Initial Balances would cause double-counting (salary already included)
+    # Exclude ALL "Initial Balance" entries - they shouldn't add to cumulative balance
     total_income = (
         db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
         .filter(
@@ -168,7 +175,7 @@ def _calculate_debit_balance(user_id: int) -> float:
         or 0
     )
 
-    # Balance = Starting (first initial balance) + Income - Expenses
+    # Balance = Starting (from User fields or legacy) + Income - Expenses
     balance_cents = starting_balance + total_income - total_debit_expenses
     return balance_cents / 100  # Convert cents to euros
 
@@ -179,11 +186,14 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
 
     Periods are cosmetic filters only - balance reflects ALL transactions ever made.
 
-    Method (period-agnostic):
-    1. Find earliest "Pre-existing Credit Card Debt" marker (category=Debt, subcategory=Credit Card)
-    2. Starting available = Credit Limit - that debt amount
-    3. Add ALL credit card payments since that date
-    4. Subtract ALL credit card expenses since that date (excluding Debt category markers)
+    Method (Issue #149 Phase 3 - Updated):
+    1. Get starting debt from User.user_initial_credit_debt (or legacy Expense marker)
+    2. Get tracking start date from User.balance_start_date
+    3. Starting available = Credit Limit - initial debt
+    4. Add ALL credit card payments since that date
+    5. Subtract ALL credit card expenses since that date (excluding Debt category markers)
+
+    Falls back to legacy Expense table lookup if User fields not populated yet.
 
     Args:
         user_id: User ID to scope all transaction queries
@@ -194,31 +204,47 @@ def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
     """
     today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Find earliest "Pre-existing Credit Card Debt" entry for THIS USER
-    earliest_debt_marker = (
-        db.session.query(Expense)
-        .filter(
-            and_(
-                Expense.user_id == user_id,
-                Expense.category == "Debt",
-                Expense.subcategory == "Credit Card",
-                Expense.payment_method == "Credit card",
-                Expense.deleted_at.is_(None),
-            )
-        )
-        .order_by(Expense.date)
-        .first()
-    )
+    # Get user with their balance tracking fields
+    user = User.query.get(user_id)
 
-    if earliest_debt_marker:
-        # Start from this marker's date
-        start_from_date = earliest_debt_marker.date
-        # Starting available = limit - debt
-        starting_available_cents = credit_limit_cents - earliest_debt_marker.amount
+    # Check if user has migrated balance data
+    if user and user.balance_start_date is not None:
+        # Use new User fields (Issue #149 Phase 3)
+        start_from_date = user.balance_start_date
+        initial_debt = user.user_initial_credit_debt
+        # Use stored credit limit if available, otherwise use passed value
+        effective_limit = (
+            user.user_initial_credit_limit
+            if user.user_initial_credit_limit > 0
+            else credit_limit_cents
+        )
+        starting_available_cents = effective_limit - initial_debt
     else:
-        # No marker found - assume started with full credit limit available
-        start_from_date = datetime(2000, 1, 1).date()  # Beginning of time
-        starting_available_cents = credit_limit_cents
+        # Fallback to legacy: find earliest "Pre-existing Credit Card Debt" marker
+        earliest_debt_marker = (
+            db.session.query(Expense)
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.category == "Debt",
+                    Expense.subcategory == "Credit Card",
+                    Expense.payment_method == "Credit card",
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .order_by(Expense.date)
+            .first()
+        )
+
+        if earliest_debt_marker:
+            # Start from this marker's date
+            start_from_date = earliest_debt_marker.date
+            # Starting available = limit - debt
+            starting_available_cents = credit_limit_cents - earliest_debt_marker.amount
+        else:
+            # No marker found - assume started with full credit limit available
+            start_from_date = datetime(2000, 1, 1).date()  # Beginning of time
+            starting_available_cents = credit_limit_cents
 
     # Get ALL credit card expenses since start date (excluding Debt category markers)
     total_credit_expenses = (

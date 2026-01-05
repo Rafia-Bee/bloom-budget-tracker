@@ -16,6 +16,7 @@ from backend.models.database import (
     Income,
     Debt,
     Goal,
+    User,
 )
 from backend.services.balance_service import get_display_balances
 from backend.services.budget_service import (
@@ -929,6 +930,17 @@ def create_salary_period():
                 .filter_by(user_id=current_user_id, type="Initial Balance")
                 .first()
             )
+
+            # Also populate User balance fields (Issue #149 Phase 3)
+            # This is done for ALL first salary periods, ensuring new users get proper balance tracking
+            user = User.query.get(current_user_id)
+            if user and user.balance_start_date is None:
+                # First salary period for this user - populate balance tracking fields
+                user.balance_start_date = start_date
+                user.user_initial_debit_balance = debit_balance
+                user.user_initial_credit_limit = credit_limit
+                user.user_initial_credit_debt = max(0, credit_limit - credit_balance)
+                user.balance_mode = "sync"  # Default mode
 
             if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(

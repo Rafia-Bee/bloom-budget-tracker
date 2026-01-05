@@ -6,32 +6,74 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-05
 
+### Phase 3: Balance Service Refactored (#149)
+
+**Context:** Phase 1 added User fields, Phase 2 migrated data. Phase 3 updates the balance service to USE the new User fields instead of querying Income/Expense markers.
+
+**Changes Made:**
+
+1. **balance_service.py - `_calculate_debit_balance()`:**
+
+    - Now checks `User.balance_start_date` first
+    - If set, uses `User.user_initial_debit_balance` as starting point
+    - Falls back to legacy Income table lookup for non-migrated users
+
+2. **balance_service.py - `_calculate_credit_available()`:**
+
+    - Now checks `User.balance_start_date` first
+    - If set, uses `User.user_initial_credit_debt` and `user_initial_credit_limit`
+    - Falls back to legacy Expense table lookup for non-migrated users
+
+3. **salary_periods.py - POST endpoint:**
+    - Now populates User balance fields when creating FIRST salary period
+    - Ensures new users get proper balance tracking from day one
+    - Sets `balance_mode = "sync"` as default
+
+**Backward Compatibility:**
+
+-   Legacy fallback ensures non-migrated users still work
+-   Income/Expense markers still created (will be removed in Phase 6)
+-   No behavior change if User fields aren't populated
+
+**What's Next:**
+
+-   Phase 4: Balance Mode UI (4 touchpoints)
+-   Phase 5: Balance Recalculation Modal for past periods
+-   Phase 6: Cleanup (remove legacy markers, feature flag)
+
+---
+
 ### Phase 2: Data Migration Completed (#149)
 
 **Context:** Phase 1 added User balance fields. Phase 2 populates these fields from existing Income/Expense marker records.
 
 **Migration Logic:**
+
 1. Find earliest "Initial Balance" income record → `user_initial_debit_balance`, `balance_start_date`
 2. Find earliest "Pre-existing Credit Card Debt" expense → `user_initial_credit_debt`
 3. Get credit limit from earliest salary period → `user_initial_credit_limit`
 4. Set `balance_mode = 'sync'` (default for existing users)
 
 **Files Created:**
-- `scripts/migrate_balance_to_user.py` - Python script with dry-run support
-- `docs/migrations/2026-01-05_populate_user_balance_fields.sql` - Neon SQL script
+
+-   `scripts/migrate_balance_to_user.py` - Python script with dry-run support
+-   `docs/migrations/2026-01-05_populate_user_balance_fields.sql` - Neon SQL script
 
 **Local Migration Results (3 users):**
-- User 1: €3072.00 debit, €1500.00 limit, €1410.58 debt
-- User 2: €1500.00 debit, €1000.00 limit, €250.00 debt  
-- User 3: €1000.00 debit, €1500.00 limit, €1400.00 debt
+
+-   User 1: €3072.00 debit, €1500.00 limit, €1410.58 debt
+-   User 2: €1500.00 debit, €1000.00 limit, €250.00 debt
+-   User 3: €1000.00 debit, €1500.00 limit, €1400.00 debt
 
 **Important:** This migration is non-destructive:
-- Original Income/Expense markers are NOT deleted
-- App continues using old system until Phase 3 (balance service refactor)
-- Markers will be removed in Phase 6 after new system verified
+
+-   Original Income/Expense markers are NOT deleted
+-   App continues using old system until Phase 3 (balance service refactor)
+-   Markers will be removed in Phase 6 after new system verified
 
 **What's Next:**
-- Phase 3: Balance service refactor to use User fields + respect balance_mode
+
+-   Phase 3: Balance service refactor to use User fields + respect balance_mode
 
 ---
 
