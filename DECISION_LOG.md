@@ -4,6 +4,54 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-05
+
+### Initial Balance Fix (#149) - Complete Implementation
+
+**Context:** Users were experiencing incorrect debit balance display. Two bugs were found:
+
+1. **PUT bug:** When updating a salary period, the system overwrote the "Initial Balance" income record
+2. **POST bug:** When creating salary periods with credit debt, no "Pre-existing Credit Card Debt" expense marker was created
+
+**Root Causes:**
+
+1. In PUT endpoint (~line 1300), code was doing `initial_income.amount = debit_balance`
+2. POST endpoint was missing creation of credit debt expense marker for consistency
+
+**Decision:** Fix both endpoints to preserve the "one-time initialization" philosophy:
+
+-   Initial Balance = Set ONCE when first salary period is created, never updated
+-   Pre-existing Credit Card Debt = Created if credit_balance < credit_limit on FIRST period only
+
+**Changes:**
+
+1. **backend/routes/salary_periods.py:**
+
+    - PUT: Removed `initial_income.amount = debit_balance` line
+    - POST: Added creation of "Pre-existing Credit Card Debt" expense for consistency
+
+2. **backend/routes/expenses.py:**
+
+    - `dates-with-transactions` endpoint now excludes "Debt" category expenses (system markers)
+
+3. **E2E Tests (balance-accumulation.spec.js):**
+
+    - Fixed cleanup order (delete income/expenses BEFORE salary periods)
+    - Fixed income API response parsing (`response.income` not direct array)
+    - Added `test.describe.configure({ mode: 'serial' })` to prevent race conditions
+    - Added `afterAll` hook to restore test data for other tests
+
+4. **E2E Tests (auth.spec.js):**
+    - Updated login check to handle empty state (wizard view)
+
+**Impact:**
+
+-   Correct balance calculation (only first Initial Balance counts)
+-   No double-counting of salary income
+-   E2E tests now properly isolated and pass consistently
+
+---
+
 ## 2026-01-04
 
 ### E2E Test Flakiness Mitigation (#153)

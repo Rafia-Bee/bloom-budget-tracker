@@ -466,13 +466,18 @@ def get_dates_with_transactions():
     """
     Get all dates that have expenses (for day-by-day navigation).
     Returns sorted array of ISO date strings.
+    Excludes system expenses (Pre-existing Credit Card Debt).
     """
     current_user_id = int(get_jwt_identity())
 
-    # Get distinct dates from expenses
+    # Get distinct dates from expenses, excluding system expenses
     expense_dates = (
         db.session.query(db.func.distinct(Expense.date))
-        .filter(Expense.user_id == current_user_id)
+        .filter(
+            Expense.user_id == current_user_id,
+            Expense.category != "Debt",  # Exclude system debt markers
+            Expense.deleted_at.is_(None),  # Exclude soft-deleted
+        )
         .all()
     )
 

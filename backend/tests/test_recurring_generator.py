@@ -196,6 +196,9 @@ class TestGenerateDueExpenses:
             user = User.query.filter_by(email="test@example.com").first()
             today = date.today()
 
+            # Count existing expenses (may include system expenses like Pre-existing Debt)
+            initial_expense_count = Expense.query.filter_by(user_id=user.id).count()
+
             # Create a recurring expense due today
             recurring = create_recurring_expense(
                 user.id,
@@ -218,9 +221,9 @@ class TestGenerateDueExpenses:
             assert len(result["templates"]) == 1
             assert result["templates"][0]["action"] == "would generate"
 
-            # Verify no actual expense was created
-            expense_count = Expense.query.filter_by(user_id=user.id).count()
-            assert expense_count == 0
+            # Verify no NEW expense was created (count unchanged)
+            final_expense_count = Expense.query.filter_by(user_id=user.id).count()
+            assert final_expense_count == initial_expense_count
 
     def test_generates_expense_from_template(
         self, app, client, auth_headers, salary_period

@@ -946,9 +946,36 @@ def create_salary_period():
                     db.session.rollback()
                     # Continue without creating duplicate - the other one will be used
 
-            # Note: Pre-existing credit card debt is tracked via the credit_balance
-            # in the salary period settings. Users manage payments via recurring expenses.
-            # No automatic expense creation needed.
+            # Create Pre-existing Credit Card Debt expense if user has existing debt
+            # (credit_limit > credit_balance means they owe money)
+            pre_existing_debt = credit_limit - credit_balance
+            if pre_existing_debt > 0:
+                # Check if debt expense already exists for this user
+                existing_debt_expense = (
+                    Expense.active()
+                    .filter_by(
+                        user_id=current_user_id,
+                        name="Pre-existing Credit Card Debt",
+                        category="Debt",
+                        subcategory="Credit Card",
+                    )
+                    .first()
+                )
+
+                if not existing_debt_expense:
+                    # Create new debt marker (date is day before period starts)
+                    debt_expense = Expense(
+                        user_id=current_user_id,
+                        name="Pre-existing Credit Card Debt",
+                        amount=pre_existing_debt,
+                        category="Debt",
+                        subcategory="Credit Card",
+                        payment_method="Credit card",
+                        date=start_date - timedelta(days=1),
+                        is_fixed_bill=False,
+                        notes="Existing credit card balance at budget period start",
+                    )
+                    db.session.add(debt_expense)
 
             # Commit all changes together
             db.session.commit()
@@ -1285,9 +1312,14 @@ def update_salary_period_full(id):
             db.session.add(budget_period)
             current_start = week_end + timedelta(days=1)
 
-        # Update Initial Balance income entry if it exists
-        # NEVER create a new Initial Balance - it should only be created with the first salary period
-        # Search for ANY Initial Balance entry for this user (not just by date)
+        # Initial Balance handling:
+        # The Initial Balance income record represents the user's starting money when they
+        # first began using the app. It should ONLY be created once and NEVER updated.
+        # Subsequent salary periods' "initial_debit_balance" values are snapshots, not
+        # additional starting money - the salary income is already included in those values.
+        #
+        # Issue #149: Previously this code was updating the Initial Balance to each new
+        # salary period's debit_balance, which caused incorrect balance calculations.
         initial_income = (
             Income.active()
             .filter_by(
@@ -1298,15 +1330,9 @@ def update_salary_period_full(id):
             .first()
         )
 
-        if initial_income:
-            # Only update the amount, keep the original date
-            initial_income.amount = debit_balance
-        elif debit_balance > 0:
-            # This should never happen in normal flow (only if user deleted it manually)
-            # Create a new one with a warning
-            current_app.logger.warning(
-                f"Creating missing Initial Balance for user {current_user_id} - this should only happen once"
-            )
+        if not initial_income and debit_balance > 0:
+            # First salary period ever - create the Initial Balance record
+            # This only happens once per user (or if they deleted all data)
             initial_income = Income(
                 user_id=current_user_id,
                 type="Initial Balance",
@@ -1321,6 +1347,8 @@ def update_salary_period_full(id):
                 # Race condition: another request already created Initial Balance
                 db.session.rollback()
                 # Continue - the existing one will be used
+        # Note: If initial_income already exists, we do NOT update it.
+        # The first Initial Balance should remain unchanged forever.
 
         # Update Pre-existing Credit Card Debt expense if credit changed
         pre_existing_debt = credit_limit - credit_balance

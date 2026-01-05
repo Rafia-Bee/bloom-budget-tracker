@@ -82,10 +82,15 @@ def _calculate_debit_balance(user_id: int) -> float:
     Periods are cosmetic filters only - balance reflects actual account state.
 
     Method:
-    1. Find earliest "Initial Balance" income entry (starting money)
-    2. Exclude subsequent "Initial Balance" entries (period snapshots)
+    1. Find earliest "Initial Balance" income entry (starting money when user began tracking)
+    2. Exclude subsequent "Initial Balance" entries (they would cause double-counting
+       since salary income is already included in the bank balance when user enters it)
     3. Sum all other income since that date
     4. Subtract all debit expenses since that date
+
+    Note (Issue #149): Only the FIRST Initial Balance counts as the starting point.
+    Subsequent salary periods' initial_debit_balance values are snapshots, not additional
+    money - the salary income is already included in those values.
 
     Args:
         user_id: User ID to scope all transaction queries
@@ -98,6 +103,8 @@ def _calculate_debit_balance(user_id: int) -> float:
     today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
 
     # Find earliest "Initial Balance" entry for this user
+    # This is the ONLY initial balance that should count - it represents
+    # what the user had when they first started using the app
     earliest_initial_balance = (
         db.session.query(Income)
         .filter(
@@ -128,15 +135,14 @@ def _calculate_debit_balance(user_id: int) -> float:
         starting_balance = earliest_initial_balance.amount
 
     # Get all NON-initial-balance income since tracking started (up to today)
-    # Exclude all "Initial Balance" entries as they're snapshots, not real income
-    # EXCEPT we already counted the first one as starting_balance
+    # Exclude ALL "Initial Balance" entries - only the first one was counted above
+    # Subsequent Initial Balances would cause double-counting (salary already included)
     total_income = (
         db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
         .filter(
             and_(
                 Income.user_id == user_id,
-                Income.type
-                != "Initial Balance",  # Exclude all initial balance snapshots
+                Income.type != "Initial Balance",  # Exclude all initial balance entries
                 Income.actual_date >= start_from_date,
                 Income.actual_date <= today,
                 Income.deleted_at.is_(None),
@@ -162,7 +168,7 @@ def _calculate_debit_balance(user_id: int) -> float:
         or 0
     )
 
-    # Balance = Starting + Income - Expenses
+    # Balance = Starting (first initial balance) + Income - Expenses
     balance_cents = starting_balance + total_income - total_debit_expenses
     return balance_cents / 100  # Convert cents to euros
 

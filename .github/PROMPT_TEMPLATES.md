@@ -44,6 +44,7 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
 - Reference issue in commit: "feat: description (#XX)"
 - Close with: fixes #XX in PR description (do NOT close unless explicitly told)
 - NEVER push unless explicitly told to do so
+- Don't just assume things, ask questions - specially about legacy algorithm.
 
 **For Bug Report Issues**
 - Create e2e test to reproduce issue first for easier debugging.

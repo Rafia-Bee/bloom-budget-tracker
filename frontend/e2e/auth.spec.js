@@ -37,8 +37,13 @@ test.describe('Authentication Flow', () => {
             // actual page content that's visible on all viewports
             // Using "Debit Card" or "Credit Card" which appear in balance cards,
             // or "available" text which appears in the balance display
+            // Also check for "Welcome" or "Get Started" in case no salary periods exist
             await expect(
-                page.locator('text=/Debit Card|Credit Card|available|Spent this period/i').first()
+                page
+                    .locator(
+                        'text=/Debit Card|Credit Card|available|Spent this period|Welcome|Get Started|Create.*Period/i'
+                    )
+                    .first()
             ).toBeVisible({ timeout: 15000 });
         });
 
