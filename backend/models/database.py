@@ -92,7 +92,7 @@ class User(db.Model):
     user_initial_credit_limit = db.Column(db.Integer, default=0, nullable=False)
     # Initial credit card debt when user first started tracking (in cents)
     user_initial_credit_debt = db.Column(db.Integer, default=0, nullable=False)
-    # Balance calculation mode: "sync" (snapshot-based) or "cumulative" (additive)
+    # Balance mode: "sync" (cumulates across periods) or "budget" (isolated per period)
     balance_mode = db.Column(db.String(20), default="sync", nullable=False)
 
     budget_periods = db.relationship(
@@ -121,7 +121,7 @@ class User(db.Model):
             name="check_user_lookahead_range",
         ),
         db.CheckConstraint(
-            "balance_mode IN ('sync', 'cumulative')",
+            "balance_mode IN ('sync', 'budget')",
             name="check_user_balance_mode_valid",
         ),
     )

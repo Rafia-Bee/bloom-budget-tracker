@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import api, { recurringExpenseAPI } from '../api';
+import api, { recurringExpenseAPI, userAPI, incomeAPI } from '../api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters';
@@ -19,6 +19,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const { defaultCurrency, convertAmount } = useCurrency();
     const { isEnabled } = useFeatureFlag();
     const flexibleSubPeriodsEnabled = isEnabled('flexibleSubPeriodsEnabled');
+    const balanceModeEnabled = isEnabled('balanceModeEnabled');
     const currencySymbol = getCurrencySymbol(defaultCurrency);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -28,6 +29,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const [creditAvailable, setCreditAvailable] = useState('');
     const [creditLimit, setCreditLimit] = useState('1500');
     const [creditAllowance, setCreditAllowance] = useState(0);
+    const [balanceMode, setBalanceMode] = useState('sync');
+    const [showBalanceModeInfo, setShowBalanceModeInfo] = useState(false);
+    const [showFutureIncomePrompt, setShowFutureIncomePrompt] = useState(false);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(() => {
         // Default end date: 1 month from start - 1 day
@@ -120,6 +124,20 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editPeriod, rolloverData]);
+
+    // Load user's balance mode preference when balance mode feature is enabled
+    useEffect(() => {
+        if (balanceModeEnabled) {
+            userAPI
+                .getBalanceMode()
+                .then((response) => {
+                    setBalanceMode(response.data.balance_mode || 'sync');
+                })
+                .catch((err) => {
+                    console.error('Failed to load balance mode:', err);
+                });
+        }
+    }, [balanceModeEnabled]);
 
     const formatCurrency = (cents) => {
         return formatCurrencyUtil(cents, defaultCurrency);
@@ -226,6 +244,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         // No validation needed - credit allowance slider only shows when credit available
 
         setError('');
+        // Close info box when moving to next step
+        setShowBalanceModeInfo(false);
         setLoading(true);
 
         try {
@@ -289,9 +309,37 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         }
     };
 
+    // Check if this is a future period in sync mode that needs an income prompt
+    const isFuturePeriodInSyncMode = () => {
+        if (editPeriod) return false; // Don't prompt when editing
+        if (balanceMode !== 'sync') return false; // Only for sync mode
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const periodStart = new Date(startDate);
+        if (periodStart <= today) return false; // Not a future period
+        const debitCents = parseCurrency(debitBalance);
+        if (debitCents <= 0) return false; // No starting balance
+        return true;
+    };
+
     const handleCreate = async () => {
+        // Check if we should show the future income prompt (sync mode only)
+        if (balanceModeEnabled && isFuturePeriodInSyncMode() && !showFutureIncomePrompt) {
+            setShowFutureIncomePrompt(true);
+            return;
+        }
+
+        await createSalaryPeriod(false);
+    };
+
+    const handleCreateWithIncome = async () => {
+        await createSalaryPeriod(true);
+    };
+
+    const createSalaryPeriod = async (createIncome) => {
         setError('');
         setLoading(true);
+        setShowFutureIncomePrompt(false);
 
         try {
             // Convert user's currency to EUR for backend storage
@@ -317,6 +365,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             } else {
                 // Create new salary period
                 await api.post('/salary-periods', payload);
+
+                // If user wants income created for future period, create it
+                if (createIncome) {
+                    const incomeAmount = toEur(parseCurrency(debitBalance));
+                    await incomeAPI.create({
+                        type: 'Salary',
+                        amount: incomeAmount,
+                        date: startDate,
+                    });
+                }
             }
 
             onComplete();
@@ -506,6 +564,100 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                                 />
                             </div>
+
+                            {/* Balance Mode Selector (behind feature flag) */}
+                            {balanceModeEnabled && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text">
+                                            Balance Mode
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowBalanceModeInfo(!showBalanceModeInfo)
+                                            }
+                                            className="inline-flex items-center justify-center w-5 h-5 text-xs text-gray-500 dark:text-dark-text-secondary bg-gray-200 dark:bg-dark-elevated rounded-full hover:bg-gray-300 dark:hover:bg-dark-border transition-colors"
+                                        >
+                                            ?
+                                        </button>
+                                    </div>
+
+                                    {/* Balance Mode Info Box */}
+                                    {showBalanceModeInfo && (
+                                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowBalanceModeInfo(false)}
+                                                className="absolute top-2 right-2 text-purple-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300"
+                                            >
+                                                ✕
+                                            </button>
+                                            <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-3">
+                                                Balance Mode Explained
+                                            </h4>
+                                            <div className="space-y-3 text-sm">
+                                                <div>
+                                                    <span className="font-medium text-purple-700 dark:text-purple-300">
+                                                        🔗 Sync with Bank
+                                                    </span>
+                                                    <p className="text-purple-600 dark:text-purple-400 mt-1">
+                                                        All your budget periods share ONE running
+                                                        balance. If you create a new period to track
+                                                        past transactions (e.g., €500 starting
+                                                        balance), that adds to your total. You're
+                                                        responsible for adding matching expenses to
+                                                        balance the books.
+                                                    </p>
+                                                    <p className="text-purple-500 dark:text-purple-500 mt-1 text-xs italic">
+                                                        Note: This doesn't connect to your bank - it
+                                                        just calculates balances the same way.
+                                                        Future-dated periods won't affect current
+                                                        balance until their date arrives.
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium text-purple-700 dark:text-purple-300">
+                                                        📊 Budget Tracker
+                                                    </span>
+                                                    <p className="text-purple-600 dark:text-purple-400 mt-1">
+                                                        Each budget period is completely isolated.
+                                                        Creating new periods doesn't affect other
+                                                        periods' balances. Good if you want to track
+                                                        spending limits without worrying about your
+                                                        actual bank balance.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <select
+                                        value={balanceMode}
+                                        onChange={(e) => {
+                                            setBalanceMode(e.target.value);
+                                            // Save preference immediately
+                                            userAPI
+                                                .updateBalanceMode(e.target.value)
+                                                .catch((err) =>
+                                                    console.error(
+                                                        'Failed to save balance mode:',
+                                                        err
+                                                    )
+                                                );
+                                        }}
+                                        className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
+                                    >
+                                        <option value="sync">🔗 Sync with Bank</option>
+                                        <option value="budget">📊 Budget Tracker</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
+                                        {balanceMode === 'sync'
+                                            ? 'Balances accumulate across periods (tracks real bank balance)'
+                                            : 'Each period has isolated balance calculation'}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Flexible Sub-Periods: End Date and Number of Sub-Periods */}
                             {flexibleSubPeriodsEnabled && (
@@ -1090,6 +1242,64 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     )}
                 </div>
             </div>
+
+            {/* Future Income Confirmation Dialog */}
+            {showFutureIncomePrompt && (
+                <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md p-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-3">
+                            📅 Future Budget Period Detected
+                        </h3>
+                        <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
+                            You're creating a budget period that starts on{' '}
+                            <strong>
+                                {new Date(startDate).toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                })}
+                            </strong>{' '}
+                            with a starting balance of{' '}
+                            <strong>{formatCurrency(parseCurrency(debitBalance))}</strong>.
+                        </p>
+                        <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
+                            In <strong>Sync with Bank</strong> mode, this starting balance won't
+                            automatically add to your current balance.
+                        </p>
+                        <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-purple-800 dark:text-purple-300 font-medium mb-2">
+                                Are you expecting income of{' '}
+                                {formatCurrency(parseCurrency(debitBalance))} on{' '}
+                                {new Date(startDate).toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                })}
+                                ?
+                            </p>
+                            <p className="text-xs text-purple-600 dark:text-purple-400">
+                                If yes, we'll create an income entry for you so your balance is
+                                accurate when that day arrives.
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => createSalaryPeriod(false)}
+                                disabled={loading}
+                                className="flex-1 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-elevated disabled:opacity-50"
+                            >
+                                No, just create period
+                            </button>
+                            <button
+                                onClick={handleCreateWithIncome}
+                                disabled={loading}
+                                className="flex-1 bg-bloom-pink text-white py-2 rounded-lg font-medium hover:bg-pink-600 disabled:opacity-50"
+                            >
+                                {loading ? 'Creating...' : 'Yes, create income'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

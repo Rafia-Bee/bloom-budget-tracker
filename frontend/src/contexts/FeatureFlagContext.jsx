@@ -19,6 +19,7 @@ export function FeatureFlagProvider({ children }) {
                   budgetRecalculationEnabled: false,
                   flexibleSubPeriodsEnabled: false,
                   reportsEnabled: false,
+                  balanceModeEnabled: false, // Issue #149 - Balance mode toggle
               };
     });
 

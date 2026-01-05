@@ -6,6 +6,64 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-05
 
+### Phase 4: Balance Mode UI - Implementation Complete (#149)
+
+**Files Created/Modified:**
+
+1. **backend/routes/user_data.py** - Added endpoints:
+
+    - `GET /api/v1/settings/balance-mode` - Returns current mode
+    - `PUT /api/v1/settings/balance-mode` - Updates mode with validation
+
+2. **frontend/src/api.js** - Added userAPI methods:
+
+    - `getBalanceMode()` - Fetches current balance mode
+    - `updateBalanceMode(mode)` - Updates balance mode
+
+3. **frontend/src/contexts/FeatureFlagContext.jsx** - Added:
+
+    - `balanceModeEnabled: false` - Feature flag for gradual rollout
+
+4. **frontend/src/components/BalanceModeModal.jsx** - NEW:
+
+    - Reusable modal component for balance mode selection
+    - Shows both mode options with detailed explanations
+    - Confirmation flow when changing modes
+    - Warning about recalculation impact
+    - 241 lines, dark mode support
+
+5. **frontend/src/components/SalaryPeriodWizard.jsx** - Modified:
+
+    - Added Balance Mode dropdown in Step 1
+    - Question mark tooltip explaining both modes
+    - Dynamic description based on selected mode
+    - Auto-saves preference when changed
+
+6. **frontend/src/pages/Settings.jsx** - Modified:
+    - Added "Balance Mode Selection" toggle in Experimental Features tab
+    - Purple color theme to distinguish from other features
+
+**Mode Definitions (CORRECTED from earlier):**
+
+| Mode               | Value    | Description           | Balance Behavior                 |
+| ------------------ | -------- | --------------------- | -------------------------------- |
+| **Sync with Bank** | `sync`   | App mirrors real bank | Balances CUMULATE across periods |
+| **Budget Tracker** | `budget` | Pure budgeting tool   | Each period ISOLATED             |
+
+**UI Implementation:**
+
+-   Dropdown selector with question mark tooltip (native title attribute)
+-   Confirmation popup in modal when changing modes
+-   Warning about recalculation time
+-   Experimental feature flag (`balanceModeEnabled`) for gradual rollout
+
+**What's Next:**
+
+-   Phase 5: Balance Recalculation Modal (update historical periods when mode changes)
+-   Phase 6: Cleanup (remove legacy Income/Expense markers, graduate feature flag)
+
+---
+
 ### Phase 3: Balance Service Refactored (#149)
 
 **Context:** Phase 1 added User fields, Phase 2 migrated data. Phase 3 updates the balance service to USE the new User fields instead of querying Income/Expense markers.
