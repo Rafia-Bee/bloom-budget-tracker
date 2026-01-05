@@ -6,6 +6,45 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ## 2026-01-05
 
+### Phase 1: User Balance Fields Added (#149)
+
+**Context:** Issue #149 requires a major refactoring of balance calculation. The current system uses fragile Income/Expense marker records that can be deleted. Moving to explicit User model fields provides:
+
+1. Data integrity (can't accidentally delete balance data)
+2. Support for two balance modes: "sync" (snapshot) vs "cumulative"
+3. Foundation for Balance Mode UI and recalculation features
+
+**Schema Changes:**
+
+```python
+# New User columns (database.py)
+balance_start_date = db.Column(db.Date, nullable=True)
+user_initial_debit_balance = db.Column(db.Integer, default=0, nullable=False)
+user_initial_credit_limit = db.Column(db.Integer, default=0, nullable=False)
+user_initial_credit_debt = db.Column(db.Integer, default=0, nullable=False)
+balance_mode = db.Column(db.String(20), default="sync", nullable=False)
+```
+
+**Migration Details:**
+
+-   Revision: `9ef3d960b257`
+-   Server defaults added for existing rows (0 for integers, 'sync' for mode)
+-   CheckConstraint added: `balance_mode IN ('sync', 'cumulative')`
+-   Note: Used `user_` prefix for balance fields to avoid conflicts with SalaryPeriod fields
+
+**What's Next:**
+
+-   Phase 2: Data migration script to populate User fields from Income/Expense markers
+-   Phase 3: Balance service refactor to use User fields + respect balance_mode
+-   Phase 4-6: UI and cleanup
+
+**Impact:**
+
+-   Schema-only change, no behavior change yet
+-   All existing code continues to work (additive change)
+
+---
+
 ### Initial Balance Fix (#149) - Complete Implementation
 
 **Context:** Users were experiencing incorrect debit balance display. Two bugs were found:
