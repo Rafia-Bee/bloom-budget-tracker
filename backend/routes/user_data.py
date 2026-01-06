@@ -98,6 +98,16 @@ def delete_all_user_data():
         Goal.query.filter_by(user_id=current_user_id).delete()
         Subcategory.query.filter_by(user_id=current_user_id).delete()
 
+        # Reset User balance tracking fields (Issue #149)
+        # Without this, deleted data would still affect new salary periods
+        user = User.query.get(current_user_id)
+        if user:
+            user.balance_start_date = None
+            user.user_initial_debit_balance = 0
+            user.user_initial_credit_limit = 0
+            user.user_initial_credit_debt = 0
+            # Keep balance_mode - it's a preference, not data
+
         db.session.commit()
 
         # Audit log this critical operation
@@ -354,9 +364,7 @@ def get_balance_mode():
         )
 
     except SQLAlchemyError as e:
-        current_app.logger.error(
-            f"[get_balance_mode] Error: {str(e)}", exc_info=True
-        )
+        current_app.logger.error(f"[get_balance_mode] Error: {str(e)}", exc_info=True)
         return jsonify({"error": "Failed to load settings. Please try again."}), 500
 
 

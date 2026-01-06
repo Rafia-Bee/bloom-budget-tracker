@@ -248,43 +248,76 @@ def get_income_stats():
     """Get income statistics for the current user.
 
     Returns:
-        - total_income: All-time income INCLUDING first Initial Balance (starting money),
-                        excluding subsequent Initial Balance snapshots (in cents)
+        - total_income: All-time income based on balance mode (in cents)
+                        Sync mode: User anchor balance + past period balances + all income
+                        Budget mode: User anchor balance + all income (periods don't affect)
         - period_income: Income for current salary period excluding all Initial Balance (in cents)
     """
-    from backend.models.database import SalaryPeriod
-    from sqlalchemy import func
+    from backend.models.database import SalaryPeriod, User
+    from sqlalchemy import func, and_
 
     user_id = int(get_jwt_identity())
 
-    # Find the earliest Initial Balance (the actual starting money)
-    earliest_initial_balance = (
-        db.session.query(Income)
-        .filter(Income.user_id == user_id, Income.type == "Initial Balance")
-        .order_by(Income.actual_date)
-        .first()
-    )
+    # Get user's balance mode and anchor data
+    user = User.query.get(user_id)
+    balance_mode = user.balance_mode if user else "sync"
 
-    # Start with the first Initial Balance as the starting money
-    starting_balance = (
-        earliest_initial_balance.amount if earliest_initial_balance else 0
-    )
+    # Base: User's anchor balance (set when first period was created)
+    if user and user.user_initial_debit_balance:
+        starting_balance = user.user_initial_debit_balance
+        anchor_date = user.balance_start_date
+    else:
+        # Fallback: Find the earliest Initial Balance income entry (legacy)
+        earliest_initial_balance = (
+            db.session.query(Income)
+            .filter(Income.user_id == user_id, Income.type == "Initial Balance")
+            .order_by(Income.actual_date)
+            .first()
+        )
+        starting_balance = (
+            earliest_initial_balance.amount if earliest_initial_balance else 0
+        )
+        anchor_date = None
+
+    # In sync mode, add past period balances (treated as "past income")
+    past_period_income = 0
+    if balance_mode == "sync" and anchor_date:
+        past_period_income = (
+            db.session.query(
+                func.coalesce(func.sum(SalaryPeriod.initial_debit_balance), 0)
+            )
+            .filter(
+                and_(
+                    SalaryPeriod.user_id == user_id,
+                    SalaryPeriod.is_active == True,  # noqa: E712
+                    SalaryPeriod.start_date < anchor_date,
+                )
+            )
+            .scalar()
+            or 0
+        )
 
     # Sum all other income (excluding ALL Initial Balance entries)
     other_income = (
         db.session.query(func.coalesce(func.sum(Income.amount), 0))
-        .filter(Income.user_id == user_id, Income.type != "Initial Balance")
+        .filter(
+            Income.user_id == user_id,
+            Income.type != "Initial Balance",
+            Income.deleted_at.is_(None),
+        )
         .scalar()
         or 0
     )
 
-    # Total income = starting balance + all other income
-    total_income = starting_balance + other_income
+    # Total income = anchor balance + past period balances (sync mode) + other income
+    total_income = starting_balance + past_period_income + other_income
 
     # Period income (current salary period) - excludes all Initial Balance entries
-    current_period = SalaryPeriod.query.filter_by(
-        user_id=user_id, is_active=True
-    ).first()
+    current_period = (
+        SalaryPeriod.query.filter_by(user_id=user_id, is_active=True)
+        .order_by(SalaryPeriod.start_date.desc())
+        .first()
+    )
 
     period_income = 0
     if current_period:
@@ -295,6 +328,7 @@ def get_income_stats():
                 Income.type != "Initial Balance",
                 Income.actual_date >= current_period.start_date,
                 Income.actual_date <= current_period.end_date,
+                Income.deleted_at.is_(None),
             )
             .scalar()
             or 0

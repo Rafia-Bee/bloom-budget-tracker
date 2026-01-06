@@ -1,65 +1,161 @@
-# Balance Calculation System - Refactoring Plan
+# Balance Calculation System - Technical Reference
 
 **Date:** January 5, 2026
+**Last Updated:** January 7, 2026
 **Issue:** #149 - Initial balances don't accumulate across multiple salary periods
-**Status:** Approved for implementation (phased approach)
+**Status:** In Progress (Phase 3)
 
 ---
 
 ## Executive Summary
 
-The current balance calculation system has two problems:
+The balance calculation system supports two distinct use cases through a "Balance Mode" toggle:
 
-1. **Technical:** Uses fragile implicit marker records (Income/Expense) that can be deleted
-2. **Conceptual:** Conflates two use cases - financial tracking vs budget planning
-
-**Approved Solution:**
-
--   Move balance tracking to explicit `User` model fields
--   Add a global **Balance Mode** toggle: "Sync with Bank" vs "Budget Tracker"
--   Implement Balance Recalculation Modal for edge cases (past/future periods)
--   Start as experimental feature
+1. **Sync with Bank** (`sync`) - App mirrors your real bank balance (cumulative)
+2. **Budget Tracker** (`budget`) - Pure budgeting tool (isolated periods)
 
 ---
 
-## Two Use Cases, One App
+## Core Concept: The Anchor Balance
 
-| Use Case           | Description                      | Balance Behavior       |
-| ------------------ | -------------------------------- | ---------------------- |
-| **Sync with Bank** | Real-life financial tracking     | Balances are snapshots |
-| **Budget Tracker** | Pure budgeting without bank sync | Balances accumulate    |
+When a user creates their **FIRST ever salary period**, that period's `initial_debit_balance` becomes the **anchor balance**. This is stored in `User.user_initial_debit_balance`.
 
-### Example: Creating a Past Period
+All subsequent balance calculations are based on this anchor:
 
-**Scenario:**
+```
+Current Balance = Anchor Balance + All Income - All Expenses
+```
 
--   Current period (Jan): €1000 debit balance
--   Past period (Dec): €2000 debit balance, €500 expenses
-
-**Sync with Bank mode:**
-
--   Balance = €1000 (current snapshot is truth)
--   Past period only tracks expenses within it
-
-**Budget Tracker mode:**
-
--   Balance = €1000 + €2000 - €500 = €2500
--   All periods contribute to cumulative balance
+**IMPORTANT:** The anchor is set ONCE and never changes, even when creating past or future periods.
 
 ---
 
-## New User Fields
+## Balance Mode Definitions
+
+| Mode               | Value    | Description                        | Balance Behavior                     |
+| ------------------ | -------- | ---------------------------------- | ------------------------------------ |
+| **Sync with Bank** | `sync`   | App mirrors your real bank balance | Balances **CUMULATE** across periods |
+| **Budget Tracker** | `budget` | Pure budgeting tool                | Each period is **ISOLATED**          |
+
+---
+
+## Sync with Bank Mode (Default)
+
+In this mode, the app's balance should always match the user's real bank balance.
+
+### Core Principle
+
+-   Your app balance = your real bank balance
+-   All income and expenses across ALL periods contribute to ONE cumulative balance
+-   User is responsible for ensuring all transactions are recorded to "balance the books"
+
+### Calculation Formula
+
+```
+Current Balance = User.user_initial_debit_balance
+                + SUM(all income since balance_start_date)
+                - SUM(all debit expenses since balance_start_date)
+                + SUM(past periods' initial_debit_balance as "past income")
+```
+
+### Creating a Past Period (Detailed Scenario)
+
+**Scenario Setup:**
+
+1. User creates their FIRST period (Jan 6 - Feb 5) with €1000 debit balance
+
+    - This becomes the **anchor balance**: `User.user_initial_debit_balance = 100000` (cents)
+    - `User.balance_start_date = 2026-01-06`
+
+2. User later creates a PAST period (Dec 6 - Jan 5) with €100 debit balance
+    - This is BEFORE the anchor date
+
+**What happens in Sync Mode:**
+
+The past period's €100 balance is treated as **"past income"** - money that existed before the anchor date. This gets ADDED to the cumulative balance.
+
+-   **Expected Current Period Balance:** €1000 + €100 = €1100
+-   **Expected Past Period Balance:** €100 (its own starting balance)
+
+**Why this makes sense:**
+
+-   The €100 represents historical money that the user had before their first tracked period
+-   By adding it as income, the app knows this money existed
+-   User must now add past expenses from Dec 6 - Jan 5 to "balance the books"
+-   Once past expenses are added, the balance will match the bank again
+
+**Example with past expenses added:**
+
+1. User adds €50 of past expenses in the Dec period
+2. Current balance becomes: €1100 - €50 = €1050
+3. If user's bank shows €1050, the books are balanced!
+4. If bank shows €1000, user is missing €50 of past expenses
+
+### Why We Don't Use Only User.user_initial_debit_balance
+
+The naive approach would be:
+
+```
+Balance = User.user_initial_debit_balance + income - expenses
+```
+
+But this fails when user creates past periods because:
+
+-   The anchor was set on Jan 6 with €1000
+-   Past period's €100 would be invisible
+-   No way to track historical transactions
+
+### Creating a Future Period
+
+When user creates a future period in Sync mode:
+
+-   The future period's `initial_debit_balance` represents expected future income
+-   Show informational modal: "This balance will be added when the period starts"
+-   User should add any expected income/expenses to match their expectations
+-   App can prompt: "Do you plan to receive income or pay debts before this period?"
+
+---
+
+## Budget Tracker Mode
+
+In this mode, each salary period is completely independent.
+
+### Core Principle
+
+-   Each period has its own isolated budget
+-   Period 1 balance has NO effect on Period 2 balance
+-   Useful for pure budgeting without bank synchronization
+
+### Calculation Formula
+
+```
+Period Balance = Period.initial_debit_balance
+               + SUM(income within period dates)
+               - SUM(expenses within period dates)
+```
+
+### Creating a Past Period
+
+In Budget mode, past periods are simply isolated budgets. No special handling needed.
+
+-   Past period: Shows its own €100 balance
+-   Current period: Shows its own €1000 balance
+-   No interaction between them
+
+---
+
+## User Model Fields
 
 ```python
 class User(db.Model):
-    # Balance tracking
+    # Balance tracking (set when first period created)
     balance_start_date = db.Column(db.Date, nullable=True)
-    initial_debit_balance = db.Column(db.Integer, default=0)
-    initial_credit_limit = db.Column(db.Integer, default=0)
-    initial_credit_debt = db.Column(db.Integer, default=0)
+    user_initial_debit_balance = db.Column(db.Integer, default=0)  # cents
+    user_initial_credit_limit = db.Column(db.Integer, default=0)   # cents
+    user_initial_credit_debt = db.Column(db.Integer, default=0)    # cents
 
-    # Balance mode (NEW)
-    balance_mode = db.Column(db.String(20), default="sync")  # "sync" or "cumulative"
+    # Balance mode
+    balance_mode = db.Column(db.String(20), default="sync")  # "sync" or "budget"
 ```
 
 ---
@@ -73,153 +169,176 @@ class User(db.Model):
 
 ---
 
-## Balance Recalculation Modal
+## Phase 5: Informational Modal (NOT Recalculation)
 
-When user creates a **PAST period** (start_date < balance_start_date), show:
+The modal for past/future periods is **informational only**. It doesn't change any calculations - it just explains what will happen based on the user's current mode.
+
+### Past Period Modal - Sync Mode
 
 ```
 ┌─────────────────────────────────────────┐
-│  ⚠️  Balance Update Required            │
+│  ℹ️  Adding Past Period                 │
 ├─────────────────────────────────────────┤
-│  You're creating a period that starts   │
-│  before your tracked balance history.   │
+│  You have Sync with Bank mode selected. │
 │                                         │
-│  Current mode: Sync with Bank           │
+│  This period's €100 balance will be     │
+│  added to your cumulative total.        │
 │                                         │
-│  How should we handle €2000?            │
+│  Add expenses in this past period to    │
+│  balance the books with your real bank. │
 │                                         │
-│  [Update Start Point]                   │
-│  Your tracked history will start from   │
-│  this period (Dec 2, 2025).             │
+│  [Continue]  [Change to Budget Tracker] │
+└─────────────────────────────────────────┘
+```
+
+### Past Period Modal - Budget Mode
+
+```
+┌─────────────────────────────────────────┐
+│  ℹ️  Adding Past Period                 │
+├─────────────────────────────────────────┤
+│  You have Budget Tracker mode selected. │
 │                                         │
-│  [Add to Balance]                       │
-│  Add €2000 to your cumulative balance.  │
-│  (Changes mode to Budget Tracker)       │
+│  This period will have its own isolated │
+│  €100 budget, separate from your other  │
+│  periods.                               │
 │                                         │
-│  [Keep Current]                         │
-│  Ignore this period's balance. Only     │
-│  track expenses within it.              │
+│  [Continue]  [Change to Sync with Bank] │
+└─────────────────────────────────────────┘
+```
+
+### Future Period Modal - Sync Mode
+
+```
+┌─────────────────────────────────────────┐
+│  ℹ️  Adding Future Period               │
+├─────────────────────────────────────────┤
+│  You have Sync with Bank mode selected. │
+│                                         │
+│  Before this period starts, your books  │
+│  should be balanced. Add any expected:  │
+│  • Income (salary, etc.)                │
+│  • Credit card debt payments            │
+│  • Other transactions                   │
+│                                         │
+│  [Continue]  [Change to Budget Tracker] │
 └─────────────────────────────────────────┘
 ```
 
 ---
 
+## Credit Card Handling
+
+**Decision:** Credit card debt is **GLOBAL** regardless of mode.
+
+-   Credit debt always interacts with the Debts page
+-   In Sync mode: Credit payments affect cumulative balance
+-   In Budget mode: Credit debt is still global (not per-period)
+
+### Edge Cases
+
+1. **Past period with more debt than current:**
+
+    - Inform user they currently have €0 credit available
+    - Prompt: "Did you pay back some of this debt? Add debt payments to track correctly."
+
+2. **Future period with less debt than current:**
+    - Prompt: "Your future credit debt is less than current. Do you plan to pay back? When?"
+
+---
+
 ## Implementation Phases
 
-### Phase 1: Database Schema Update (~1 hour) - Today
-
-**Tasks:**
-
-1. Add User columns: `balance_start_date`, `initial_debit_balance`, `initial_credit_limit`, `initial_credit_debt`, `balance_mode`
-2. Update User model in `database.py`
-3. Run migration
-
-**Files:** `backend/models/database.py`, new migration file
-
----
-
-### Phase 2: Data Migration Script (~1 hour) - Today
-
-**Tasks:**
-
-1. Migrate existing Income/Expense markers to User fields
-2. Set default `balance_mode = "sync"` for all users
-3. Create SQL for production (Neon)
-
-**Files:** `scripts/migrate_balance_to_user.py`, `docs/migrations/`
-
----
-
-### Phase 3: Balance Service Refactor (~2 hours) - Tomorrow
-
-**Tasks:**
-
-1. Modify `_calculate_debit_balance()` to check `user.balance_mode`:
-    - "sync" → Use first period's balance only
-    - "cumulative" → Sum all period initial balances
-2. Same for `_calculate_credit_available()`
-3. Update salary period creation to use User fields
-
-**Files:** `backend/services/balance_service.py`, `backend/routes/salary_periods.py`
-
----
-
-### Phase 4: Balance Mode UI (~2 hours) - Tomorrow
-
-**Tasks:**
-
-1. Create `BalanceModeModal.jsx` - Onboarding + Settings access
-2. Add toggle to `SalaryPeriodWizard.jsx` Step 1
-3. Add "Balance Settings" to user menu dropdown
-4. Add section in Settings.jsx
-
-**Files:** New modal, `SalaryPeriodWizard.jsx`, `Header.jsx`, `Settings.jsx`
-
----
-
-### Phase 5: Balance Recalculation Modal (~1.5 hours) - Day 3
-
-**Tasks:**
-
-1. Create `BalanceRecalculationModal.jsx`
-2. Trigger when creating past periods
-3. Handle mode switching with migration logic
-
-**Files:** New modal, `salary_periods.py` endpoint updates
-
----
-
-### Phase 6: Cleanup & Feature Flag (~1 hour) - Day 3
-
-**Tasks:**
-
-1. Add `balanceModeEnabled` feature flag
-2. Delete legacy marker records
-3. Remove dead code
-4. Update documentation
-
-**Files:** `FeatureFlagContext.jsx`, migration scripts, docs
-
----
-
-## Total Estimated Effort
-
-| Phase     | Description         | Time           | Day      |
-| --------- | ------------------- | -------------- | -------- |
-| Phase 1   | Schema update       | 1 hour         | Today    |
-| Phase 2   | Data migration      | 1 hour         | Today    |
-| Phase 3   | Balance service     | 2 hours        | Tomorrow |
-| Phase 4   | Balance mode UI     | 2 hours        | Tomorrow |
-| Phase 5   | Recalculation modal | 1.5 hours      | Day 3    |
-| Phase 6   | Cleanup + flag      | 1 hour         | Day 3    |
-| **Total** |                     | **~8.5 hours** |          |
+| Phase     | Description              | Time       | Status      |
+| --------- | ------------------------ | ---------- | ----------- |
+| Phase 1   | Database schema update   | 1 hour     | ✅ Complete |
+| Phase 2   | Data migration script    | 1 hour     | ✅ Complete |
+| Phase 3   | Balance service refactor | 2 hours    | ✅ Complete |
+| Phase 4   | Balance Mode UI          | 2 hours    | ✅ Complete |
+| Phase 5   | Informational modal      | 1.5 hours  | 🔄 Pending  |
+| Phase 6   | Cleanup + feature flag   | 1 hour     | 🔄 Pending  |
+| **Total** |                          | ~8.5 hours |             |
 
 ---
 
 ## Success Criteria
 
--   [ ] Phase 1-2: User fields populated, old code still works
--   [ ] Phase 3: Balance calculation respects mode
--   [ ] Phase 4: Users can toggle mode in 4 places
--   [ ] Phase 5: Past period creation prompts for action
+-   [x] Phase 1-2: User fields populated, old code still works
+-   [x] Phase 3: Balance calculation respects mode correctly
+-   [x] Phase 4: Users can toggle mode in 4 places
+-   [ ] Phase 5: Past/future period creation shows info modal
 -   [ ] Phase 6: Feature flag controls rollout
 -   [ ] No "Initial Balance" entries in income list
 -   [ ] All tests pass
--   [ ] Production migration successful
 
 ---
 
-## Risk Mitigation
+## Testing Checklist
 
-### Production Data Safety
+### Prerequisites
 
-1. Take full database backup before any migration
-2. Run migration on staging/test data first
-3. Keep old Income/Expense records until Phase 6 confirmed working
-4. Provide rollback SQL script
+-   Balance Mode Selection feature flag enabled
+-   New user OR existing user with all data deleted
+-   Note the current date for period date reference
 
-### Backward Compatibility
+### Budget Mode Test
 
--   Phases 1-2 don't change any behavior (additive only)
--   Phase 3 is the cutover - test thoroughly
--   Phase 4-6 are UI/cleanup after core logic verified
+**Setup:**
+
+1. Delete all data (Settings → Delete All Data)
+2. Ensure "Budget Tracker" mode is selected
+
+**Steps:**
+
+1. Create current period (e.g., Jan 6 - Feb 5, 2026) with €1000 debit
+2. Create past period (e.g., Dec 6 - Jan 5, 2026) with €100 debit
+3. Navigate between periods
+
+**Expected Results:**
+| View | Debit Available | All-Time Income |
+|------|-----------------|-----------------|
+| Current period | €1000 | €1000 |
+| Past period | €100 | €1000 |
+
+**Notes:**
+
+-   Each period is isolated
+-   All-Time Income shows anchor only (no accumulation)
+
+### Sync Mode Test
+
+**Setup:**
+
+1. Delete all data (Settings → Delete All Data)
+2. Select "Sync with Bank" mode
+
+**Steps:**
+
+1. Create current period (e.g., Jan 6 - Feb 5, 2026) with €1000 debit
+    - This becomes the **anchor balance**
+2. Create past period (e.g., Dec 30 - Jan 5, 2026) with €100 debit
+    - This is treated as "past income"
+3. Navigate between periods
+
+**Expected Results:**
+| View | Debit Available | All-Time Income |
+|------|-----------------|-----------------|
+| Current period | €1100 (€1000 + €100) | €1100 |
+| Past period | €100 (isolated) | €1100 |
+
+**Additional Test - Adding Past Expenses:**
+
+1. While viewing past period, add €50 expense
+2. Navigate back to current period
+
+**Expected:**
+| View | Debit Available | All-Time Income |
+|------|-----------------|-----------------|
+| Current period | €1050 (€1100 - €50) | €1100 |
+| Past period | €50 (€100 - €50) | €1100 |
+
+**Notes:**
+
+-   Past period's €100 is added to cumulative total
+-   Adding expenses to past period affects current balance
+-   User is "balancing the books" by adding historical transactions

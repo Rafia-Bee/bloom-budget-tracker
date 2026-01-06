@@ -131,8 +131,7 @@ export default function BalanceModeModal({ isOpen, onClose, onModeChange }) {
                                     ⚠️ Confirm Mode Change
                                 </h3>
                                 <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                                    Changing from{' '}
-                                    <strong>{modeInfo[currentMode].title}</strong> to{' '}
+                                    Changing from <strong>{modeInfo[currentMode].title}</strong> to{' '}
                                     <strong>{modeInfo[selectedMode].title}</strong>
                                 </p>
                                 <p className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">

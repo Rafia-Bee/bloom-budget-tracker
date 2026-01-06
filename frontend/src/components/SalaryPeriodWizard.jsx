@@ -313,10 +313,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const isFuturePeriodInSyncMode = () => {
         if (editPeriod) return false; // Don't prompt when editing
         if (balanceMode !== 'sync') return false; // Only for sync mode
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const periodStart = new Date(startDate);
-        if (periodStart <= today) return false; // Not a future period
+
+        // Compare dates as strings to avoid timezone issues
+        // startDate is "YYYY-MM-DD" format
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (startDate <= todayStr) return false; // Not a future period
+
         const debitCents = parseCurrency(debitBalance);
         if (debitCents <= 0) return false; // No starting balance
         return true;

@@ -102,11 +102,8 @@ def get_current_salary_period():
         ).all()
 
         if periods_to_activate:
-            # Deactivate old active periods
-            SalaryPeriod.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).update({"is_active": False})
-            # Activate the period that contains today (should only be one due to overlap check)
+            # Activate periods that have started - don't deactivate others
+            # Multiple periods can be active (past + current)
             for period in periods_to_activate:
                 period.is_active = True
             db.session.commit()
@@ -856,7 +853,9 @@ def create_salary_period():
 
         # Smart activation logic:
         # - If creating a future period (starts after today), keep it inactive
-        # - If creating a current/past period, deactivate old periods and activate this one
+        # - If creating a current/past period, set it to active
+        # NOTE: Multiple periods can be active (past + current). Only future periods
+        # start as inactive and get auto-activated when their start date arrives.
         today = datetime.now().date()
         is_future_period = start_date > today
 
@@ -864,10 +863,8 @@ def create_salary_period():
             # Creating a future period - keep it inactive until its start date
             is_active = False
         else:
-            # Creating a current/past period - deactivate old active periods
-            SalaryPeriod.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).update({"is_active": False})
+            # Creating a current/past period - set it to active
+            # Don't deactivate other periods - they can coexist
             is_active = True
 
         # Wrap all operations in a transaction
