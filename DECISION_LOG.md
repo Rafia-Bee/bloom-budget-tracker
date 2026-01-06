@@ -63,8 +63,26 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ### What's Next
 
--   Phase 5: Informational modal for past/future period creation
--   Phase 6: Remove legacy Income/Expense markers, graduate feature flag
+**Phase 5: Informational Modal** (~1.5 hours)
+- Create `PeriodInfoModal.jsx` - shows context-aware info when creating past/future periods
+- Sync mode past period: "This €X will be added to your cumulative total"
+- Budget mode past period: "This period is isolated from other periods"  
+- Wire up in `SalaryPeriodWizard.jsx` when user clicks "Create"
+- Options: [Continue] or [Change to X Mode]
+- Reference: See modal mockups in `docs/BALANCE_CALCULATION_ANALYSIS.md` (Phase 5 section)
+
+**Phase 6: Cleanup & Feature Flag** (~1 hour)
+- Graduate `balanceModeEnabled` feature flag (make it always on)
+- Remove legacy "Initial Balance" Income entries from dashboard/lists
+- Remove legacy "Pre-existing Credit Card Debt" Expense markers
+- Clean up dead code paths in balance_service.py fallbacks
+- Update tests for new behavior
+
+**Branch:** `fix/149-initial-balance-accumulation` - 5 commits ahead of origin, NOT pushed yet
+
+**To Continue:**
+1. `git push` to update PR #156
+2. Start Phase 5 implementation
 
 ---
 
