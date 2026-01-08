@@ -1,6 +1,45 @@
 # Decision Log
 
-Architectural decisions only. Max 2 days of entries. Remove entries older than 1 week unless it's the last entry.
+Session continuity for AI context + architectural decisions. Max 2 days of entries. Remove entries older than 1 week unless it's the last entry.
+
+---
+
+## 2026-01-08: Issue #149 Complete - PR #156 Ready for Merge
+
+**Session Summary:** Completed all 6 phases of Issue #149 (Balance Calculation Refactoring).
+
+### Work Completed This Session
+
+1. **Fixed 6 failing backend tests** - Updated function signatures in `test_balance_service.py`
+2. **Fixed credit display bug** - Past/future periods now show correct credit values
+3. **Phase 6 complete:**
+    - Task 1: Renamed `user_initial_credit_debt` → `user_initial_credit_available`
+    - Task 2: Hidden "Initial Balance" Income markers from user lists
+    - Task 3: Hidden "Pre-existing Credit Card Debt" Expense markers from user lists
+    - Task 4: Reviewed dead code paths (kept fallbacks for backward compatibility)
+    - Task 5: Fixed `test_get_all_income` test
+4. **Updated Issue #149** with acceptance criteria comment
+5. **Pushed 10 commits** to `fix/149-initial-balance-accumulation`
+6. **Updated PR #156** with comprehensive description
+
+### Branch/PR Status
+
+-   **Branch:** `fix/149-initial-balance-accumulation`
+-   **PR:** #156 - Ready for review and merge
+-   **Tests:** All 621 backend tests passing
+
+### What's Next
+
+1. **Manual testing** (optional) - Verify credit display fix in UI
+2. **Merge PR #156** - After CI passes
+3. **Feature flag graduation** (deferred) - Move to separate PR if desired
+4. **Production migration** - Run `docs/migrations/2026-01-08_rename_credit_debt_to_available.sql` on Neon
+
+### Files to Note
+
+-   `docs/migrations/2026-01-08_rename_credit_debt_to_available.sql` - Must run on Neon before/after deploy
+-   `backend/routes/income.py` - Added `include_markers` param
+-   `backend/routes/expenses.py` - Added `include_markers` param
 
 ---
 

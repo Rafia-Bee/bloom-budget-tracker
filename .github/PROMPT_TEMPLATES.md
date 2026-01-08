@@ -1,6 +1,8 @@
 # TaskSync Prompt Templates
 
-Copy-paste these templates for common tasks. Key reminders are built-in to prevent context loss.
+Copy-paste these templates for common tasks. These contain scenario-specific workflows.
+
+For permanent reference (architecture, design, commands): See `copilot-instructions.md`
 
 ---
 
@@ -12,19 +14,23 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
 **Requirements:**
 - [Requirement 1]
 - [Requirement 2]
-- [Requirement 3]
 
 **Workflow:**
-1. Research relevant code/documentation areas based on requirements
-2. Create a report covering:
-   - Security considerations
-   - Pros and cons of implementing
-   - Design notes (if user-facing)
-   - Any questions about requirements
-3. Write report to temp file, create issue using --body-file
-4. Apply priority label (`priority: critical`/`priority: high`/`priority: medium`/`priority: low`) and effort label (quick win/medium/difficult)
+1. Research relevant code/documentation
+2. Create report: security, pros/cons, design notes, questions
+3. Write to temp file, create issue using --body-file
+4. Apply labels: priority (critical/high/medium/low) + effort (quick win/medium/difficult)
 
-**Note:** No in-depth code/test analysis needed - just overall look-through for context.
+**Issue CLI Pattern:**
+@"
+## Description
+[Description]
+
+## Acceptance Criteria
+- [ ] Criterion 1
+"@ | Out-File issue_body.md -Encoding utf8
+gh issue create --title "feat: description" --body-file issue_body.md --label "priority: medium" --label "medium"
+Remove-Item issue_body.md
 ```
 
 ---
@@ -34,59 +40,153 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
 ```
 **Task:** Implement issue #[number]
 
-**Reminders:**
-- Read issue details with: gh issue view [number]
-- Create feat/ or fix/ branch FIRST before any code changes
-- Divide work into phases as necessary
-- Update DECISION_LOG.md if architectural decisions → commit after each phase and then ask_user for instructions on whether to continue to next phase
-- Write/update tests for new functionality
-- Run bformat and btest before suggesting commits
-- Reference issue in commit: "feat: description (#XX)"
-- Close with: fixes #XX in PR description (do NOT close unless explicitly told)
-- NEVER push unless explicitly told to do so
-- Don't just assume things, ask questions - specially about legacy algorithm.
+**Workflow:**
+1. Read issue: gh issue view [number]
+2. Create branch FIRST: git checkout -b feat/description
+3. Divide into phases if complex
+4. For each phase:
+   - Write/update tests for new functionality
+   - Make code changes
+   - Update DECISION_LOG.md if architectural
+   - Run bformat, btest
+   - Commit: git add . && git commit -m "feat: description (#XX)"
+   - Ask user before continuing to next phase
+5. Reference issue in commits
+6. NEVER push unless explicitly told
 
-**For Bug Report Issues**
-- Create e2e test to reproduce issue first for easier debugging.
+**For Bug Issues:** Create E2E test to reproduce first.
 ```
 
 ---
 
-## 🐛 Bug Report (Create Issue)
+## 🐛 Bug Report
 
 ```
-**Task:** Create bug report issue for [bug description]
+**Task:** Create bug report for [description]
 
 **Observed:** [What's happening]
 **Expected:** [What should happen]
-**Steps to reproduce:** [If known]
+**Steps:** [If known]
 
 **Workflow:**
-1. Research relevant code/documentation to understand the issue
-2. Create a report covering:
-   - Security considerations
-   - Pros and cons of potential fixes
-   - Design notes (if user-facing)
-   - Any questions about the bug
-   - How to create e2e test to reproduce
-3. Write report to temp file, create issue using --body-file
-4. Apply priority label and effort label
+1. Research code to understand issue
+2. Report: security, potential fixes, E2E test approach
+3. Create issue with labels
 ```
 
 ---
 
-## 🚨 Quick Commands Reference
+## 🚀 Git Workflow
 
-| Action             | Command                     |
-| ------------------ | --------------------------- |
-| View issue         | `gh issue view [number]`    |
-| List issues        | `gh issue list`             |
-| Format code        | `bformat`                   |
-| Run frontend tests | `btest f`                   |
-| Run backend tests  | `btest b`                   |
-| Run E2E tests      | `btest e`                   |
-| Create branch      | `git checkout -b feat/name` |
-| Start servers      | `bstart`                    |
+```
+**Pre-Work:**
+1. Create branch FIRST: git checkout -b feat/description
+2. Make changes on feature branch
+3. bformat
+4. Update docs per change type
+5. btest f / btest b / btest e
+6. git add . && git commit -m "feat: description (#XX)"
+
+**Push (only when asked):**
+git push -u origin feat/branch-name
+gh pr create --fill
+
+**After CI passes:**
+gh pr merge --squash --delete-branch
+git checkout main && git pull
+```
+
+---
+
+## 🗄️ Database Migration
+
+```
+**Development (SQLite):**
+bmigrate
+
+**Production (Neon PostgreSQL):**
+1. Write migration with Flask-Migrate locally
+2. Test locally with SQLite
+3. Convert to raw SQL script
+4. Save to: docs/migrations/YYYY-MM-DD_description.sql
+5. Run manually on Neon SQL Editor
+
+**SQL Template:**
+-- Migration: [description]
+-- Date: YYYY-MM-DD
+-- Issue: #XX
+
+-- Forward
+ALTER TABLE ...;
+
+-- Verification
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'table';
+```
+
+---
+
+## 🧪 Testing Workflow
+
+```
+**Before Commit:**
+- bformat (Black + Prettier)
+- btest b (backend)
+- btest f (frontend)
+- btest e (E2E, if UI changes)
+
+**Coverage Commands:**
+pytest --cov=backend --cov-report=html
+npm test -- --run --coverage
+
+**Rules:**
+- NEVER skip failing tests - ask developer for options
+- NEVER push until tests pass locally
+- Start long tests with isBackground: true, ask user for results
+```
+
+---
+
+## 📚 Documentation Updates
+
+```
+| Change Type          | Update These                              |
+| -------------------- | ----------------------------------------- |
+| Major feature        | README, DEVELOPMENT_REFERENCE, USER_GUIDE |
+| Architecture         | ARCHITECTURE.md, DECISION_LOG.md          |
+| Session summary      | DECISION_LOG.md                           |
+| API changes          | docs/API.md, DEVELOPMENT_REFERENCE        |
+| Security             | docs/SECURITY.md                          |
+| Tests                | TEST_COVERAGE.md, docs/TESTING.md         |
+| Deployment           | docs/DEPLOYMENT.md                        |
+| Feature flags        | docs/FEATURE_FLAGS.md                     |
+| Mobile/PWA           | docs/MOBILE_DEV.md                        |
+| DB migrations        | docs/migrations/                          |
+
+**DECISION_LOG.md Format:**
+## YYYY-MM-DD: [Title]
+**Session Summary:** What was completed
+**What's Next:** Pending tasks
+**Files to Note:** Key files
+```
+
+---
+
+## 🚫 Warnings & Errors
+
+```
+**When encountering ANY warning/error:**
+1. NEVER ignore - even if pre-existing
+2. Inform developer: what, why, how to fix, effort estimate
+3. Track in issues if deferred
+
+| Type          | Action                    |
+| ------------- | ------------------------- |
+| Linting       | Fix immediately           |
+| Deprecation   | Create issue              |
+| Console       | Investigate, fix/document |
+| Build         | Never ship with warnings  |
+| Test          | Fix before merge          |
+```
 
 ---
 
@@ -95,17 +195,34 @@ Copy-paste these templates for common tasks. Key reminders are built-in to preve
 **Create issue:**
 
 ```
-Create GH issue for [description]. Research code, report pros/cons/security, use temp file for body.
+Create GH issue for [description]. Research code, report pros/cons/security, use temp file.
 ```
 
 **Implement issue:**
 
 ```
-Implement #[number]. Branch first, phases with commits, tests required, update docs per change type.
+Implement #[number]. Branch first, phases with commits, tests required, update docs.
 ```
 
 **Bug report:**
 
 ```
-Create bug issue for [description]. Research, report, consider E2E test for UI bugs.
+Create bug issue for [description]. Research, report, consider E2E test.
 ```
+
+---
+
+## 🚨 Quick Commands
+
+| Action         | Command                     |
+| -------------- | --------------------------- |
+| View issue     | `gh issue view [number]`    |
+| List issues    | `gh issue list`             |
+| Format code    | `bformat`                   |
+| Frontend tests | `btest f`                   |
+| Backend tests  | `btest b`                   |
+| E2E tests      | `btest e`                   |
+| Create branch  | `git checkout -b feat/name` |
+| Start servers  | `bstart`                    |
+| Stop servers   | `bstop`                     |
+| DB migrations  | `bmigrate`                  |
