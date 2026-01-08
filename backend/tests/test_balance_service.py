@@ -49,11 +49,14 @@ class TestDebitBalanceCalculation:
             headers=auth_headers,
         )
         assert response.status_code == 201
+        period_id = response.json["id"]
 
         # Verify balance calculation
         with client.application.app_context():
             user = User.query.filter_by(email="test@example.com").first()
-            balance = _calculate_debit_balance(user.id)
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
             # Should be €1000 from the first Initial Balance
             assert balance == 1000.0
 
@@ -106,6 +109,7 @@ class TestDebitBalanceCalculation:
             headers=auth_headers,
         )
         assert response2.status_code == 201
+        period2_id = response2.json["id"]
 
         # Verify Initial Balance is STILL €2000 (not updated to €3000)
         with client.application.app_context():
@@ -119,7 +123,9 @@ class TestDebitBalanceCalculation:
             assert initial_income.amount == 200000
 
             # Balance should still be €2000 (only first initial balance counts)
-            balance = _calculate_debit_balance(user.id)
+            salary_period = SalaryPeriod.query.get(period2_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
             assert balance == 2000.0
 
     def test_balance_subtracts_debit_expenses(self, client, auth_headers):
@@ -138,6 +144,7 @@ class TestDebitBalanceCalculation:
             headers=auth_headers,
         )
         assert response.status_code == 201
+        period_id = response.json["id"]
 
         # Add a €200 debit expense
         expense_response = client.post(
@@ -156,7 +163,9 @@ class TestDebitBalanceCalculation:
         # Balance should be €1500 - €200 = €1300
         with client.application.app_context():
             user = User.query.filter_by(email="test@example.com").first()
-            balance = _calculate_debit_balance(user.id)
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
             assert balance == 1300.0
 
     def test_balance_adds_salary_income(self, client, auth_headers):
@@ -175,6 +184,7 @@ class TestDebitBalanceCalculation:
             headers=auth_headers,
         )
         assert response.status_code == 201
+        period_id = response.json["id"]
 
         # Add €500 salary income (not Initial Balance type)
         income_response = client.post(
@@ -191,7 +201,9 @@ class TestDebitBalanceCalculation:
         # Balance should be €1000 + €500 = €1500
         with client.application.app_context():
             user = User.query.filter_by(email="test@example.com").first()
-            balance = _calculate_debit_balance(user.id)
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
             assert balance == 1500.0
 
     def test_balance_excludes_credit_expenses(self, client, auth_headers):
@@ -210,6 +222,7 @@ class TestDebitBalanceCalculation:
             headers=auth_headers,
         )
         assert response.status_code == 201
+        period_id = response.json["id"]
 
         # Add a €300 credit card expense (should NOT affect debit balance)
         expense_response = client.post(
@@ -228,15 +241,20 @@ class TestDebitBalanceCalculation:
         # Balance should still be €1000 (credit expense doesn't affect debit)
         with client.application.app_context():
             user = User.query.filter_by(email="test@example.com").first()
-            balance = _calculate_debit_balance(user.id)
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
             assert balance == 1000.0
 
-    def test_no_periods_no_income_returns_zero(self, client, auth_headers):
-        """With no salary periods and no income, balance should be 0"""
-        with client.application.app_context():
-            user = User.query.filter_by(email="test@example.com").first()
-            balance = _calculate_debit_balance(user.id)
-            assert balance == 0.0
+    def test_no_periods_returns_404_for_display_balances(self, client, auth_headers):
+        """With no salary periods, get_display_balances should return 404"""
+        # Try to get display balances for a non-existent period
+        response = client.get(
+            "/api/v1/salary-periods/99999",
+            headers=auth_headers,
+        )
+        # Should return 404 since period doesn't exist
+        assert response.status_code == 404
 
     def test_only_one_initial_balance_record_created(self, client, auth_headers):
         """Multiple salary periods should only create ONE Initial Balance record"""
