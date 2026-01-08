@@ -14,6 +14,7 @@ import api, { recurringExpenseAPI, userAPI, incomeAPI } from '../api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters';
+import PeriodInfoModal from './PeriodInfoModal';
 
 function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverData = null }) {
     const { defaultCurrency, convertAmount } = useCurrency();
@@ -30,7 +31,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const [creditLimit, setCreditLimit] = useState('1500');
     const [creditAllowance, setCreditAllowance] = useState(0);
     const [balanceMode, setBalanceMode] = useState('sync');
+    const [balanceStartDate, setBalanceStartDate] = useState(null);
     const [showBalanceModeInfo, setShowBalanceModeInfo] = useState(false);
+    const [showPeriodInfoModal, setShowPeriodInfoModal] = useState(false);
     const [showFutureIncomePrompt, setShowFutureIncomePrompt] = useState(false);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(() => {
@@ -125,13 +128,14 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editPeriod, rolloverData]);
 
-    // Load user's balance mode preference when balance mode feature is enabled
+    // Load user's balance mode preference and balance_start_date when feature is enabled
     useEffect(() => {
         if (balanceModeEnabled) {
             userAPI
                 .getBalanceMode()
                 .then((response) => {
                     setBalanceMode(response.data.balance_mode || 'sync');
+                    setBalanceStartDate(response.data.balance_start_date || null);
                 })
                 .catch((err) => {
                     console.error('Failed to load balance mode:', err);
@@ -309,6 +313,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         }
     };
 
+    // Check if this is a past period (start_date < balance_start_date)
+    // Past periods need an informational modal in both sync and budget modes
+    const isPastPeriod = () => {
+        if (editPeriod) return false; // Don't prompt when editing
+        if (!balanceStartDate) return false; // No anchor date yet = first period, not "past"
+
+        // Compare dates as strings (YYYY-MM-DD format)
+        return startDate < balanceStartDate;
+    };
+
     // Check if this is a future period in sync mode that needs an income prompt
     const isFuturePeriodInSyncMode = () => {
         if (editPeriod) return false; // Don't prompt when editing
@@ -325,8 +339,31 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     };
 
     const handleCreate = async () => {
+        // Check if we should show the past period info modal
+        if (balanceModeEnabled && isPastPeriod() && !showPeriodInfoModal) {
+            setShowPeriodInfoModal(true);
+            return;
+        }
+
         // Check if we should show the future income prompt (sync mode only)
         if (balanceModeEnabled && isFuturePeriodInSyncMode() && !showFutureIncomePrompt) {
+            setShowFutureIncomePrompt(true);
+            return;
+        }
+
+        await createSalaryPeriod(false);
+    };
+
+    // Handle continue from PeriodInfoModal (with optional mode change)
+    const handlePeriodInfoContinue = async (newMode) => {
+        // Update local state if mode changed
+        if (newMode !== balanceMode) {
+            setBalanceMode(newMode);
+        }
+        setShowPeriodInfoModal(false);
+
+        // Now continue with the normal flow (check for future income prompt if applicable)
+        if (newMode === 'sync' && isFuturePeriodInSyncMode()) {
             setShowFutureIncomePrompt(true);
             return;
         }
@@ -1302,6 +1339,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     </div>
                 </div>
             )}
+
+            {/* Past Period Info Modal */}
+            <PeriodInfoModal
+                isOpen={showPeriodInfoModal}
+                onContinue={handlePeriodInfoContinue}
+                periodType="past"
+                balanceMode={balanceMode}
+                periodBalance={parseCurrency(debitBalance)}
+                periodStartDate={startDate}
+            />
         </div>
     );
 }

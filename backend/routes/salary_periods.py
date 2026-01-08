@@ -937,7 +937,8 @@ def create_salary_period():
                 user.user_initial_debit_balance = debit_balance
                 user.user_initial_credit_limit = credit_limit
                 user.user_initial_credit_debt = max(0, credit_limit - credit_balance)
-                user.balance_mode = "sync"  # Default mode
+                # Note: balance_mode has a default value in the model, no need to set it here
+                # User can change it via Settings; we don't override their choice
 
             if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(

@@ -4,6 +4,95 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-06: Phase 5 Complete + E2E Tests Pass (#149)
+
+**Context:** Completed Phase 5 (PeriodInfoModal) and E2E tests. Found and fixed a critical bug where period creation overwrote user's balance_mode preference.
+
+### Phase 5: PeriodInfoModal
+
+**Created:** `frontend/src/components/PeriodInfoModal.jsx`
+
+-   Shows context-aware information when `balance_start_date` is set
+-   Sync mode: Explains how past/future periods contribute to cumulative balance
+-   Budget mode: Explains period isolation
+-   Includes "Change Mode" button to switch balance modes
+
+**Integrated Into:** `SalaryPeriodWizard.jsx`
+
+-   Modal appears at end of Step 3 (Review) when user has balance tracking active
+-   If user changes mode via modal, wizard navigates to Settings page
+
+### E2E Tests: `frontend/e2e/balance-mode.spec.js`
+
+**Test Groups:**
+
+1. **Balance mode setting** - API CRUD for sync/budget modes
+2. **Sync mode** - Multiple periods with cumulative balance, expense impact
+3. **Budget mode** - Multiple periods with isolated balances, expense isolation
+4. **PeriodInfoModal** - Appears when balance_start_date is set
+
+**Key Testing Patterns:**
+
+-   Uses `/api/v1/salary-periods/current` endpoint which returns `display_debit_balance`
+-   Deletes all data before each test group via `/api/v1/user-data/delete-all`
+-   Must run with `--workers=1` to avoid database conflicts
+
+### Bug Found & Fixed
+
+**Bug:** `salary_periods.py` line 940 unconditionally set `user.balance_mode = "sync"` when creating the first period, **overwriting** any user preference.
+
+**Impact:** E2E tests for budget mode were failing because mode was silently changed to sync.
+
+**Fix:** Removed the line. The User model's `default="sync"` handles new users, and existing preferences are preserved.
+
+**File:** `backend/routes/salary_periods.py` (lines 931-941)
+
+### Test Results
+
+```
+26 passed (2.4m)
+- Balance mode setting works correctly
+- Sync mode period creation works
+- Expenses affect balance correctly (sync)
+- Budget mode maintains isolated balances
+- Past period expenses do not affect current balance (budget)
+- Current period expenses affect current balance (budget)
+- Modal appears when balance start date is set
+```
+
+### What's Next
+
+**Phase 6: Cleanup & Feature Flag** (~1 hour)
+
+-   Graduate `balanceModeEnabled` feature flag (make it always on)
+-   Remove legacy "Initial Balance" Income entries from dashboard/lists
+-   Remove legacy "Pre-existing Credit Card Debt" Expense markers
+-   Clean up dead code paths in balance_service.py fallbacks
+-   Update tests for new behavior
+
+### Files Modified This Session
+
+-   `frontend/e2e/balance-mode.spec.js` - Complete E2E test suite for balance modes
+-   `backend/routes/salary_periods.py` - Fixed balance_mode override bug
+
+### Branch Status
+
+**Branch:** `fix/149-initial-balance-accumulation` (PR #156)
+**Status:** Local changes NOT committed yet
+
+-   Fixed balance_mode override bug
+-   Ready to format, test, and commit
+
+**To Continue:**
+
+1. Run `bformat` to format code
+2. Run `btest b` to verify backend tests pass
+3. Commit: `git add . && git commit -m "fix(#149): prevent period creation from overwriting balance_mode"`
+4. Push to PR
+5. Start Phase 6
+
+---
+
 ## 2026-01-07: Phase 3 Complete - Mode-Aware Balance Calculations (#149)
 
 **Context:** Phase 3 needed to implement mode-aware balance calculations. Testing revealed multiple issues that were fixed.
@@ -64,23 +153,26 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 ### What's Next
 
 **Phase 5: Informational Modal** (~1.5 hours)
-- Create `PeriodInfoModal.jsx` - shows context-aware info when creating past/future periods
-- Sync mode past period: "This €X will be added to your cumulative total"
-- Budget mode past period: "This period is isolated from other periods"  
-- Wire up in `SalaryPeriodWizard.jsx` when user clicks "Create"
-- Options: [Continue] or [Change to X Mode]
-- Reference: See modal mockups in `docs/BALANCE_CALCULATION_ANALYSIS.md` (Phase 5 section)
+
+-   Create `PeriodInfoModal.jsx` - shows context-aware info when creating past/future periods
+-   Sync mode past period: "This €X will be added to your cumulative total"
+-   Budget mode past period: "This period is isolated from other periods"
+-   Wire up in `SalaryPeriodWizard.jsx` when user clicks "Create"
+-   Options: [Continue] or [Change to X Mode]
+-   Reference: See modal mockups in `docs/BALANCE_CALCULATION_ANALYSIS.md` (Phase 5 section)
 
 **Phase 6: Cleanup & Feature Flag** (~1 hour)
-- Graduate `balanceModeEnabled` feature flag (make it always on)
-- Remove legacy "Initial Balance" Income entries from dashboard/lists
-- Remove legacy "Pre-existing Credit Card Debt" Expense markers
-- Clean up dead code paths in balance_service.py fallbacks
-- Update tests for new behavior
+
+-   Graduate `balanceModeEnabled` feature flag (make it always on)
+-   Remove legacy "Initial Balance" Income entries from dashboard/lists
+-   Remove legacy "Pre-existing Credit Card Debt" Expense markers
+-   Clean up dead code paths in balance_service.py fallbacks
+-   Update tests for new behavior
 
 **Branch:** `fix/149-initial-balance-accumulation` - 5 commits ahead of origin, NOT pushed yet
 
 **To Continue:**
+
 1. `git push` to update PR #156
 2. Start Phase 5 implementation
 

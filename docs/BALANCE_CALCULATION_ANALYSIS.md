@@ -173,6 +173,25 @@ class User(db.Model):
 
 The modal for past/future periods is **informational only**. It doesn't change any calculations - it just explains what will happen based on the user's current mode.
 
+### Implementation (Jan 2026)
+
+**Files Created:**
+
+-   `frontend/src/components/PeriodInfoModal.jsx` - Reusable modal component
+
+**Integration:**
+
+-   `SalaryPeriodWizard.jsx` - Added past period detection, shows modal before creation
+-   Detection: `startDate < balance_start_date` = past period
+-   Modal shows: Current mode effects, option to switch modes
+-   "Change to X Mode" shows explanation before switching, then continues
+
+**Notes:**
+
+-   Future periods in Sync mode already have `showFutureIncomePrompt` (separate flow)
+-   Past periods now use `PeriodInfoModal` for both modes
+-   Mode change affects ALL periods (global user setting)
+
 ### Past Period Modal - Sync Mode
 
 ```
@@ -255,7 +274,7 @@ The modal for past/future periods is **informational only**. It doesn't change a
 | Phase 2   | Data migration script    | 1 hour     | ✅ Complete |
 | Phase 3   | Balance service refactor | 2 hours    | ✅ Complete |
 | Phase 4   | Balance Mode UI          | 2 hours    | ✅ Complete |
-| Phase 5   | Informational modal      | 1.5 hours  | 🔄 Pending  |
+| Phase 5   | Informational modal      | 1.5 hours  | ✅ Complete |
 | Phase 6   | Cleanup + feature flag   | 1 hour     | 🔄 Pending  |
 | **Total** |                          | ~8.5 hours |             |
 
@@ -266,7 +285,7 @@ The modal for past/future periods is **informational only**. It doesn't change a
 -   [x] Phase 1-2: User fields populated, old code still works
 -   [x] Phase 3: Balance calculation respects mode correctly
 -   [x] Phase 4: Users can toggle mode in 4 places
--   [ ] Phase 5: Past/future period creation shows info modal
+-   [x] Phase 5: Past/future period creation shows info modal
 -   [ ] Phase 6: Feature flag controls rollout
 -   [ ] No "Initial Balance" entries in income list
 -   [ ] All tests pass
