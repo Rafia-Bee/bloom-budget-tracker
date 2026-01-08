@@ -13,6 +13,18 @@
 
 import { test, expect, loginAsTestUser } from './fixtures.js';
 
+// Helper to format date as YYYY-MM-DD
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+// Helper to create date offset by days
+function dateOffset(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return formatDate(d);
+}
+
 test.describe('Initial Balance Handling (#149)', () => {
     // Run these tests serially to avoid race conditions with shared test user data
     test.describe.configure({ mode: 'serial' });
@@ -138,14 +150,17 @@ test.describe('Initial Balance Handling (#149)', () => {
         }
 
         // Create FIRST salary period with €1000 initial balance
+        // Use dynamic dates: 30-60 days ago (past period)
+        const period1Start = dateOffset(-60);
+        const period1End = dateOffset(-31);
         const period1Res = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2025-12-01',
-                end_date: '2025-12-31',
+                start_date: period1Start,
+                end_date: period1End,
                 debit_balance: 100000, // €1000 in cents
                 credit_balance: 50000,
                 credit_limit: 100000,
@@ -168,14 +183,17 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(initialBalancesFirst[0].amount).toBe(100000); // €1000
 
         // Create SECOND salary period with €2000 (different) initial balance
+        // Use dynamic dates: around today (current period)
+        const period2Start = dateOffset(-15);
+        const period2End = dateOffset(15);
         const period2Res = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2026-01-01',
-                end_date: '2026-01-31',
+                start_date: period2Start,
+                end_date: period2End,
                 debit_balance: 200000, // €2000 in cents (different!)
                 credit_balance: 50000,
                 credit_limit: 100000,
@@ -297,14 +315,17 @@ test.describe('Initial Balance Handling (#149)', () => {
         }
 
         // Create first period with €1500 initial balance
+        // Use dynamic dates: 60-31 days ago (past period)
+        const test2Period1Start = dateOffset(-60);
+        const test2Period1End = dateOffset(-31);
         const period1 = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2025-12-10',
-                end_date: '2026-01-09',
+                start_date: test2Period1Start,
+                end_date: test2Period1End,
                 debit_balance: 150000, // €1500
                 credit_balance: 100000,
                 credit_limit: 100000,
@@ -316,14 +337,17 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(period1.ok()).toBeTruthy();
 
         // Create second period with €2000 initial balance
+        // Use dynamic dates: around today (current period)
+        const test2Period2Start = dateOffset(-15);
+        const test2Period2End = dateOffset(15);
         const period2 = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2026-01-10',
-                end_date: '2026-02-09',
+                start_date: test2Period2Start,
+                end_date: test2Period2End,
                 debit_balance: 200000, // €2000
                 credit_balance: 100000,
                 credit_limit: 100000,
@@ -451,14 +475,17 @@ test.describe('Initial Balance Handling (#149)', () => {
         }
 
         // Create salary period with €1000 initial balance
+        // Use dynamic dates: 60-31 days ago (past period)
+        const test3Start = dateOffset(-60);
+        const test3End = dateOffset(-31);
         const createRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2025-12-01',
-                end_date: '2025-12-31',
+                start_date: test3Start,
+                end_date: test3End,
                 debit_balance: 100000, // €1000
                 credit_balance: 50000,
                 credit_limit: 100000,
@@ -486,8 +513,8 @@ test.describe('Initial Balance Handling (#149)', () => {
                 'Content-Type': 'application/json',
             },
             data: {
-                start_date: '2025-12-01',
-                end_date: '2025-12-31',
+                start_date: test3Start,
+                end_date: test3End,
                 debit_balance: 500000, // €5000 (changed!)
                 credit_balance: 50000,
                 credit_limit: 100000,

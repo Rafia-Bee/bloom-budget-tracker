@@ -10,26 +10,41 @@
 
 import { test, expect, loginAsTestUser } from './fixtures.js';
 
-// Test dates - fixed for reproducibility
+// Helper to format date as YYYY-MM-DD
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+// Helper to create date offset by days
+function dateOffset(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return formatDate(d);
+}
+
+// Test dates - dynamic based on current date for reliability
+// PAST_PERIOD: 14-7 days ago
+// CURRENT_PERIOD: today +/- 3 days (7 day window centered on today)
+// FUTURE_PERIOD: 7-14 days from now
 const PAST_PERIOD = {
-    start: '2025-12-25',
-    end: '2025-12-31',
+    start: dateOffset(-14),
+    end: dateOffset(-7),
     debit: 10000, // €100 in cents
     credit: 60000, // €600 available
     creditLimit: 150000, // €1500
 };
 
 const CURRENT_PERIOD = {
-    start: '2026-01-01',
-    end: '2026-01-07',
+    start: dateOffset(-3),
+    end: dateOffset(4),
     debit: 50000, // €500
     credit: 50000, // €500 available
     creditLimit: 150000, // €1500
 };
 
 const FUTURE_PERIOD = {
-    start: '2026-01-08',
-    end: '2026-01-14',
+    start: dateOffset(7),
+    end: dateOffset(14),
     debit: 5000, // €50
     credit: 10000, // €100 available
     creditLimit: 150000, // €1500
@@ -261,7 +276,7 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
                     name: 'Test Debit Expense',
                     amount: 1000, // €10
                     category: 'Flexible Expenses',
-                    date: '2026-01-03', // Within current period
+                    date: dateOffset(0), // Today - within current period
                     payment_method: 'Debit card',
                 })
             ).toBeTruthy();
@@ -363,7 +378,7 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
                     name: 'Past Period Expense',
                     amount: 2000, // €20
                     category: 'Flexible Expenses',
-                    date: '2025-12-27', // Within past period
+                    date: dateOffset(-10), // 10 days ago - within past period (-14 to -7)
                     payment_method: 'Debit card',
                 })
             ).toBeTruthy();
@@ -405,7 +420,7 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
                     name: 'Current Period Expense',
                     amount: 500, // €5
                     category: 'Flexible Expenses',
-                    date: '2026-01-05', // Within current period
+                    date: dateOffset(0), // Today - within current period (-3 to +4)
                     payment_method: 'Debit card',
                 })
             ).toBeTruthy();
