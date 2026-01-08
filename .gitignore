@@ -74,10 +74,13 @@ frontend/e2e/.auth/
 .DS_Store
 Thumbs.db
 
-# Test log files
+# Test log files (legacy - root level)
 backend-tests.txt
 frontend-tests.txt
 e2e-tests.txt
+
+# Test output directory (new)
+testOutput/
 
 # Local Netlify folder
 .netlify

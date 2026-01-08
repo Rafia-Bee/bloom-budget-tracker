@@ -22,6 +22,17 @@
 #   .\scripts\run_all_tests.ps1 e "currency" list    # List E2E tests matching "currency"
 #   .\scripts\run_all_tests.ps1 f list               # List all frontend tests
 #   .\scripts\run_all_tests.ps1 b "auth" list        # List backend tests matching "auth"
+#
+# OUTPUT:
+#   All test outputs are saved to testOutput/ directory:
+#   - testOutput/backend-tests.txt       Full backend test output
+#   - testOutput/backend-failed.txt      Failed backend tests only (if any)
+#   - testOutput/frontend-tests.txt      Full frontend test output
+#   - testOutput/frontend-failed.txt     Failed frontend tests only (if any)
+#   - testOutput/e2e-tests.txt           Full E2E test output
+#   - testOutput/e2e-syslog.txt          E2E test logs (non-webserver)
+#   - testOutput/e2e-webserver.txt       E2E webserver logs
+#   - testOutput/e2e-failed.txt          Failed E2E tests only (if any)
 
 param(
     [Parameter(Position=0)]
@@ -79,6 +90,90 @@ function Remove-AnsiCodes($text) {
     return $text -replace $ansiPattern, ''
 }
 
+# Extract failed test output from pytest output
+function Get-BackendFailedTests($output) {
+    $inFailure = $false
+    $failedLines = @()
+    foreach ($line in $output) {
+        $cleanLine = Remove-AnsiCodes $line
+        # Detect FAILURES section
+        if ($cleanLine -match "^=+ FAILURES =+$") {
+            $inFailure = $true
+        }
+        # End at short test summary or another section
+        if ($inFailure -and ($cleanLine -match "^=+ short test summary" -or $cleanLine -match "^=+ \d+ (passed|failed)")) {
+            $failedLines += $cleanLine
+            break
+        }
+        if ($inFailure) {
+            $failedLines += $cleanLine
+        }
+    }
+    return $failedLines
+}
+
+# Extract failed test output from vitest output
+function Get-FrontendFailedTests($output) {
+    $failedLines = @()
+    $inFailure = $false
+    foreach ($line in $output) {
+        $cleanLine = Remove-AnsiCodes $line
+        # Detect failure blocks (FAIL lines)
+        if ($cleanLine -match "^\s*FAIL\s+" -or $cleanLine -match "^AssertionError:") {
+            $inFailure = $true
+        }
+        # Capture until we hit a pass or summary
+        if ($inFailure) {
+            $failedLines += $cleanLine
+            # End of test file
+            if ($cleanLine -match "^\s*$" -and $failedLines.Count -gt 3) {
+                $inFailure = $false
+            }
+        }
+    }
+    return $failedLines
+}
+
+# Extract failed test output from playwright output
+function Get-E2EFailedTests($output) {
+    $failedLines = @()
+    $inFailure = $false
+    foreach ($line in $output) {
+        $cleanLine = Remove-AnsiCodes $line
+        # Detect failure blocks
+        if ($cleanLine -match "^\s+\d+\) \[" -or $cleanLine -match "^Error:" -or $cleanLine -match "expect\(received\)") {
+            $inFailure = $true
+        }
+        if ($inFailure) {
+            $failedLines += $cleanLine
+        }
+        # Detect summary line to also include
+        if ($cleanLine -match "^\s+\d+ failed$") {
+            $failedLines += $cleanLine
+        }
+    }
+    return $failedLines
+}
+
+# Split E2E output into syslog (test output) and webserver logs
+function Split-E2ELogs($output) {
+    $syslog = @()
+    $webserver = @()
+    foreach ($line in $output) {
+        $cleanLine = Remove-AnsiCodes $line
+        # WebServer lines start with [WebServer] prefix
+        if ($cleanLine -match "^\[WebServer\]") {
+            $webserver += $cleanLine -replace "^\[WebServer\]\s*", ""
+        } else {
+            $syslog += $cleanLine
+        }
+    }
+    return @{
+        Syslog = $syslog
+        Webserver = $webserver
+    }
+}
+
 # Results tracking
 $results = @{
     Backend = @{ Status = "skipped"; Tests = 0; Passed = 0; Failed = 0; Coverage = "N/A"; Time = 0 }
@@ -90,10 +185,22 @@ $results = @{
 $projectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $projectRoot
 
-# Log file paths
-$backendLogFile = Join-Path $projectRoot "backend-tests.txt"
-$frontendLogFile = Join-Path $projectRoot "frontend-tests.txt"
-$e2eLogFile = Join-Path $projectRoot "e2e-tests.txt"
+# Create testOutput directory if it doesn't exist
+$testOutputDir = Join-Path $projectRoot "testOutput"
+if (-not (Test-Path $testOutputDir)) {
+    New-Item -ItemType Directory -Path $testOutputDir | Out-Null
+    Write-Info "Created testOutput directory"
+}
+
+# Log file paths (all go to testOutput/)
+$backendLogFile = Join-Path $testOutputDir "backend-tests.txt"
+$backendFailedFile = Join-Path $testOutputDir "backend-failed.txt"
+$frontendLogFile = Join-Path $testOutputDir "frontend-tests.txt"
+$frontendFailedFile = Join-Path $testOutputDir "frontend-failed.txt"
+$e2eLogFile = Join-Path $testOutputDir "e2e-tests.txt"
+$e2eSyslogFile = Join-Path $testOutputDir "e2e-syslog.txt"
+$e2eWebserverFile = Join-Path $testOutputDir "e2e-webserver.txt"
+$e2eFailedFile = Join-Path $testOutputDir "e2e-failed.txt"
 
 Write-Header "RUNNING TESTS"
 Write-Host "Project: $projectRoot"
@@ -160,10 +267,18 @@ if ($runBackend) {
             $results.Backend.Status = if ($backendExitCode -eq 0) { "passed" } else { "failed" }
             $results.Backend.Time = ((Get-Date) - $backendStart).TotalSeconds
 
-            if ($backendExitCode -eq 0) {
-                Write-Success "Backend tests passed!"
-            } else {
+            # Extract and save failed tests if any
+            if ($backendExitCode -ne 0) {
+                $failedTests = Get-BackendFailedTests $backendOutput
+                if ($failedTests.Count -gt 0) {
+                    $failedTests | Out-File -FilePath $backendFailedFile -Encoding UTF8
+                    Write-Info "Failed tests saved to: $backendFailedFile"
+                }
                 Write-Failure "Backend tests failed!"
+            } else {
+                # Remove old failed file if tests pass
+                if (Test-Path $backendFailedFile) { Remove-Item $backendFailedFile }
+                Write-Success "Backend tests passed!"
             }
         } else {
             # For list mode, count the tests listed
@@ -238,10 +353,18 @@ if ($runFrontend) {
             $results.Frontend.Status = if ($frontendExitCode -eq 0) { "passed" } else { "failed" }
             $results.Frontend.Time = ((Get-Date) - $frontendStart).TotalSeconds
 
-            if ($frontendExitCode -eq 0) {
-                Write-Success "Frontend tests passed!"
-            } else {
+            # Extract and save failed tests if any
+            if ($frontendExitCode -ne 0) {
+                $failedTests = Get-FrontendFailedTests $frontendOutput
+                if ($failedTests.Count -gt 0) {
+                    $failedTests | Out-File -FilePath $frontendFailedFile -Encoding UTF8
+                    Write-Info "Failed tests saved to: $frontendFailedFile"
+                }
                 Write-Failure "Frontend tests failed!"
+            } else {
+                # Remove old failed file if tests pass
+                if (Test-Path $frontendFailedFile) { Remove-Item $frontendFailedFile }
+                Write-Success "Frontend tests passed!"
             }
         }
     } catch {
@@ -307,6 +430,17 @@ if ($runE2E) {
         ($e2eOutput | ForEach-Object { Remove-AnsiCodes $_ }) | Out-File -FilePath $e2eLogFile -Encoding UTF8
         Write-Info "Full output saved to: $e2eLogFile"
 
+        # Split E2E logs into syslog and webserver logs
+        $splitLogs = Split-E2ELogs $e2eOutput
+        if ($splitLogs.Syslog.Count -gt 0) {
+            $splitLogs.Syslog | Out-File -FilePath $e2eSyslogFile -Encoding UTF8
+            Write-Info "Test logs saved to: $e2eSyslogFile"
+        }
+        if ($splitLogs.Webserver.Count -gt 0) {
+            $splitLogs.Webserver | Out-File -FilePath $e2eWebserverFile -Encoding UTF8
+            Write-Info "WebServer logs saved to: $e2eWebserverFile"
+        }
+
         if (-not $ListOnly) {
             # Parse results
             $resultLine = $e2eOutput | Select-String -Pattern "(\d+) passed|(\d+) failed" | Select-Object -Last 1
@@ -321,10 +455,18 @@ if ($runE2E) {
             $results.E2E.Status = if ($e2eExitCode -eq 0) { "passed" } else { "failed" }
             $results.E2E.Time = ((Get-Date) - $e2eStart).TotalSeconds
 
-            if ($e2eExitCode -eq 0) {
-                Write-Success "E2E tests passed!"
-            } else {
+            # Extract and save failed tests if any
+            if ($e2eExitCode -ne 0) {
+                $failedTests = Get-E2EFailedTests $e2eOutput
+                if ($failedTests.Count -gt 0) {
+                    $failedTests | Out-File -FilePath $e2eFailedFile -Encoding UTF8
+                    Write-Info "Failed tests saved to: $e2eFailedFile"
+                }
                 Write-Failure "E2E tests failed!"
+            } else {
+                # Remove old failed file if tests pass
+                if (Test-Path $e2eFailedFile) { Remove-Item $e2eFailedFile }
+                Write-Success "E2E tests passed!"
             }
         }
     } catch {
