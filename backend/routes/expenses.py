@@ -41,8 +41,14 @@ def get_expenses():
     min_amount = request.args.get("min_amount", type=int)
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in name/notes
+    include_markers = request.args.get("include_markers", "false").lower() == "true"
 
     query = Expense.active().filter_by(user_id=current_user_id)
+
+    # Exclude "Pre-existing Credit Card Debt" marker entries by default (Phase 6 cleanup)
+    # These are internal markers used for balance calculation, not real expenses
+    if not include_markers:
+        query = query.filter(Expense.name != "Pre-existing Credit Card Debt")
 
     # Apply filters
     # Note: period_id parameter is deprecated - use start_date/end_date instead

@@ -179,24 +179,28 @@ class TestIncomeCRUD:
         assert response.json["income"]["amount"] == 300000
 
     def test_get_all_income(self, client, auth_headers, salary_period):
-        """Should retrieve all income"""
-        # Create income entries
-        client.post(
+        """Should retrieve all income (excluding Initial Balance markers)"""
+        # Create income entries with correct field name (type, not source)
+        response = client.post(
             "/api/v1/income",
             json={
-                "source": "Salary",
+                "type": "Salary",
                 "amount": 300000,
                 "date": "2025-11-20",
-                "budget_period_id": salary_period,  # salary_period is now just the ID
             },
             headers=auth_headers,
         )
+        assert response.status_code == 201, f"Failed to create income: {response.json}"
 
         response = client.get("/api/v1/income", headers=auth_headers)
 
         assert response.status_code == 200
         assert "income" in response.json
+        # Should have at least the Salary income we just created
+        # Initial Balance markers are now filtered out by default
         assert len(response.json["income"]) >= 1
+        # Verify the income type
+        assert any(i["type"] == "Salary" for i in response.json["income"])
 
 
 class TestSalaryPeriodCRUD:

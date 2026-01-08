@@ -32,8 +32,14 @@ def get_income():
     min_amount = request.args.get("min_amount", type=int)
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in type field
+    include_markers = request.args.get("include_markers", "false").lower() == "true"
 
     query = Income.active().filter_by(user_id=user_id)
+
+    # Exclude "Initial Balance" marker entries by default (Phase 6 cleanup)
+    # These are internal markers used for balance calculation, not real income
+    if not include_markers:
+        query = query.filter(Income.type != "Initial Balance")
 
     # Apply filters
     # Note: budget_period_id parameter is deprecated - use start_date/end_date instead
