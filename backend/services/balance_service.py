@@ -349,12 +349,10 @@ def _calculate_credit_available(
         # misrepresent the actual credit card state.
 
         user = User.query.get(user_id)
-        if user and user.user_initial_credit_limit:
-            # Starting available = limit - initial debt
-            starting_available = (
-                user.user_initial_credit_limit - user.user_initial_credit_debt
-            )
-            start_from_date = user.balance_start_date
+        if user and user.user_initial_credit_available:
+            # Use stored credit available directly (simplified in Phase 6)
+            anchor_available = user.user_initial_credit_available
+            anchor_date = user.balance_start_date
         else:
             # Fallback: use earliest period's credit balance
             earliest_period = (
@@ -363,12 +361,59 @@ def _calculate_credit_available(
                 .first()
             )
             if earliest_period:
-                starting_available = earliest_period.initial_credit_balance
-                start_from_date = earliest_period.start_date
+                anchor_available = earliest_period.initial_credit_balance
+                anchor_date = earliest_period.start_date
             else:
-                starting_available = salary_period.credit_limit
-                start_from_date = salary_period.start_date
+                anchor_available = salary_period.credit_limit
+                anchor_date = salary_period.start_date
 
+        # Check if viewing a PAST period (before anchor date)
+        if salary_period.start_date < anchor_date:
+            # Past period: Show isolated balance (like budget mode)
+            starting_available = salary_period.initial_credit_balance
+            period_start = salary_period.start_date
+            period_end = salary_period.end_date
+
+            # Get credit expenses within this period only (excluding Debt markers)
+            total_credit_expenses = (
+                db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.payment_method == "Credit card",
+                        Expense.category != "Debt",
+                        Expense.date >= period_start,
+                        Expense.date <= period_end,
+                        Expense.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            # Get debt payments within this period
+            total_credit_payments = (
+                db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.category == "Debt Payments",
+                        Expense.subcategory == "Credit Card",
+                        Expense.date >= period_start,
+                        Expense.date <= period_end,
+                        Expense.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            balance_cents = (
+                starting_available + total_credit_payments - total_credit_expenses
+            )
+            return balance_cents / 100  # Convert cents to euros
+
+        # Current or future period: Calculate cumulative credit balance
         end_at_date = salary_period.end_date
 
         # Get ALL credit expenses up to this period's end (excluding Debt markers)
@@ -379,7 +424,7 @@ def _calculate_credit_available(
                     Expense.user_id == user_id,
                     Expense.payment_method == "Credit card",
                     Expense.category != "Debt",
-                    Expense.date >= start_from_date,
+                    Expense.date >= anchor_date,
                     Expense.date <= end_at_date,
                     Expense.deleted_at.is_(None),
                 )
@@ -396,7 +441,7 @@ def _calculate_credit_available(
                     Expense.user_id == user_id,
                     Expense.category == "Debt Payments",
                     Expense.subcategory == "Credit Card",
-                    Expense.date >= start_from_date,
+                    Expense.date >= anchor_date,
                     Expense.date <= end_at_date,
                     Expense.deleted_at.is_(None),
                 )
@@ -405,9 +450,7 @@ def _calculate_credit_available(
             or 0
         )
 
-        balance_cents = (
-            starting_available + total_credit_payments - total_credit_expenses
-        )
+        balance_cents = anchor_available + total_credit_payments - total_credit_expenses
 
     return balance_cents / 100  # Convert cents to euros
 

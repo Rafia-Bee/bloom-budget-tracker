@@ -90,8 +90,9 @@ class User(db.Model):
     user_initial_debit_balance = db.Column(db.Integer, default=0, nullable=False)
     # Initial credit card limit when user first started tracking (in cents)
     user_initial_credit_limit = db.Column(db.Integer, default=0, nullable=False)
-    # Initial credit card debt when user first started tracking (in cents)
-    user_initial_credit_debt = db.Column(db.Integer, default=0, nullable=False)
+    # Initial credit available when user first started tracking (in cents)
+    # Simplified: stores what user entered directly, not debt calculation
+    user_initial_credit_available = db.Column(db.Integer, default=0, nullable=False)
     # Balance mode: "sync" (cumulates across periods) or "budget" (isolated per period)
     balance_mode = db.Column(db.String(20), default="sync", nullable=False)
 

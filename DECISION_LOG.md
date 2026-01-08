@@ -4,6 +4,61 @@ Architectural decisions only. Max 2 days of entries. Remove entries older than 1
 
 ---
 
+## 2026-01-08: Credit Storage Simplification (#149 Phase 6)
+
+**Context:** The credit balance calculation was convoluted - storing debt and calculating available backwards.
+
+**Previous Design:**
+
+```python
+# Store debt: user.user_initial_credit_debt = limit - available
+# Calculate: available = limit - debt  (unnecessary conversion)
+```
+
+**New Design:**
+
+```python
+# Store what user entered directly
+user.user_initial_credit_available = credit_balance
+# Use directly without conversion
+```
+
+**Changes:**
+
+1. `database.py`: Renamed `user_initial_credit_debt` → `user_initial_credit_available`
+2. `salary_periods.py`: Store `credit_balance` directly
+3. `balance_service.py`: Use `user_initial_credit_available` directly
+4. Migration: `34eed8893f3a` with data conversion (available = limit - debt)
+5. Production SQL: `docs/migrations/2026-01-08_rename_credit_debt_to_available.sql`
+
+**Rationale:** Simpler code is easier to maintain. This matches how debit works (`user_initial_debit_balance`).
+
+**Impact:** Cleaner code, same functionality.
+
+---
+
+## 2026-01-08: Past Period Credit Balance Bug Fix (#149)
+
+**Context:** Bug discovered where creating a past period after a current period showed wrong credit balance when viewing the past period. User expected €1000 but saw €500 (the current period's credit).
+
+**Root Cause:** Two issues:
+
+1. User balance anchor fields (`balance_start_date`, `user_initial_credit_*`) only updated on FIRST period creation, not when creating an earlier period
+2. `_calculate_credit_available()` in sync mode didn't handle past periods specially (debit already did)
+
+**Decision:** Treat past periods (before anchor date) as isolated for balance calculations in sync mode
+
+**Changes:**
+
+1. `salary_periods.py`: Update user anchor fields when creating a period earlier than existing `balance_start_date`
+2. `balance_service.py`: Added past period handling to `_calculate_credit_available()` mirroring existing debit logic
+
+**Rationale:** When viewing a past period, users expect to see the balances that were valid during that period, not the accumulated balance from a later anchor. This maintains parity between debit and credit balance calculations.
+
+**Impact:** Past periods now correctly show their own `initial_credit_balance` instead of using the user anchor value.
+
+---
+
 ## 2026-01-06: Phase 5 Complete + E2E Tests Pass (#149)
 
 **Context:** Completed Phase 5 (PeriodInfoModal) and E2E tests. Found and fixed a critical bug where period creation overwrote user's balance_mode preference.

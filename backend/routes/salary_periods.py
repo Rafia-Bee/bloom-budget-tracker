@@ -929,16 +929,22 @@ def create_salary_period():
             )
 
             # Also populate User balance fields (Issue #149 Phase 3)
-            # This is done for ALL first salary periods, ensuring new users get proper balance tracking
+            # Update user balance anchor if this is the first period OR if creating an earlier period
             user = User.query.get(current_user_id)
-            if user and user.balance_start_date is None:
-                # First salary period for this user - populate balance tracking fields
-                user.balance_start_date = start_date
-                user.user_initial_debit_balance = debit_balance
-                user.user_initial_credit_limit = credit_limit
-                user.user_initial_credit_debt = max(0, credit_limit - credit_balance)
-                # Note: balance_mode has a default value in the model, no need to set it here
-                # User can change it via Settings; we don't override their choice
+            if user:
+                is_new_anchor = (
+                    user.balance_start_date is None
+                    or start_date < user.balance_start_date
+                )
+                if is_new_anchor:
+                    # This period becomes the new balance anchor (earliest period)
+                    user.balance_start_date = start_date
+                    user.user_initial_debit_balance = debit_balance
+                    user.user_initial_credit_limit = credit_limit
+                    # Store credit_balance directly (what user entered)
+                    user.user_initial_credit_available = credit_balance
+                    # Note: balance_mode has a default value in the model, no need to set it here
+                    # User can change it via Settings; we don't override their choice
 
             if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(

@@ -293,6 +293,70 @@ class TestDebitBalanceCalculation:
             assert initial_balances[0].amount == 100000
 
 
+class TestPastPeriodBalanceCalculation:
+    """Tests for balance calculation when viewing past periods"""
+
+    def test_past_period_credit_uses_period_initial_balance(self, client, auth_headers):
+        """
+        Bug fix test: Creating a past period after current period should show
+        the past period's credit balance when viewing that period, not the current.
+
+        Scenario:
+        1. Create current period (Dec 2025) with 500 credit available
+        2. Create past period (Nov 2025) with 1000 credit available
+        3. View past period -> Should show 1000 credit, not 500
+        """
+        # Step 1: Create current period with €500 credit available
+        current_response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": "2025-12-01",
+                "end_date": "2025-12-31",
+                "debit_balance": 60000,  # €600
+                "credit_balance": 50000,  # €500 available
+                "credit_limit": 50000,  # €500 limit (no debt)
+                "credit_allowance": 0,
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert current_response.status_code == 201
+
+        # Step 2: Create past period with €1000 credit available
+        past_response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": "2025-11-01",
+                "end_date": "2025-11-30",
+                "debit_balance": 10000,  # €100
+                "credit_balance": 100000,  # €1000 available
+                "credit_limit": 100000,  # €1000 limit (no debt)
+                "credit_allowance": 0,
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert past_response.status_code == 201
+        past_period_id = past_response.json["id"]
+
+        # Step 3: Verify past period shows €1000 credit, not €500
+        with client.application.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            balances = get_display_balances(past_period_id, user.id)
+
+            # Credit available should be €1000 from past period's initial balance
+            assert (
+                balances["credit_available"] == 1000.0
+            ), f"Expected €1000 credit for past period, got €{balances['credit_available']}"
+
+            # Debit should also use past period's initial balance (€100)
+            assert (
+                balances["debit_balance"] == 100.0
+            ), f"Expected €100 debit for past period, got €{balances['debit_balance']}"
+
+
 class TestDisplayBalancesIntegration:
     """Integration tests for get_display_balances function"""
 
