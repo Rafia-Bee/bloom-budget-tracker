@@ -25,6 +25,27 @@ function dateOffset(days) {
     return formatDate(d);
 }
 
+// Helper to set balance mode
+async function setBalanceMode(request, cookieHeader, mode) {
+    const baseUrl = 'http://localhost:5000';
+    const res = await request.put(`${baseUrl}/api/v1/user-data/settings/balance-mode`, {
+        headers: { Cookie: cookieHeader, 'Content-Type': 'application/json' },
+        data: { balance_mode: mode },
+    });
+    return res.ok();
+}
+
+// Helper to clean database state completely
+// This uses /delete-all which also resets User balance tracking fields
+async function cleanDatabase(request, cookieHeader) {
+    const baseUrl = 'http://localhost:5000';
+    const deleteRes = await request.post(`${baseUrl}/api/v1/user-data/delete-all`, {
+        headers: { Cookie: cookieHeader, 'Content-Type': 'application/json' },
+        data: { confirmation: 'Delete everything' },
+    });
+    return deleteRes.ok();
+}
+
 test.describe('Initial Balance Handling (#149)', () => {
     // Run these tests serially to avoid race conditions with shared test user data
     test.describe.configure({ mode: 'serial' });
@@ -40,51 +61,8 @@ test.describe('Initial Balance Handling (#149)', () => {
         }
     });
 
-    // Restore a default salary period after all tests to avoid affecting other test files
-    test.afterAll(async ({ request }) => {
-        // Use global setup auth state
-        const authFile = 'playwright/.auth/user.json';
-        const fs = await import('fs');
-        let cookies = [];
-
-        try {
-            const authState = JSON.parse(fs.readFileSync(authFile, 'utf8'));
-            cookies = authState.cookies || [];
-        } catch {
-            // Auth file might not exist, skip restoration
-            return;
-        }
-
-        const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
-        const baseUrl = 'http://localhost:5000';
-
-        // Calculate dates for a period containing today
-        const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - today.getDay()); // Start of current week (Sunday)
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 27); // 4 weeks
-
-        const formatDate = (d) => d.toISOString().split('T')[0];
-
-        // Create a default salary period so other tests can use the dashboard
-        await request.post(`${baseUrl}/api/v1/salary-periods`, {
-            headers: {
-                Cookie: cookieHeader,
-                'Content-Type': 'application/json',
-            },
-            data: {
-                start_date: formatDate(startDate),
-                end_date: formatDate(endDate),
-                debit_balance: 175000, // €1750
-                credit_balance: 50000, // €500
-                credit_limit: 100000, // €1000
-                credit_allowance: 0,
-                num_sub_periods: 4,
-                fixed_bills: [],
-            },
-        });
-    });
+    // NOTE: No afterAll hook - tests should clean up after themselves
+    // and other tests should create their own periods as needed
 
     test('only one Initial Balance record is created across multiple periods', async ({
         page,
@@ -96,63 +74,20 @@ test.describe('Initial Balance Handling (#149)', () => {
         const cookies = await page.context().cookies();
         const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
 
-        const baseUrl = await page.evaluate(() => {
-            return window.location.origin.includes('localhost')
-                ? 'http://localhost:5000'
-                : 'https://bloom-backend-b44r.onrender.com';
-        });
+        // Clean database completely (resets User balance fields too)
+        await cleanDatabase(request, cookieHeader);
 
-        // Clean up existing data for clean state
-        // Order is important: delete transactions first, then periods
+        // Set balance mode to "budget" - these tests verify Initial Balance behavior
+        await setBalanceMode(request, cookieHeader, 'budget');
 
-        // 1. Delete ALL income first (including Initial Balance)
-        const incomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (incomeRes.ok()) {
-            const incomeResponse = await incomeRes.json();
-            const incomeList = incomeResponse.income || [];
-            for (const income of incomeList) {
-                await request.delete(`${baseUrl}/api/v1/income/${income.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 2. Delete ALL expenses (including Debt category markers)
-        const expenseRes = await request.get(`${baseUrl}/api/v1/expenses`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (expenseRes.ok()) {
-            const expenseResponse = await expenseRes.json();
-            const expenseList = expenseResponse.expenses || [];
-            for (const expense of expenseList) {
-                await request.delete(`${baseUrl}/api/v1/expenses/${expense.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 3. Now delete salary periods (they should be empty)
-        const existingPeriodsRes = await request.get(`${baseUrl}/api/v1/salary-periods`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (existingPeriodsRes.ok()) {
-            const existingPeriods = await existingPeriodsRes.json();
-            for (const period of existingPeriods) {
-                await request.delete(`${baseUrl}/api/v1/salary-periods/${period.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
+        const baseUrl = 'http://localhost:5000';
 
         // Create FIRST salary period with €1000 initial balance
-        // Use dynamic dates: 30-60 days ago (past period)
-        const period1Start = dateOffset(-60);
-        const period1End = dateOffset(-31);
+        // Use dynamic dates: 90-120 days ago (past period)
+        // NOTE: Using dates far in the past to avoid overlap with balance-mode.spec.js
+        // which uses -14 to +14 days range
+        const period1Start = dateOffset(-120);
+        const period1End = dateOffset(-91);
         const period1Res = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -172,7 +107,8 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(period1Res.ok()).toBeTruthy();
 
         // Get Initial Balance after first period
-        let incomeAfterFirst = await request.get(`${baseUrl}/api/v1/income`, {
+        // Note: include_markers=true is required to see Initial Balance records
+        let incomeAfterFirst = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
         let incomeResponseFirst = await incomeAfterFirst.json();
@@ -183,9 +119,9 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(initialBalancesFirst[0].amount).toBe(100000); // €1000
 
         // Create SECOND salary period with €2000 (different) initial balance
-        // Use dynamic dates: around today (current period)
-        const period2Start = dateOffset(-15);
-        const period2End = dateOffset(15);
+        // Use dynamic dates: 60-30 days ago (second past period, non-overlapping)
+        const period2Start = dateOffset(-60);
+        const period2End = dateOffset(-31);
         const period2Res = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -205,7 +141,7 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(period2Res.ok()).toBeTruthy();
 
         // Verify: Still only ONE Initial Balance, and it's still €1000 (not updated to €2000)
-        let incomeAfterSecond = await request.get(`${baseUrl}/api/v1/income`, {
+        let incomeAfterSecond = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
         let incomeResponseSecond = await incomeAfterSecond.json();
@@ -216,9 +152,12 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(initialBalancesSecond[0].amount).toBe(100000); // Still €1000!
 
         // Cleanup - delete transactions first, then periods
-        const cleanupIncomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
+        const cleanupIncomeRes = await request.get(
+            `${baseUrl}/api/v1/income?include_markers=true`,
+            {
+                headers: { Cookie: cookieHeader },
+            }
+        );
         if (cleanupIncomeRes.ok()) {
             const incomeData = await cleanupIncomeRes.json();
             for (const income of incomeData.income || []) {
@@ -255,69 +194,27 @@ test.describe('Initial Balance Handling (#149)', () => {
     });
 
     test('debit balance uses only first Initial Balance', async ({ page, request }) => {
-        // This test verifies that the displayed debit balance is based on
-        // only the first Initial Balance, not cumulative
+        // This test verifies that in SYNC mode, the displayed debit balance is based on
+        // only the first Initial Balance (User.user_initial_debit_balance anchor),
+        // not each period's snapshot
 
         const cookies = await page.context().cookies();
         const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
 
-        const baseUrl = await page.evaluate(() => {
-            return window.location.origin.includes('localhost')
-                ? 'http://localhost:5000'
-                : 'https://bloom-backend-b44r.onrender.com';
-        });
+        // Clean database completely (resets User balance fields too)
+        await cleanDatabase(request, cookieHeader);
 
-        // Clean up existing data for clean state
-        // Order is important: delete transactions first, then periods
+        // Set balance mode to "sync" - this test verifies only first Initial Balance counts
+        // across all periods (cumulative behavior)
+        await setBalanceMode(request, cookieHeader, 'sync');
 
-        // 1. Delete ALL income first (including Initial Balance)
-        const incomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (incomeRes.ok()) {
-            const incomeResponse = await incomeRes.json();
-            const incomeList = incomeResponse.income || [];
-            for (const income of incomeList) {
-                await request.delete(`${baseUrl}/api/v1/income/${income.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 2. Delete ALL expenses (including Debt category markers)
-        const expenseRes = await request.get(`${baseUrl}/api/v1/expenses`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (expenseRes.ok()) {
-            const expenseResponse = await expenseRes.json();
-            const expenseList = expenseResponse.expenses || [];
-            for (const expense of expenseList) {
-                await request.delete(`${baseUrl}/api/v1/expenses/${expense.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 3. Now delete salary periods (they should be empty)
-        const existingPeriodsRes = await request.get(`${baseUrl}/api/v1/salary-periods`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (existingPeriodsRes.ok()) {
-            const existingPeriods = await existingPeriodsRes.json();
-            for (const period of existingPeriods) {
-                await request.delete(`${baseUrl}/api/v1/salary-periods/${period.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
+        const baseUrl = 'http://localhost:5000';
 
         // Create first period with €1500 initial balance
-        // Use dynamic dates: 60-31 days ago (past period)
-        const test2Period1Start = dateOffset(-60);
-        const test2Period1End = dateOffset(-31);
+        // Use dynamic dates: 90-120 days ago (past period)
+        // NOTE: Using dates far in the past to avoid overlap with balance-mode.spec.js
+        const test2Period1Start = dateOffset(-120);
+        const test2Period1End = dateOffset(-91);
         const period1 = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -337,9 +234,9 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(period1.ok()).toBeTruthy();
 
         // Create second period with €2000 initial balance
-        // Use dynamic dates: around today (current period)
-        const test2Period2Start = dateOffset(-15);
-        const test2Period2End = dateOffset(15);
+        // Use dynamic dates: 60-31 days ago (second past period, non-overlapping)
+        const test2Period2Start = dateOffset(-90);
+        const test2Period2End = dateOffset(-61);
         const period2 = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -358,17 +255,31 @@ test.describe('Initial Balance Handling (#149)', () => {
         });
         expect(period2.ok()).toBeTruthy();
 
-        // Get current salary period balance
-        const currentRes = await request.get(`${baseUrl}/api/v1/salary-periods/current`, {
+        // Get most recent salary period to check balance
+        // First get list to find the most recent period ID
+        const periodsRes = await request.get(`${baseUrl}/api/v1/salary-periods`, {
             headers: { Cookie: cookieHeader },
         });
 
-        expect(currentRes.ok()).toBeTruthy();
-        const currentData = await currentRes.json();
+        expect(periodsRes.ok()).toBeTruthy();
+        const periods = await periodsRes.json();
+
+        // Sort by end_date descending to get most recent period
+        periods.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+        const mostRecentPeriodId = periods[0]?.id;
+
+        // Fetch the specific period to get display_debit_balance
+        // (list endpoint doesn't include calculated display balances)
+        const periodDetailRes = await request.get(
+            `${baseUrl}/api/v1/salary-periods/${mostRecentPeriodId}`,
+            { headers: { Cookie: cookieHeader } }
+        );
+        expect(periodDetailRes.ok()).toBeTruthy();
+        const periodDetail = await periodDetailRes.json();
 
         // Expected: €1500 (only first Initial Balance), NOT €1500 + €2000
         const expectedBalance = 150000; // €1500 in cents
-        const actualBalance = currentData.salary_period?.display_debit_balance;
+        const actualBalance = periodDetail.salary_period?.display_debit_balance;
 
         console.log('Expected balance (cents):', expectedBalance);
         console.log('Actual balance (cents):', actualBalance);
@@ -376,9 +287,12 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(actualBalance).toBe(expectedBalance);
 
         // Cleanup - delete transactions first, then periods
-        const cleanupIncomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
+        const cleanupIncomeRes = await request.get(
+            `${baseUrl}/api/v1/income?include_markers=true`,
+            {
+                headers: { Cookie: cookieHeader },
+            }
+        );
         if (cleanupIncomeRes.ok()) {
             const incomeData = await cleanupIncomeRes.json();
             for (const income of incomeData.income || []) {
@@ -421,63 +335,19 @@ test.describe('Initial Balance Handling (#149)', () => {
         const cookies = await page.context().cookies();
         const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
 
-        const baseUrl = await page.evaluate(() => {
-            return window.location.origin.includes('localhost')
-                ? 'http://localhost:5000'
-                : 'https://bloom-backend-b44r.onrender.com';
-        });
+        // Clean database completely (resets User balance fields too)
+        await cleanDatabase(request, cookieHeader);
 
-        // Clean up existing data for clean state
-        // Order is important: delete transactions first, then periods
+        // Set balance mode to "budget" - these tests verify Initial Balance behavior
+        await setBalanceMode(request, cookieHeader, 'budget');
 
-        // 1. Delete ALL income first (including Initial Balance)
-        const incomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (incomeRes.ok()) {
-            const incomeResponse = await incomeRes.json();
-            const incomeList = incomeResponse.income || [];
-            for (const income of incomeList) {
-                await request.delete(`${baseUrl}/api/v1/income/${income.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 2. Delete ALL expenses (including Debt category markers)
-        const expenseRes = await request.get(`${baseUrl}/api/v1/expenses`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (expenseRes.ok()) {
-            const expenseResponse = await expenseRes.json();
-            const expenseList = expenseResponse.expenses || [];
-            for (const expense of expenseList) {
-                await request.delete(`${baseUrl}/api/v1/expenses/${expense.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
-
-        // 3. Now delete salary periods (they should be empty)
-        const existingPeriodsRes = await request.get(`${baseUrl}/api/v1/salary-periods`, {
-            headers: { Cookie: cookieHeader },
-        });
-
-        if (existingPeriodsRes.ok()) {
-            const existingPeriods = await existingPeriodsRes.json();
-            for (const period of existingPeriods) {
-                await request.delete(`${baseUrl}/api/v1/salary-periods/${period.id}`, {
-                    headers: { Cookie: cookieHeader },
-                });
-            }
-        }
+        const baseUrl = 'http://localhost:5000';
 
         // Create salary period with €1000 initial balance
-        // Use dynamic dates: 60-31 days ago (past period)
-        const test3Start = dateOffset(-60);
-        const test3End = dateOffset(-31);
+        // Use dynamic dates: 90-120 days ago (past period)
+        // NOTE: Using dates far in the past to avoid overlap with balance-mode.spec.js
+        const test3Start = dateOffset(-120);
+        const test3End = dateOffset(-91);
         const createRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -498,7 +368,9 @@ test.describe('Initial Balance Handling (#149)', () => {
         const periodId = (await createRes.json()).id;
 
         // Verify Initial Balance is €1000
-        let incomeAfterCreate = await request.get(`${baseUrl}/api/v1/income`, {
+        // Verify Initial Balance is €1000
+        // Note: include_markers=true is required to see Initial Balance records
+        let incomeAfterCreate = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
         let incomeResponseCreate = await incomeAfterCreate.json();
@@ -526,7 +398,7 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(updateRes.ok()).toBeTruthy();
 
         // Verify Initial Balance is STILL €1000 (not updated to €5000)
-        let incomeAfterUpdate = await request.get(`${baseUrl}/api/v1/income`, {
+        let incomeAfterUpdate = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
         let incomeResponseUpdate = await incomeAfterUpdate.json();
@@ -535,9 +407,12 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(initialBalanceUpdate.amount).toBe(100000); // Still €1000!
 
         // Cleanup - delete transactions first, then periods
-        const cleanupIncomeRes = await request.get(`${baseUrl}/api/v1/income`, {
-            headers: { Cookie: cookieHeader },
-        });
+        const cleanupIncomeRes = await request.get(
+            `${baseUrl}/api/v1/income?include_markers=true`,
+            {
+                headers: { Cookie: cookieHeader },
+            }
+        );
         if (cleanupIncomeRes.ok()) {
             const incomeData = await cleanupIncomeRes.json();
             for (const income of incomeData.income || []) {

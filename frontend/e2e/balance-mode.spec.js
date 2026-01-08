@@ -228,7 +228,9 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
             expect(futureResult.ok, 'Future period creation failed').toBeTruthy();
 
             // Step 6: Verify current balance after adding periods
-            // In sync mode, balance should accumulate from past periods
+            // In sync mode, balance anchor moves to the EARLIEST period
+            // So after creating PAST_PERIOD, the anchor becomes PAST_PERIOD.debit (€100)
+            // not CURRENT_PERIOD.debit (€500)
             await page.waitForTimeout(500);
             periodData = await getCurrentPeriodBalance(request, cookieHeader);
             console.log(
@@ -237,12 +239,11 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
                 'EUR'
             );
 
-            // The balance calculation in sync mode:
-            // anchor (current) + past period income - past period expenses
-            // Since we have no expenses yet, the cumulative effect depends on implementation
-            // At minimum, current period balance should be >= what we entered
+            // In sync mode, anchor moves to earliest period
+            // Balance = PAST_PERIOD.debit (anchor) + any income - any expenses
+            // With no transactions, balance should equal the anchor (past period's balance)
             expect(periodData.salary_period.display_debit_balance).toBeGreaterThanOrEqual(
-                CURRENT_PERIOD.debit
+                PAST_PERIOD.debit
             );
 
             console.log('✓ Sync mode period creation works');
@@ -464,11 +465,8 @@ test.describe('Balance Mode - Sync vs Budget (#149)', () => {
             const currentResult = await createSalaryPeriod(request, cookieHeader, CURRENT_PERIOD);
             expect(currentResult.ok).toBeTruthy();
 
-            // Reload to see empty state or period
-            await page.reload();
-            await page.waitForLoadState('networkidle');
-
-            // Check balance mode settings to verify balance_start_date is set
+            // IMPORTANT: Check balance_start_date IMMEDIATELY after period creation,
+            // before any reload/wait that could allow another worker to interfere
             const modeData = await getBalanceMode(request, cookieHeader);
             console.log('Balance mode data:', modeData);
             expect(modeData.balance_start_date).toBeTruthy();
