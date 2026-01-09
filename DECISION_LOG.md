@@ -6,28 +6,57 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ## 2026-01-09: Fix #160 - Manage Salary Period Shows Selected Period Values
 
-**Session Summary:** Fixed bug where clicking "Manage Salary Period" showed current period's values instead of the selected period's values.
+**Session Summary:** Fixed four related bugs:
 
-### Root Cause
+1. Clicking "Manage Salary Period" showed current period's values instead of selected period's values
+2. After editing a salary period, dashboard balances didn't update
+3. In SYNC mode, editing anchor period's initial debit balance didn't update display balance
+4. In SYNC mode, editing future period's debit balance didn't update the associated Salary income
 
-The `onSetupClick` handlers in Dashboard.jsx were fetching all salary periods via API and finding the `is_active` period, instead of using the already-tracked `viewingSalaryPeriodId` state.
+### Bug 1: Wrong Period Values in Wizard
 
-### Fix Applied
+**Root Cause:** The `onSetupClick` handlers in Dashboard.jsx were fetching all salary periods via API and finding the `is_active` period, instead of using the already-tracked `viewingSalaryPeriodId` state.
 
-Modified both `onSetupClick` handlers (lines ~988 and ~1100) in [Dashboard.jsx](frontend/src/pages/Dashboard.jsx) to:
+**Fix:** Modified both `onSetupClick` handlers to use `viewingSalaryPeriodId` from state.
 
-1. Use `viewingSalaryPeriodId` from state instead of making API call
-2. Find the viewed period from the already-loaded `salaryPeriods` array
-3. Set `editSalaryPeriod` to the viewed period (not the active one)
+### Bug 2: Balance Not Updating After Edit (Frontend)
+
+**Root Cause:** After editing salary period, `onComplete` callback only called `loadPeriodsAndCurrentWeek()` which loads current period data. If viewing a non-current period, that period's data wasn't reloaded.
+
+**Fix:** Pass `loadSalaryPeriodData` and `viewingSalaryPeriodId` to DashboardModals, and call `loadSalaryPeriodData(viewingSalaryPeriodId)` in `onComplete` callback.
+
+### Bug 3: Anchor Period Balance Edit Not Reflected (Backend)
+
+**Root Cause:** In SYNC mode, `display_debit_balance` uses `user.user_initial_debit_balance` as anchor. When editing the anchor period, only salary_period was updated.
+
+**Fix:** When editing the anchor salary period (contains `balance_start_date`):
+
+-   Update `user.user_initial_debit_balance`, `user.user_initial_credit_available`, `user.user_initial_credit_limit`
+-   Update "Initial Balance" income record to stay in sync
+
+### Bug 4: Future Period Balance Edit Not Reflected (Backend)
+
+**Root Cause:** When creating a future period in SYNC mode, user can opt to create a "Salary" income. When editing, this income wasn't updated.
+
+**Fix:** Use concrete naming convention `"Projected Period Salary: <start_date>"` for the income type:
+
+-   **Frontend (SalaryPeriodWizard.jsx):** Create income with `type: "Projected Period Salary: <startDate>"`
+-   **Backend (salary_periods.py):** Match on exact type string `"Projected Period Salary: <start_date>"`
+
+This provides concrete matching instead of fragile date+type lookups.
 
 ### Files Changed
 
--   `frontend/src/pages/Dashboard.jsx` - Fixed both WeeklyBudgetCard onSetupClick handlers
+-   `frontend/src/pages/Dashboard.jsx` - Fixed onSetupClick handlers, pass new props to DashboardModals
+-   `frontend/src/components/dashboard/DashboardModals.jsx` - Accept new props, reload viewed period data on complete
+-   `frontend/src/components/SalaryPeriodWizard.jsx` - Use concrete "Period Salary: <date>" type for future period income
+-   `backend/routes/salary_periods.py` - Update user anchor balances, Initial Balance income, and future Period Salary income when editing
 
-### What's Next
+### Testing Status
 
-1. Run `bformat` and `btest f` to verify fix
-2. Commit and create PR
+-   Issue #160 fix (wizard values) confirmed working
+-   Past/current period balance edit confirmed working
+-   Future period balance edit needs testing
 
 ---
 

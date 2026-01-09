@@ -1259,6 +1259,8 @@ function Dashboard({ setIsAuthenticated }) {
                 rolloverData={rolloverData}
                 setRolloverData={setRolloverData}
                 loadPeriodsAndCurrentWeek={loadPeriodsAndCurrentWeek}
+                loadSalaryPeriodData={loadSalaryPeriodData}
+                viewingSalaryPeriodId={viewingSalaryPeriodId}
                 weeklyBudgetCardRef={weeklyBudgetCardRef}
                 showLeftoverModal={showLeftoverModal}
                 setShowLeftoverModal={setShowLeftoverModal}

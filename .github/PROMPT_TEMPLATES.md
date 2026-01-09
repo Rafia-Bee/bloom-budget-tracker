@@ -47,14 +47,14 @@ Remove-Item issue_body.md
 4. For each phase:
    - Write/update tests for new functionality
    - Make code changes
-   - Update DECISION_LOG.md if architectural
-   - Run bformat, btest
+   - Update DECISION_LOG.md
+   - Run bformat and then ask_user to run btest
    - Commit: git add . && git commit -m "feat: description (#XX)"
    - Ask user before continuing to next phase
 5. Reference issue in commits
 6. NEVER push unless explicitly told
 
-**For Bug Issues:** Create E2E test to reproduce first.
+**For Bug Issues:** Create E2E/Frontend/Backend test to reproduce first.
 ```
 
 ---
