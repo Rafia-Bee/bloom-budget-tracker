@@ -20,6 +20,7 @@ from backend.models.database import (
     BudgetPeriod,
     Expense,
     Income,
+    User,
 )
 from sqlalchemy import and_
 
@@ -30,6 +31,10 @@ def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float
 
     Returns display balances that should be shown in UI instead of the snapshot
     balances stored in salary_period.initial_debit_balance / initial_credit_balance.
+
+    Behavior depends on user's balance_mode:
+    - "budget" (isolated): Each period has its own independent balance
+    - "sync" (cumulative): Balances accumulate across all periods
 
     Args:
         salary_period_id: ID of the salary period to calculate balances for
@@ -44,25 +49,22 @@ def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float
         id=salary_period_id, user_id=user_id
     ).first_or_404()
 
-    # Get date range for this salary period
-    period_start = salary_period.start_date
-    # Use the last budget period's end_date to ensure we capture the full period
-    last_budget_period = (
-        BudgetPeriod.query.filter_by(salary_period_id=salary_period_id, user_id=user_id)
-        .order_by(BudgetPeriod.end_date.desc())
-        .first()
-    )
-    period_end = (
-        last_budget_period.end_date if last_budget_period else salary_period.start_date
+    # Get user to check balance mode
+    user = User.query.get(user_id)
+    balance_mode = user.balance_mode if user else "sync"
+
+    # Calculate real debit balance (mode-aware)
+    debit_balance = _calculate_debit_balance(
+        user_id=user_id,
+        salary_period=salary_period,
+        balance_mode=balance_mode,
     )
 
-    # Calculate real debit balance
-    debit_balance = _calculate_debit_balance(user_id)
-
-    # Calculate real credit available (period-agnostic, uses all transactions)
+    # Calculate real credit available (mode-aware)
     credit_available = _calculate_credit_available(
         user_id=user_id,
-        credit_limit_cents=salary_period.credit_limit,
+        salary_period=salary_period,
+        balance_mode=balance_mode,
     )
 
     # Ensure available doesn't exceed limit
@@ -75,183 +77,381 @@ def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float
     }
 
 
-def _calculate_debit_balance(user_id: int) -> float:
+def _calculate_debit_balance(
+    user_id: int, salary_period: SalaryPeriod, balance_mode: str
+) -> float:
     """
-    Calculate real-time debit balance from all-time transactions.
-
-    Periods are cosmetic filters only - balance reflects actual account state.
-
-    Method:
-    1. Find earliest "Initial Balance" income entry (starting money)
-    2. Exclude subsequent "Initial Balance" entries (period snapshots)
-    3. Sum all other income since that date
-    4. Subtract all debit expenses since that date
+    Calculate real-time debit balance based on balance mode.
 
     Args:
         user_id: User ID to scope all transaction queries
+        salary_period: The salary period being viewed
+        balance_mode: "budget" (isolated) or "sync" (cumulative)
 
     Returns:
         Debit balance in euros (can be negative if overdrawn)
     """
     from datetime import datetime
 
-    today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    if balance_mode == "budget":
+        # BUDGET MODE: Each period is isolated
+        # Balance = Period's initial balance + income within period - expenses within period
+        starting_balance = salary_period.initial_debit_balance
+        period_start = salary_period.start_date
+        period_end = salary_period.end_date
 
-    # Find earliest "Initial Balance" entry for this user
-    earliest_initial_balance = (
-        db.session.query(Income)
-        .filter(
-            and_(
-                Income.user_id == user_id,
-                Income.type == "Initial Balance",
-                Income.deleted_at.is_(None),
+        # Get income within this period only (excluding Initial Balance markers)
+        total_income = (
+            db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
+            .filter(
+                and_(
+                    Income.user_id == user_id,
+                    Income.type != "Initial Balance",
+                    Income.actual_date >= period_start,
+                    Income.actual_date <= period_end,
+                    Income.deleted_at.is_(None),
+                )
             )
+            .scalar()
+            or 0
         )
-        .order_by(Income.actual_date)
-        .first()
-    )
 
-    if not earliest_initial_balance:
-        # No initial balance, use earliest income instead
-        earliest_income = (
-            db.session.query(Income)
-            .filter(and_(Income.user_id == user_id, Income.deleted_at.is_(None)))
-            .order_by(Income.actual_date)
-            .first()
+        # Get debit expenses within this period only
+        total_debit_expenses = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.payment_method == "Debit card",
+                    Expense.date >= period_start,
+                    Expense.date <= period_end,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
         )
-        if not earliest_income:
-            return 0.0
-        start_from_date = earliest_income.actual_date
-        starting_balance = 0
+
+        balance_cents = starting_balance + total_income - total_debit_expenses
+
     else:
-        start_from_date = earliest_initial_balance.actual_date
-        starting_balance = earliest_initial_balance.amount
+        # SYNC MODE: User's balance mirrors their real bank account
+        #
+        # The ANCHOR is User.user_initial_debit_balance, set when first period created.
+        # User.balance_start_date marks when tracking began.
+        #
+        # If viewing a PAST period (before balance_start_date), show that period's
+        # isolated balance. The past period balance is added to cumulative total
+        # only when viewing periods from anchor date onwards.
+        #
+        # Formula for anchor+ periods:
+        #   Balance = Anchor + Past Period Balances + Income - Expenses
 
-    # Get all NON-initial-balance income since tracking started (up to today)
-    # Exclude all "Initial Balance" entries as they're snapshots, not real income
-    # EXCEPT we already counted the first one as starting_balance
-    total_income = (
-        db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
-        .filter(
-            and_(
-                Income.user_id == user_id,
-                Income.type
-                != "Initial Balance",  # Exclude all initial balance snapshots
-                Income.actual_date >= start_from_date,
-                Income.actual_date <= today,
-                Income.deleted_at.is_(None),
+        user = User.query.get(user_id)
+        if user and user.user_initial_debit_balance:
+            anchor_balance = user.user_initial_debit_balance
+            anchor_date = user.balance_start_date
+        else:
+            # Fallback: use earliest period's balance
+            earliest_period = (
+                SalaryPeriod.query.filter_by(user_id=user_id, is_active=True)
+                .order_by(SalaryPeriod.start_date)
+                .first()
             )
-        )
-        .scalar()
-        or 0
-    )
+            if earliest_period:
+                anchor_balance = earliest_period.initial_debit_balance
+                anchor_date = earliest_period.start_date
+            else:
+                anchor_balance = 0
+                anchor_date = salary_period.start_date
 
-    # Get ALL debit expenses since tracking started (up to today)
-    total_debit_expenses = (
-        db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
-        .filter(
-            and_(
-                Expense.user_id == user_id,
-                Expense.payment_method == "Debit card",
-                Expense.date >= start_from_date,
-                Expense.date <= today,
-                Expense.deleted_at.is_(None),
+        # Check if viewing a PAST period (before anchor date)
+        if salary_period.start_date < anchor_date:
+            # Past period: Show isolated balance (like budget mode)
+            starting_balance = salary_period.initial_debit_balance
+            period_start = salary_period.start_date
+            period_end = salary_period.end_date
+
+            total_income = (
+                db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
+                .filter(
+                    and_(
+                        Income.user_id == user_id,
+                        Income.type != "Initial Balance",
+                        Income.actual_date >= period_start,
+                        Income.actual_date <= period_end,
+                        Income.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
             )
-        )
-        .scalar()
-        or 0
-    )
 
-    # Balance = Starting + Income - Expenses
-    balance_cents = starting_balance + total_income - total_debit_expenses
+            total_debit_expenses = (
+                db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.payment_method == "Debit card",
+                        Expense.date >= period_start,
+                        Expense.date <= period_end,
+                        Expense.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            balance_cents = starting_balance + total_income - total_debit_expenses
+            return balance_cents / 100
+
+        # Current or future period: Calculate cumulative balance
+        # Sum past period balances (periods that START before anchor date)
+        # These are treated as "past income" to be accounted for
+        past_period_balances = (
+            db.session.query(
+                db.func.coalesce(db.func.sum(SalaryPeriod.initial_debit_balance), 0)
+            )
+            .filter(
+                and_(
+                    SalaryPeriod.user_id == user_id,
+                    SalaryPeriod.is_active == True,  # noqa: E712
+                    SalaryPeriod.start_date < anchor_date,
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Calculate from earliest date (could be past period or anchor)
+        all_periods = (
+            SalaryPeriod.query.filter_by(user_id=user_id, is_active=True)
+            .order_by(SalaryPeriod.start_date)
+            .all()
+        )
+        if all_periods:
+            earliest_date = all_periods[0].start_date
+        else:
+            earliest_date = anchor_date
+
+        end_at_date = salary_period.end_date
+
+        # Get all income up to this period's end (excluding Initial Balance markers)
+        total_income = (
+            db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
+            .filter(
+                and_(
+                    Income.user_id == user_id,
+                    Income.type != "Initial Balance",
+                    Income.actual_date >= earliest_date,
+                    Income.actual_date <= end_at_date,
+                    Income.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Get all debit expenses up to this period's end
+        total_debit_expenses = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.payment_method == "Debit card",
+                    Expense.date >= earliest_date,
+                    Expense.date <= end_at_date,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        balance_cents = (
+            anchor_balance + past_period_balances + total_income - total_debit_expenses
+        )
+
     return balance_cents / 100  # Convert cents to euros
 
 
-def _calculate_credit_available(user_id: int, credit_limit_cents: int) -> float:
+def _calculate_credit_available(
+    user_id: int, salary_period: SalaryPeriod, balance_mode: str
+) -> float:
     """
-    Calculate current real-time credit card available balance.
+    Calculate real-time credit card available balance based on balance mode.
 
-    Periods are cosmetic filters only - balance reflects ALL transactions ever made.
-
-    Method (period-agnostic):
-    1. Find earliest "Pre-existing Credit Card Debt" marker (category=Debt, subcategory=Credit Card)
-    2. Starting available = Credit Limit - that debt amount
-    3. Add ALL credit card payments since that date
-    4. Subtract ALL credit card expenses since that date (excluding Debt category markers)
+    Credit debt is treated as GLOBAL regardless of mode (per Issue #149 decision).
+    This means credit debt accumulates across all periods, even in budget mode.
 
     Args:
         user_id: User ID to scope all transaction queries
-        credit_limit_cents: Credit card limit (in cents)
+        salary_period: The salary period being viewed
+        balance_mode: "budget" (isolated) or "sync" (cumulative)
 
     Returns:
         Current available credit balance in euros
     """
-    today = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    credit_limit = salary_period.credit_limit
 
-    # Find earliest "Pre-existing Credit Card Debt" entry for THIS USER
-    earliest_debt_marker = (
-        db.session.query(Expense)
-        .filter(
-            and_(
-                Expense.user_id == user_id,
-                Expense.category == "Debt",
-                Expense.subcategory == "Credit Card",
-                Expense.payment_method == "Credit card",
-                Expense.deleted_at.is_(None),
+    if balance_mode == "budget":
+        # BUDGET MODE: Period-isolated balance
+        # Credit available = Period's initial credit balance
+        # (which is credit_limit - debt at period start)
+        starting_available = salary_period.initial_credit_balance
+        period_start = salary_period.start_date
+        period_end = salary_period.end_date
+
+        # Get credit expenses within this period only (excluding Debt markers)
+        total_credit_expenses = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.payment_method == "Credit card",
+                    Expense.category != "Debt",
+                    Expense.date >= period_start,
+                    Expense.date <= period_end,
+                    Expense.deleted_at.is_(None),
+                )
             )
+            .scalar()
+            or 0
         )
-        .order_by(Expense.date)
-        .first()
-    )
 
-    if earliest_debt_marker:
-        # Start from this marker's date
-        start_from_date = earliest_debt_marker.date
-        # Starting available = limit - debt
-        starting_available_cents = credit_limit_cents - earliest_debt_marker.amount
+        # Get debt payments within this period
+        total_credit_payments = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.category == "Debt Payments",
+                    Expense.subcategory == "Credit Card",
+                    Expense.date >= period_start,
+                    Expense.date <= period_end,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        balance_cents = (
+            starting_available + total_credit_payments - total_credit_expenses
+        )
+
     else:
-        # No marker found - assume started with full credit limit available
-        start_from_date = datetime(2000, 1, 1).date()  # Beginning of time
-        starting_available_cents = credit_limit_cents
+        # SYNC MODE: Credit mirrors real credit card state
+        # Use the ONE initial credit state set when user created their first period
+        # Then track all credit expenses and payments up to viewed period's end
+        #
+        # NOTE: We do NOT sum period initial_credit_balances because that would
+        # misrepresent the actual credit card state.
 
-    # Get ALL credit card expenses since start date (excluding Debt category markers)
-    total_credit_expenses = (
-        db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
-        .filter(
-            and_(
-                Expense.user_id == user_id,
-                Expense.payment_method == "Credit card",
-                Expense.category != "Debt",  # Exclude pre-existing debt markers
-                Expense.date >= start_from_date,
-                Expense.date <= today,
-                Expense.deleted_at.is_(None),
+        user = User.query.get(user_id)
+        if user and user.user_initial_credit_available:
+            # Use stored credit available directly (simplified in Phase 6)
+            anchor_available = user.user_initial_credit_available
+            anchor_date = user.balance_start_date
+        else:
+            # Fallback: use earliest period's credit balance
+            earliest_period = (
+                SalaryPeriod.query.filter_by(user_id=user_id, is_active=True)
+                .order_by(SalaryPeriod.start_date)
+                .first()
             )
-        )
-        .scalar()
-        or 0
-    )
+            if earliest_period:
+                anchor_available = earliest_period.initial_credit_balance
+                anchor_date = earliest_period.start_date
+            else:
+                anchor_available = salary_period.credit_limit
+                anchor_date = salary_period.start_date
 
-    # Get ALL debt payments since start date
-    total_credit_payments = (
-        db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
-        .filter(
-            and_(
-                Expense.user_id == user_id,
-                Expense.category == "Debt Payments",
-                Expense.subcategory == "Credit Card",
-                Expense.date >= start_from_date,
-                Expense.date <= today,
-                Expense.deleted_at.is_(None),
+        # Check if viewing a PAST period (before anchor date)
+        if salary_period.start_date < anchor_date:
+            # Past period: Show isolated balance (like budget mode)
+            starting_available = salary_period.initial_credit_balance
+            period_start = salary_period.start_date
+            period_end = salary_period.end_date
+
+            # Get credit expenses within this period only (excluding Debt markers)
+            total_credit_expenses = (
+                db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.payment_method == "Credit card",
+                        Expense.category != "Debt",
+                        Expense.date >= period_start,
+                        Expense.date <= period_end,
+                        Expense.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
             )
-        )
-        .scalar()
-        or 0
-    )
 
-    # Available = Starting + Payments - Expenses
-    balance_cents = (
-        starting_available_cents + total_credit_payments - total_credit_expenses
-    )
+            # Get debt payments within this period
+            total_credit_payments = (
+                db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == user_id,
+                        Expense.category == "Debt Payments",
+                        Expense.subcategory == "Credit Card",
+                        Expense.date >= period_start,
+                        Expense.date <= period_end,
+                        Expense.deleted_at.is_(None),
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            balance_cents = (
+                starting_available + total_credit_payments - total_credit_expenses
+            )
+            return balance_cents / 100  # Convert cents to euros
+
+        # Current or future period: Calculate cumulative credit balance
+        end_at_date = salary_period.end_date
+
+        # Get ALL credit expenses up to this period's end (excluding Debt markers)
+        total_credit_expenses = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.payment_method == "Credit card",
+                    Expense.category != "Debt",
+                    Expense.date >= anchor_date,
+                    Expense.date <= end_at_date,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Get ALL debt payments up to this period's end
+        total_credit_payments = (
+            db.session.query(db.func.coalesce(db.func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == user_id,
+                    Expense.category == "Debt Payments",
+                    Expense.subcategory == "Credit Card",
+                    Expense.date >= anchor_date,
+                    Expense.date <= end_at_date,
+                    Expense.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        balance_cents = anchor_available + total_credit_payments - total_credit_expenses
+
     return balance_cents / 100  # Convert cents to euros
 
 

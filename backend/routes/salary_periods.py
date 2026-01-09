@@ -16,6 +16,7 @@ from backend.models.database import (
     Income,
     Debt,
     Goal,
+    User,
 )
 from backend.services.balance_service import get_display_balances
 from backend.services.budget_service import (
@@ -101,11 +102,8 @@ def get_current_salary_period():
         ).all()
 
         if periods_to_activate:
-            # Deactivate old active periods
-            SalaryPeriod.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).update({"is_active": False})
-            # Activate the period that contains today (should only be one due to overlap check)
+            # Activate periods that have started - don't deactivate others
+            # Multiple periods can be active (past + current)
             for period in periods_to_activate:
                 period.is_active = True
             db.session.commit()
@@ -855,7 +853,9 @@ def create_salary_period():
 
         # Smart activation logic:
         # - If creating a future period (starts after today), keep it inactive
-        # - If creating a current/past period, deactivate old periods and activate this one
+        # - If creating a current/past period, set it to active
+        # NOTE: Multiple periods can be active (past + current). Only future periods
+        # start as inactive and get auto-activated when their start date arrives.
         today = datetime.now().date()
         is_future_period = start_date > today
 
@@ -863,10 +863,8 @@ def create_salary_period():
             # Creating a future period - keep it inactive until its start date
             is_active = False
         else:
-            # Creating a current/past period - deactivate old active periods
-            SalaryPeriod.query.filter_by(
-                user_id=current_user_id, is_active=True
-            ).update({"is_active": False})
+            # Creating a current/past period - set it to active
+            # Don't deactivate other periods - they can coexist
             is_active = True
 
         # Wrap all operations in a transaction
@@ -930,6 +928,24 @@ def create_salary_period():
                 .first()
             )
 
+            # Also populate User balance fields (Issue #149 Phase 3)
+            # Update user balance anchor if this is the first period OR if creating an earlier period
+            user = User.query.get(current_user_id)
+            if user:
+                is_new_anchor = (
+                    user.balance_start_date is None
+                    or start_date < user.balance_start_date
+                )
+                if is_new_anchor:
+                    # This period becomes the new balance anchor (earliest period)
+                    user.balance_start_date = start_date
+                    user.user_initial_debit_balance = debit_balance
+                    user.user_initial_credit_limit = credit_limit
+                    # Store credit_balance directly (what user entered)
+                    user.user_initial_credit_available = credit_balance
+                    # Note: balance_mode has a default value in the model, no need to set it here
+                    # User can change it via Settings; we don't override their choice
+
             if not existing_initial_balance and debit_balance > 0:
                 initial_income = Income(
                     user_id=current_user_id,
@@ -946,9 +962,36 @@ def create_salary_period():
                     db.session.rollback()
                     # Continue without creating duplicate - the other one will be used
 
-            # Note: Pre-existing credit card debt is tracked via the credit_balance
-            # in the salary period settings. Users manage payments via recurring expenses.
-            # No automatic expense creation needed.
+            # Create Pre-existing Credit Card Debt expense if user has existing debt
+            # (credit_limit > credit_balance means they owe money)
+            pre_existing_debt = credit_limit - credit_balance
+            if pre_existing_debt > 0:
+                # Check if debt expense already exists for this user
+                existing_debt_expense = (
+                    Expense.active()
+                    .filter_by(
+                        user_id=current_user_id,
+                        name="Pre-existing Credit Card Debt",
+                        category="Debt",
+                        subcategory="Credit Card",
+                    )
+                    .first()
+                )
+
+                if not existing_debt_expense:
+                    # Create new debt marker (date is day before period starts)
+                    debt_expense = Expense(
+                        user_id=current_user_id,
+                        name="Pre-existing Credit Card Debt",
+                        amount=pre_existing_debt,
+                        category="Debt",
+                        subcategory="Credit Card",
+                        payment_method="Credit card",
+                        date=start_date - timedelta(days=1),
+                        is_fixed_bill=False,
+                        notes="Existing credit card balance at budget period start",
+                    )
+                    db.session.add(debt_expense)
 
             # Commit all changes together
             db.session.commit()
@@ -1285,9 +1328,14 @@ def update_salary_period_full(id):
             db.session.add(budget_period)
             current_start = week_end + timedelta(days=1)
 
-        # Update Initial Balance income entry if it exists
-        # NEVER create a new Initial Balance - it should only be created with the first salary period
-        # Search for ANY Initial Balance entry for this user (not just by date)
+        # Initial Balance handling:
+        # The Initial Balance income record represents the user's starting money when they
+        # first began using the app. It should ONLY be created once and NEVER updated.
+        # Subsequent salary periods' "initial_debit_balance" values are snapshots, not
+        # additional starting money - the salary income is already included in those values.
+        #
+        # Issue #149: Previously this code was updating the Initial Balance to each new
+        # salary period's debit_balance, which caused incorrect balance calculations.
         initial_income = (
             Income.active()
             .filter_by(
@@ -1298,15 +1346,9 @@ def update_salary_period_full(id):
             .first()
         )
 
-        if initial_income:
-            # Only update the amount, keep the original date
-            initial_income.amount = debit_balance
-        elif debit_balance > 0:
-            # This should never happen in normal flow (only if user deleted it manually)
-            # Create a new one with a warning
-            current_app.logger.warning(
-                f"Creating missing Initial Balance for user {current_user_id} - this should only happen once"
-            )
+        if not initial_income and debit_balance > 0:
+            # First salary period ever - create the Initial Balance record
+            # This only happens once per user (or if they deleted all data)
             initial_income = Income(
                 user_id=current_user_id,
                 type="Initial Balance",
@@ -1321,6 +1363,8 @@ def update_salary_period_full(id):
                 # Race condition: another request already created Initial Balance
                 db.session.rollback()
                 # Continue - the existing one will be used
+        # Note: If initial_income already exists, we do NOT update it.
+        # The first Initial Balance should remain unchanged forever.
 
         # Update Pre-existing Credit Card Debt expense if credit changed
         pre_existing_debt = credit_limit - credit_balance

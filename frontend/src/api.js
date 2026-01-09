@@ -174,6 +174,12 @@ export const userAPI = {
         api.put('/user-data/settings/default-currency', {
             default_currency: currency,
         }),
+    // Balance mode settings (Issue #149 - Phase 4)
+    getBalanceMode: () => api.get('/user-data/settings/balance-mode'),
+    updateBalanceMode: (mode) =>
+        api.put('/user-data/settings/balance-mode', {
+            balance_mode: mode,
+        }),
 };
 
 export const currencyAPI = {

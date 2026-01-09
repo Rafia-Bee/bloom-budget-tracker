@@ -83,6 +83,19 @@ class User(db.Model):
     # User's preferred base currency for display (ISO 4217 code)
     default_currency = db.Column(db.String(3), default="EUR", nullable=False)
 
+    # Balance tracking fields (Issue #149 - Phase 1)
+    # The date when the user started tracking their balance
+    balance_start_date = db.Column(db.Date, nullable=True)
+    # Initial debit card balance when user first started tracking (in cents)
+    user_initial_debit_balance = db.Column(db.Integer, default=0, nullable=False)
+    # Initial credit card limit when user first started tracking (in cents)
+    user_initial_credit_limit = db.Column(db.Integer, default=0, nullable=False)
+    # Initial credit available when user first started tracking (in cents)
+    # Simplified: stores what user entered directly, not debt calculation
+    user_initial_credit_available = db.Column(db.Integer, default=0, nullable=False)
+    # Balance mode: "sync" (cumulates across periods) or "budget" (isolated per period)
+    balance_mode = db.Column(db.String(20), default="sync", nullable=False)
+
     budget_periods = db.relationship(
         "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
     )
@@ -107,6 +120,10 @@ class User(db.Model):
         db.CheckConstraint(
             "recurring_lookahead_days >= 7 AND recurring_lookahead_days <= 90",
             name="check_user_lookahead_range",
+        ),
+        db.CheckConstraint(
+            "balance_mode IN ('sync', 'budget')",
+            name="check_user_balance_mode_valid",
         ),
     )
 

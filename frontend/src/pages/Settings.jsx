@@ -47,6 +47,12 @@ function Settings({ setIsAuthenticated }) {
     const [savingLookahead, setSavingLookahead] = useState(false);
     const [lookaheadSuccess, setLookaheadSuccess] = useState('');
 
+    // Balance Mode state (for preferences tab when feature flag enabled)
+    const [balanceMode, setBalanceMode] = useState('sync');
+    const [savingBalanceMode, setSavingBalanceMode] = useState(false);
+    const [balanceModeSuccess, setBalanceModeSuccess] = useState('');
+    const [showBalanceModeInfo, setShowBalanceModeInfo] = useState(false);
+
     const categories = [
         'Fixed Expenses',
         'Flexible Expenses',
@@ -66,6 +72,16 @@ function Settings({ setIsAuthenticated }) {
             const [lookaheadRes] = await Promise.all([userAPI.getRecurringLookahead()]);
             setRecurringLookaheadDays(lookaheadRes.data.recurring_lookahead_days);
             // Currency is already loaded from context
+
+            // Load balance mode if feature flag is enabled
+            if (flags.balanceModeEnabled) {
+                try {
+                    const balanceModeRes = await userAPI.getBalanceMode();
+                    setBalanceMode(balanceModeRes.data.balance_mode || 'sync');
+                } catch (err) {
+                    logError('loadBalanceMode', err);
+                }
+            }
         } catch (err) {
             logError('loadPreferences', err);
         }
@@ -151,6 +167,22 @@ function Settings({ setIsAuthenticated }) {
             setError(err.response?.data?.error || 'Failed to save setting');
         } finally {
             setSavingLookahead(false);
+        }
+    };
+
+    const handleSaveBalanceMode = async (newMode) => {
+        setSavingBalanceMode(true);
+        setBalanceModeSuccess('');
+        setError('');
+        try {
+            await userAPI.updateBalanceMode(newMode);
+            setBalanceMode(newMode);
+            setBalanceModeSuccess('Balance mode saved successfully!');
+            setTimeout(() => setBalanceModeSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to save balance mode');
+        } finally {
+            setSavingBalanceMode(false);
         }
     };
 
@@ -425,6 +457,110 @@ function Settings({ setIsAuthenticated }) {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Balance Mode Setting (only when feature flag enabled) */}
+                            {flags.balanceModeEnabled && (
+                                <div className="border-b dark:border-gray-700 pb-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                            Balance Mode
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowBalanceModeInfo(!showBalanceModeInfo)
+                                            }
+                                            className="inline-flex items-center justify-center w-5 h-5 text-xs text-gray-500 dark:text-dark-text-secondary bg-gray-200 dark:bg-dark-elevated rounded-full hover:bg-gray-300 dark:hover:bg-dark-border transition-colors"
+                                        >
+                                            ?
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Choose how balances are calculated across budget periods.
+                                    </p>
+
+                                    {/* Balance Mode Info Box */}
+                                    {showBalanceModeInfo && (
+                                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowBalanceModeInfo(false)}
+                                                className="absolute top-2 right-2 text-purple-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300"
+                                            >
+                                                ✕
+                                            </button>
+                                            <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-3">
+                                                Balance Mode Explained
+                                            </h4>
+                                            <div className="space-y-3 text-sm">
+                                                <div>
+                                                    <span className="font-medium text-purple-700 dark:text-purple-300">
+                                                        🔗 Sync with Bank
+                                                    </span>
+                                                    <p className="text-purple-600 dark:text-purple-400 mt-1">
+                                                        All your budget periods share ONE running
+                                                        balance. If you create a new period to track
+                                                        past transactions (e.g., €500 starting
+                                                        balance), that adds to your total. You're
+                                                        responsible for adding matching expenses to
+                                                        balance the books.
+                                                    </p>
+                                                    <p className="text-purple-500 dark:text-purple-500 mt-1 text-xs italic">
+                                                        Note: This doesn't connect to your bank - it
+                                                        just calculates balances the same way.
+                                                        Future-dated periods won't affect current
+                                                        balance until their date arrives.
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium text-purple-700 dark:text-purple-300">
+                                                        📊 Budget Tracker
+                                                    </span>
+                                                    <p className="text-purple-600 dark:text-purple-400 mt-1">
+                                                        Each budget period is completely isolated.
+                                                        Creating new periods doesn't affect other
+                                                        periods' balances. Good if you want to track
+                                                        spending limits without worrying about your
+                                                        actual bank balance.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-4">
+                                        <label
+                                            htmlFor="balance-mode"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                                        >
+                                            Mode:
+                                        </label>
+                                        <select
+                                            id="balance-mode"
+                                            value={balanceMode}
+                                            onChange={(e) => handleSaveBalanceMode(e.target.value)}
+                                            disabled={savingBalanceMode}
+                                            className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
+                                        >
+                                            <option value="sync">🔗 Sync with Bank</option>
+                                            <option value="budget">📊 Budget Tracker</option>
+                                        </select>
+                                        {savingBalanceMode && (
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                Saving...
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {balanceModeSuccess && (
+                                        <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                            <p className="text-green-700 dark:text-green-400 text-sm">
+                                                {balanceModeSuccess}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -548,6 +684,41 @@ function Settings({ setIsAuthenticated }) {
                                     <span
                                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                                             flags.reportsEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Balance Mode Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-purple-500">🔗</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Balance Mode Selection
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded">
+                                            NEW
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Choose between syncing with real bank balance or isolated
+                                        period budgeting
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => toggleFlag('balanceModeEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.balanceModeEnabled
+                                            ? 'bg-purple-500 dark:bg-purple-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.balanceModeEnabled
+                                                ? 'translate-x-6'
+                                                : 'translate-x-1'
                                         }`}
                                     />
                                 </button>

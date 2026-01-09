@@ -98,6 +98,16 @@ def delete_all_user_data():
         Goal.query.filter_by(user_id=current_user_id).delete()
         Subcategory.query.filter_by(user_id=current_user_id).delete()
 
+        # Reset User balance tracking fields (Issue #149)
+        # Without this, deleted data would still affect new salary periods
+        user = User.query.get(current_user_id)
+        if user:
+            user.balance_start_date = None
+            user.user_initial_debit_balance = 0
+            user.user_initial_credit_limit = 0
+            user.user_initial_credit_debt = 0
+            # Keep balance_mode - it's a preference, not data
+
         db.session.commit()
 
         # Audit log this critical operation
@@ -308,6 +318,113 @@ def update_default_currency():
         db.session.rollback()
         current_app.logger.error(
             f"[update_default_currency] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update settings. Please try again."}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# Valid balance modes
+VALID_BALANCE_MODES = ["sync", "budget"]
+
+
+@user_data_bp.route("/settings/balance-mode", methods=["GET"])
+@jwt_required()
+def get_balance_mode():
+    """
+    Get the user's balance mode setting.
+
+    Balance Modes:
+    - "sync": Sync with Bank - balances cumulate across periods
+    - "budget": Budget Tracker - each period is isolated
+
+    Returns:
+        - balance_mode: Current mode ("sync" or "budget")
+        - balance_start_date: When balance tracking started
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = db.session.get(User, current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        return (
+            jsonify(
+                {
+                    "balance_mode": user.balance_mode,
+                    "balance_start_date": (
+                        user.balance_start_date.isoformat()
+                        if user.balance_start_date
+                        else None
+                    ),
+                }
+            ),
+            200,
+        )
+
+    except SQLAlchemyError as e:
+        current_app.logger.error(f"[get_balance_mode] Error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Failed to load settings. Please try again."}), 500
+
+
+@user_data_bp.route("/settings/balance-mode", methods=["PUT"])
+@jwt_required()
+def update_balance_mode():
+    """
+    Update the user's balance mode setting.
+
+    Body:
+        - balance_mode: "sync" or "budget"
+
+    Balance Modes:
+    - "sync": Sync with Bank - balances cumulate across all periods
+    - "budget": Budget Tracker - each period has isolated balance
+
+    Returns:
+        - Success message with updated value
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = db.session.get(User, current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        data = request.get_json()
+        mode = data.get("balance_mode")
+
+        if not mode:
+            return jsonify({"error": "balance_mode is required"}), 400
+
+        mode = mode.lower()
+        if mode not in VALID_BALANCE_MODES:
+            return (
+                jsonify(
+                    {
+                        "error": f"Invalid balance mode. Must be one of: {', '.join(VALID_BALANCE_MODES)}"
+                    }
+                ),
+                400,
+            )
+
+        user.balance_mode = mode
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Balance mode updated successfully",
+                    "balance_mode": mode,
+                }
+            ),
+            200,
+        )
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f"[update_balance_mode] Error: {str(e)}", exc_info=True
         )
         return jsonify({"error": "Failed to update settings. Please try again."}), 500
     except ValueError as e:

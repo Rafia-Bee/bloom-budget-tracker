@@ -41,8 +41,14 @@ def get_expenses():
     min_amount = request.args.get("min_amount", type=int)
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in name/notes
+    include_markers = request.args.get("include_markers", "false").lower() == "true"
 
     query = Expense.active().filter_by(user_id=current_user_id)
+
+    # Exclude "Pre-existing Credit Card Debt" marker entries by default (Phase 6 cleanup)
+    # These are internal markers used for balance calculation, not real expenses
+    if not include_markers:
+        query = query.filter(Expense.name != "Pre-existing Credit Card Debt")
 
     # Apply filters
     # Note: period_id parameter is deprecated - use start_date/end_date instead
@@ -466,13 +472,18 @@ def get_dates_with_transactions():
     """
     Get all dates that have expenses (for day-by-day navigation).
     Returns sorted array of ISO date strings.
+    Excludes system expenses (Pre-existing Credit Card Debt).
     """
     current_user_id = int(get_jwt_identity())
 
-    # Get distinct dates from expenses
+    # Get distinct dates from expenses, excluding system expenses
     expense_dates = (
         db.session.query(db.func.distinct(Expense.date))
-        .filter(Expense.user_id == current_user_id)
+        .filter(
+            Expense.user_id == current_user_id,
+            Expense.category != "Debt",  # Exclude system debt markers
+            Expense.deleted_at.is_(None),  # Exclude soft-deleted
+        )
         .all()
     )
 
