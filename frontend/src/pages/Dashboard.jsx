@@ -985,18 +985,15 @@ function Dashboard({ setIsAuthenticated }) {
                         <div className="max-w-md mx-auto mb-8">
                             <WeeklyBudgetCard
                                 ref={weeklyBudgetCardRef}
-                                onSetupClick={async () => {
-                                    // Check if there's an active salary period to edit
-                                    try {
-                                        const response = await salaryPeriodAPI.getAll();
-                                        const activePeriod = response.data?.find(
-                                            (p) => p.is_active
+                                onSetupClick={() => {
+                                    // Use the currently viewed salary period, not active period
+                                    if (viewingSalaryPeriodId) {
+                                        const viewedPeriod = salaryPeriods.find(
+                                            (p) => p.id === viewingSalaryPeriodId
                                         );
-                                        if (activePeriod) {
-                                            setEditSalaryPeriod(activePeriod);
+                                        if (viewedPeriod) {
+                                            setEditSalaryPeriod(viewedPeriod);
                                         }
-                                    } catch (err) {
-                                        logError('checkActivePeriod', err);
                                     }
                                     setShowSalaryWizard(true);
                                 }}
@@ -1099,18 +1096,15 @@ function Dashboard({ setIsAuthenticated }) {
                             <WeeklyBudgetCard
                                 key={viewingSalaryPeriodId || 'current'}
                                 ref={weeklyBudgetCardRef}
-                                onSetupClick={async () => {
-                                    // Check if there's an active salary period to edit
-                                    try {
-                                        const response = await salaryPeriodAPI.getAll();
-                                        const activePeriod = response.data?.find(
-                                            (p) => p.is_active
+                                onSetupClick={() => {
+                                    // Use the currently viewed salary period, not active period
+                                    if (viewingSalaryPeriodId) {
+                                        const viewedPeriod = salaryPeriods.find(
+                                            (p) => p.id === viewingSalaryPeriodId
                                         );
-                                        if (activePeriod) {
-                                            setEditSalaryPeriod(activePeriod);
+                                        if (viewedPeriod) {
+                                            setEditSalaryPeriod(viewedPeriod);
                                         }
-                                    } catch (err) {
-                                        logError('checkActivePeriod', err);
                                     }
                                     setShowSalaryWizard(true);
                                 }}

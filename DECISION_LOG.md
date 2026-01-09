@@ -4,6 +4,33 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-09: Fix #160 - Manage Salary Period Shows Selected Period Values
+
+**Session Summary:** Fixed bug where clicking "Manage Salary Period" showed current period's values instead of the selected period's values.
+
+### Root Cause
+
+The `onSetupClick` handlers in Dashboard.jsx were fetching all salary periods via API and finding the `is_active` period, instead of using the already-tracked `viewingSalaryPeriodId` state.
+
+### Fix Applied
+
+Modified both `onSetupClick` handlers (lines ~988 and ~1100) in [Dashboard.jsx](frontend/src/pages/Dashboard.jsx) to:
+
+1. Use `viewingSalaryPeriodId` from state instead of making API call
+2. Find the viewed period from the already-loaded `salaryPeriods` array
+3. Set `editSalaryPeriod` to the viewed period (not the active one)
+
+### Files Changed
+
+-   `frontend/src/pages/Dashboard.jsx` - Fixed both WeeklyBudgetCard onSetupClick handlers
+
+### What's Next
+
+1. Run `bformat` and `btest f` to verify fix
+2. Commit and create PR
+
+---
+
 ## 2026-01-08: Issue #149 Complete - PR #156 Ready for Merge
 
 **Session Summary:** Completed all 6 phases of Issue #149 (Balance Calculation Refactoring).
