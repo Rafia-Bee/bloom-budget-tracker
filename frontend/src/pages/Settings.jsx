@@ -65,6 +65,7 @@ function Settings({ setIsAuthenticated }) {
         if (activeTab === 'preferences' || activeTab === 'experimental') {
             loadPreferences();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
 
     const loadPreferences = async () => {

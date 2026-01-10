@@ -40,7 +40,7 @@ function CategoryBreakdownChart({
     }, [data]);
 
     // Handle click on pie slice
-    const handleClick = (data, index) => {
+    const handleClick = (data) => {
         if (clickable && onCategoryClick && data?.name && !isAnimating) {
             onCategoryClick(data.name);
         }

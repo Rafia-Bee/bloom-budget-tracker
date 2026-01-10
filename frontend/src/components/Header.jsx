@@ -13,11 +13,10 @@ import CurrencySettingsModal from './CurrencySettingsModal';
 import { authAPI } from '../api';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 
-function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children }) {
+function Header({ setIsAuthenticated, children }) {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-    const [expandedSubmenu, setExpandedSubmenu] = useState(null); // 'import-export' | null
     const navigate = useNavigate();
     const { isEnabled, experimentalEnabled } = useFeatureFlag();
     const reportsEnabled = experimentalEnabled && isEnabled('reportsEnabled');
@@ -171,41 +170,6 @@ function Header({ setIsAuthenticated, onExport, onImport, onBankImport, children
             >
                 💳 Debts
             </button>
-        </>
-    );
-
-    // Submenu Button Component for collapsible submenus
-    const SubmenuButton = ({ icon, label, isExpanded, onClick, children }) => (
-        <>
-            <button
-                onClick={onClick}
-                className="w-full text-left px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-elevated transition flex items-center justify-between group"
-            >
-                <div className="flex items-center gap-2">
-                    {icon}
-                    <span>{label}</span>
-                </div>
-                <svg
-                    className={`w-4 h-4 transition-transform duration-150 ${
-                        isExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                    />
-                </svg>
-            </button>
-            {isExpanded && (
-                <div className="bg-gray-50 dark:bg-dark-elevated border-l-2 border-bloom-pink dark:border-dark-pink ml-4 my-1 overflow-hidden transition-all duration-150">
-                    {children}
-                </div>
-            )}
         </>
     );
 

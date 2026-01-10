@@ -31,6 +31,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
     const [showBankImportModal, setShowBankImportModal] = useState(false);
     const [view, setView] = useState('active'); // 'active' or 'upcoming'
     const [scheduledExpenses, setScheduledExpenses] = useState([]);
+    // eslint-disable-next-line no-unused-vars -- Reserved for future bulk selection feature
     const [selectedScheduled, setSelectedScheduled] = useState([]);
     const [budgetImpact, setBudgetImpact] = useState(null);
 

@@ -5,7 +5,7 @@
  * Provides act()-wrapped event handlers to prevent React act() warnings.
  */
 
-import { act, fireEvent, waitFor } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
 
 /**
  * Wait for async effects to complete after render.
