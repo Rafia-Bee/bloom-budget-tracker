@@ -328,9 +328,13 @@ test.describe('Initial Balance Handling (#149)', () => {
         }
     });
 
-    test('updating salary period does not change Initial Balance', async ({ page, request }) => {
-        // This test verifies that updating an existing salary period
-        // does NOT update the Initial Balance
+    test('updating non-anchor salary period does not change Initial Balance', async ({
+        page,
+        request,
+    }) => {
+        // This test verifies that updating a NON-ANCHOR salary period
+        // does NOT update the Initial Balance.
+        // Note: The ANCHOR period (first period) CAN update Initial Balance when edited.
 
         const cookies = await page.context().cookies();
         const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
@@ -343,9 +347,30 @@ test.describe('Initial Balance Handling (#149)', () => {
 
         const baseUrl = 'http://localhost:5000';
 
-        // Create salary period with €1000 initial balance
-        // Use dynamic dates: 90-120 days ago (past period)
-        // NOTE: Using dates far in the past to avoid overlap with balance-mode.spec.js
+        // Create FIRST salary period (anchor) with €1000 initial balance
+        // Use dynamic dates: 120-150 days ago (older period)
+        const anchorStart = dateOffset(-150);
+        const anchorEnd = dateOffset(-121);
+        const anchorRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
+            headers: {
+                Cookie: cookieHeader,
+                'Content-Type': 'application/json',
+            },
+            data: {
+                start_date: anchorStart,
+                end_date: anchorEnd,
+                debit_balance: 100000, // €1000
+                credit_balance: 50000,
+                credit_limit: 100000,
+                credit_allowance: 0,
+                num_sub_periods: 4,
+                fixed_bills: [],
+            },
+        });
+        expect(anchorRes.ok()).toBeTruthy();
+        const anchorPeriodId = (await anchorRes.json()).id;
+
+        // Create SECOND salary period (non-anchor) with €2000
         const test3Start = dateOffset(-120);
         const test3End = dateOffset(-91);
         const createRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
@@ -356,7 +381,7 @@ test.describe('Initial Balance Handling (#149)', () => {
             data: {
                 start_date: test3Start,
                 end_date: test3End,
-                debit_balance: 100000, // €1000
+                debit_balance: 200000, // €2000
                 credit_balance: 50000,
                 credit_limit: 100000,
                 credit_allowance: 0,
@@ -367,9 +392,7 @@ test.describe('Initial Balance Handling (#149)', () => {
         expect(createRes.ok()).toBeTruthy();
         const periodId = (await createRes.json()).id;
 
-        // Verify Initial Balance is €1000
-        // Verify Initial Balance is €1000
-        // Note: include_markers=true is required to see Initial Balance records
+        // Verify Initial Balance is €1000 (from first/anchor period)
         let incomeAfterCreate = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
@@ -378,7 +401,7 @@ test.describe('Initial Balance Handling (#149)', () => {
         let initialBalanceCreate = incomeListCreate.find((i) => i.type === 'Initial Balance');
         expect(initialBalanceCreate.amount).toBe(100000);
 
-        // UPDATE the salary period with €5000 debit balance
+        // UPDATE the SECOND (non-anchor) salary period with €5000 debit balance
         const updateRes = await request.put(`${baseUrl}/api/v1/salary-periods/${periodId}`, {
             headers: {
                 Cookie: cookieHeader,
@@ -397,7 +420,7 @@ test.describe('Initial Balance Handling (#149)', () => {
         });
         expect(updateRes.ok()).toBeTruthy();
 
-        // Verify Initial Balance is STILL €1000 (not updated to €5000)
+        // Verify Initial Balance is STILL €1000 (editing non-anchor should not change it)
         let incomeAfterUpdate = await request.get(`${baseUrl}/api/v1/income?include_markers=true`, {
             headers: { Cookie: cookieHeader },
         });
@@ -434,7 +457,11 @@ test.describe('Initial Balance Handling (#149)', () => {
             }
         }
 
+        // Delete both periods
         await request.delete(`${baseUrl}/api/v1/salary-periods/${periodId}`, {
+            headers: { Cookie: cookieHeader },
+        });
+        await request.delete(`${baseUrl}/api/v1/salary-periods/${anchorPeriodId}`, {
             headers: { Cookie: cookieHeader },
         });
     });

@@ -1,15 +1,13 @@
-# TaskSync Prompt Templates
+# Prompt Templates
 
-Copy-paste these templates for common tasks. These contain scenario-specific workflows.
-
-For permanent reference (architecture, design, commands): See `copilot-instructions.md`
+Copy-paste these for common tasks.
 
 ---
 
 ## 📋 Create GitHub Issue
 
 ```
-**Task:** Create a GitHub issue for [brief description]
+**Task:** Create GitHub issue for [brief description]
 
 **Requirements:**
 - [Requirement 1]
@@ -17,20 +15,10 @@ For permanent reference (architecture, design, commands): See `copilot-instructi
 
 **Workflow:**
 1. Research relevant code/documentation
-2. Create report: security, pros/cons, design notes, questions
-3. Write to temp file, create issue using --body-file
-4. Apply labels: priority (critical/high/medium/low) + effort (quick win/medium/difficult)
+2. Report: security, pros/cons, design notes, questions
+3. Create issue via temp file with labels (priority + effort)
 
-**Issue CLI Pattern:**
-@"
-## Description
-[Description]
-
-## Acceptance Criteria
-- [ ] Criterion 1
-"@ | Out-File issue_body.md -Encoding utf8
-gh issue create --title "feat: description" --body-file issue_body.md --label "priority: medium" --label "medium"
-Remove-Item issue_body.md
+**For DB migration:** Include SQL script template in issue body.
 ```
 
 ---
@@ -44,17 +32,13 @@ Remove-Item issue_body.md
 1. Read issue: gh issue view [number]
 2. Create branch FIRST: git checkout -b feat/description
 3. Divide into phases if complex
-4. For each phase:
-   - Write/update tests for new functionality
-   - Make code changes
-   - Update DECISION_LOG.md if architectural
-   - Run bformat, btest
-   - Commit: git add . && git commit -m "feat: description (#XX)"
-   - Ask user before continuing to next phase
-5. Reference issue in commits
-6. NEVER push unless explicitly told
+4. For each phase: tests → code → DECISION_LOG → bformat → commit
+5. NEVER push unless explicitly told
 
-**For Bug Issues:** Create E2E test to reproduce first.
+**For Bug:** Create test to reproduce first.
+**For DB Migration:** Write Flask-Migrate locally, test, convert to SQL, save to docs/migrations/.
+
+**⚠️ FOR ANY DATABASE CHANGES:** See "Production Database Verification Checklist" below - ALWAYS query production DB first.
 ```
 
 ---
@@ -62,167 +46,59 @@ Remove-Item issue_body.md
 ## 🐛 Bug Report
 
 ```
-**Task:** Create bug report for [description]
+**Task:** Bug report for [description]
 
 **Observed:** [What's happening]
 **Expected:** [What should happen]
-**Steps:** [If known]
 
-**Workflow:**
-1. Research code to understand issue
-2. Report: security, potential fixes, E2E test approach
-3. Create issue with labels
+**Workflow:** Research → root-cause analysis report with E2E test approach → create issue with priority and effort labels
 ```
 
 ---
 
-## 🚀 Git Workflow
+## 🗄️ Production Database Verification Checklist
 
-```
-**Pre-Work:**
-1. Create branch FIRST: git checkout -b feat/description
-2. Make changes on feature branch
-3. bformat
-4. Update docs per change type
-5. btest f / btest b / btest e
-6. git add . && git commit -m "feat: description (#XX)"
+**⚠️ CRITICAL: ALWAYS check production database state before ANY database-related change including:**
 
-**Push (only when asked):**
-git push -u origin feat/branch-name
-gh pr create --fill
+- Schema migrations (adding/modifying columns, constraints)
+- Data migrations (updating existing records)
+- New queries or query modifications
+- Balance/period calculations
+- Any feature touching existing data
 
-**After CI passes:**
-gh pr merge --squash --delete-branch
-git checkout main && git pull
-```
+**Verification queries to run on production BEFORE writing any migration or query:**
 
----
+```sql
+-- Check current table structure and constraints
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns WHERE table_name = '[table]';
 
-## 🗄️ Database Migration
+-- Check existing data state that will be affected
+SELECT * FROM [table] WHERE [conditions] LIMIT 10;
 
-```
-**Development (SQLite):**
-bmigrate
+-- Verify counts and sums before migration
+SELECT COUNT(*), SUM(amount) FROM [table] WHERE [conditions];
 
-**Production (Neon PostgreSQL):**
-1. Write migration with Flask-Migrate locally
-2. Test locally with SQLite
-3. Convert to raw SQL script
-4. Save to: docs/migrations/YYYY-MM-DD_description.sql
-5. Run manually on Neon SQL Editor
-
-**SQL Template:**
--- Migration: [description]
--- Date: YYYY-MM-DD
--- Issue: #XX
-
--- Forward
-ALTER TABLE ...;
-
--- Verification
-SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'table';
+-- Check for any edge cases (NULL values, inactive records, soft-deleted rows)
+SELECT COUNT(*) FROM [table] WHERE [column] IS NULL OR is_active = false OR deleted_at IS NOT NULL;
 ```
 
----
+**The Rule:** Never assume local database state matches production. Always verify production data state before writing migrations.
 
-## 🧪 Testing Workflow
-
-```
-**Before Commit:**
-- bformat (Black + Prettier)
-- btest b (backend)
-- btest f (frontend)
-- btest e (E2E, if UI changes)
-
-**Coverage Commands:**
-pytest --cov=backend --cov-report=html
-npm test -- --run --coverage
-
-**Rules:**
-- NEVER skip failing tests - ask developer for options
-- NEVER push until tests pass locally
-- Start long tests with isBackground: true, ask user for results
-```
-
----
-
-## 📚 Documentation Updates
-
-```
-| Change Type          | Update These                              |
-| -------------------- | ----------------------------------------- |
-| Major feature        | README, DEVELOPMENT_REFERENCE, USER_GUIDE |
-| Architecture         | ARCHITECTURE.md, DECISION_LOG.md          |
-| Session summary      | DECISION_LOG.md                           |
-| API changes          | docs/API.md, DEVELOPMENT_REFERENCE        |
-| Security             | docs/SECURITY.md                          |
-| Tests                | TEST_COVERAGE.md, docs/TESTING.md         |
-| Deployment           | docs/DEPLOYMENT.md                        |
-| Feature flags        | docs/FEATURE_FLAGS.md                     |
-| Mobile/PWA           | docs/MOBILE_DEV.md                        |
-| DB migrations        | docs/migrations/                          |
-
-**DECISION_LOG.md Format:**
-## YYYY-MM-DD: [Title]
-**Session Summary:** What was completed
-**What's Next:** Pending tasks
-**Files to Note:** Key files
-```
-
----
-
-## 🚫 Warnings & Errors
-
-```
-**When encountering ANY warning/error:**
-1. NEVER ignore - even if pre-existing
-2. Inform developer: what, why, how to fix, effort estimate
-3. Track in issues if deferred
-
-| Type          | Action                    |
-| ------------- | ------------------------- |
-| Linting       | Fix immediately           |
-| Deprecation   | Create issue              |
-| Console       | Investigate, fix/document |
-| Build         | Never ship with warnings  |
-| Test          | Fix before merge          |
-```
+**Lesson learned (2026-01-10):** Balance calculation migration failed to account for `is_active=false` on historical periods, causing sync mode to use wrong date range for income/expense queries.
 
 ---
 
 ## ⚡ Minimal Prompts
 
-**Create issue:**
-
 ```
-Create GH issue for [description]. Research code, report pros/cons/security, use temp file.
+Create GH issue for [description]. Research, report pros/cons/security.
 ```
 
-**Implement issue:**
-
 ```
-Implement #[number]. Branch first, phases with commits, tests required, update docs.
+Implement #[number]. Branch first, phases with commits, tests required.
 ```
 
-**Bug report:**
-
 ```
-Create bug issue for [description]. Research, report, consider E2E test.
+Bug issue for [description]. Research, consider E2E test.
 ```
-
----
-
-## 🚨 Quick Commands
-
-| Action         | Command                     |
-| -------------- | --------------------------- |
-| View issue     | `gh issue view [number]`    |
-| List issues    | `gh issue list`             |
-| Format code    | `bformat`                   |
-| Frontend tests | `btest f`                   |
-| Backend tests  | `btest b`                   |
-| E2E tests      | `btest e`                   |
-| Create branch  | `git checkout -b feat/name` |
-| Start servers  | `bstart`                    |
-| Stop servers   | `bstop`                     |
-| DB migrations  | `bmigrate`                  |

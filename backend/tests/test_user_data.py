@@ -425,3 +425,89 @@ class TestUserNotFound:
 
         assert response.status_code == 404
         assert "User not found" in response.json["error"]
+
+
+class TestBalanceMode:
+    """Tests for balance mode settings endpoints (Issue #165)"""
+
+    def test_get_balance_mode_requires_auth(self, client):
+        """Should require authentication"""
+        response = client.get("/api/v1/user-data/settings/balance-mode")
+        assert response.status_code == 401
+
+    def test_get_balance_mode_default(self, client, auth_headers):
+        """Should return default balance mode (sync)"""
+        response = client.get(
+            "/api/v1/user-data/settings/balance-mode",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["balance_mode"] == "sync"
+
+    def test_update_balance_mode_requires_auth(self, client):
+        """Should require authentication"""
+        response = client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={"balance_mode": "budget"},
+        )
+        assert response.status_code == 401
+
+    def test_update_balance_mode_to_budget(self, client, auth_headers):
+        """Should update balance mode to budget"""
+        response = client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={"balance_mode": "budget"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["balance_mode"] == "budget"
+
+        # Verify change persisted
+        get_response = client.get(
+            "/api/v1/user-data/settings/balance-mode",
+            headers=auth_headers,
+        )
+        assert get_response.json["balance_mode"] == "budget"
+
+    def test_update_balance_mode_to_sync(self, client, auth_headers):
+        """Should update balance mode to sync"""
+        # First set to budget
+        client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={"balance_mode": "budget"},
+            headers=auth_headers,
+        )
+
+        # Then back to sync
+        response = client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={"balance_mode": "sync"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["balance_mode"] == "sync"
+
+    def test_update_balance_mode_missing_field(self, client, auth_headers):
+        """Should reject without required field"""
+        response = client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "required" in response.json["error"]
+
+    def test_update_balance_mode_invalid(self, client, auth_headers):
+        """Should reject invalid balance mode"""
+        response = client.put(
+            "/api/v1/user-data/settings/balance-mode",
+            json={"balance_mode": "invalid_mode"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "Invalid balance mode" in response.json["error"]

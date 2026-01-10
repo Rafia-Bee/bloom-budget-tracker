@@ -4,6 +4,107 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-10: Production Balance Bug - Period is_active Flag
+
+**Session Summary:** Investigated production bug where debit balance showed €2,714.03 instead of expected €174.99.
+
+**Root Cause:** Period 1 (2025-11-20 to 2025-12-19) had `is_active = false` in production database. The balance_service.py filters periods by `is_active=True` when determining earliest date for sync mode calculations, causing:
+
+-   Income only counted from Period 2 start (1,733 cents instead of 313,628 cents)
+-   Expenses only counted from Period 2 start (37,530 cents instead of 607,664 cents)
+-   Wrong calculation: 307,200 + 1,733 - 37,530 = 271,403 cents (€2,714.03)
+-   Correct calculation: 307,200 + 313,628 - 607,664 = 13,164 cents (€131.64)
+
+**Fix:** Created SQL migration to set Period 1 `is_active = true`.
+
+**Lesson Learned:** Always verify production database state before any database-related migration. Added Rule #7 to Critical Rules and comprehensive Production Database Verification Checklist to PROMPT_TEMPLATES.md.
+
+**Files Changed:**
+
+-   `docs/migrations/2026-01-10_fix_period_is_active_for_sync_balance.sql` - Fix migration
+-   `.github/copilot-instructions.md` - Added Rule #7 for production DB verification
+-   `.github/PROMPT_TEMPLATES.md` - Added Production Database Verification Checklist
+
+**What's Next:** Run SQL fix in Neon, verify balance displays correctly
+
+---
+
+## 2026-01-10: Fix #165 - Balance Mode DB Constraint Mismatch
+
+**Session Summary:** Fixed production bug where balance mode switching fails with constraint violation.
+
+**Root Cause:** Migration `2026-01-05_add_user_balance_fields.sql` created constraint with `'cumulative'` but code uses `'budget'`. This caused `check_user_balance_mode_valid` constraint violation when trying to change mode.
+
+**Fix:**
+
+-   Created migration script to drop/recreate constraint with correct values
+-   Added tests for balance mode switching endpoint
+
+**Files Changed:**
+
+-   `docs/migrations/2026-01-10_fix_balance_mode_constraint.sql` - Production migration
+-   `backend/tests/test_user_data.py` - Added TestBalanceMode class
+
+**What's Next:** Run migration on Neon SQL Editor, verify balance display is correct
+
+---
+
+## 2026-01-09: Fix #160 - Manage Salary Period Shows Selected Period Values
+
+**Session Summary:** Fixed four related bugs:
+
+1. Clicking "Manage Salary Period" showed current period's values instead of selected period's values
+2. After editing a salary period, dashboard balances didn't update
+3. In SYNC mode, editing anchor period's initial debit balance didn't update display balance
+4. In SYNC mode, editing future period's debit balance didn't update the associated Salary income
+
+### Bug 1: Wrong Period Values in Wizard
+
+**Root Cause:** The `onSetupClick` handlers in Dashboard.jsx were fetching all salary periods via API and finding the `is_active` period, instead of using the already-tracked `viewingSalaryPeriodId` state.
+
+**Fix:** Modified both `onSetupClick` handlers to use `viewingSalaryPeriodId` from state.
+
+### Bug 2: Balance Not Updating After Edit (Frontend)
+
+**Root Cause:** After editing salary period, `onComplete` callback only called `loadPeriodsAndCurrentWeek()` which loads current period data. If viewing a non-current period, that period's data wasn't reloaded.
+
+**Fix:** Pass `loadSalaryPeriodData` and `viewingSalaryPeriodId` to DashboardModals, and call `loadSalaryPeriodData(viewingSalaryPeriodId)` in `onComplete` callback.
+
+### Bug 3: Anchor Period Balance Edit Not Reflected (Backend)
+
+**Root Cause:** In SYNC mode, `display_debit_balance` uses `user.user_initial_debit_balance` as anchor. When editing the anchor period, only salary_period was updated.
+
+**Fix:** When editing the anchor salary period (contains `balance_start_date`):
+
+-   Update `user.user_initial_debit_balance`, `user.user_initial_credit_available`, `user.user_initial_credit_limit`
+-   Update "Initial Balance" income record to stay in sync
+
+### Bug 4: Future Period Balance Edit Not Reflected (Backend)
+
+**Root Cause:** When creating a future period in SYNC mode, user can opt to create a "Salary" income. When editing, this income wasn't updated.
+
+**Fix:** Use concrete naming convention `"Projected Period Salary: <start_date>"` for the income type:
+
+-   **Frontend (SalaryPeriodWizard.jsx):** Create income with `type: "Projected Period Salary: <startDate>"`
+-   **Backend (salary_periods.py):** Match on exact type string `"Projected Period Salary: <start_date>"`
+
+This provides concrete matching instead of fragile date+type lookups.
+
+### Files Changed
+
+-   `frontend/src/pages/Dashboard.jsx` - Fixed onSetupClick handlers, pass new props to DashboardModals
+-   `frontend/src/components/dashboard/DashboardModals.jsx` - Accept new props, reload viewed period data on complete
+-   `frontend/src/components/SalaryPeriodWizard.jsx` - Use concrete "Period Salary: <date>" type for future period income
+-   `backend/routes/salary_periods.py` - Update user anchor balances, Initial Balance income, and future Period Salary income when editing
+
+### Testing Status
+
+-   Issue #160 fix (wizard values) confirmed working
+-   Past/current period balance edit confirmed working
+-   Future period balance edit needs testing
+
+---
+
 ## 2026-01-08: Issue #149 Complete - PR #156 Ready for Merge
 
 **Session Summary:** Completed all 6 phases of Issue #149 (Balance Calculation Refactoring).

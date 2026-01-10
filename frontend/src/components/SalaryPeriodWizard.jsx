@@ -409,7 +409,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 if (createIncome) {
                     const incomeAmount = toEur(parseCurrency(debitBalance));
                     await incomeAPI.create({
-                        type: 'Salary',
+                        type: `Projected Period Salary: ${startDate}`,
                         amount: incomeAmount,
                         date: startDate,
                     });

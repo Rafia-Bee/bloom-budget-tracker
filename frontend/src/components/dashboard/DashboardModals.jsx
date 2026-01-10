@@ -41,6 +41,8 @@ const DashboardModals = ({
     rolloverData,
     setRolloverData,
     loadPeriodsAndCurrentWeek,
+    loadSalaryPeriodData,
+    viewingSalaryPeriodId,
     weeklyBudgetCardRef,
     showLeftoverModal,
     setShowLeftoverModal,
@@ -247,6 +249,10 @@ const DashboardModals = ({
                         // Reload all data
                         await loadPeriodsAndCurrentWeek();
                         await loadExpenses();
+                        // If viewing a specific period, reload that period's data too
+                        if (viewingSalaryPeriodId && loadSalaryPeriodData) {
+                            await loadSalaryPeriodData(viewingSalaryPeriodId);
+                        }
                         // Force refresh the weekly budget card
                         weeklyBudgetCardRef.current?.refresh();
                     }}

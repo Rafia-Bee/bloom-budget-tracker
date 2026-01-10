@@ -1299,6 +1299,21 @@ def update_salary_period_full(id):
         salary_period.end_date = end_date
         salary_period.num_sub_periods = num_sub_periods
 
+        # Update user's anchor balances if editing the anchor salary period
+        # In SYNC mode, display_balance uses user.user_initial_debit_balance,
+        # so we need to update it when the anchor period is edited
+        user = User.query.get(current_user_id)
+        if user and user.balance_start_date:
+            # Check if this is the anchor period (starts on or before balance_start_date)
+            if (
+                salary_period.start_date
+                <= user.balance_start_date
+                <= salary_period.end_date
+            ):
+                user.user_initial_debit_balance = debit_balance
+                user.user_initial_credit_available = credit_balance
+                user.user_initial_credit_limit = credit_limit
+
         # Delete existing budget periods and recreate with new configuration
         BudgetPeriod.query.filter_by(salary_period_id=salary_period.id).delete()
 
@@ -1330,12 +1345,10 @@ def update_salary_period_full(id):
 
         # Initial Balance handling:
         # The Initial Balance income record represents the user's starting money when they
-        # first began using the app. It should ONLY be created once and NEVER updated.
-        # Subsequent salary periods' "initial_debit_balance" values are snapshots, not
-        # additional starting money - the salary income is already included in those values.
-        #
-        # Issue #149: Previously this code was updating the Initial Balance to each new
-        # salary period's debit_balance, which caused incorrect balance calculations.
+        # first began using the app. It should ONLY be created once when setting up.
+        # EXCEPTION: When editing the ANCHOR salary period (the one that contains
+        # balance_start_date), we update both the user's anchor balance AND the
+        # Initial Balance income to keep them in sync.
         initial_income = (
             Income.active()
             .filter_by(
@@ -1344,6 +1357,15 @@ def update_salary_period_full(id):
             )
             .order_by(Income.actual_date)  # Get the FIRST one (earliest)
             .first()
+        )
+
+        # Check if this is the anchor period
+        is_anchor_period = (
+            user
+            and user.balance_start_date
+            and salary_period.start_date
+            <= user.balance_start_date
+            <= salary_period.end_date
         )
 
         if not initial_income and debit_balance > 0:
@@ -1363,8 +1385,10 @@ def update_salary_period_full(id):
                 # Race condition: another request already created Initial Balance
                 db.session.rollback()
                 # Continue - the existing one will be used
-        # Note: If initial_income already exists, we do NOT update it.
-        # The first Initial Balance should remain unchanged forever.
+        elif initial_income and is_anchor_period:
+            # Editing the anchor period - update Initial Balance to stay in sync
+            # with user.user_initial_debit_balance
+            initial_income.amount = debit_balance
 
         # Update Pre-existing Credit Card Debt expense if credit changed
         pre_existing_debt = credit_limit - credit_balance
@@ -1401,6 +1425,29 @@ def update_salary_period_full(id):
         elif debt_expense:
             # If debt is now 0, delete the expense
             db.session.delete(debt_expense)
+
+        # Update future period "Period Salary" income if it exists
+        # When creating a future period in SYNC mode, user can choose to create
+        # a "Projected Period Salary: <date>" income entry for expected income. If editing, update that income.
+        if (
+            user
+            and user.balance_start_date
+            and salary_period.start_date > user.balance_start_date
+        ):
+            # This is a future period - check for associated Period Salary income
+            # The income type is "Projected Period Salary: <start_date>" for concrete matching
+            period_salary_type = f"Projected Period Salary: {start_date}"
+            future_salary_income = (
+                Income.active()
+                .filter_by(
+                    user_id=current_user_id,
+                    type=period_salary_type,
+                )
+                .first()
+            )
+            if future_salary_income:
+                # Update the salary income to match the new debit balance
+                future_salary_income.amount = debit_balance
 
         db.session.commit()
 
