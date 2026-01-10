@@ -35,7 +35,6 @@ function ChartExportButton({ targetRef, filename = 'chart', title = 'Chart' }) {
 
         // Temporarily hide the export button and dropdown during capture
         const exportButton = dropdownRef.current;
-        const originalDisplay = exportButton?.style.display;
         if (exportButton) {
             exportButton.style.visibility = 'hidden';
         }

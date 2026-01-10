@@ -7,7 +7,7 @@ import React from 'react';
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
 import { clickWithAct } from './test-utils';
 import PeriodSelector from '../components/PeriodSelector';
 

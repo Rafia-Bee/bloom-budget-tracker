@@ -91,7 +91,7 @@ function DebtPayoffChart({ data, currencyFormatter }) {
                     {/* Total Balance */}
                     {payload
                         .filter((p) => p.name === 'Total Debt')
-                        .map((entry, index) => (
+                        .map((entry) => (
                             <p
                                 key="total"
                                 className="text-sm font-bold mb-2"
@@ -104,8 +104,8 @@ function DebtPayoffChart({ data, currencyFormatter }) {
                     {/* Individual Debts */}
                     {payload
                         .filter((p) => p.name !== 'Total Debt')
-                        .map((entry, index) => (
-                            <p key={index} className="text-sm" style={{ color: entry.color }}>
+                        .map((entry, idx) => (
+                            <p key={idx} className="text-sm" style={{ color: entry.color }}>
                                 {entry.name}: {currencyFormatter(entry.value)}
                             </p>
                         ))}

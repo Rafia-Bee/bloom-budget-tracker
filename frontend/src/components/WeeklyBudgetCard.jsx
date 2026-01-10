@@ -83,6 +83,7 @@ const WeeklyBudgetCard = forwardRef(
                     loadSalaryPeriodData(selectedPeriod.id);
                 }
             }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [selectedPeriod, weeklyData?.salary_period?.id]);
 
         // Expose refresh method to parent via ref

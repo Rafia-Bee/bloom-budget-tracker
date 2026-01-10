@@ -32,7 +32,7 @@ function Dashboard({ setIsAuthenticated }) {
     const [expenses, setExpenses] = useState([]);
     const [income, setIncome] = useState([]);
     const [transactions, setTransactions] = useState([]);
-    const [filter, setFilter] = useState('all'); // 'all', 'income', 'expense', 'debit', 'credit'
+    const [filter, setFilter] = useState('all'); // eslint-disable-line no-unused-vars -- Reserved for future filter feature
     const [transactionView, setTransactionView] = useState('transactions'); // 'transactions' or 'scheduled'
     const [scheduledExpenses, setScheduledExpenses] = useState([]);
     const [selectedScheduled, setSelectedScheduled] = useState([]); // Array of template_ids for scheduled view
@@ -70,7 +70,8 @@ function Dashboard({ setIsAuthenticated }) {
     const [creditLimit, setCreditLimit] = useState(null); // Load from salary period
     const [isInitialLoading, setIsInitialLoading] = useState(true); // Prevent flickering on initial load
     const [viewingSalaryPeriodId, setViewingSalaryPeriodId] = useState(null); // Track which salary period we're viewing
-    const [isViewingCurrentPeriod, setIsViewingCurrentPeriod] = useState(true); // Track if viewing current period
+    // eslint-disable-next-line no-unused-vars -- Reserved for future current period indicator
+    const [isViewingCurrentPeriod, setIsViewingCurrentPeriod] = useState(true);
     const weeklyBudgetCardRef = useRef(null);
 
     // Currency context for multi-currency support
@@ -78,6 +79,7 @@ function Dashboard({ setIsAuthenticated }) {
 
     // Helper to convert EUR amounts to user's currency and format
     // Used for balances/totals stored in EUR on backend
+    // eslint-disable-next-line no-unused-vars -- Reserved for future currency conversion
     const fcEur = (cents) => {
         const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents;
         return formatCurrency(converted, defaultCurrency);

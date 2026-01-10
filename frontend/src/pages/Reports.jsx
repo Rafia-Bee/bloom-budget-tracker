@@ -16,6 +16,7 @@ import DebtPayoffChart from '../components/reports/DebtPayoffChart';
 import BudgetVsActualChart from '../components/reports/BudgetVsActualChart';
 import TopMerchantsCard from '../components/reports/TopMerchantsCard';
 import ChartExportButton from '../components/reports/ChartExportButton';
+// eslint-disable-next-line no-unused-vars -- Reserved for future export all feature
 import ExportAllReportsButton from '../components/reports/ExportAllReportsButton';
 import PeriodComparisonCard from '../components/reports/PeriodComparisonCard';
 
@@ -84,6 +85,7 @@ function Reports({ setIsAuthenticated }) {
 
     useEffect(() => {
         loadAnalyticsData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dateRange, granularity, merchantSortBy]);
 
     const loadAnalyticsData = async () => {
