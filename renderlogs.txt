@@ -1,0 +1,77 @@
+
+[2026-01-10 00:38:21,213] ERROR in user_data: [update_balance_mode] Error: (psycopg2.errors.CheckViolation) new row for relation "users" violates check constraint "check_user_balance_mode_valid"
+DETAIL:  Failing row contains (1, saiyuriye.rafia@gmail.com, scrypt:32768:8:1$NTBL2jq9wdswJ317$a866f96e54aca726260d216f04bafb..., 2025-12-04 16:05:51.698396, 0, null, 30, EUR, 2025-11-20, 307200, 150000, budget, 8942).
+[SQL: UPDATE users SET balance_mode=%(balance_mode)s WHERE users.id = %(users_id)s]
+[parameters: {'balance_mode': 'budget', 'users_id': 1}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Traceback (most recent call last):
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.CheckViolation: new row for relation "users" violates check constraint "check_user_balance_mode_valid"
+DETAIL:  Failing row contains (1, saiyuriye.rafia@gmail.com, scrypt:32768:8:1$NTBL2jq9wdswJ317$a866f96e54aca726260d216f04bafb..., 2025-12-04 16:05:51.698396, 0, null, 30, EUR, 2025-11-20, 307200, 150000, budget, 8942).
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "/opt/render/project/src/backend/routes/user_data.py", line 412, in update_balance_mode
+    db.session.commit()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/scoping.py", line 597, in commit
+    return self._proxied.commit()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1311, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1286, in _prepare_impl
+    self.session.flush()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4331, in flush
+    self._flush(objects)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4466, in _flush
+    with util.safe_reraise():
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4427, in _flush
+    flush_context.execute()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+    _emit_update_statements(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 912, in _emit_update_statements
+    c = connection.execute(
+        ^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.CheckViolation) new row for relation "users" violates check constraint "check_user_balance_mode_valid"
+DETAIL:  Failing row contains (1, saiyuriye.rafia@gmail.com, scrypt:32768:8:1$NTBL2jq9wdswJ317$a866f96e54aca726260d216f04bafb..., 2025-12-04 16:05:51.698396, 0, null, 30, EUR, 2025-11-20, 307200, 150000, budget, 8942).
+[SQL: UPDATE users SET balance_mode=%(balance_mode)s WHERE users.id = %(users_id)s]
+[parameters: {'balance_mode': 'budget', 'users_id': 1}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+127.0.0.1 - - [10/Jan/2026:00:38:21 +0000] "PUT /api/v1/user-data/settings/balance-mode HTTP/1.1" 500 57 "https://bloom-tracker.app/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"

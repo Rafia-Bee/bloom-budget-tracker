@@ -49,7 +49,7 @@ Copy-paste these for common tasks.
 **Observed:** [What's happening]
 **Expected:** [What should happen]
 
-**Workflow:** Research → report with E2E test approach → create issue with labels
+**Workflow:** Research → root-cause analysis report with E2E test approach → create issue with priority and effort labels
 ```
 
 ---

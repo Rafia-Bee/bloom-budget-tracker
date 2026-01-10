@@ -1305,7 +1305,11 @@ def update_salary_period_full(id):
         user = User.query.get(current_user_id)
         if user and user.balance_start_date:
             # Check if this is the anchor period (starts on or before balance_start_date)
-            if salary_period.start_date <= user.balance_start_date <= salary_period.end_date:
+            if (
+                salary_period.start_date
+                <= user.balance_start_date
+                <= salary_period.end_date
+            ):
                 user.user_initial_debit_balance = debit_balance
                 user.user_initial_credit_available = credit_balance
                 user.user_initial_credit_limit = credit_limit
@@ -1359,7 +1363,9 @@ def update_salary_period_full(id):
         is_anchor_period = (
             user
             and user.balance_start_date
-            and salary_period.start_date <= user.balance_start_date <= salary_period.end_date
+            and salary_period.start_date
+            <= user.balance_start_date
+            <= salary_period.end_date
         )
 
         if not initial_income and debit_balance > 0:

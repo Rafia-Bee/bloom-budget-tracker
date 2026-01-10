@@ -4,6 +4,26 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-10: Fix #165 - Balance Mode DB Constraint Mismatch
+
+**Session Summary:** Fixed production bug where balance mode switching fails with constraint violation.
+
+**Root Cause:** Migration `2026-01-05_add_user_balance_fields.sql` created constraint with `'cumulative'` but code uses `'budget'`. This caused `check_user_balance_mode_valid` constraint violation when trying to change mode.
+
+**Fix:**
+
+-   Created migration script to drop/recreate constraint with correct values
+-   Added tests for balance mode switching endpoint
+
+**Files Changed:**
+
+-   `docs/migrations/2026-01-10_fix_balance_mode_constraint.sql` - Production migration
+-   `backend/tests/test_user_data.py` - Added TestBalanceMode class
+
+**What's Next:** Run migration on Neon SQL Editor, verify balance display is correct
+
+---
+
 ## 2026-01-09: Fix #160 - Manage Salary Period Shows Selected Period Values
 
 **Session Summary:** Fixed four related bugs:
