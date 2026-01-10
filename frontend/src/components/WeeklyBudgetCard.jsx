@@ -14,10 +14,14 @@ import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
 
 const WeeklyBudgetCard = forwardRef(
-    ({ onSetupClick, onAllocateClick, onWeekChange, selectedPeriod }, ref) => {
-        const [weeklyData, setWeeklyData] = useState(null);
+    (
+        { onSetupClick, onAllocateClick, onWeekChange, selectedPeriod, initialSalaryPeriodData },
+        ref
+    ) => {
+        // Initialize with provided data to skip initial API call
+        const [weeklyData, setWeeklyData] = useState(initialSalaryPeriodData || null);
         const [selectedWeek, setSelectedWeek] = useState(null);
-        const [loading, setLoading] = useState(true);
+        const [loading, setLoading] = useState(!initialSalaryPeriodData);
         const [error, setError] = useState(null);
 
         // Currency context for multi-currency support
@@ -47,6 +51,15 @@ const WeeklyBudgetCard = forwardRef(
         };
 
         useEffect(() => {
+            // Skip initial load if we already have data from props
+            if (initialSalaryPeriodData) {
+                // Set initial week selection
+                if (!selectedWeek && initialSalaryPeriodData?.current_week) {
+                    setSelectedWeek(initialSalaryPeriodData.current_week.week_number);
+                }
+                return;
+            }
+
             // On mount, if we have a selectedPeriod that's a salary period, load it directly
             // Otherwise load the current period
             if (selectedPeriod?.weekly_budget !== undefined) {

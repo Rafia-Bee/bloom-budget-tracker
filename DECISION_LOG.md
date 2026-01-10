@@ -4,6 +4,34 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-10: Optimize Dashboard API Calls - Phase 1 (#164)
+
+**Session Summary:** Investigated frontend API call redundancies and implemented Phase 1 optimizations.
+
+**Investigation Findings:**
+
+-   `debtAPI.getAll()` called by 6 different modals (AddExpense, EditExpense, Filter, AddRecurring, AddDebtPayment, Debts page)
+-   `subcategoryAPI.getAll()` called by 5 different locations
+-   `goalAPI.getAll()` called by 3 different locations
+-   `salaryPeriodAPI.getCurrent()` called by 4 different components
+-   WeeklyBudgetCard made redundant API calls despite Dashboard having the data
+
+**Phase 1 Optimizations Implemented:**
+
+1. Dashboard now caches `salaryPeriodData` in state and passes to child components
+2. WeeklyBudgetCard accepts `initialSalaryPeriodData` prop, skips API call if provided
+3. SalaryPeriodRolloverPrompt accepts `salaryPeriodData` prop (already had fallback pattern)
+
+**Files Changed:**
+
+-   `frontend/src/pages/Dashboard.jsx` - Added salaryPeriodData state, pass to children
+-   `frontend/src/components/WeeklyBudgetCard.jsx` - Accept initialSalaryPeriodData prop
+-   `frontend/src/components/SalaryPeriodRolloverPrompt.jsx` - Accept salaryPeriodData prop
+
+**What's Next:** Phase 2 - Create SharedDataContext for debts/goals/subcategories, Phase 3 - SalaryPeriodContext
+
+---
+
 ## 2026-01-10: Production Balance Bug - Period is_active Flag
 
 **Session Summary:** Investigated production bug where debit balance showed €2,714.03 instead of expected €174.99.
@@ -310,21 +338,21 @@ user.user_initial_credit_available = credit_balance
 
 -   **backend/services/balance_service.py**
 
-    -   Budget mode: Period-isolated balance calculation
-    -   Sync mode: Anchor + past periods + income - expenses
-    -   Past periods in sync mode show their isolated balance (not cumulative)
+-   Budget mode: Period-isolated balance calculation
+-   Sync mode: Anchor + past periods + income - expenses
+-   Past periods in sync mode show their isolated balance (not cumulative)
 
 -   **backend/routes/salary_periods.py**
 
-    -   Removed code that deactivated other periods when creating new ones
-    -   Multiple periods can now be active simultaneously
+-   Removed code that deactivated other periods when creating new ones
+-   Multiple periods can now be active simultaneously
 
 -   **backend/routes/user_data.py**
 
-    -   Delete All Data now resets User balance fields
+-   Delete All Data now resets User balance fields
 
 -   **backend/routes/income.py**
-    -   `get_income_stats()` now mode-aware, includes past period balances in sync mode
+-   `get_income_stats()` now mode-aware, includes past period balances in sync mode
 
 ### Sync Mode Logic (Final)
 
