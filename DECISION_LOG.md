@@ -4,23 +4,34 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-10: Optimize Dashboard API Calls - Phase 1 (#164)
+## 2026-01-10: Optimize Dashboard API Calls - Phase 1 Complete (#164)
 
-**Session Summary:** Investigated frontend API call redundancies and implemented Phase 1 optimizations.
+**Session Summary:** Investigated frontend API call redundancies, analyzed webserver logs for runtime impact, implemented Phase 1 optimizations, and updated GitHub issue with findings.
 
-**Investigation Findings:**
+**Webserver Log Analysis (E2E Test Run):**
 
--   `debtAPI.getAll()` called by 6 different modals (AddExpense, EditExpense, Filter, AddRecurring, AddDebtPayment, Debts page)
+| API Endpoint             | Actual Calls | Problem                                       |
+| ------------------------ | ------------ | --------------------------------------------- |
+| `salary-periods/{id}`    | 623          | Same period fetched by multiple components    |
+| `currencies/rates`       | 537          | Not fully centralized despite CurrencyContext |
+| `default-currency`       | 523          | Every component fetches independently         |
+| `salary-periods/current` | 412          | Dashboard, Debts, Reports all call            |
+| `budget-periods`         | 367          | Dashboard and child components duplicate      |
+
+**Static Code Analysis:**
+
+-   `debtAPI.getAll()` called by 6 different modals
 -   `subcategoryAPI.getAll()` called by 5 different locations
 -   `goalAPI.getAll()` called by 3 different locations
 -   `salaryPeriodAPI.getCurrent()` called by 4 different components
--   WeeklyBudgetCard made redundant API calls despite Dashboard having the data
 
 **Phase 1 Optimizations Implemented:**
 
-1. Dashboard now caches `salaryPeriodData` in state and passes to child components
+1. Dashboard caches `salaryPeriodData` in state and passes to child components
 2. WeeklyBudgetCard accepts `initialSalaryPeriodData` prop, skips API call if provided
-3. SalaryPeriodRolloverPrompt accepts `salaryPeriodData` prop (already had fallback pattern)
+3. SalaryPeriodRolloverPrompt accepts `salaryPeriodData` prop with fallback pattern
+
+**Branch:** `feat/optimize-dashboard-api-calls` (rebased on main, includes balance fixes from #166)
 
 **Files Changed:**
 
@@ -28,7 +39,12 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 -   `frontend/src/components/WeeklyBudgetCard.jsx` - Accept initialSalaryPeriodData prop
 -   `frontend/src/components/SalaryPeriodRolloverPrompt.jsx` - Accept salaryPeriodData prop
 
-**What's Next:** Phase 2 - Create SharedDataContext for debts/goals/subcategories, Phase 3 - SalaryPeriodContext
+**What's Next:**
+
+1. Run E2E tests to verify Phase 1 reduces API calls and balance fixes work
+2. Phase 2 - Create SharedDataContext for debts/goals/subcategories/budget-periods
+3. Phase 3 - Create SalaryPeriodContext for centralized salary period data
+4. Update App.jsx with provider hierarchy
 
 ---
 
