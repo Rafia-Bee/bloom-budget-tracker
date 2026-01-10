@@ -4,6 +4,31 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-10: Production Balance Bug - Period is_active Flag
+
+**Session Summary:** Investigated production bug where debit balance showed €2,714.03 instead of expected €174.99.
+
+**Root Cause:** Period 1 (2025-11-20 to 2025-12-19) had `is_active = false` in production database. The balance_service.py filters periods by `is_active=True` when determining earliest date for sync mode calculations, causing:
+
+-   Income only counted from Period 2 start (1,733 cents instead of 313,628 cents)
+-   Expenses only counted from Period 2 start (37,530 cents instead of 607,664 cents)
+-   Wrong calculation: 307,200 + 1,733 - 37,530 = 271,403 cents (€2,714.03)
+-   Correct calculation: 307,200 + 313,628 - 607,664 = 13,164 cents (€131.64)
+
+**Fix:** Created SQL migration to set Period 1 `is_active = true`.
+
+**Lesson Learned:** Always verify production database state before any database-related migration. Added Rule #7 to Critical Rules and comprehensive Production Database Verification Checklist to PROMPT_TEMPLATES.md.
+
+**Files Changed:**
+
+-   `docs/migrations/2026-01-10_fix_period_is_active_for_sync_balance.sql` - Fix migration
+-   `.github/copilot-instructions.md` - Added Rule #7 for production DB verification
+-   `.github/PROMPT_TEMPLATES.md` - Added Production Database Verification Checklist
+
+**What's Next:** Run SQL fix in Neon, verify balance displays correctly
+
+---
+
 ## 2026-01-10: Fix #165 - Balance Mode DB Constraint Mismatch
 
 **Session Summary:** Fixed production bug where balance mode switching fails with constraint violation.
