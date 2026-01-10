@@ -15,6 +15,7 @@ import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
 import Header from '../components/Header';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSharedData } from '../contexts/SharedDataContext';
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters';
 
 function Debts({ setIsAuthenticated }) {
@@ -33,6 +34,9 @@ function Debts({ setIsAuthenticated }) {
 
     // Currency context for multi-currency support
     const { defaultCurrency, convertAmount } = useCurrency();
+
+    // SharedDataContext for cache invalidation
+    const { refreshDebts: refreshSharedDebts } = useSharedData();
 
     // Helper function to format EUR amounts (stored in DB) converted to user's currency
     const fcEur = (cents) => {
@@ -141,6 +145,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.create(debtData);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
             setShowAddModal(false);
         } catch (error) {
             logError('addDebt', error);
@@ -152,6 +157,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.update(id, debtData);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
             setShowEditModal(false);
             setSelectedDebt(null);
         } catch (error) {
@@ -171,6 +177,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.delete(id);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
         } catch (error) {
             logError('deleteDebt', error);
         }

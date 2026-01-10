@@ -4,11 +4,11 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-10: Optimize Dashboard API Calls - Phase 1 Complete (#164)
+## 2026-01-10: Optimize Dashboard API Calls - Phase 1 & 2 Complete (#164)
 
-**Session Summary:** Investigated frontend API call redundancies, analyzed webserver logs for runtime impact, implemented Phase 1 optimizations, and updated GitHub issue with findings.
+**Session Summary:** Investigated frontend API call redundancies, analyzed webserver logs for runtime impact, implemented Phase 1 & 2 optimizations.
 
-**Webserver Log Analysis (E2E Test Run):**
+**Webserver Log Analysis (E2E Test Run - Before Optimization):**
 
 | API Endpoint             | Actual Calls | Problem                                       |
 | ------------------------ | ------------ | --------------------------------------------- |
@@ -31,20 +31,46 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 2. WeeklyBudgetCard accepts `initialSalaryPeriodData` prop, skips API call if provided
 3. SalaryPeriodRolloverPrompt accepts `salaryPeriodData` prop with fallback pattern
 
-**Branch:** `feat/optimize-dashboard-api-calls` (rebased on main, includes balance fixes from #166)
+**Phase 2 Optimizations Implemented:**
 
-**Files Changed:**
+1. Created `SharedDataContext` for centralized caching of debts/goals/subcategories
+2. Updated 5 modals to use cached data instead of fetching:
+    - AddExpenseModal, EditExpenseModal, FilterTransactionsModal
+    - AddRecurringExpenseModal, AddDebtPaymentModal
+3. Added cache invalidation (refreshDebts/refreshGoals/refreshSubcategories) to:
+    - Debts.jsx (after create/update/delete)
+    - Goals.jsx (after create/update/delete)
+    - Settings.jsx (after subcategory CRUD)
 
--   `frontend/src/pages/Dashboard.jsx` - Added salaryPeriodData state, pass to children
--   `frontend/src/components/WeeklyBudgetCard.jsx` - Accept initialSalaryPeriodData prop
--   `frontend/src/components/SalaryPeriodRolloverPrompt.jsx` - Accept salaryPeriodData prop
+**Branch:** `feat/optimize-dashboard-api-calls`
 
-**What's Next:**
+**Files Changed (Phase 2):**
 
-1. Run E2E tests to verify Phase 1 reduces API calls and balance fixes work
-2. Phase 2 - Create SharedDataContext for debts/goals/subcategories/budget-periods
-3. Phase 3 - Create SalaryPeriodContext for centralized salary period data
-4. Update App.jsx with provider hierarchy
+-   `frontend/src/contexts/SharedDataContext.jsx` - NEW: Centralized data caching
+-   `frontend/src/App.jsx` - Added SharedDataProvider wrapper
+-   `frontend/src/components/AddExpenseModal.jsx` - Use SharedDataContext
+-   `frontend/src/components/EditExpenseModal.jsx` - Use SharedDataContext
+-   `frontend/src/components/FilterTransactionsModal.jsx` - Use SharedDataContext
+-   `frontend/src/components/AddRecurringExpenseModal.jsx` - Use SharedDataContext
+-   `frontend/src/components/AddDebtPaymentModal.jsx` - Use SharedDataContext
+-   `frontend/src/pages/Debts.jsx` - Add refreshSharedDebts calls
+-   `frontend/src/pages/Goals.jsx` - Add refreshSharedGoals calls
+-   `frontend/src/pages/Settings.jsx` - Add refreshSharedSubcategories calls
+
+**What's Next (Resume Here Tomorrow):**
+
+1. **FIRST:** Run `btest f` to verify frontend tests pass
+2. **THEN:** Run `bformat` to format all code
+3. **THEN:** Commit Phase 2 with message: `feat: add SharedDataContext for modal data caching (#164)`
+4. **OPTIONAL Phase 3:** Create SalaryPeriodContext for cross-page salary period data sharing
+5. **OPTIONAL Phase 4:** Audit other pages (Expenses.jsx, Income.jsx, Debts.jsx) for similar redundancies
+
+**Key Files to Review:**
+
+-   `frontend/src/contexts/SharedDataContext.jsx` - The new context for caching
+-   `frontend/src/App.jsx` - Where SharedDataProvider is wrapped
+
+**Current Branch:** `feat/optimize-dashboard-api-calls` (uncommitted changes)
 
 ---
 

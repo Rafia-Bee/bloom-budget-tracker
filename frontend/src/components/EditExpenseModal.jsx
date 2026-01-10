@@ -2,11 +2,12 @@
  * Bloom - Edit Expense Modal
  *
  * Modal dialog for editing existing expenses with pre-filled data.
+ *
+ * Optimization: Uses SharedDataContext for cached debts/subcategories (#164)
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, subcategoryAPI } from '../api';
-import { logError } from '../utils/logger';
+import { useSharedData } from '../contexts/SharedDataContext';
 import PropTypes from 'prop-types';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
@@ -22,33 +23,20 @@ function EditExpenseModal({ onClose, onEdit, expense }) {
     const [paymentMethod, setPaymentMethod] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [debts, setDebts] = useState([]);
-    const [subcategoriesData, setSubcategoriesData] = useState({});
+
+    // Use cached data from SharedDataContext instead of fetching each time modal opens
+    const {
+        debts,
+        subcategories: subcategoriesData,
+        ensureDebtsLoaded,
+        ensureSubcategoriesLoaded,
+    } = useSharedData();
 
     useEffect(() => {
-        // Always load fresh data when component mounts (modal opens)
-        loadDebts();
-        loadSubcategories();
-    }, []); // Only run on mount since modal is conditionally rendered
-
-    const loadDebts = async () => {
-        try {
-            const response = await debtAPI.getAll();
-            setDebts(response.data);
-        } catch (error) {
-            logError('loadDebts', error);
-        }
-    };
-
-    const loadSubcategories = async () => {
-        try {
-            const response = await subcategoryAPI.getAll();
-            setSubcategoriesData(response.data.subcategories || {});
-        } catch (error) {
-            logError('loadSubcategories', error);
-            setSubcategoriesData({});
-        }
-    };
+        // Ensure data is loaded (uses cached data if already loaded)
+        ensureDebtsLoaded();
+        ensureSubcategoriesLoaded();
+    }, [ensureDebtsLoaded, ensureSubcategoriesLoaded]);
 
     const categories = [
         'Fixed Expenses',
