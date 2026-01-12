@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, expenseAPI, budgetPeriodAPI } from '../api';
+import { debtAPI, expenseAPI } from '../api';
 import { logError } from '../utils/logger';
 import AddDebtModal from '../components/AddDebtModal';
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal';
@@ -28,7 +28,6 @@ function Debts({ setIsAuthenticated }) {
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedDebt, setSelectedDebt] = useState(null);
     const [creditCardDebt, setCreditCardDebt] = useState(null);
-    const [currentPeriod, setCurrentPeriod] = useState(null);
     const [expandedDebtId, setExpandedDebtId] = useState(null);
     const [debtTransactions, setDebtTransactions] = useState({});
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -66,28 +65,16 @@ function Debts({ setIsAuthenticated }) {
     };
 
     useEffect(() => {
-        loadCurrentPeriod();
         loadDebts();
         loadArchivedDebts();
     }, []);
 
     useEffect(() => {
-        if (currentPeriod) {
+        if (sharedSalaryPeriod) {
             loadCreditCardDebt();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPeriod, sharedSalaryPeriod]);
-
-    const loadCurrentPeriod = async () => {
-        try {
-            const periodsRes = await budgetPeriodAPI.getAll();
-            if (periodsRes.data.length > 0) {
-                setCurrentPeriod(periodsRes.data[0]);
-            }
-        } catch (error) {
-            logError('loadPeriods', error);
-        }
-    };
+    }, [sharedSalaryPeriod]);
 
     const loadDebts = async () => {
         try {
@@ -109,8 +96,6 @@ function Debts({ setIsAuthenticated }) {
 
     const loadCreditCardDebt = async () => {
         try {
-            if (!currentPeriod) return;
-
             // Use cached salary period data from SalaryPeriodContext (Issue #164 Phase 3)
             if (!sharedSalaryPeriod) {
                 setCreditCardDebt(null);
@@ -993,7 +978,7 @@ function Debts({ setIsAuthenticated }) {
                         setShowBankImportModal(false);
                         loadDebts();
                         loadArchivedDebts();
-                        if (currentPeriod) loadCreditCardDebt();
+                        if (sharedSalaryPeriod) loadCreditCardDebt();
                     }}
                 />
             )}
