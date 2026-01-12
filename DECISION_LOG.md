@@ -190,6 +190,30 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-13: Fix FAB Button Disabled with Rollover Prompt (#169)
+
+**Session Summary:** Fixed bug where FAB (+) button was incorrectly disabled when the rollover prompt notification was showing.
+
+**Bug Fix:**
+
+-   `frontend/src/pages/Dashboard.jsx` - Removed `showRolloverPrompt` from FAB button's `disabled` prop
+-   The rollover prompt is a non-blocking notification banner, not a modal requiring exclusive attention
+-   FAB button now remains enabled when rollover prompt is visible
+
+**Root Cause:**
+
+-   `showRolloverPrompt` was included in disabled conditions alongside actual modals
+-   Unlike modals that block interaction, the rollover prompt is informational only
+
+**What's Next:**
+
+1. Manual testing: Verify FAB button works when rollover prompt shows
+2. Consider fixing other rollover prompt issues (#72, #73) in future PRs
+
+**Current Branch:** `fix/fab-button-disabled-with-rollover-prompt`
+
+---
+
 ## 2026-01-12: Phase 4 Complete + E2E Test Fixes (#164)
 
 **Session Summary:**
