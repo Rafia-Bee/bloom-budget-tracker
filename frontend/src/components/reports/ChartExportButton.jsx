@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { logError } from '../../utils/logger';
 
 function ChartExportButton({ targetRef, filename = 'chart', title = 'Chart' }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,7 @@ function ChartExportButton({ targetRef, filename = 'chart', title = 'Chart' }) {
 
     const captureChart = async () => {
         if (!targetRef?.current) {
-            console.error('Chart reference not found');
+            logError('captureChart', new Error('Chart reference not found'));
             return null;
         }
 
@@ -75,7 +76,7 @@ function ChartExportButton({ targetRef, filename = 'chart', title = 'Chart' }) {
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (error) {
-            console.error('PNG export failed:', error);
+            logError('exportPNG', error);
         } finally {
             setExporting(false);
         }
@@ -143,7 +144,7 @@ function ChartExportButton({ targetRef, filename = 'chart', title = 'Chart' }) {
 
             pdf.save(`${filename}-${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (error) {
-            console.error('PDF export failed:', error);
+            logError('exportPDF', error);
         } finally {
             setExporting(false);
         }

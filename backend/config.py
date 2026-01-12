@@ -9,7 +9,8 @@ class Config:
     # Basic Flask config
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    # Security: Reduced from 24h to 1h to limit exposure window for compromised tokens
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

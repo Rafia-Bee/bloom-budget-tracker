@@ -27,6 +27,7 @@ from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
 from backend.services.audit_service import log_auth_event
+from backend.utils.validators import validate_password_strength
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -44,10 +45,11 @@ def register():
     if len(email) > 120 or "@" not in email:
         return jsonify({"error": "Invalid email format"}), 400
 
-    # Validate password strength
+    # Validate password strength (complexity requirements)
     password = data["password"]
-    if len(password) < 8:
-        return jsonify({"error": "Password must be at least 8 characters"}), 400
+    is_valid, error_msg = validate_password_strength(password)
+    if not is_valid:
+        return jsonify({"error": error_msg}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 409
@@ -250,3 +252,54 @@ def get_current_user():
         ),
         200,
     )
+
+
+@auth_bp.route("/change-password", methods=["POST"])
+@jwt_required()
+def change_password():
+    """
+    Change password for authenticated user.
+
+    Requires current password verification and validates new password
+    meets complexity requirements.
+    """
+    current_user_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "Request body required"}), 400
+
+    current_password = data.get("current_password", "")
+    new_password = data.get("new_password", "")
+
+    if not current_password:
+        return jsonify({"error": "Current password is required"}), 400
+
+    # Validate new password meets complexity requirements
+    is_valid, error_msg = validate_password_strength(new_password)
+    if not is_valid:
+        return jsonify({"error": error_msg}), 400
+
+    user = db.session.get(User, current_user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Verify current password
+    if not user.check_password(current_password):
+        log_auth_event("change_password", user_id=user.id, success=False)
+        return jsonify({"error": "Current password is incorrect"}), 401
+
+    # Check if new password is same as current
+    if user.check_password(new_password):
+        return (
+            jsonify({"error": "New password must be different from current password"}),
+            400,
+        )
+
+    # Update password
+    user.set_password(new_password)
+    db.session.commit()
+
+    log_auth_event("change_password", user_id=user.id, success=True)
+
+    return jsonify({"message": "Password changed successfully"}), 200

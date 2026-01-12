@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { analyticsAPI } from '../api';
 import { formatCurrency } from '../utils/formatters';
+import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import Header from '../components/Header';
@@ -114,7 +115,7 @@ function Reports({ setIsAuthenticated }) {
             setSpendingBySubcategory(null);
         } catch (err) {
             setError('Failed to load analytics data');
-            console.error('Analytics error:', err);
+            logError('loadAnalytics', err);
         } finally {
             setLoading(false);
         }
@@ -132,7 +133,7 @@ function Reports({ setIsAuthenticated }) {
             setSpendingBySubcategory(subcategoryRes.data);
             setSelectedCategory(categoryName);
         } catch (err) {
-            console.error('Failed to load subcategory data:', err);
+            logError('loadSubcategoryData', err);
         }
     };
 

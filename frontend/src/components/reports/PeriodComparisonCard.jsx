@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { analyticsAPI } from '../../api';
 import { formatCurrency } from '../../utils/formatters';
+import { logError } from '../../utils/logger';
 
 // Arrow icons for change indicators
 const UpArrow = () => (
@@ -62,7 +63,7 @@ function PeriodComparisonCard({ currencyFormatter = formatCurrency }) {
             });
             setData(response.data);
         } catch (err) {
-            console.error('Failed to load comparison data:', err);
+            logError('loadComparisonData', err);
             setError('Failed to load comparison data');
         } finally {
             setLoading(false);

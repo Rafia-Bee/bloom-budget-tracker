@@ -1,21 +1,24 @@
 # Backend Dependencies for Bloom (Flask API)
 Flask==3.0.0
-Flask-CORS==5.0.0
+Flask-CORS>=6.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
 Flask-JWT-Extended==4.6.0
+Flask-Talisman>=1.0.0
 python-dotenv==1.0.0
 SQLAlchemy==2.0.23
+gunicorn==23.0.0
+psycopg2-binary>=2.9.9
 
 # Data validation and serialization
-marshmallow==3.23.2
+marshmallow>=3.26.2
 email-validator==2.1.0
 
 # Date/time handling
 python-dateutil==2.8.2
 
 # HTTP requests (for currency API)
-requests==2.32.3
+requests>=2.32.4
 
 # Email service
 sendgrid==6.11.0

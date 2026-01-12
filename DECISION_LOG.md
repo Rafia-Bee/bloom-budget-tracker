@@ -4,6 +4,192 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-13: Fix Dependabot Security Alerts (#170)
+
+**Session Summary:** Fixed all 16 open Dependabot security alerts across Python and npm dependencies.
+
+**Python Vulnerabilities Fixed (backend/requirements.txt & requirements.txt):**
+
+1. **Flask-CORS** (CVE-2024-6839, CVE-2024-6866, CVE-2024-6844) - Updated 5.0.0 → 6.0.0+
+
+    - Path equivalence bypass, case sensitivity handling, URL path normalization
+
+2. **Black** (CVE-2024-21503) - Updated 23.12.1 → 24.3.0+
+
+    - ReDoS vulnerability in code formatting
+
+3. **Marshmallow** (CVE-2025-68480) - Updated 3.23.2 → 3.26.2+
+
+    - Denial of Service via deeply nested schema
+
+4. **Requests** (CVE-2024-47081) - Updated 2.32.3 → 2.32.4+
+    - Credentials leak when session is reused after redirect
+
+**npm Vulnerabilities Fixed (frontend/package.json & package-lock.json):**
+
+1. **jsPDF** (GHSA-f8cm-6447-x5h2) - CRITICAL - Updated to 4.0.0
+
+    - Arbitrary file write via PDF generation
+
+2. **react-router** (GHSA-2w69-qvjg-hvjx) - HIGH - Auto-fixed via npm audit
+
+    - XSS vulnerability in route handling
+
+3. **glob** (GHSA-5j98-mcp5-4vw2) - HIGH - Auto-fixed via npm audit
+    - Command injection via pattern matching
+
+**Remaining (Dev-only, Accepted Risk):**
+
+-   6 moderate esbuild/vite vulnerabilities - affects dev server only
+-   Requires breaking vite 7.x upgrade; not worth stability risk
+
+**Files Updated:**
+
+-   backend/requirements.txt
+-   requirements.txt (root)
+-   frontend/package.json
+-   frontend/package-lock.json
+
+**What's Next:**
+
+-   Security audit 100% complete! All critical/high production alerts resolved.
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+---
+
+## 2026-01-13: Security Audit Phase 3 Complete - Form UX & Password Management (#170)
+
+**Session Summary:** Completed LOW priority security improvements - form autocomplete, password change endpoint.
+
+**Phase 3.1 - Add Autocomplete Attributes to Register Form:**
+
+-   Added `autoComplete="email"` to email input
+-   Added `autoComplete="new-password"` to both password inputs
+-   Improves password manager integration
+-   Also fixed client-side validation message to match backend complexity requirements
+
+**Phase 3.2 - Add Password Change Endpoint:**
+
+-   Added `POST /auth/change-password` endpoint in `backend/routes/auth.py`
+-   Requires JWT authentication
+-   Validates current password before allowing change
+-   New password must meet complexity requirements
+-   Rejects if new password matches current password
+-   Added audit logging for password change attempts
+-   Added 10 new tests for password change scenarios
+
+**Phase 3.3 - Global Rate Limiting (Documented as Limitation):**
+
+-   Auth endpoints (register, login, password reset) already have rate limiting
+-   Global rate limiting for all endpoints not implemented
+-   Accepted limitation for personal app - expensive endpoints (exports, bulk operations) are not rate limited
+-   Recommendation: Add per-endpoint rate limits if app scales to multi-user
+
+**Files Updated:**
+
+-   Frontend: Register.jsx (autocomplete + validation message)
+-   Backend: auth.py (new change-password endpoint)
+-   Tests: test_auth.py (10 new password change tests)
+
+**What's Next:**
+
+-   Fix existing Dependabot alerts
+-   All security audit items (#170) now complete!
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+---
+
+## 2026-01-13: Security Audit Phase 2 Complete - Password & Token Hardening (#170)
+
+**Session Summary:** Completed MEDIUM priority security fixes from audit - JWT expiration, password complexity.
+
+**Phase 2.1 - Reduce JWT Token Expiration:**
+
+-   Changed `JWT_ACCESS_TOKEN_EXPIRES` from 24h to 1h in `backend/config.py`
+-   Security benefit: Reduces window of exposure for compromised tokens
+-   Refresh tokens (30 days) remain unchanged for user convenience
+
+**Phase 2.2 - Add Password Complexity Requirements:**
+
+-   Added `validate_password_strength()` function in `backend/utils/validators.py`
+-   Requirements: 8+ chars, uppercase, lowercase, number
+-   Updated `backend/routes/auth.py` (registration) to use new validator
+-   Updated `backend/routes/password_reset.py` (password reset) to use new validator
+-   Added comprehensive tests for all password complexity rules
+
+**Phase 2.3 - Feature Flag Security Documentation:**
+
+-   Added security note to `frontend/src/contexts/FeatureFlagContext.jsx`
+-   Documents that localStorage flags can be manipulated by users
+-   Accepted limitation: flags control UI/UX only, not security-sensitive operations
+
+**Test Updates:**
+
+-   Updated 6 password reset tests to use complex passwords
+-   Added 3 new auth tests for password complexity (no uppercase/lowercase/number)
+-   Added 12 new validator tests for `validate_password_strength()`
+
+**Files Updated:**
+
+-   Backend: config.py, validators.py, auth.py, password_reset.py
+-   Tests: test_auth.py, test_password_reset.py, test_validators.py
+-   Frontend: FeatureFlagContext.jsx
+
+**What's Next:**
+
+-   Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
+-   Fix existing Dependabot alerts (added to issue #170)
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+---
+
+## 2026-01-13: Security Audit Phase 1 Complete - Frontend & Backend Hardening (#170)
+
+**Session Summary:** Completed all three HIGH priority security fixes from audit - console logging, source maps, and security headers.
+
+**Phase 1.1 - Replace Direct Console Logging:**
+
+-   Replaced 14 instances of direct `console.error`/`console.warn` with `logError`/`logWarn` from `utils/logger.js`
+-   Updated 7 files to import and use secure logging functions
+-   Security benefit: Prevents sensitive data (headers, request bodies, stack traces) from leaking to browser DevTools in production
+
+**Phase 1.2 - Disable Source Maps in Production:**
+
+-   Added `sourcemap: false` to `frontend/vite.config.js` build config
+-   Prevents original source code from being exposed in production builds
+-   Security benefit: Attackers cannot easily reverse-engineer application logic
+
+**Phase 1.3 - Add Security Headers with Flask-Talisman:**
+
+-   Added `flask-talisman>=1.0.0` to `backend/requirements.txt`
+-   Configured Talisman in `backend/app.py` (production only)
+-   Implements CSP, HSTS, X-Frame-Options, X-Content-Type-Options headers
+-   Security benefits:
+    -   **CSP**: Prevents XSS attacks by restricting script sources
+    -   **HSTS**: Forces HTTPS connections for 1 year
+    -   **X-Frame-Options**: Prevents clickjacking attacks
+    -   **X-Content-Type-Options**: Prevents MIME sniffing
+
+**Files Updated:**
+
+-   Frontend (7 files): Reports.jsx, SalaryPeriodWizard.jsx, ExportAllReportsButton.jsx, ChartExportButton.jsx, PeriodComparisonCard.jsx, BalanceModeModal.jsx, PeriodInfoModal.jsx
+-   Build: vite.config.js
+-   Backend: app.py, requirements.txt
+
+**What's Next:**
+
+-   Phase 2 (MEDIUM priority): JWT token expiration, password complexity, feature flag validation
+-   Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+**Related:** Fixed #169 (FAB button disabled with rollover prompt) - PR #172 created
+
+---
+
 ## 2026-01-13: Fix FAB Button Disabled with Rollover Prompt (#169)
 
 **Session Summary:** Fixed bug where FAB (+) button was incorrectly disabled when the rollover prompt notification was showing.

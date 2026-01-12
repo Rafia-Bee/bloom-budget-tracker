@@ -27,8 +27,10 @@ function Register({ setIsAuthenticated }) {
             return;
         }
 
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters long');
+        if (password.length < 8) {
+            setError(
+                'Password must be at least 8 characters with uppercase, lowercase, and a number'
+            );
             return;
         }
 
@@ -100,6 +102,7 @@ function Register({ setIsAuthenticated }) {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoComplete="email"
                             className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
                             pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
                             required
@@ -114,12 +117,13 @@ function Register({ setIsAuthenticated }) {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            autoComplete="new-password"
                             className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
                             minLength={8}
                             required
                         />
                         <p className="text-sm text-gray-500 dark:text-dark-text-tertiary mt-1">
-                            Minimum 8 characters
+                            Min 8 chars with uppercase, lowercase, and number
                         </p>
                     </div>
 
@@ -131,6 +135,7 @@ function Register({ setIsAuthenticated }) {
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
+                            autoComplete="new-password"
                             className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink dark:bg-dark-elevated dark:text-dark-text"
                             minLength={8}
                             required

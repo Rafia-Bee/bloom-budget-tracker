@@ -13,6 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { userAPI } from '../api';
+import { logError } from '../utils/logger';
 
 export default function BalanceModeModal({ isOpen, onClose, onModeChange }) {
     const [currentMode, setCurrentMode] = useState('sync');
@@ -35,7 +36,7 @@ export default function BalanceModeModal({ isOpen, onClose, onModeChange }) {
             setCurrentMode(mode);
             setSelectedMode(mode);
         } catch (err) {
-            console.error('Failed to load balance mode:', err);
+            logError('loadBalanceMode', err);
             setError('Failed to load settings');
         } finally {
             setLoading(false);
@@ -61,7 +62,7 @@ export default function BalanceModeModal({ isOpen, onClose, onModeChange }) {
             }
             onClose();
         } catch (err) {
-            console.error('Failed to update balance mode:', err);
+            logError('updateBalanceMode', err);
             setError('Failed to save settings. Please try again.');
         } finally {
             setLoading(false);

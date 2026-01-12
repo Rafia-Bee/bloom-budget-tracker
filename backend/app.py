@@ -14,6 +14,7 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from flask_talisman import Talisman
 from alembic.script import ScriptDirectory
 from alembic.runtime.migration import MigrationContext
 from backend.config import config, _validate_production_secrets
@@ -111,6 +112,25 @@ def create_app(config_name="development"):
     CORS(app, origins=cors_origins, supports_credentials=True)
 
     db.init_app(app)
+
+    # Security headers with Flask-Talisman (production only)
+    if config_name == "production":
+        Talisman(
+            app,
+            force_https=True,
+            strict_transport_security=True,
+            strict_transport_security_max_age=31536000,  # 1 year
+            content_security_policy={
+                "default-src": "'self'",
+                "script-src": "'self'",
+                "style-src": "'self' 'unsafe-inline'",  # Tailwind needs inline styles
+                "img-src": "'self' data: blob:",
+                "font-src": "'self'",
+                "connect-src": "'self' https://bloom-backend-b44r.onrender.com",
+            },
+            frame_options="DENY",
+            content_type_nosniff=True,
+        )
 
     # Check for pending migrations (Issue #124)
     _check_pending_migrations(app)

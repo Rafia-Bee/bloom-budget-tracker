@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import html2canvas from 'html2canvas';
 import { analyticsAPI } from '../../api';
+import { logError, logWarn } from '../../utils/logger';
 
 // Color palette for categories (matches CategoryBreakdownChart)
 const COLORS = [
@@ -214,13 +215,13 @@ function ExportAllReportsButton({ chartRefs, dateRange, categoryData }) {
                             });
                         }
                     } catch (err) {
-                        console.warn(`Failed to fetch subcategories for ${category.name}:`, err);
+                        logWarn(`Failed to fetch subcategories for ${category.name}`, err);
                     }
                 }
             }
 
             if (canvases.length === 0) {
-                console.error('No charts to export');
+                logError('exportAllReports', new Error('No charts to export'));
                 setExporting(false);
                 return;
             }
@@ -321,7 +322,7 @@ function ExportAllReportsButton({ chartRefs, dateRange, categoryData }) {
             link.href = combinedCanvas.toDataURL('image/png');
             link.click();
         } catch (error) {
-            console.error('Export all failed:', error);
+            logError('exportAllReports', error);
         } finally {
             setExporting(false);
             setProgress('');

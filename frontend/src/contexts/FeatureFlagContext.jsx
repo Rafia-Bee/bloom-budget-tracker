@@ -3,6 +3,11 @@
  *
  * Manages experimental feature flags with local storage persistence.
  * Provides useFeatureFlag hook for checking if features are enabled.
+ *
+ * SECURITY NOTE: Feature flags are stored in localStorage and can be manipulated
+ * by users via browser DevTools. This is an accepted limitation for this personal
+ * app. For production apps with sensitive features, implement server-side validation.
+ * Current flags control UI/UX features only, not security-sensitive operations.
  */
 
 import { createContext, useContext, useState, useEffect } from 'react';

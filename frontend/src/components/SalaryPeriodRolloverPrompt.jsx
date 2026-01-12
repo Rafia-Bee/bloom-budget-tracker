@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { logError } from '../utils/logger';
+
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import { formatCurrency } from '../utils/formatters';

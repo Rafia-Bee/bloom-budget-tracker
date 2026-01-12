@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timezone, timedelta, timezone
 from flask import Blueprint, request, jsonify, current_app
 from backend.models.database import db, User, PasswordResetToken
-from backend.utils.validators import validate_email
+from backend.utils.validators import validate_email, validate_password_strength
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
 from sqlalchemy.exc import SQLAlchemyError
@@ -121,11 +121,9 @@ def reset_password():
         if not token:
             return jsonify({"error": "Reset token is required"}), 400
 
-        if not new_password or len(new_password) < 8:
-            return (
-                jsonify({"error": "Password must be at least 8 characters long"}),
-                400,
-            )
+        is_valid, error_msg = validate_password_strength(new_password)
+        if not is_valid:
+            return jsonify({"error": error_msg}), 400
 
         # Find valid, unused token
         reset_token = PasswordResetToken.query.filter_by(
