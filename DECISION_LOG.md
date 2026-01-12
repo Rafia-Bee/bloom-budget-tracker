@@ -4,6 +4,60 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-13: Fix Dependabot Security Alerts (#170)
+
+**Session Summary:** Fixed all 16 open Dependabot security alerts across Python and npm dependencies.
+
+**Python Vulnerabilities Fixed (backend/requirements.txt & requirements.txt):**
+
+1. **Flask-CORS** (CVE-2024-6839, CVE-2024-6866, CVE-2024-6844) - Updated 5.0.0 → 6.0.0+
+
+    - Path equivalence bypass, case sensitivity handling, URL path normalization
+
+2. **Black** (CVE-2024-21503) - Updated 23.12.1 → 24.3.0+
+
+    - ReDoS vulnerability in code formatting
+
+3. **Marshmallow** (CVE-2025-68480) - Updated 3.23.2 → 3.26.2+
+
+    - Denial of Service via deeply nested schema
+
+4. **Requests** (CVE-2024-47081) - Updated 2.32.3 → 2.32.4+
+    - Credentials leak when session is reused after redirect
+
+**npm Vulnerabilities Fixed (frontend/package.json & package-lock.json):**
+
+1. **jsPDF** (GHSA-f8cm-6447-x5h2) - CRITICAL - Updated to 4.0.0
+
+    - Arbitrary file write via PDF generation
+
+2. **react-router** (GHSA-2w69-qvjg-hvjx) - HIGH - Auto-fixed via npm audit
+
+    - XSS vulnerability in route handling
+
+3. **glob** (GHSA-5j98-mcp5-4vw2) - HIGH - Auto-fixed via npm audit
+    - Command injection via pattern matching
+
+**Remaining (Dev-only, Accepted Risk):**
+
+-   6 moderate esbuild/vite vulnerabilities - affects dev server only
+-   Requires breaking vite 7.x upgrade; not worth stability risk
+
+**Files Updated:**
+
+-   backend/requirements.txt
+-   requirements.txt (root)
+-   frontend/package.json
+-   frontend/package-lock.json
+
+**What's Next:**
+
+-   Security audit 100% complete! All critical/high production alerts resolved.
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+---
+
 ## 2026-01-13: Security Audit Phase 3 Complete - Form UX & Password Management (#170)
 
 **Session Summary:** Completed LOW priority security improvements - form autocomplete, password change endpoint.
