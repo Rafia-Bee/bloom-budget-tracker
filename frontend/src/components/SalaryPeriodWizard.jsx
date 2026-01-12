@@ -12,6 +12,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api, { recurringExpenseAPI, userAPI, incomeAPI } from '../api';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { logError } from '../utils/logger';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency as formatCurrencyUtil, getCurrencySymbol } from '../utils/formatters';
 import PeriodInfoModal from './PeriodInfoModal';
@@ -138,7 +139,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     setBalanceStartDate(response.data.balance_start_date || null);
                 })
                 .catch((err) => {
-                    console.error('Failed to load balance mode:', err);
+                    logError('loadBalanceMode', err);
                 });
         }
     }, [balanceModeEnabled]);
@@ -678,12 +679,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                             // Save preference immediately
                                             userAPI
                                                 .updateBalanceMode(e.target.value)
-                                                .catch((err) =>
-                                                    console.error(
-                                                        'Failed to save balance mode:',
-                                                        err
-                                                    )
-                                                );
+                                                .catch((err) => logError('saveBalanceMode', err));
                                         }}
                                         className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                                     >

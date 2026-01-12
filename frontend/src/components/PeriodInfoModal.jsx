@@ -14,6 +14,7 @@
 
 import { useState } from 'react';
 import { userAPI } from '../api';
+import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { formatCurrency as formatCurrencyUtil } from '../utils/formatters';
 
@@ -96,7 +97,7 @@ export default function PeriodInfoModal({
             // Continue with the new mode - parent will reload mode and continue
             onContinue(alternateMode);
         } catch (err) {
-            console.error('Failed to change balance mode:', err);
+            logError('changeBalanceMode', err);
             setError('Failed to change mode. Please try again.');
         } finally {
             setChangingMode(false);
