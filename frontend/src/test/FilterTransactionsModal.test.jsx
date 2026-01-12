@@ -8,8 +8,9 @@ import React from 'react';
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { screen, waitFor, act } from '@testing-library/react';
 import { clickWithAct, typeWithAct, selectWithAct } from './test-utils';
+import { renderWithSharedData } from './utils.jsx';
 import FilterTransactionsModal from '../components/FilterTransactionsModal';
 
 // Mock the APIs
@@ -19,6 +20,9 @@ vi.mock('../api', () => ({
     },
     debtAPI: {
         getAll: vi.fn(),
+    },
+    goalAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: [] })),
     },
 }));
 
@@ -54,7 +58,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Rendering', () => {
         it('does not render when isOpen is false', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={false}
                     onClose={mockOnClose}
@@ -66,7 +70,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('renders when isOpen is true', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -78,7 +82,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('renders all filter sections', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -98,7 +102,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('renders Apply Filters and Clear All buttons', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -111,7 +115,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('renders close X button', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -125,7 +129,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Transaction Type Buttons', () => {
         it('defaults to Both selected', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -138,7 +142,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows selecting Expenses', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -153,7 +157,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows selecting Income', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -168,7 +172,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('hides expense-specific filters when Income is selected', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -186,7 +190,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Search Input', () => {
         it('renders search input with placeholder', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -198,7 +202,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows typing in search field', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -213,7 +217,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('debounces search input (500ms)', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -246,7 +250,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Date Filters', () => {
         it('allows setting start date', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -263,7 +267,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows setting end date', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -281,7 +285,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Category Filter', () => {
         it('shows all category options', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -308,7 +312,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows selecting a category', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -328,7 +332,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('clears subcategory when category changes', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -358,7 +362,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Subcategory Filter', () => {
         it('shows subcategories for selected category', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -381,7 +385,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('includes debts in Debt Payments subcategories', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -410,7 +414,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Payment Method Filter', () => {
         it('shows payment method options', () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -428,7 +432,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows selecting payment method', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -446,7 +450,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Amount Range', () => {
         it('allows setting min amount', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -461,7 +465,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('allows setting max amount', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -490,7 +494,7 @@ describe('FilterTransactionsModal', () => {
                 transactionType: 'expense',
             };
 
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -508,7 +512,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Apply Filters', () => {
         it('calls onApply with all filters', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -532,7 +536,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('calls onClose after applying', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -560,7 +564,7 @@ describe('FilterTransactionsModal', () => {
                 transactionType: 'expense',
             };
 
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -585,7 +589,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('calls onClose after clearing', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -601,7 +605,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('Close Modal', () => {
         it('calls onClose when X button clicked', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -617,7 +621,7 @@ describe('FilterTransactionsModal', () => {
 
     describe('API Loading', () => {
         it('loads subcategories on open', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -631,7 +635,7 @@ describe('FilterTransactionsModal', () => {
         });
 
         it('loads debts on open', async () => {
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
@@ -647,7 +651,7 @@ describe('FilterTransactionsModal', () => {
         it('handles API errors gracefully', async () => {
             subcategoryAPI.getAll.mockRejectedValue(new Error('API error'));
 
-            render(
+            renderWithSharedData(
                 <FilterTransactionsModal
                     isOpen={true}
                     onClose={mockOnClose}
