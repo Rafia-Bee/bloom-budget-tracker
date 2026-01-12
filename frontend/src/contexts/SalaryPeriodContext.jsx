@@ -69,6 +69,7 @@ export function SalaryPeriodProvider({ children, isAuthenticated = false }) {
     const refresh = useCallback(async () => {
         setLoaded(false);
         await loadCurrentPeriod();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /**
@@ -78,6 +79,7 @@ export function SalaryPeriodProvider({ children, isAuthenticated = false }) {
         if (!loaded && !loading) {
             await loadCurrentPeriod();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loaded, loading]);
 
     // Derived data for convenience

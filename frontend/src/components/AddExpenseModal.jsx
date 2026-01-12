@@ -10,7 +10,6 @@
 import { useState, useEffect } from 'react';
 import { recurringExpenseAPI } from '../api';
 import { useSharedData } from '../contexts/SharedDataContext';
-import { logError } from '../utils/logger';
 import PropTypes from 'prop-types';
 import CurrencySelector from './CurrencySelector';
 
