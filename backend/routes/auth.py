@@ -27,6 +27,7 @@ from backend.models.database import db, User, UserDefaults, CreditCardSettings
 from backend.utils.rate_limiter import rate_limit
 from backend.services.email_service import email_service
 from backend.services.audit_service import log_auth_event
+from backend.utils.validators import validate_password_strength
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -44,10 +45,11 @@ def register():
     if len(email) > 120 or "@" not in email:
         return jsonify({"error": "Invalid email format"}), 400
 
-    # Validate password strength
+    # Validate password strength (complexity requirements)
     password = data["password"]
-    if len(password) < 8:
-        return jsonify({"error": "Password must be at least 8 characters"}), 400
+    is_valid, error_msg = validate_password_strength(password)
+    if not is_valid:
+        return jsonify({"error": error_msg}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 409

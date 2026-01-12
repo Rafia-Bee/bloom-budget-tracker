@@ -14,6 +14,7 @@ from backend.utils.validators import (
     validate_notes,
     sanitize_string,
     validate_email,
+    validate_password_strength,
     ALLOWED_CATEGORIES,
     ALLOWED_INCOME_TYPES,
     ALLOWED_PERIOD_TYPES,
@@ -512,3 +513,67 @@ class TestAllowedConstants:
         expected = ["weekly", "biweekly", "monthly", "custom"]
         for freq in expected:
             assert freq in ALLOWED_RECURRING_FREQUENCIES
+
+
+class TestValidatePasswordStrength:
+    """Tests for validate_password_strength function."""
+
+    def test_valid_password(self):
+        """Test valid password meeting all requirements."""
+        valid, error = validate_password_strength("ValidPass123")
+        assert valid is True
+        assert error is None
+
+    def test_valid_password_with_special_chars(self):
+        """Test valid password with special characters."""
+        valid, error = validate_password_strength("ValidPass123!")
+        assert valid is True
+        assert error is None
+
+    def test_too_short(self):
+        """Test password shorter than 8 characters."""
+        valid, error = validate_password_strength("Short1A")
+        assert valid is False
+        assert "8 characters" in error
+
+    def test_empty_password(self):
+        """Test empty password."""
+        valid, error = validate_password_strength("")
+        assert valid is False
+        assert "8 characters" in error
+
+    def test_none_password(self):
+        """Test None password."""
+        valid, error = validate_password_strength(None)
+        assert valid is False
+        assert "8 characters" in error
+
+    def test_no_uppercase(self):
+        """Test password without uppercase letter."""
+        valid, error = validate_password_strength("lowercase123")
+        assert valid is False
+        assert "uppercase" in error
+
+    def test_no_lowercase(self):
+        """Test password without lowercase letter."""
+        valid, error = validate_password_strength("UPPERCASE123")
+        assert valid is False
+        assert "lowercase" in error
+
+    def test_no_number(self):
+        """Test password without number."""
+        valid, error = validate_password_strength("NoNumbersHere")
+        assert valid is False
+        assert "number" in error
+
+    def test_only_numbers(self):
+        """Test password with only numbers."""
+        valid, error = validate_password_strength("12345678")
+        assert valid is False
+        assert "uppercase" in error or "lowercase" in error
+
+    def test_boundary_length(self):
+        """Test password exactly at minimum length."""
+        valid, error = validate_password_strength("Passwo1d")
+        assert valid is True
+        assert error is None

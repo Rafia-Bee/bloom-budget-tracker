@@ -189,7 +189,7 @@ class TestResetPassword:
 
             response = client.post(
                 "/api/v1/auth/reset-password",
-                json={"token": token_value, "password": "newpassword123"},
+                json={"token": token_value, "password": "NewPassword123"},
             )
 
             assert response.status_code == 200
@@ -206,7 +206,7 @@ class TestResetPassword:
 
             response = client.post(
                 "/api/v1/auth/reset-password",
-                json={"token": "invalid_token_xyz", "password": "newpassword123"},
+                json={"token": "invalid_token_xyz", "password": "NewPassword123"},
             )
 
             assert response.status_code == 400
@@ -229,7 +229,7 @@ class TestResetPassword:
 
             response = client.post(
                 "/api/v1/auth/reset-password",
-                json={"token": token_value, "password": "newpassword123"},
+                json={"token": token_value, "password": "NewPassword123"},
             )
 
             assert response.status_code == 400
@@ -252,7 +252,7 @@ class TestResetPassword:
 
             response = client.post(
                 "/api/v1/auth/reset-password",
-                json={"token": token_value, "password": "newpassword123"},
+                json={"token": token_value, "password": "NewPassword123"},
             )
 
             assert response.status_code == 400
@@ -265,7 +265,7 @@ class TestResetPassword:
 
             response = client.post(
                 "/api/v1/auth/reset-password",
-                json={"password": "newpassword123"},
+                json={"password": "NewPassword123"},
             )
 
             assert response.status_code == 400
@@ -326,7 +326,7 @@ class TestResetPassword:
         """Should actually change the user's password"""
         user = db.session.get(User, user_id)
         old_password = "TestPassword123!"
-        new_password = "brandnewpassword123"
+        new_password = "BrandNewPassword123"
 
         # Verify old password works
         assert user.check_password(old_password)

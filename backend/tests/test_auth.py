@@ -88,6 +88,45 @@ class TestAuthRegistration:
         assert response.status_code == 400
         assert "password" in response.json["error"].lower()
 
+    def test_register_password_no_uppercase(self, client):
+        """Password without uppercase should be rejected"""
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "lowercase123",
+            },
+        )
+
+        assert response.status_code == 400
+        assert "uppercase" in response.json["error"].lower()
+
+    def test_register_password_no_lowercase(self, client):
+        """Password without lowercase should be rejected"""
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "UPPERCASE123",
+            },
+        )
+
+        assert response.status_code == 400
+        assert "lowercase" in response.json["error"].lower()
+
+    def test_register_password_no_number(self, client):
+        """Password without number should be rejected"""
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "NoNumbersHere",
+            },
+        )
+
+        assert response.status_code == 400
+        assert "number" in response.json["error"].lower()
+
     def test_register_missing_fields(self, client):
         """Missing required fields should fail"""
         response = client.post("/api/v1/auth/register", json={"username": "testuser"})

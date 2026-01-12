@@ -4,6 +4,51 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-13: Security Audit Phase 2 Complete - Password & Token Hardening (#170)
+
+**Session Summary:** Completed MEDIUM priority security fixes from audit - JWT expiration, password complexity.
+
+**Phase 2.1 - Reduce JWT Token Expiration:**
+
+-   Changed `JWT_ACCESS_TOKEN_EXPIRES` from 24h to 1h in `backend/config.py`
+-   Security benefit: Reduces window of exposure for compromised tokens
+-   Refresh tokens (30 days) remain unchanged for user convenience
+
+**Phase 2.2 - Add Password Complexity Requirements:**
+
+-   Added `validate_password_strength()` function in `backend/utils/validators.py`
+-   Requirements: 8+ chars, uppercase, lowercase, number
+-   Updated `backend/routes/auth.py` (registration) to use new validator
+-   Updated `backend/routes/password_reset.py` (password reset) to use new validator
+-   Added comprehensive tests for all password complexity rules
+
+**Phase 2.3 - Feature Flag Security Documentation:**
+
+-   Added security note to `frontend/src/contexts/FeatureFlagContext.jsx`
+-   Documents that localStorage flags can be manipulated by users
+-   Accepted limitation: flags control UI/UX only, not security-sensitive operations
+
+**Test Updates:**
+
+-   Updated 6 password reset tests to use complex passwords
+-   Added 3 new auth tests for password complexity (no uppercase/lowercase/number)
+-   Added 12 new validator tests for `validate_password_strength()`
+
+**Files Updated:**
+
+-   Backend: config.py, validators.py, auth.py, password_reset.py
+-   Tests: test_auth.py, test_password_reset.py, test_validators.py
+-   Frontend: FeatureFlagContext.jsx
+
+**What's Next:**
+
+-   Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
+-   Fix existing Dependabot alerts (added to issue #170)
+
+**Current Branch:** `fix/security-audit-console-logging`
+
+---
+
 ## 2026-01-13: Security Audit Phase 1 Complete - Frontend & Backend Hardening (#170)
 
 **Session Summary:** Completed all three HIGH priority security fixes from audit - console logging, source maps, and security headers.
