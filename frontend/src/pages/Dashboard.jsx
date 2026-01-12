@@ -1192,7 +1192,6 @@ function Dashboard({ setIsAuthenticated }) {
                         showLeftoverModal ||
                         showFilterModal ||
                         showSalaryWizard ||
-                        showRolloverPrompt ||
                         showBulkDeleteConfirm ||
                         !!warningModal ||
                         !!deleteConfirmation
