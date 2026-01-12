@@ -4,6 +4,44 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-12: Context-Specific Copilot Instructions & Phase 3 Complete (#164)
+
+**Session Summary:**
+
+1. Created context-specific instruction files for backend/frontend/database development
+2. Verified Phase 3 optimization changes work correctly via manual testing
+3. Identified and created GH issue for rollover prompt FAB button bug
+
+**Instruction Files Created:**
+
+-   `.github/BACKEND_INSTRUCTIONS.md` - Flask routes, models, testing patterns
+-   `.github/FRONTEND_INSTRUCTIONS.md` - React components, Tailwind styling, API integration
+-   `.github/DATABASE_INSTRUCTIONS.md` - Schema reference, migrations, queries
+-   `.github/prompts/backend.prompt.md` - Auto-attached context for backend files
+-   `.github/prompts/frontend.prompt.md` - Auto-attached context for frontend files
+-   `.github/prompts/database.prompt.md` - Auto-attached context for database files
+
+**Bug Found During Testing:**
+
+-   Issue #XXX: FAB (+) button disabled when rollover prompt showing
+-   Root cause: `showRolloverPrompt` included in disabled conditions in Dashboard.jsx
+
+**Manual Testing Results:** ✅ App working correctly
+
+-   SharedDataContext caching working (no duplicate API calls for modals)
+-   SalaryPeriodContext caching working (no duplicate salary period calls)
+-   All CRUD operations functioning normally
+
+**What's Next:**
+
+1. Create PR for `feat/optimize-dashboard-api-calls` branch
+2. Fix rollover prompt FAB button bug (Issue #XXX)
+3. Optional Phase 4: Dashboard prop-drilling to PeriodSelector
+
+**Current Branch:** `feat/optimize-dashboard-api-calls`
+
+---
+
 ## 2026-01-12: Phase 3 Complete - SalaryPeriodContext (#164)
 
 **Session Summary:** Implemented Phase 3 - SalaryPeriodContext for cross-page salary period data caching.
