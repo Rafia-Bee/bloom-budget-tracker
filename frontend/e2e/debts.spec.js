@@ -26,7 +26,13 @@ test.describe('Debt Management', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to dashboard first (cookies are auto-restored by fixture)
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        // Use 'domcontentloaded' instead of 'networkidle' to avoid timeout from slow currency API
+        await page.waitForLoadState('domcontentloaded');
+        // Wait for auth to complete (either dashboard content or login redirect)
+        await Promise.race([
+            page.waitForSelector('h2:has-text("Weekly Budget")').catch(() => {}),
+            page.waitForURL('**/login').catch(() => {}),
+        ]);
 
         // If redirected to login, perform manual login
         if (page.url().includes('/login')) {
@@ -35,8 +41,8 @@ test.describe('Debt Management', () => {
     });
     test.describe('Navigation', () => {
         test('can navigate to Debts page', async ({ page }) => {
-            // Wait for page to be loaded
-            await page.waitForLoadState('networkidle');
+            // Wait for page to be loaded - use domcontentloaded to avoid currency API timeouts
+            await page.waitForLoadState('domcontentloaded');
             await page.waitForTimeout(500);
 
             // Use viewport-based detection for mobile (more reliable than element visibility)
@@ -66,7 +72,9 @@ test.describe('Debt Management', () => {
 
         test('Debts page shows correct sections', async ({ page }) => {
             await page.goto('/debts');
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
+            // Wait for debts page content to appear
+            await page.waitForSelector('h2:has-text("Your Debts"), text=/No debts/i', { timeout: 10000 });
 
             // Page should have loaded - check for any debt-related content
             // Could be debt list, empty state, add button, or page title
@@ -133,7 +141,9 @@ test.describe('Debt Management', () => {
 
         test('can add a new debt', async ({ page }) => {
             await page.goto('/debts');
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
+            // Wait for debts page content to appear
+            await page.waitForSelector('h2:has-text("Your Debts"), button:has-text("Add Debt")', { timeout: 10000 });
 
             // Open modal
             const addButton = page.locator(

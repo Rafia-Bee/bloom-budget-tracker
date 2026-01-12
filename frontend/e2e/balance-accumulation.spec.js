@@ -341,6 +341,9 @@ test.describe('Initial Balance Handling (#149)', () => {
 
         // Clean database completely (resets User balance fields too)
         await cleanDatabase(request, cookieHeader);
+        
+        // Wait a bit to ensure cleanup is complete before creating new periods
+        await page.waitForTimeout(500);
 
         // Set balance mode to "budget" - these tests verify Initial Balance behavior
         await setBalanceMode(request, cookieHeader, 'budget');
@@ -348,9 +351,9 @@ test.describe('Initial Balance Handling (#149)', () => {
         const baseUrl = 'http://localhost:5000';
 
         // Create FIRST salary period (anchor) with €1000 initial balance
-        // Use dynamic dates: 120-150 days ago (older period)
-        const anchorStart = dateOffset(-150);
-        const anchorEnd = dateOffset(-121);
+        // Use dynamic dates: 180-210 days ago (far in past to avoid conflicts)
+        const anchorStart = dateOffset(-210);
+        const anchorEnd = dateOffset(-181);
         const anchorRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
@@ -371,8 +374,9 @@ test.describe('Initial Balance Handling (#149)', () => {
         const anchorPeriodId = (await anchorRes.json()).id;
 
         // Create SECOND salary period (non-anchor) with €2000
-        const test3Start = dateOffset(-120);
-        const test3End = dateOffset(-91);
+        // Dates: 180-151 days ago (adjacent to anchor, far from current)
+        const test3Start = dateOffset(-180);
+        const test3End = dateOffset(-151);
         const createRes = await request.post(`${baseUrl}/api/v1/salary-periods`, {
             headers: {
                 Cookie: cookieHeader,
