@@ -2,12 +2,13 @@
  * Bloom - Test Utilities
  *
  * Helper functions for testing React components.
- * Includes wrappers for SharedDataContext and Router.
+ * Includes wrappers for SharedDataContext, SalaryPeriodContext, and Router.
  */
 
 import { render } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { SharedDataProvider } from '../contexts/SharedDataContext';
+import { SalaryPeriodProvider } from '../contexts/SalaryPeriodContext';
 
 /**
  * Render component with Router context
@@ -45,6 +46,22 @@ export function renderWithProviders(ui, options = {}) {
                     {children}
                 </SharedDataProvider>
             </BrowserRouter>
+        ),
+        ...renderOptions,
+    });
+}
+
+/**
+ * Render component with SalaryPeriodContext
+ * Used for components that use useSalaryPeriod hook
+ */
+export function renderWithSalaryPeriod(ui, options = {}) {
+    const { isAuthenticated = false, ...renderOptions } = options;
+    return render(ui, {
+        wrapper: ({ children }) => (
+            <SalaryPeriodProvider isAuthenticated={isAuthenticated}>
+                {children}
+            </SalaryPeriodProvider>
         ),
         ...renderOptions,
     });

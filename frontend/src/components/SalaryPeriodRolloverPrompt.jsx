@@ -5,13 +5,14 @@
  * Prompts user to create next salary period with pre-filled balances.
  *
  * Optimization: Accepts salary period data from parent to avoid duplicate API calls.
+ * Falls back to SalaryPeriodContext if parent doesn't provide data.
  */
 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { salaryPeriodAPI } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import { formatCurrency } from '../utils/formatters';
 
 function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData }) {
@@ -21,15 +22,23 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
     const [loading, setLoading] = useState(!salaryPeriodData);
     const [error, setError] = useState(null);
 
+    // SalaryPeriodContext as fallback (Issue #164 Phase 3)
+    const { salaryPeriodData: contextData, loaded: contextLoaded } = useSalaryPeriod();
+
     useEffect(() => {
         // If data provided by parent, use it directly (avoids duplicate API call)
         if (salaryPeriodData?.salary_period) {
             processRolloverData(salaryPeriodData.salary_period);
-        } else {
-            checkRolloverStatus();
+        } else if (contextLoaded && contextData?.salary_period) {
+            // Fallback to context data (cached, no API call)
+            processRolloverData(contextData.salary_period);
+        } else if (contextLoaded && !contextData?.salary_period) {
+            // Context loaded but no period exists
+            setError('No active salary period found');
+            setLoading(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [salaryPeriodData]);
+    }, [salaryPeriodData, contextData, contextLoaded]);
 
     const processRolloverData = (salary_period) => {
         if (!salary_period) {
@@ -58,18 +67,6 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
         });
 
         setLoading(false);
-    };
-
-    const checkRolloverStatus = async () => {
-        try {
-            // Fallback: Get current salary period with real-time balances from backend
-            const currentRes = await salaryPeriodAPI.getCurrent();
-            processRolloverData(currentRes.data.salary_period);
-        } catch (err) {
-            logError('checkRolloverStatus', err);
-            setError(err);
-            setLoading(false);
-        }
     };
 
     if (loading || error || !rolloverData) {

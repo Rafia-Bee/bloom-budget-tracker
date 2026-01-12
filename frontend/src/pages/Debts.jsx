@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, expenseAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api';
+import { debtAPI, expenseAPI, budgetPeriodAPI } from '../api';
 import { logError } from '../utils/logger';
 import AddDebtModal from '../components/AddDebtModal';
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal';
@@ -16,6 +16,7 @@ import BankImportModal from '../components/BankImportModal';
 import Header from '../components/Header';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useSharedData } from '../contexts/SharedDataContext';
+import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters';
 
 function Debts({ setIsAuthenticated }) {
@@ -37,6 +38,9 @@ function Debts({ setIsAuthenticated }) {
 
     // SharedDataContext for cache invalidation
     const { refreshDebts: refreshSharedDebts } = useSharedData();
+
+    // SalaryPeriodContext for cached current period data (Issue #164 Phase 3)
+    const { currentPeriod: sharedSalaryPeriod } = useSalaryPeriod();
 
     // Helper function to format EUR amounts (stored in DB) converted to user's currency
     const fcEur = (cents) => {
@@ -72,7 +76,7 @@ function Debts({ setIsAuthenticated }) {
             loadCreditCardDebt();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPeriod]);
+    }, [currentPeriod, sharedSalaryPeriod]);
 
     const loadCurrentPeriod = async () => {
         try {
@@ -107,20 +111,16 @@ function Debts({ setIsAuthenticated }) {
         try {
             if (!currentPeriod) return;
 
-            // Get current salary period for initial credit balance
-            const salaryPeriodRes = await salaryPeriodAPI.getCurrent();
-
-            if (!salaryPeriodRes?.data?.salary_period) {
+            // Use cached salary period data from SalaryPeriodContext (Issue #164 Phase 3)
+            if (!sharedSalaryPeriod) {
                 setCreditCardDebt(null);
                 return;
             }
 
-            const salaryPeriod = salaryPeriodRes.data.salary_period;
-
             // display_credit_available returns AVAILABLE amount (what you can spend)
             // Debt = limit - available (what you owe)
-            const creditAvailable = salaryPeriod.display_credit_available; // Already in cents
-            const creditLimit = salaryPeriod.credit_limit; // Already in cents
+            const creditAvailable = sharedSalaryPeriod.display_credit_available; // Already in cents
+            const creditLimit = sharedSalaryPeriod.credit_limit; // Already in cents
             const currentBalance = creditLimit - creditAvailable; // Debt (what you owe)
             const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0; // 50% of debt
 

@@ -1,24 +1,19 @@
-import React from 'react';
 /**
  * SalaryPeriodRolloverPrompt Test Suite
  *
  * Tests the rollover prompt banner that appears at end of salary periods.
  * Verifies loading states, messages, and rollover actions.
+ *
+ * Note: Tests pass salaryPeriodData prop directly to component (bypasses context).
+ * This tests the component's rendering logic without needing context mocking.
  */
 
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { clickWithAct } from './test-utils';
+import { renderWithSalaryPeriod } from './utils.jsx';
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt';
-
-// Mock the API
-vi.mock('../api', () => ({
-    salaryPeriodAPI: {
-        getCurrent: vi.fn(),
-    },
-}));
-
-import { salaryPeriodAPI } from '../api';
 
 describe('SalaryPeriodRolloverPrompt', () => {
     let mockOnCreateNext;
@@ -30,11 +25,29 @@ describe('SalaryPeriodRolloverPrompt', () => {
         vi.clearAllMocks();
     });
 
+    // Helper to create mock salary period data
+    const createMockPeriodData = (overrides = {}) => {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 3);
+
+        return {
+            salary_period: {
+                id: 1,
+                start_date: '2025-12-01',
+                end_date: futureDate.toISOString().split('T')[0],
+                display_debit_balance: 75000,
+                display_credit_available: 120000,
+                credit_limit: 150000,
+                credit_budget_allowance: 5000,
+                ...overrides,
+            },
+        };
+    };
+
     describe('Loading State', () => {
         it('renders nothing while loading', () => {
-            salaryPeriodAPI.getCurrent.mockImplementation(() => new Promise(() => {})); // Never resolves
-
-            const { container } = render(
+            // Component without salaryPeriodData prop and no context = loading
+            const { container } = renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
@@ -46,30 +59,13 @@ describe('SalaryPeriodRolloverPrompt', () => {
     });
 
     describe('Error State', () => {
-        it('renders nothing when API fails', async () => {
-            salaryPeriodAPI.getCurrent.mockRejectedValue(new Error('Network error'));
-
-            const { container } = render(
-                <SalaryPeriodRolloverPrompt
-                    onCreateNext={mockOnCreateNext}
-                    onDismiss={mockOnDismiss}
-                />
-            );
-
-            await waitFor(() => {
-                expect(container.firstChild).toBeNull();
-            });
-        });
-
         it('renders nothing when no salary period found', async () => {
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: { salary_period: null },
-            });
-
-            const { container } = render(
+            // Pass null salary_period data
+            const { container } = renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={{ salary_period: null }}
                 />
             );
 
@@ -80,31 +76,24 @@ describe('SalaryPeriodRolloverPrompt', () => {
     });
 
     describe('Ending Soon Banner (Yellow)', () => {
+        let mockPeriodData;
+
         beforeEach(() => {
             // Period ending in 3 days
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 75000,
-                        display_credit_available: 120000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 5000,
-                    },
-                },
+            mockPeriodData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
             });
         });
 
         it('renders the banner with ending soon message', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -114,10 +103,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('shows days remaining in message', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -127,10 +117,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('displays suggested debit balance', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -140,10 +131,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('displays suggested credit available and limit', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -154,10 +146,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('has yellow background for ending soon', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -168,10 +161,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('shows Create Next Period button', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -181,10 +175,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('shows Remind Me Later button', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockPeriodData}
                 />
             );
 
@@ -195,31 +190,27 @@ describe('SalaryPeriodRolloverPrompt', () => {
     });
 
     describe('Overdue Banner (Red)', () => {
+        let mockOverduePeriodData;
+
         beforeEach(() => {
             // Period ended 2 days ago
             const pastDate = new Date();
             pastDate.setDate(pastDate.getDate() - 2);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: pastDate.toISOString().split('T')[0],
-                        display_debit_balance: 50000,
-                        display_credit_available: 100000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 0,
-                    },
-                },
+            mockOverduePeriodData = createMockPeriodData({
+                end_date: pastDate.toISOString().split('T')[0],
+                display_debit_balance: 50000,
+                display_credit_available: 100000,
+                credit_budget_allowance: 0,
             });
         });
 
         it('renders the banner with overdue message', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockOverduePeriodData}
                 />
             );
 
@@ -229,10 +220,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('shows how many days ago period ended', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockOverduePeriodData}
                 />
             );
 
@@ -242,10 +234,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('has red background for overdue', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockOverduePeriodData}
                 />
             );
 
@@ -256,10 +249,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('has red border for overdue', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockOverduePeriodData}
                 />
             );
 
@@ -271,30 +265,26 @@ describe('SalaryPeriodRolloverPrompt', () => {
     });
 
     describe('User Actions', () => {
+        let mockActionPeriodData;
+
         beforeEach(() => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 5);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 80000,
-                        display_credit_available: 130000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 10000,
-                    },
-                },
+            mockActionPeriodData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
+                display_debit_balance: 80000,
+                display_credit_available: 130000,
+                credit_budget_allowance: 10000,
             });
         });
 
         it('calls onCreateNext with rollover data when Create Next Period clicked', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockActionPeriodData}
                 />
             );
 
@@ -315,10 +305,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('calls onDismiss when Remind Me Later clicked', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockActionPeriodData}
                 />
             );
 
@@ -332,10 +323,11 @@ describe('SalaryPeriodRolloverPrompt', () => {
         });
 
         it('calls onDismiss when X button clicked', async () => {
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockActionPeriodData}
                 />
             );
 
@@ -355,24 +347,18 @@ describe('SalaryPeriodRolloverPrompt', () => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 123456,
-                        display_credit_available: 98765,
-                        credit_limit: 200000,
-                        credit_budget_allowance: 5000,
-                    },
-                },
+            const mockData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
+                display_debit_balance: 123456,
+                display_credit_available: 98765,
+                credit_limit: 200000,
             });
 
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockData}
                 />
             );
 
@@ -387,24 +373,18 @@ describe('SalaryPeriodRolloverPrompt', () => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 50000,
-                        display_credit_available: 100000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 0,
-                    },
-                },
+            const mockData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
+                display_debit_balance: 50000,
+                display_credit_available: 100000,
+                credit_budget_allowance: 0,
             });
 
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockData}
                 />
             );
 
@@ -420,24 +400,15 @@ describe('SalaryPeriodRolloverPrompt', () => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 50000,
-                        display_credit_available: 100000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 0,
-                    },
-                },
+            const mockData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
             });
 
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockData}
                 />
             );
 
@@ -453,24 +424,15 @@ describe('SalaryPeriodRolloverPrompt', () => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 3);
 
-            salaryPeriodAPI.getCurrent.mockResolvedValue({
-                data: {
-                    salary_period: {
-                        id: 1,
-                        start_date: '2025-12-01',
-                        end_date: futureDate.toISOString().split('T')[0],
-                        display_debit_balance: 50000,
-                        display_credit_available: 100000,
-                        credit_limit: 150000,
-                        credit_budget_allowance: 0,
-                    },
-                },
+            const mockData = createMockPeriodData({
+                end_date: futureDate.toISOString().split('T')[0],
             });
 
-            render(
+            renderWithSalaryPeriod(
                 <SalaryPeriodRolloverPrompt
                     onCreateNext={mockOnCreateNext}
                     onDismiss={mockOnDismiss}
+                    salaryPeriodData={mockData}
                 />
             );
 
