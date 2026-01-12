@@ -3,63 +3,70 @@
  *
  * Banner that appears when Week 4 of current salary period is ending or has ended.
  * Prompts user to create next salary period with pre-filled balances.
+ *
+ * Optimization: Accepts salary period data from parent to avoid duplicate API calls.
+ * Falls back to SalaryPeriodContext if parent doesn't provide data.
  */
 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { salaryPeriodAPI } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import { formatCurrency } from '../utils/formatters';
 
-function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
+function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData }) {
     const { defaultCurrency } = useCurrency();
     const fc = (cents) => formatCurrency(cents, defaultCurrency);
     const [rolloverData, setRolloverData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!salaryPeriodData);
     const [error, setError] = useState(null);
 
+    // SalaryPeriodContext as fallback (Issue #164 Phase 3)
+    const { salaryPeriodData: contextData, loaded: contextLoaded } = useSalaryPeriod();
+
     useEffect(() => {
-        checkRolloverStatus();
-    }, []);
-
-    const checkRolloverStatus = async () => {
-        try {
-            // Get current salary period with real-time balances from backend
-            const currentRes = await salaryPeriodAPI.getCurrent();
-            const salary_period = currentRes.data.salary_period;
-
-            if (!salary_period) {
-                setError('No active salary period found');
-                setLoading(false);
-                return;
-            }
-
-            const endDate = new Date(salary_period.end_date);
-            const today = new Date();
-            const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-
-            // Use backend-calculated real-time balances (already in cents)
-            const currentDebitBalance = salary_period.display_debit_balance;
-            const currentCreditAvailable = salary_period.display_credit_available;
-            const creditLimit = salary_period.credit_limit;
-
-            setRolloverData({
-                daysRemaining,
-                isOverdue: daysRemaining < 0,
-                suggestedDebitBalance: currentDebitBalance,
-                suggestedCreditAvailable: currentCreditAvailable,
-                creditLimit: creditLimit,
-                creditAllowance: salary_period.credit_budget_allowance || 0,
-                endDate: salary_period.end_date,
-            });
-
-            setLoading(false);
-        } catch (err) {
-            logError('checkRolloverStatus', err);
-            setError(err);
+        // If data provided by parent, use it directly (avoids duplicate API call)
+        if (salaryPeriodData?.salary_period) {
+            processRolloverData(salaryPeriodData.salary_period);
+        } else if (contextLoaded && contextData?.salary_period) {
+            // Fallback to context data (cached, no API call)
+            processRolloverData(contextData.salary_period);
+        } else if (contextLoaded && !contextData?.salary_period) {
+            // Context loaded but no period exists
+            setError('No active salary period found');
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [salaryPeriodData, contextData, contextLoaded]);
+
+    const processRolloverData = (salary_period) => {
+        if (!salary_period) {
+            setError('No active salary period found');
+            setLoading(false);
+            return;
+        }
+
+        const endDate = new Date(salary_period.end_date);
+        const today = new Date();
+        const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+
+        // Use backend-calculated real-time balances (already in cents)
+        const currentDebitBalance = salary_period.display_debit_balance;
+        const currentCreditAvailable = salary_period.display_credit_available;
+        const creditLimit = salary_period.credit_limit;
+
+        setRolloverData({
+            daysRemaining,
+            isOverdue: daysRemaining < 0,
+            suggestedDebitBalance: currentDebitBalance,
+            suggestedCreditAvailable: currentCreditAvailable,
+            creditLimit: creditLimit,
+            creditAllowance: salary_period.credit_budget_allowance || 0,
+            endDate: salary_period.end_date,
+        });
+
+        setLoading(false);
     };
 
     if (loading || error || !rolloverData) {
@@ -156,6 +163,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss }) {
 SalaryPeriodRolloverPrompt.propTypes = {
     onCreateNext: PropTypes.func.isRequired,
     onDismiss: PropTypes.func.isRequired,
+    salaryPeriodData: PropTypes.object, // Optional: passed from parent to avoid duplicate API call
 };
 
 export default SalaryPeriodRolloverPrompt;

@@ -14,6 +14,7 @@ import EditGoalModal from '../components/EditGoalModal';
 import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSharedData } from '../contexts/SharedDataContext';
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters';
 
 function Goals({ setIsAuthenticated }) {
@@ -32,6 +33,9 @@ function Goals({ setIsAuthenticated }) {
 
     // Currency context for multi-currency support
     const { defaultCurrency, convertAmount } = useCurrency();
+
+    // SharedDataContext for cache invalidation
+    const { refreshGoals: refreshSharedGoals } = useSharedData();
 
     // Helper function to format EUR amounts (stored in DB) converted to user's currency
     const fcEur = (cents) => {
@@ -66,6 +70,7 @@ function Goals({ setIsAuthenticated }) {
         try {
             await goalAPI.create(data);
             await loadGoals();
+            refreshSharedGoals(); // Invalidate shared cache
             setShowCreateModal(false);
             setError('');
         } catch (err) {
@@ -77,6 +82,7 @@ function Goals({ setIsAuthenticated }) {
         try {
             await goalAPI.update(editingGoal.id, data);
             await loadGoals();
+            refreshSharedGoals(); // Invalidate shared cache
             setShowEditModal(false);
             setEditingGoal(null);
             setError('');
@@ -89,6 +95,7 @@ function Goals({ setIsAuthenticated }) {
         try {
             await goalAPI.delete(goal.id, false);
             await loadGoals();
+            refreshSharedGoals(); // Invalidate shared cache
             setDeleteConfirm(null);
         } catch (err) {
             if (err.response?.status === 409 && err.response?.data?.can_force) {
@@ -109,6 +116,7 @@ function Goals({ setIsAuthenticated }) {
         try {
             await goalAPI.delete(goal.id, true);
             await loadGoals();
+            refreshSharedGoals(); // Invalidate shared cache
             setDeleteConfirm(null);
             setError('');
         } catch (err) {

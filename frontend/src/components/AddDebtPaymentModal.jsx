@@ -3,11 +3,12 @@
  *
  * Simplified modal for adding debt payments with pre-filled category.
  * Shows dropdown of existing debts and autofills payment amounts.
+ *
+ * Optimization: Uses SharedDataContext for cached debts (#164)
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI } from '../api';
-import { logError } from '../utils/logger';
+import { useSharedData } from '../contexts/SharedDataContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 
@@ -20,35 +21,31 @@ function AddDebtPaymentModal({ onClose, onAdd, preSelectedDebt }) {
     const [paymentMethod, setPaymentMethod] = useState('Debit card');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [debts, setDebts] = useState([]);
+
+    // Use cached data from SharedDataContext
+    const { debts, debtsLoaded, ensureDebtsLoaded } = useSharedData();
 
     useEffect(() => {
-        loadDebts();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        ensureDebtsLoaded();
+    }, [ensureDebtsLoaded]);
 
-    const loadDebts = async () => {
-        try {
-            const response = await debtAPI.getAll();
-            setDebts(response.data);
+    // Set initial debt selection when debts are loaded
+    useEffect(() => {
+        if (!debtsLoaded || debts.length === 0) return;
 
-            // If preSelectedDebt is provided, use it and set amount
-            if (preSelectedDebt) {
-                const debt = response.data.find((d) => d.name === preSelectedDebt);
-                if (debt && debt.monthly_payment) {
-                    setAmount((debt.monthly_payment / 100).toFixed(2));
-                }
-            } else if (response.data.length > 0) {
-                // Otherwise, default to first debt
-                const firstDebt = response.data[0];
-                setSelectedDebt(firstDebt.name);
-                setAmount((firstDebt.monthly_payment / 100).toFixed(2));
+        // If preSelectedDebt is provided, use it and set amount
+        if (preSelectedDebt) {
+            const debt = debts.find((d) => d.name === preSelectedDebt);
+            if (debt && debt.monthly_payment) {
+                setAmount((debt.monthly_payment / 100).toFixed(2));
             }
-        } catch (error) {
-            logError('loadDebts', error);
-            setError('Failed to load debts');
+        } else if (!selectedDebt && debts.length > 0) {
+            // Otherwise, default to first debt
+            const firstDebt = debts[0];
+            setSelectedDebt(firstDebt.name);
+            setAmount((firstDebt.monthly_payment / 100).toFixed(2));
         }
-    };
+    }, [debtsLoaded, debts, preSelectedDebt, selectedDebt]);
 
     const handleDebtChange = (debtName) => {
         setSelectedDebt(debtName);

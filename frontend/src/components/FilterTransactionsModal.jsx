@@ -8,11 +8,12 @@
  * - Amount range (min/max)
  * - Search text (name/notes) with 500ms debounce
  * - Transaction type (Expense/Income/Both)
+ *
+ * Optimization: Uses SharedDataContext for cached debts/subcategories (#164)
  */
 
 import { useState, useEffect } from 'react';
-import { subcategoryAPI, debtAPI } from '../api';
-import { logError } from '../utils/logger';
+import { useSharedData } from '../contexts/SharedDataContext';
 import useDebounce from '../hooks/useDebounce';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
@@ -22,8 +23,6 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
     const currencySymbol = getCurrencySymbol(defaultCurrency);
     const [searchInput, setSearchInput] = useState(''); // Immediate search input
     const debouncedSearch = useDebounce(searchInput, 500); // Debounced value
-    const [subcategoriesData, setSubcategoriesData] = useState({});
-    const [debts, setDebts] = useState([]);
     const [filters, setFilters] = useState({
         startDate: '',
         endDate: '',
@@ -36,31 +35,21 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
         transactionType: 'both', // 'expense', 'income', 'both'
     });
 
+    // Use cached data from SharedDataContext
+    const {
+        debts,
+        subcategories: subcategoriesData,
+        ensureDebtsLoaded,
+        ensureSubcategoriesLoaded,
+    } = useSharedData();
+
     useEffect(() => {
         if (isOpen) {
-            loadSubcategories();
-            loadDebts();
+            // Ensure data is loaded (uses cached data if already loaded)
+            ensureDebtsLoaded();
+            ensureSubcategoriesLoaded();
         }
-    }, [isOpen]);
-
-    const loadDebts = async () => {
-        try {
-            const response = await debtAPI.getAll();
-            setDebts(response.data);
-        } catch (error) {
-            logError('loadDebts', error);
-        }
-    };
-
-    const loadSubcategories = async () => {
-        try {
-            const response = await subcategoryAPI.getAll();
-            setSubcategoriesData(response.data.subcategories || {});
-        } catch (error) {
-            logError('loadSubcategories', error);
-            setSubcategoriesData({});
-        }
-    };
+    }, [isOpen, ensureDebtsLoaded, ensureSubcategoriesLoaded]);
 
     useEffect(() => {
         if (initialFilters) {

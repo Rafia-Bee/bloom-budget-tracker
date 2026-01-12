@@ -7,10 +7,27 @@ import React from 'react';
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils';
+import { renderWithSharedData } from './utils.jsx';
 import AddExpenseModal from '../components/AddExpenseModal';
 import { recurringExpenseAPI } from '../api';
+
+// Mock the API
+vi.mock('../api', () => ({
+    debtAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: [] })),
+    },
+    goalAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: [] })),
+    },
+    subcategoryAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: {} })),
+    },
+    recurringExpenseAPI: {
+        create: vi.fn(() => Promise.resolve({ data: {} })),
+    },
+}));
 
 // Helper to find input by its label text (works with labels not using htmlFor)
 const getInputByLabel = (labelText) => {
@@ -38,7 +55,7 @@ describe('AddExpenseModal', () => {
 
     describe('Basic Rendering', () => {
         it('renders modal with title', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText(/add expense/i)).toBeInTheDocument();
@@ -46,7 +63,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('displays all form field labels', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Name')).toBeInTheDocument();
@@ -59,7 +76,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('displays category options', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Fixed Expenses')).toBeInTheDocument();
@@ -70,7 +87,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('displays payment method options', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Credit card')).toBeInTheDocument();
@@ -81,7 +98,7 @@ describe('AddExpenseModal', () => {
 
     describe('Form Interactions', () => {
         it('updates name field on input', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Name')).toBeInTheDocument();
@@ -95,7 +112,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('updates amount field on input', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Amount')).toBeInTheDocument();
@@ -108,7 +125,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('updates date field on input', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Date')).toBeInTheDocument();
@@ -122,7 +139,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('changes category selection', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Category')).toBeInTheDocument();
@@ -135,7 +152,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('changes payment method selection', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Payment Method')).toBeInTheDocument();
@@ -150,7 +167,7 @@ describe('AddExpenseModal', () => {
 
     describe('Modal Actions', () => {
         it('calls onClose when cancel button clicked', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
@@ -162,7 +179,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('calls onClose when X button clicked', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText(/add expense/i)).toBeInTheDocument();
@@ -179,7 +196,7 @@ describe('AddExpenseModal', () => {
 
     describe('Recurring Expense Toggle', () => {
         it('displays recurring expense checkbox', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText(/make this a recurring expense/i)).toBeInTheDocument();
@@ -187,7 +204,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('shows recurring options when checkbox is checked', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText(/make this a recurring expense/i)).toBeInTheDocument();
@@ -203,7 +220,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('shows frequency options when recurring is enabled', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText(/make this a recurring expense/i)).toBeInTheDocument();
@@ -221,7 +238,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('changes button text to Create Template when recurring', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument();
@@ -241,7 +258,7 @@ describe('AddExpenseModal', () => {
         it('submits one-time expense with correct data', async () => {
             mockOnAdd.mockResolvedValue({});
 
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Name')).toBeInTheDocument();
@@ -272,7 +289,7 @@ describe('AddExpenseModal', () => {
         it('submits recurring expense template', async () => {
             recurringExpenseAPI.create.mockResolvedValue({ data: {} });
 
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Name')).toBeInTheDocument();
@@ -315,7 +332,7 @@ describe('AddExpenseModal', () => {
                 })
             );
 
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Amount')).toBeInTheDocument();
@@ -343,7 +360,7 @@ describe('AddExpenseModal', () => {
                 response: { data: { error: 'Failed to add expense' } },
             });
 
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Amount')).toBeInTheDocument();
@@ -366,7 +383,7 @@ describe('AddExpenseModal', () => {
 
     describe('Default Values', () => {
         it('has Wolt as default name', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(getInputByLabel('Name')).toHaveValue('Wolt');
@@ -374,7 +391,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('has Flexible Expenses as default category', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(getInputByLabel('Category')).toHaveValue('Flexible Expenses');
@@ -382,7 +399,7 @@ describe('AddExpenseModal', () => {
         });
 
         it('has Debit card as default payment method', async () => {
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(getInputByLabel('Payment Method')).toHaveValue('Debit card');
@@ -392,7 +409,7 @@ describe('AddExpenseModal', () => {
         it('has todays date as default', async () => {
             const today = new Date().toISOString().split('T')[0];
 
-            render(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(getInputByLabel('Date')).toHaveValue(today);

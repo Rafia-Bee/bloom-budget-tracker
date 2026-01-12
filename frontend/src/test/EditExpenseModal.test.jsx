@@ -12,13 +12,17 @@ import React from 'react';
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { screen, waitFor, cleanup } from '@testing-library/react';
 import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils';
+import { renderWithSharedData } from './utils.jsx';
 import EditExpenseModal from '../components/EditExpenseModal';
 
 // Mock the API module
 vi.mock('../api', () => ({
     debtAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: [] })),
+    },
+    goalAPI: {
         getAll: vi.fn(() => Promise.resolve({ data: [] })),
     },
     subcategoryAPI: {
@@ -52,7 +56,7 @@ describe('EditExpenseModal', () => {
 
     describe('Rendering', () => {
         it('renders the edit modal with title', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -60,7 +64,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('renders all form fields', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -73,7 +77,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('shows Save and Cancel buttons', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -84,7 +88,7 @@ describe('EditExpenseModal', () => {
 
     describe('Pre-fill Expense Data', () => {
         it('pre-fills name from expense', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -95,7 +99,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('pre-fills amount from expense (converted from cents)', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -106,7 +110,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('pre-fills date from expense (parsed from display format)', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -117,7 +121,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('pre-fills category from expense', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -129,7 +133,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('pre-fills payment method from expense', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -144,7 +148,7 @@ describe('EditExpenseModal', () => {
 
     describe('Form Interactions', () => {
         it('allows updating the name', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -160,7 +164,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('allows updating the amount', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -176,7 +180,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('allows changing category', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -191,7 +195,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('allows changing payment method', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -209,7 +213,7 @@ describe('EditExpenseModal', () => {
 
     describe('Modal Actions', () => {
         it('calls onClose when Cancel button is clicked', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -220,7 +224,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('calls onClose when X button is clicked', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -240,7 +244,7 @@ describe('EditExpenseModal', () => {
 
     describe('Form Submission', () => {
         it('calls onEdit with updated expense data', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -266,7 +270,7 @@ describe('EditExpenseModal', () => {
         });
 
         it('converts amount to cents before submission', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -301,7 +305,7 @@ describe('EditExpenseModal', () => {
                     })
             );
 
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -325,7 +329,7 @@ describe('EditExpenseModal', () => {
                 response: { data: { error: 'Failed to update expense' } },
             });
 
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -344,7 +348,7 @@ describe('EditExpenseModal', () => {
         it('shows generic error when response has no error message', async () => {
             mockOnEdit.mockRejectedValueOnce(new Error('Network error'));
 
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -363,7 +367,7 @@ describe('EditExpenseModal', () => {
 
     describe('Category Options', () => {
         it('has all category options', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 
@@ -376,7 +380,7 @@ describe('EditExpenseModal', () => {
 
     describe('Payment Method Options', () => {
         it('has Credit card and Debit card options', async () => {
-            render(
+            renderWithSharedData(
                 <EditExpenseModal onClose={mockOnClose} onEdit={mockOnEdit} expense={mockExpense} />
             );
 

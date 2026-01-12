@@ -3,11 +3,12 @@
  *
  * Modal dialog for creating recurring expense templates with frequency scheduling.
  * Supports weekly, biweekly, monthly, and custom day intervals.
+ *
+ * Optimization: Uses SharedDataContext for cached debts/goals/subcategories (#164)
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, goalAPI, subcategoryAPI } from '../api';
-import { logError } from '../utils/logger';
+import { useSharedData } from '../contexts/SharedDataContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 
@@ -39,44 +40,23 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
     const [isFixedBill, setIsFixedBill] = useState(existingExpense?.is_fixed_bill || false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [debts, setDebts] = useState([]);
-    const [goals, setGoals] = useState([]);
-    const [subcategoriesData, setSubcategoriesData] = useState({});
+
+    // Use cached data from SharedDataContext instead of fetching each time modal opens
+    const {
+        debts,
+        goals,
+        subcategories: subcategoriesData,
+        ensureDebtsLoaded,
+        ensureGoalsLoaded,
+        ensureSubcategoriesLoaded,
+    } = useSharedData();
 
     useEffect(() => {
-        loadDebts();
-        loadGoals();
-        loadSubcategories();
-    }, []);
-
-    const loadDebts = async () => {
-        try {
-            const response = await debtAPI.getAll();
-            setDebts(response.data);
-        } catch (error) {
-            logError('loadDebts', error);
-        }
-    };
-
-    const loadGoals = async () => {
-        try {
-            const response = await goalAPI.getAll();
-            setGoals(response.data.goals || []);
-        } catch (error) {
-            logError('loadGoals', error);
-        }
-    };
-
-    const loadSubcategories = async () => {
-        try {
-            const response = await subcategoryAPI.getAll();
-            setSubcategoriesData(response.data.subcategories || {});
-        } catch (error) {
-            logError('loadSubcategories', error);
-            // Fallback to empty object if API fails
-            setSubcategoriesData({});
-        }
-    };
+        // Ensure data is loaded (uses cached data if already loaded)
+        ensureDebtsLoaded();
+        ensureGoalsLoaded();
+        ensureSubcategoriesLoaded();
+    }, [ensureDebtsLoaded, ensureGoalsLoaded, ensureSubcategoriesLoaded]);
 
     const categories = [
         'Fixed Expenses',

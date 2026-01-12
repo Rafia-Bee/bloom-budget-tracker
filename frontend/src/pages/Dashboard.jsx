@@ -70,6 +70,7 @@ function Dashboard({ setIsAuthenticated }) {
     const [creditLimit, setCreditLimit] = useState(null); // Load from salary period
     const [isInitialLoading, setIsInitialLoading] = useState(true); // Prevent flickering on initial load
     const [viewingSalaryPeriodId, setViewingSalaryPeriodId] = useState(null); // Track which salary period we're viewing
+    const [salaryPeriodData, setSalaryPeriodData] = useState(null); // Cached salary period data for child components
     // eslint-disable-next-line no-unused-vars -- Reserved for future current period indicator
     const [isViewingCurrentPeriod, setIsViewingCurrentPeriod] = useState(true);
     const weeklyBudgetCardRef = useRef(null);
@@ -376,6 +377,9 @@ function Dashboard({ setIsAuthenticated }) {
             if (salaryPeriodRes?.data?.current_week?.id) {
                 const currentWeek = salaryPeriodRes.data.current_week;
                 const salaryPeriod = salaryPeriodRes.data.salary_period;
+
+                // Cache salary period data for child components (avoids duplicate API calls)
+                setSalaryPeriodData(salaryPeriodRes.data);
 
                 // Load credit limit from salary period
                 if (salaryPeriod.credit_limit) {
@@ -1006,6 +1010,7 @@ function Dashboard({ setIsAuthenticated }) {
                                 onWeekChange={(weekPeriod) => {
                                     setCurrentPeriod(weekPeriod);
                                 }}
+                                initialSalaryPeriodData={salaryPeriodData}
                             />
                         </div>
                         <div className="text-center py-12">
@@ -1056,6 +1061,7 @@ function Dashboard({ setIsAuthenticated }) {
                                     }
                                     setShowRolloverPrompt(false);
                                 }}
+                                salaryPeriodData={salaryPeriodData}
                             />
                         )}
 
@@ -1119,6 +1125,7 @@ function Dashboard({ setIsAuthenticated }) {
                                     setCurrentPeriod(weekPeriod);
                                 }}
                                 selectedPeriod={currentPeriod}
+                                initialSalaryPeriodData={salaryPeriodData}
                             />
 
                             <BalanceCards

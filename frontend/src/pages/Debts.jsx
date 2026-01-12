@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, expenseAPI, budgetPeriodAPI, salaryPeriodAPI } from '../api';
+import { debtAPI, expenseAPI } from '../api';
 import { logError } from '../utils/logger';
 import AddDebtModal from '../components/AddDebtModal';
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal';
@@ -15,6 +15,8 @@ import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
 import Header from '../components/Header';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSharedData } from '../contexts/SharedDataContext';
+import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import { formatCurrency, formatTransactionAmount } from '../utils/formatters';
 
 function Debts({ setIsAuthenticated }) {
@@ -26,13 +28,18 @@ function Debts({ setIsAuthenticated }) {
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedDebt, setSelectedDebt] = useState(null);
     const [creditCardDebt, setCreditCardDebt] = useState(null);
-    const [currentPeriod, setCurrentPeriod] = useState(null);
     const [expandedDebtId, setExpandedDebtId] = useState(null);
     const [debtTransactions, setDebtTransactions] = useState({});
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     // Currency context for multi-currency support
     const { defaultCurrency, convertAmount } = useCurrency();
+
+    // SharedDataContext for cache invalidation
+    const { refreshDebts: refreshSharedDebts } = useSharedData();
+
+    // SalaryPeriodContext for cached current period data (Issue #164 Phase 3)
+    const { currentPeriod: sharedSalaryPeriod } = useSalaryPeriod();
 
     // Helper function to format EUR amounts (stored in DB) converted to user's currency
     const fcEur = (cents) => {
@@ -58,28 +65,16 @@ function Debts({ setIsAuthenticated }) {
     };
 
     useEffect(() => {
-        loadCurrentPeriod();
         loadDebts();
         loadArchivedDebts();
     }, []);
 
     useEffect(() => {
-        if (currentPeriod) {
+        if (sharedSalaryPeriod) {
             loadCreditCardDebt();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPeriod]);
-
-    const loadCurrentPeriod = async () => {
-        try {
-            const periodsRes = await budgetPeriodAPI.getAll();
-            if (periodsRes.data.length > 0) {
-                setCurrentPeriod(periodsRes.data[0]);
-            }
-        } catch (error) {
-            logError('loadPeriods', error);
-        }
-    };
+    }, [sharedSalaryPeriod]);
 
     const loadDebts = async () => {
         try {
@@ -101,22 +96,16 @@ function Debts({ setIsAuthenticated }) {
 
     const loadCreditCardDebt = async () => {
         try {
-            if (!currentPeriod) return;
-
-            // Get current salary period for initial credit balance
-            const salaryPeriodRes = await salaryPeriodAPI.getCurrent();
-
-            if (!salaryPeriodRes?.data?.salary_period) {
+            // Use cached salary period data from SalaryPeriodContext (Issue #164 Phase 3)
+            if (!sharedSalaryPeriod) {
                 setCreditCardDebt(null);
                 return;
             }
 
-            const salaryPeriod = salaryPeriodRes.data.salary_period;
-
             // display_credit_available returns AVAILABLE amount (what you can spend)
             // Debt = limit - available (what you owe)
-            const creditAvailable = salaryPeriod.display_credit_available; // Already in cents
-            const creditLimit = salaryPeriod.credit_limit; // Already in cents
+            const creditAvailable = sharedSalaryPeriod.display_credit_available; // Already in cents
+            const creditLimit = sharedSalaryPeriod.credit_limit; // Already in cents
             const currentBalance = creditLimit - creditAvailable; // Debt (what you owe)
             const monthlyPayment = currentBalance > 0 ? Math.round(currentBalance * 0.5) : 0; // 50% of debt
 
@@ -141,6 +130,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.create(debtData);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
             setShowAddModal(false);
         } catch (error) {
             logError('addDebt', error);
@@ -152,6 +142,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.update(id, debtData);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
             setShowEditModal(false);
             setSelectedDebt(null);
         } catch (error) {
@@ -171,6 +162,7 @@ function Debts({ setIsAuthenticated }) {
         try {
             await debtAPI.delete(id);
             loadDebts();
+            refreshSharedDebts(); // Invalidate shared cache
         } catch (error) {
             logError('deleteDebt', error);
         }
@@ -986,7 +978,7 @@ function Debts({ setIsAuthenticated }) {
                         setShowBankImportModal(false);
                         loadDebts();
                         loadArchivedDebts();
-                        if (currentPeriod) loadCreditCardDebt();
+                        if (sharedSalaryPeriod) loadCreditCardDebt();
                     }}
                 />
             )}

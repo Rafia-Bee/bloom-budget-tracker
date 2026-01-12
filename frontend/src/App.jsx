@@ -18,6 +18,8 @@ import { setLoadingCallback, authAPI } from './api';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
+import { SharedDataProvider } from './contexts/SharedDataContext';
+import { SalaryPeriodProvider } from './contexts/SalaryPeriodContext';
 
 // Lazy load secondary pages for code-splitting
 // These are loaded on-demand when user navigates to them
@@ -81,121 +83,151 @@ function App() {
         <ThemeProvider>
             <FeatureFlagProvider>
                 <CurrencyProvider isAuthenticated={isAuthenticated}>
-                    <OfflineIndicator />
-                    {apiLoading && (
-                        <div className="fixed inset-0 z-50">
-                            <Loading />
-                        </div>
-                    )}
-                    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                        <Suspense fallback={<Loading />}>
-                            <Routes>
-                                <Route
-                                    path="/login"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Navigate to="/dashboard" />
-                                        ) : (
-                                            <Login setIsAuthenticated={setIsAuthenticated} />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/register"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Navigate to="/dashboard" />
-                                        ) : (
-                                            <Register setIsAuthenticated={setIsAuthenticated} />
-                                        )
-                                    }
-                                />
-                                <Route path="/reset-password" element={<ResetPassword />} />
-                                <Route
-                                    path="/dashboard"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Dashboard setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/debts"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Debts setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/recurring-expenses"
-                                    element={
-                                        isAuthenticated ? (
-                                            <RecurringExpenses
-                                                setIsAuthenticated={setIsAuthenticated}
-                                            />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/settings"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Settings setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/goals"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Goals setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/trash"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Trash setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/reports"
-                                    element={
-                                        isAuthenticated ? (
-                                            <Reports setIsAuthenticated={setIsAuthenticated} />
-                                        ) : (
-                                            <Navigate to="/login" />
-                                        )
-                                    }
-                                />
-                                <Route
-                                    path="/admin"
-                                    element={isAuthenticated ? <Admin /> : <Navigate to="/login" />}
-                                />
-                                <Route
-                                    path="/"
-                                    element={
-                                        <Navigate to={isAuthenticated ? '/dashboard' : '/login'} />
-                                    }
-                                />
-                            </Routes>
-                        </Suspense>
-                    </Router>
+                    <SharedDataProvider isAuthenticated={isAuthenticated}>
+                        <SalaryPeriodProvider isAuthenticated={isAuthenticated}>
+                            <OfflineIndicator />
+                            {apiLoading && (
+                                <div className="fixed inset-0 z-50">
+                                    <Loading />
+                                </div>
+                            )}
+                            <Router
+                                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+                            >
+                                <Suspense fallback={<Loading />}>
+                                    <Routes>
+                                        <Route
+                                            path="/login"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Navigate to="/dashboard" />
+                                                ) : (
+                                                    <Login
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/register"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Navigate to="/dashboard" />
+                                                ) : (
+                                                    <Register
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                )
+                                            }
+                                        />
+                                        <Route path="/reset-password" element={<ResetPassword />} />
+                                        <Route
+                                            path="/dashboard"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Dashboard
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/debts"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Debts
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/recurring-expenses"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <RecurringExpenses
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/settings"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Settings
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/goals"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Goals
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/trash"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Trash
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/reports"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Reports
+                                                        setIsAuthenticated={setIsAuthenticated}
+                                                    />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/admin"
+                                            element={
+                                                isAuthenticated ? (
+                                                    <Admin />
+                                                ) : (
+                                                    <Navigate to="/login" />
+                                                )
+                                            }
+                                        />
+                                        <Route
+                                            path="/"
+                                            element={
+                                                <Navigate
+                                                    to={isAuthenticated ? '/dashboard' : '/login'}
+                                                />
+                                            }
+                                        />
+                                    </Routes>
+                                </Suspense>
+                            </Router>
+                        </SalaryPeriodProvider>
+                    </SharedDataProvider>
                 </CurrencyProvider>
             </FeatureFlagProvider>
         </ThemeProvider>

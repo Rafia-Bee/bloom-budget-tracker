@@ -3,10 +3,13 @@
  *
  * Modal dialog for quickly adding expenses with category selection,
  * subcategory, payment method, and amount input.
+ *
+ * Optimization: Uses SharedDataContext for cached debts/goals/subcategories (#164)
  */
 
 import { useState, useEffect } from 'react';
-import { debtAPI, recurringExpenseAPI, subcategoryAPI, goalAPI } from '../api';
+import { recurringExpenseAPI } from '../api';
+import { useSharedData } from '../contexts/SharedDataContext';
 import { logError } from '../utils/logger';
 import PropTypes from 'prop-types';
 import CurrencySelector from './CurrencySelector';
@@ -26,45 +29,23 @@ function AddExpenseModal({ onClose, onAdd }) {
     const [frequencyValue, setFrequencyValue] = useState(30);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [debts, setDebts] = useState([]);
-    const [goals, setGoals] = useState([]);
-    const [subcategoriesData, setSubcategoriesData] = useState({});
+
+    // Use cached data from SharedDataContext instead of fetching each time modal opens
+    const {
+        debts,
+        goals,
+        subcategories: subcategoriesData,
+        ensureDebtsLoaded,
+        ensureGoalsLoaded,
+        ensureSubcategoriesLoaded,
+    } = useSharedData();
 
     useEffect(() => {
-        // Always load fresh data when component mounts (modal opens)
-        loadDebts();
-        loadGoals();
-        loadSubcategories();
-    }, []); // Only run on mount since modal is conditionally rendered
-
-    const loadDebts = async () => {
-        try {
-            const response = await debtAPI.getAll();
-            setDebts(response.data);
-        } catch (error) {
-            logError('loadDebts', error);
-        }
-    };
-
-    const loadGoals = async () => {
-        try {
-            const response = await goalAPI.getAll();
-            setGoals(response.data.goals || []);
-        } catch (error) {
-            logError('loadGoals', error);
-        }
-    };
-
-    const loadSubcategories = async () => {
-        try {
-            const response = await subcategoryAPI.getAll();
-            setSubcategoriesData(response.data.subcategories || {});
-        } catch (error) {
-            logError('loadSubcategories', error);
-            // Fallback to empty object if API fails
-            setSubcategoriesData({});
-        }
-    };
+        // Ensure data is loaded (uses cached data if already loaded)
+        ensureDebtsLoaded();
+        ensureGoalsLoaded();
+        ensureSubcategoriesLoaded();
+    }, [ensureDebtsLoaded, ensureGoalsLoaded, ensureSubcategoriesLoaded]);
 
     const categories = [
         'Fixed Expenses',
