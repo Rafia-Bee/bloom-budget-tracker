@@ -322,3 +322,138 @@ class TestAccountLockout:
         assert response.status_code == 401
         assert "invalid" in response.json["error"].lower()
         assert "locked" not in response.json["error"].lower()
+
+
+class TestChangePassword:
+    """Test password change endpoint for authenticated users"""
+
+    def test_change_password_success(self, client, auth_headers):
+        """Should change password with valid current password"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "NewSecurePass456!",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert "successfully" in response.json["message"].lower()
+
+    def test_change_password_wrong_current(self, client, auth_headers):
+        """Should reject incorrect current password"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "WrongPassword123!",
+                "new_password": "NewSecurePass456!",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 401
+        assert "incorrect" in response.json["error"].lower()
+
+    def test_change_password_weak_new_password(self, client, auth_headers):
+        """Should reject new password that doesn't meet complexity requirements"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "weakpass",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        # Should mention one of the complexity requirements
+        error = response.json["error"].lower()
+        assert (
+            "uppercase" in error
+            or "lowercase" in error
+            or "number" in error
+            or "8 char" in error
+        )
+
+    def test_change_password_same_as_current(self, client, auth_headers):
+        """Should reject new password that matches current password"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "TestPassword123!",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "different" in response.json["error"].lower()
+
+    def test_change_password_missing_current(self, client, auth_headers):
+        """Should reject request without current password"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "new_password": "NewSecurePass456!",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "current password" in response.json["error"].lower()
+
+    def test_change_password_no_uppercase(self, client, auth_headers):
+        """Should reject new password without uppercase"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "lowercase123",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "uppercase" in response.json["error"].lower()
+
+    def test_change_password_no_lowercase(self, client, auth_headers):
+        """Should reject new password without lowercase"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "UPPERCASE123",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "lowercase" in response.json["error"].lower()
+
+    def test_change_password_no_number(self, client, auth_headers):
+        """Should reject new password without number"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "NoNumbersHere",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+        assert "number" in response.json["error"].lower()
+
+    def test_change_password_unauthenticated(self, client):
+        """Should reject unauthenticated request"""
+        response = client.post(
+            "/api/v1/auth/change-password",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "NewSecurePass456!",
+            },
+        )
+
+        # JWT required should return 401
+        assert response.status_code == 401
