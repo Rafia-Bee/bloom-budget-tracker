@@ -341,7 +341,7 @@ test.describe('Initial Balance Handling (#149)', () => {
 
         // Clean database completely (resets User balance fields too)
         await cleanDatabase(request, cookieHeader);
-        
+
         // Wait a bit to ensure cleanup is complete before creating new periods
         await page.waitForTimeout(500);
 

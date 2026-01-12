@@ -73,8 +73,11 @@ test.describe('Debt Management', () => {
         test('Debts page shows correct sections', async ({ page }) => {
             await page.goto('/debts');
             await page.waitForLoadState('domcontentloaded');
-            // Wait for debts page content to appear
-            await page.waitForSelector('h2:has-text("Your Debts"), text=/No debts/i', { timeout: 10000 });
+            // Wait for debts page content to appear - use OR condition
+            await Promise.race([
+                page.waitForSelector('h2:has-text("Your Debts")', { timeout: 10000 }),
+                page.waitForSelector('text=/No debts/i', { timeout: 10000 }),
+            ]);
 
             // Page should have loaded - check for any debt-related content
             // Could be debt list, empty state, add button, or page title
@@ -142,8 +145,11 @@ test.describe('Debt Management', () => {
         test('can add a new debt', async ({ page }) => {
             await page.goto('/debts');
             await page.waitForLoadState('domcontentloaded');
-            // Wait for debts page content to appear
-            await page.waitForSelector('h2:has-text("Your Debts"), button:has-text("Add Debt")', { timeout: 10000 });
+            // Wait for debts page content to appear - use OR condition
+            await Promise.race([
+                page.waitForSelector('h2:has-text("Your Debts")', { timeout: 10000 }),
+                page.waitForSelector('button:has-text("Add Debt")', { timeout: 10000 }),
+            ]);
 
             // Open modal
             const addButton = page.locator(
