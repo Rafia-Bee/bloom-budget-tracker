@@ -7,14 +7,21 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { screen, waitFor, act, cleanup } from '@testing-library/react';
 import AddDebtPaymentModal from '../components/AddDebtPaymentModal';
 import { clickWithAct, changeWithAct, selectWithAct, clearWithAct } from './test-utils';
+import { renderWithSharedData } from './utils.jsx';
 
 // Mock the API
 vi.mock('../api', () => ({
     debtAPI: {
         getAll: vi.fn(),
+    },
+    goalAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: [] })),
+    },
+    subcategoryAPI: {
+        getAll: vi.fn(() => Promise.resolve({ data: {} })),
     },
 }));
 
@@ -30,10 +37,10 @@ describe('AddDebtPaymentModal', () => {
     ];
 
     beforeEach(() => {
+        vi.clearAllMocks();
         mockOnClose = vi.fn();
         mockOnAdd = vi.fn().mockResolvedValue({});
         debtAPI.getAll.mockResolvedValue({ data: mockDebts });
-        vi.clearAllMocks();
     });
 
     afterEach(async () => {
@@ -45,7 +52,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Rendering', () => {
         it('renders the modal with title', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             // Wait for initial API call to settle
             await waitFor(() => {
@@ -55,7 +62,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('renders all form fields', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByText('Select Debt')).toBeInTheDocument();
@@ -66,7 +73,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('renders Add Payment and Cancel buttons', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: 'Add Payment' })).toBeInTheDocument();
@@ -75,7 +82,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('renders close X button', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const closeButtons = screen.getAllByRole('button');
@@ -88,7 +95,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Debt Loading', () => {
         it('loads debts from API on mount', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(debtAPI.getAll).toHaveBeenCalledTimes(1);
@@ -96,7 +103,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('displays loaded debts in dropdown', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Car Loan' })).toBeInTheDocument();
@@ -106,7 +113,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('includes Credit Card option in dropdown', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Credit Card' })).toBeInTheDocument();
@@ -114,7 +121,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('includes placeholder option in dropdown', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(
@@ -124,7 +131,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('auto-selects first debt on load', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -133,7 +140,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('auto-fills amount from first debt monthly payment', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const amountInput = screen.getByPlaceholderText('0.00');
@@ -141,19 +148,28 @@ describe('AddDebtPaymentModal', () => {
             });
         });
 
-        it('displays error when debts fail to load', async () => {
-            debtAPI.getAll.mockRejectedValue(new Error('Network error'));
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+        it('handles API error gracefully when debts fail to load', async () => {
+            // SharedDataContext logs errors but doesn't expose them to components
+            // The component should still render with just the Credit Card option
+            debtAPI.getAll.mockRejectedValueOnce(new Error('Network error'));
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
-                expect(screen.getByText('Failed to load debts')).toBeInTheDocument();
+                // Modal should still render
+                expect(screen.getByText('Debt Payment')).toBeInTheDocument();
+                // Credit Card option should always be available
+                const [debtSelect] = screen.getAllByRole('combobox');
+                expect(debtSelect).toBeInTheDocument();
             });
+
+            // Reset the mock for subsequent tests
+            debtAPI.getAll.mockResolvedValue({ data: mockDebts });
         });
     });
 
     describe('Pre-selected Debt', () => {
         it('uses preSelectedDebt when provided', async () => {
-            render(
+            renderWithSharedData(
                 <AddDebtPaymentModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -168,7 +184,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('auto-fills amount from preSelectedDebt monthly payment', async () => {
-            render(
+            renderWithSharedData(
                 <AddDebtPaymentModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -185,7 +201,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Debt Selection', () => {
         it('updates amount when debt is changed', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Student Loan' })).toBeInTheDocument();
@@ -199,7 +215,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('clears amount when Credit Card is selected', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Car Loan' })).toBeInTheDocument();
@@ -213,7 +229,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('handles debt with zero monthly payment', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Personal Loan' })).toBeInTheDocument();
@@ -230,7 +246,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Form Interactions', () => {
         it('allows entering custom amount', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -245,7 +261,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('allows changing payment method', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const methodSelects = screen.getAllByRole('combobox');
             const paymentMethodSelect = methodSelects[1]; // Second select is payment method
@@ -258,7 +274,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('defaults to Debit card payment method', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const methodSelects = screen.getAllByRole('combobox');
@@ -268,7 +284,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('allows changing payment date', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const dateInput = document.querySelector('input[type="date"]');
             await clearWithAct(dateInput);
@@ -278,7 +294,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('defaults date to today', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const today = new Date().toISOString().split('T')[0];
             await waitFor(() => {
@@ -290,7 +306,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Input Validation', () => {
         it('debt selection is required', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -299,7 +315,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('amount is required', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const amountInput = screen.getByPlaceholderText('0.00');
@@ -308,7 +324,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('amount has min value of 0.01', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const amountInput = screen.getByPlaceholderText('0.00');
@@ -317,7 +333,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('amount has step of 0.01', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const amountInput = screen.getByPlaceholderText('0.00');
@@ -326,7 +342,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('date is required', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const dateInput = document.querySelector('input[type="date"]');
@@ -336,7 +352,7 @@ describe('AddDebtPaymentModal', () => {
 
         it('submit button is disabled when no debt is selected', async () => {
             debtAPI.getAll.mockResolvedValue({ data: [] });
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const submitButton = screen.getByRole('button', { name: 'Add Payment' });
@@ -347,14 +363,14 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Modal Actions', () => {
         it('calls onClose when Cancel is clicked', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
             expect(mockOnClose).toHaveBeenCalledTimes(1);
         });
 
         it('calls onClose when X button is clicked', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const closeButtons = screen.getAllByRole('button');
             const xButton = closeButtons.find((btn) => btn.querySelector('svg.w-6.h-6'));
@@ -366,7 +382,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Form Submission', () => {
         it('calls onAdd with correct data on submission', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -390,7 +406,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('converts amount to cents on submission', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -410,7 +426,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('uses selected payment method in submission', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -432,7 +448,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('includes selected date in submission', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -454,7 +470,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('creates expense name with debt name + Payment suffix', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Student Loan' })).toBeInTheDocument();
@@ -481,7 +497,7 @@ describe('AddDebtPaymentModal', () => {
         it('shows loading text during submission', async () => {
             mockOnAdd.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -499,7 +515,7 @@ describe('AddDebtPaymentModal', () => {
         it('disables submit button during loading', async () => {
             mockOnAdd.mockImplementation(() => new Promise(() => {}));
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -521,7 +537,7 @@ describe('AddDebtPaymentModal', () => {
                 response: { data: { error: 'Insufficient funds' } },
             });
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -539,7 +555,7 @@ describe('AddDebtPaymentModal', () => {
         it('displays generic error message when no specific error', async () => {
             mockOnAdd.mockRejectedValue(new Error('Network error'));
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -559,7 +575,7 @@ describe('AddDebtPaymentModal', () => {
                 response: { data: { error: 'Failed to add payment' } },
             });
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -590,7 +606,7 @@ describe('AddDebtPaymentModal', () => {
                 response: { data: { error: 'Error' } },
             });
 
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -611,7 +627,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Credit Card Special Case', () => {
         it('handles Credit Card selection differently', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Credit Card' })).toBeInTheDocument();
@@ -626,7 +642,7 @@ describe('AddDebtPaymentModal', () => {
         });
 
         it('submits with Credit Card as subcategory', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Credit Card' })).toBeInTheDocument();
@@ -654,7 +670,7 @@ describe('AddDebtPaymentModal', () => {
 
     describe('Payment Method Options', () => {
         it('includes all payment method options', async () => {
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Debit card' })).toBeInTheDocument();
@@ -670,7 +686,7 @@ describe('AddDebtPaymentModal', () => {
     describe('Empty Debts List', () => {
         it('handles empty debts list gracefully', async () => {
             debtAPI.getAll.mockResolvedValue({ data: [] });
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 const [debtSelect] = screen.getAllByRole('combobox');
@@ -681,7 +697,7 @@ describe('AddDebtPaymentModal', () => {
 
         it('still shows Credit Card option when no debts exist', async () => {
             debtAPI.getAll.mockResolvedValue({ data: [] });
-            render(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(<AddDebtPaymentModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await waitFor(() => {
                 expect(screen.getByRole('option', { name: 'Credit Card' })).toBeInTheDocument();

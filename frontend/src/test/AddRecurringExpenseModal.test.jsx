@@ -15,8 +15,9 @@ import React from 'react';
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { screen, waitFor, cleanup } from '@testing-library/react';
 import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils';
+import { renderWithSharedData } from './utils.jsx';
 import AddRecurringExpenseModal from '../components/AddRecurringExpenseModal';
 import { debtAPI, goalAPI, subcategoryAPI } from '../api';
 
@@ -53,7 +54,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Rendering', () => {
         it('renders the modal with title for add mode', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             expect(
                 screen.getByRole('heading', { name: 'Add Recurring Expense' })
@@ -62,7 +65,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('renders the modal with title for edit mode', async () => {
             const existingExpense = { name: 'Test Expense', amount: 1500 };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -76,7 +79,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders all form fields', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Name')).toBeInTheDocument();
@@ -88,7 +93,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders recurrence schedule section', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Recurrence Schedule')).toBeInTheDocument();
@@ -97,7 +104,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders Create and Cancel buttons in add mode', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
@@ -105,7 +114,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('renders Update button in edit mode', async () => {
             const existingExpense = { name: 'Test', amount: 1000 };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -117,7 +126,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders close X button', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const buttons = screen.getAllByRole('button');
             const xButton = buttons.find(
@@ -130,7 +141,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders notes field', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Notes (Optional)')).toBeInTheDocument();
@@ -141,7 +154,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('renders fixed bill checkbox', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText(/Fixed Bill/)).toBeInTheDocument();
@@ -152,14 +167,18 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Default Values', () => {
         it('has default name of Netflix', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const nameInput = screen.getByDisplayValue('Netflix');
             expect(nameInput).toBeInTheDocument();
         });
 
         it('has default category of Fixed Expenses', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 // Category is the second select (index 1): Payment Method, Category, Subcategory, Frequency
@@ -169,7 +188,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('has default frequency of monthly', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 const frequencySelect = screen.getByDisplayValue('Monthly');
@@ -178,7 +199,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('has default payment method of Credit card', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Credit Card')).toBeInTheDocument();
@@ -189,7 +212,7 @@ describe('AddRecurringExpenseModal', () => {
     describe('Edit Mode Pre-Population', () => {
         it('pre-populates name from existing expense', async () => {
             const existingExpense = { name: 'Gym Membership', amount: 2500 };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -202,7 +225,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('pre-populates amount from existing expense (converts from cents)', async () => {
             const existingExpense = { name: 'Test', amount: 2500 };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -215,7 +238,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('pre-populates category from existing expense', async () => {
             const existingExpense = { name: 'Test', amount: 1000, category: 'Flexible Expenses' };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -230,7 +253,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('pre-populates frequency from existing expense', async () => {
             const existingExpense = { name: 'Test', amount: 1000, frequency: 'weekly' };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -245,7 +268,7 @@ describe('AddRecurringExpenseModal', () => {
 
         it('pre-populates is_fixed_bill from existing expense', async () => {
             const existingExpense = { name: 'Rent', amount: 100000, is_fixed_bill: true };
-            render(
+            renderWithSharedData(
                 <AddRecurringExpenseModal
                     onClose={mockOnClose}
                     onAdd={mockOnAdd}
@@ -259,7 +282,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Frequency Selection', () => {
         it('shows all frequency options', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 const frequencySelect = screen.getByDisplayValue('Monthly');
@@ -276,7 +301,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows day of week selector for weekly frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -290,7 +317,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows day of week selector for biweekly frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -303,7 +332,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows day of month selector for monthly frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Due Date (Day of Month)')).toBeInTheDocument();
@@ -311,7 +342,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows custom day interval input for custom frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -324,7 +357,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows all weekday options', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -352,7 +387,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Category Selection', () => {
         it('shows all category options', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 const categorySelect = screen.getByDisplayValue('Fixed Expenses');
@@ -366,7 +403,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows default subcategories for Fixed Expenses', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Rent')).toBeInTheDocument();
@@ -377,7 +416,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('updates subcategories when category changes', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -392,7 +433,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows credit card option for Debt Payments', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             // Wait for API calls to complete
             await waitFor(() => {
                 expect(debtAPI.getAll).toHaveBeenCalled();
@@ -422,7 +465,9 @@ describe('AddRecurringExpenseModal', () => {
             ];
             debtAPI.getAll.mockResolvedValue({ data: mockDebts });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(debtAPI.getAll).toHaveBeenCalled();
@@ -433,7 +478,9 @@ describe('AddRecurringExpenseModal', () => {
             const mockDebts = [{ id: 1, name: 'Student Loan', monthly_payment: 25000 }];
             debtAPI.getAll.mockResolvedValue({ data: mockDebts });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -449,7 +496,9 @@ describe('AddRecurringExpenseModal', () => {
             const mockDebts = [{ id: 1, name: 'Student Loan', monthly_payment: 25000 }];
             debtAPI.getAll.mockResolvedValue({ data: mockDebts });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -474,7 +523,9 @@ describe('AddRecurringExpenseModal', () => {
             const mockDebts = [{ id: 1, name: 'Car Loan', monthly_payment: 30000 }];
             debtAPI.getAll.mockResolvedValue({ data: mockDebts });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -502,7 +553,9 @@ describe('AddRecurringExpenseModal', () => {
             ];
             goalAPI.getAll.mockResolvedValue({ data: { goals: mockGoals } });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(goalAPI.getAll).toHaveBeenCalled();
@@ -516,7 +569,9 @@ describe('AddRecurringExpenseModal', () => {
             ];
             goalAPI.getAll.mockResolvedValue({ data: { goals: mockGoals } });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -535,7 +590,9 @@ describe('AddRecurringExpenseModal', () => {
         it('shows info text when no goals exist', async () => {
             goalAPI.getAll.mockResolvedValue({ data: { goals: [] } });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -556,7 +613,9 @@ describe('AddRecurringExpenseModal', () => {
             ];
             goalAPI.getAll.mockResolvedValue({ data: { goals: mockGoals } });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Fixed Expenses')).toBeInTheDocument();
             });
@@ -582,7 +641,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Custom Subcategories', () => {
         it('loads subcategories on mount', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(subcategoryAPI.getAll).toHaveBeenCalled();
@@ -598,7 +659,9 @@ describe('AddRecurringExpenseModal', () => {
                 },
             });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Custom Bill')).toBeInTheDocument();
@@ -610,13 +673,17 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Fixed Bill Toggle', () => {
         it('checkbox is unchecked by default', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             expect(screen.getByRole('checkbox')).not.toBeChecked();
         });
 
         it('can toggle fixed bill checkbox', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             const checkbox = screen.getByRole('checkbox');
             expect(checkbox).not.toBeChecked();
 
@@ -626,7 +693,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('shows explanation text for fixed bill', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             expect(screen.getByText(/exclude from weekly budget/)).toBeInTheDocument();
         });
@@ -634,7 +703,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Form Submission', () => {
         it('calls onAdd with correct data on submit', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -664,7 +735,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('converts amount to cents', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -687,7 +760,9 @@ describe('AddRecurringExpenseModal', () => {
         it('shows loading state during submission', async () => {
             mockOnAdd.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -704,7 +779,9 @@ describe('AddRecurringExpenseModal', () => {
         it('disables buttons during submission', async () => {
             mockOnAdd.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -720,7 +797,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('includes day_of_week for weekly frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -745,7 +824,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('includes day_of_month for monthly frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -768,7 +849,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('includes frequency_value for custom frequency', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Monthly')).toBeInTheDocument();
             });
@@ -803,7 +886,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('includes is_fixed_bill when checked', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -832,7 +917,9 @@ describe('AddRecurringExpenseModal', () => {
                 response: { data: { error: 'Failed to create recurring expense' } },
             });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -851,7 +938,9 @@ describe('AddRecurringExpenseModal', () => {
         it('shows generic error if no specific message', async () => {
             mockOnAdd.mockRejectedValue({});
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -872,7 +961,9 @@ describe('AddRecurringExpenseModal', () => {
                 response: { data: { error: 'Error' } },
             });
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Netflix')).toBeInTheDocument();
             });
@@ -893,7 +984,9 @@ describe('AddRecurringExpenseModal', () => {
             goalAPI.getAll.mockRejectedValue(new Error('Network error'));
             subcategoryAPI.getAll.mockRejectedValue(new Error('Network error'));
 
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             // Should still render without crashing
             await waitFor(() => {
@@ -904,14 +997,18 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Modal Close Actions', () => {
         it('calls onClose when Cancel button is clicked', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
 
             expect(mockOnClose).toHaveBeenCalledTimes(1);
         });
 
         it('calls onClose when X button is clicked', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             const buttons = screen.getAllByRole('button');
             const xButton = buttons.find(
                 (btn) =>
@@ -928,41 +1025,53 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Input Validation', () => {
         it('name input is required', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const nameInput = screen.getByDisplayValue('Netflix');
             expect(nameInput).toBeRequired();
         });
 
         it('name input has maxLength of 200', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const nameInput = screen.getByDisplayValue('Netflix');
             expect(nameInput).toHaveAttribute('maxLength', '200');
         });
 
         it('amount input is required', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const amountInput = screen.getByRole('spinbutton');
             expect(amountInput).toBeRequired();
         });
 
         it('notes textarea has maxLength of 1000', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             const notesTextarea = screen.getByPlaceholderText('Add any additional details...');
             expect(notesTextarea).toHaveAttribute('maxLength', '1000');
         });
 
         it('shows character count for notes', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             expect(screen.getByText('0/1000 characters')).toBeInTheDocument();
         });
 
         it('updates character count when typing notes', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             const notesTextarea = screen.getByPlaceholderText('Add any additional details...');
             await typeWithAct(notesTextarea, 'Test note');
 
@@ -970,7 +1079,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('start date is required', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('Start Date')).toBeInTheDocument();
@@ -983,7 +1094,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('end date min is set to start date', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByText('End Date (Optional)')).toBeInTheDocument();
@@ -997,7 +1110,9 @@ describe('AddRecurringExpenseModal', () => {
 
     describe('Payment Method Selection', () => {
         it('shows all payment method options', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
 
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Credit Card')).toBeInTheDocument();
@@ -1010,7 +1125,9 @@ describe('AddRecurringExpenseModal', () => {
         });
 
         it('can change payment method', async () => {
-            render(<AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithSharedData(
+                <AddRecurringExpenseModal onClose={mockOnClose} onAdd={mockOnAdd} />
+            );
             await waitFor(() => {
                 expect(screen.getByDisplayValue('Credit Card')).toBeInTheDocument();
             });

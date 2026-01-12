@@ -15,6 +15,7 @@ import EditSubcategoryModal from '../components/EditSubcategoryModal';
 import ExportImportModal from '../components/ExportImportModal';
 import BankImportModal from '../components/BankImportModal';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
+import { useSharedData } from '../contexts/SharedDataContext';
 
 function Settings({ setIsAuthenticated }) {
     const navigate = useNavigate();
@@ -41,6 +42,9 @@ function Settings({ setIsAuthenticated }) {
 
     // Feature flags
     const { flags, toggleFlag } = useFeatureFlag();
+
+    // SharedDataContext for cache invalidation
+    const { refreshSubcategories: refreshSharedSubcategories } = useSharedData();
 
     // Preferences state
     const [recurringLookaheadDays, setRecurringLookaheadDays] = useState(14);
@@ -106,6 +110,7 @@ function Settings({ setIsAuthenticated }) {
         try {
             await subcategoryAPI.create(data);
             await loadSubcategories();
+            refreshSharedSubcategories(); // Invalidate shared cache
             setShowCreateModal(false);
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to create subcategory');
@@ -116,6 +121,7 @@ function Settings({ setIsAuthenticated }) {
         try {
             await subcategoryAPI.update(id, data);
             await loadSubcategories();
+            refreshSharedSubcategories(); // Invalidate shared cache
             setShowEditModal(false);
             setEditingSubcategory(null);
         } catch (err) {
@@ -127,6 +133,7 @@ function Settings({ setIsAuthenticated }) {
         try {
             await subcategoryAPI.delete(subcategory.id, false);
             await loadSubcategories();
+            refreshSharedSubcategories(); // Invalidate shared cache
             setDeleteConfirm(null);
         } catch (err) {
             if (err.response?.status === 409 && err.response?.data?.can_force) {
@@ -147,6 +154,7 @@ function Settings({ setIsAuthenticated }) {
         try {
             await subcategoryAPI.delete(subcategory.id, true);
             await loadSubcategories();
+            refreshSharedSubcategories(); // Invalidate shared cache
             setDeleteConfirm(null);
             setError('');
         } catch (err) {

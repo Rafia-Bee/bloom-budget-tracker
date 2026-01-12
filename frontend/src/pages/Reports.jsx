@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { analyticsAPI, salaryPeriodAPI } from '../api';
+import { analyticsAPI } from '../api';
 import { formatCurrency } from '../utils/formatters';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useSalaryPeriod } from '../contexts/SalaryPeriodContext';
 import Header from '../components/Header';
 import SpendingTrendsChart from '../components/reports/SpendingTrendsChart';
 import CategoryBreakdownChart from '../components/reports/CategoryBreakdownChart';
@@ -34,27 +35,21 @@ function Reports({ setIsAuthenticated }) {
     });
     const [granularity, setGranularity] = useState('daily');
 
-    // Load current salary period on mount to set default date range
+    // SalaryPeriodContext for cached current period data (Issue #164 Phase 3)
+    const { currentPeriod: sharedCurrentPeriod, loaded: periodLoaded } = useSalaryPeriod();
+
+    // Set default date range from cached salary period
     useEffect(() => {
-        const loadDefaultPeriod = async () => {
-            try {
-                const response = await salaryPeriodAPI.getCurrent();
-                // Use salary period (cycle) dates instead of current week
-                if (response.data?.salary_period) {
-                    const { start_date, end_date } = response.data.salary_period;
-                    setDateRange({
-                        start: start_date,
-                        end: end_date,
-                    });
-                    setGranularity('daily'); // Default to daily for current cycle
-                }
-            } catch (err) {
-                console.error('Failed to load current period:', err);
-                // Fallback to 30 days (already set in initial state)
-            }
-        };
-        loadDefaultPeriod();
-    }, []);
+        if (periodLoaded && sharedCurrentPeriod) {
+            const { start_date, end_date } = sharedCurrentPeriod;
+            setDateRange({
+                start: start_date,
+                end: end_date,
+            });
+            setGranularity('daily'); // Default to daily for current cycle
+        }
+        // Fallback to 30 days if no period (already set in initial state)
+    }, [periodLoaded, sharedCurrentPeriod]);
 
     // Analytics data
     const [spendingByCategory, setSpendingByCategory] = useState(null);
