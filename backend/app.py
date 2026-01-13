@@ -129,7 +129,7 @@ def create_app(config_name="development"):
                 "connect-src": "'self' https://bloom-backend-b44r.onrender.com",
             },
             frame_options="DENY",
-            content_type_nosniff=True,
+            # Note: content_type_nosniff removed in Flask-Talisman 1.1.0 (now always enabled)
         )
 
     # Check for pending migrations (Issue #124)
