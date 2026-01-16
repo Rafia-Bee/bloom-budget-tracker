@@ -69,13 +69,17 @@ describe('TransactionCard', () => {
         recurring_template_id: 42,
     };
 
-    // Future expense (date in future)
+    // Future expense (date in future) - use date 30 days from now to avoid flaky tests
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 30);
+    const futureDateString = futureDate.toISOString().split('T')[0];
+
     const mockFutureExpense = {
         id: 5,
         transactionType: 'expense',
         name: 'Scheduled Payment',
         amount: 10000, // €100.00
-        date: '2026-01-15', // Future date
+        date: futureDateString, // Dynamically calculated future date
         category: 'Fixed Expenses',
         subcategory: 'Bills',
         payment_method: 'Debit card',
