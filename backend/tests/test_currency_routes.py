@@ -10,28 +10,35 @@ Uses mocked API responses to avoid slow network calls and rate limiting.
 import pytest
 from flask import json
 from unittest.mock import patch, MagicMock
+from datetime import date
 
 
 # Mock responses for fawazahmed0/exchange-api (new API format)
 # Uses lowercase currency codes and {currency: {rates}} structure
-MOCK_RATES_EUR = {
-    "date": "2024-01-15",
-    "eur": {
-        "eur": 1.0,
-        "usd": 1.08,
-        "gbp": 0.86,
-        "aed": 3.97,
-    },
-}
+# Note: date must be today's date for cache to work correctly
+def get_mock_rates_eur():
+    """Get mock EUR rates with today's date for cache compatibility"""
+    return {
+        "date": date.today().isoformat(),
+        "eur": {
+            "eur": 1.0,
+            "usd": 1.08,
+            "gbp": 0.86,
+            "aed": 3.97,
+        },
+    }
 
-MOCK_RATES_USD = {
-    "date": "2024-01-15",
-    "usd": {
-        "eur": 0.93,
-        "usd": 1.0,
-        "gbp": 0.80,
-    },
-}
+
+def get_mock_rates_usd():
+    """Get mock USD rates with today's date for cache compatibility"""
+    return {
+        "date": date.today().isoformat(),
+        "usd": {
+            "eur": 0.93,
+            "usd": 1.0,
+            "gbp": 0.80,
+        },
+    }
 
 
 @pytest.fixture(autouse=True)
@@ -45,9 +52,9 @@ def mock_currency_api():
             response.raise_for_status = MagicMock()
             # New API uses lowercase currency codes in URL
             if "/usd." in url.lower():
-                response.json.return_value = MOCK_RATES_USD
+                response.json.return_value = get_mock_rates_usd()
             else:
-                response.json.return_value = MOCK_RATES_EUR
+                response.json.return_value = get_mock_rates_eur()
             return response
 
         mock_get.side_effect = mock_response

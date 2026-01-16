@@ -18,8 +18,9 @@ function Header({ setIsAuthenticated, children }) {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const navigate = useNavigate();
-    const { isEnabled, experimentalEnabled } = useFeatureFlag();
-    const reportsEnabled = experimentalEnabled && isEnabled('reportsEnabled');
+    const { isEnabled } = useFeatureFlag();
+    // Reports feature uses the reportsEnabled flag directly
+    const reportsEnabled = isEnabled('reportsEnabled');
 
     useEffect(() => {
         const handleClickOutside = (e) => {

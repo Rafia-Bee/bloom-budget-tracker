@@ -114,7 +114,7 @@ describe('ExperimentalFeaturesModal', () => {
             ).toBeInTheDocument();
         });
 
-        it('renders experimental features toggle', () => {
+        it('renders Reports toggle', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -122,16 +122,17 @@ describe('ExperimentalFeaturesModal', () => {
             );
 
             expect(screen.getByRole('checkbox')).toBeInTheDocument();
+            expect(screen.getByText('Reports & Analytics')).toBeInTheDocument();
         });
 
-        it('renders BETA badge', () => {
+        it('renders NEW badge for Reports feature', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
 
-            expect(screen.getByText('BETA')).toBeInTheDocument();
+            expect(screen.getByText('NEW')).toBeInTheDocument();
         });
 
         it('renders Done button in footer', () => {
@@ -175,7 +176,7 @@ describe('ExperimentalFeaturesModal', () => {
     });
 
     describe('Feature Toggle', () => {
-        it('toggle is unchecked by default', () => {
+        it('Reports toggle is unchecked by default', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -186,7 +187,7 @@ describe('ExperimentalFeaturesModal', () => {
             expect(checkbox).not.toBeChecked();
         });
 
-        it('can enable experimental features', async () => {
+        it('can enable Reports feature', async () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
@@ -199,72 +200,44 @@ describe('ExperimentalFeaturesModal', () => {
             expect(checkbox).toBeChecked();
         });
 
-        it('shows danger zone when experimental features are enabled', async () => {
+        it('shows danger zone by default', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
 
-            expect(screen.queryByText(/Danger Zone/)).not.toBeInTheDocument();
-
-            const checkbox = screen.getByRole('checkbox');
-            await clickWithAct(checkbox);
-
-            await waitFor(() => {
-                expect(screen.getByText(/Danger Zone/)).toBeInTheDocument();
-            });
+            expect(screen.getByText(/Danger Zone/)).toBeInTheDocument();
         });
 
-        it('shows Delete All Data button when enabled', async () => {
+        it('shows Delete All Data button by default', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
 
-            const checkbox = screen.getByRole('checkbox');
-            await clickWithAct(checkbox);
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
+            expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument();
         });
     });
 
     describe('Delete All Data - Initial State', () => {
-        it('shows Delete All Data button initially when enabled', async () => {
+        it('shows Delete All Data button by default', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
+            expect(screen.getByRole('button', { name: /Delete All Data/i })).toBeInTheDocument();
         });
 
-        it('does not show confirmation input initially', async () => {
+        it('does not show confirmation input initially', () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             expect(screen.queryByPlaceholderText('Delete everything')).not.toBeInTheDocument();
         });
@@ -278,14 +251,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
             expect(screen.getByPlaceholderText('Delete everything')).toBeInTheDocument();
@@ -297,14 +262,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -320,14 +277,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
             await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
 
@@ -342,14 +291,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
             const confirmButton = screen.getByRole('button', { name: /Confirm Delete All/i });
@@ -362,14 +303,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -389,14 +322,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
             const input = screen.getByPlaceholderText('Delete everything');
@@ -413,14 +338,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -440,14 +357,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -474,14 +383,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
             const input = screen.getByPlaceholderText('Delete everything');
@@ -502,14 +403,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -535,14 +428,6 @@ describe('ExperimentalFeaturesModal', () => {
                 </TestWrapper>
             );
 
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
-
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
             const input = screen.getByPlaceholderText('Delete everything');
@@ -561,14 +446,6 @@ describe('ExperimentalFeaturesModal', () => {
                     <ExperimentalFeaturesModal onClose={mockOnClose} />
                 </TestWrapper>
             );
-
-            await clickWithAct(screen.getByRole('checkbox'));
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Delete All Data/i })
-                ).toBeInTheDocument();
-            });
 
             await clickWithAct(screen.getByRole('button', { name: /Delete All Data/i }));
 
@@ -596,7 +473,7 @@ describe('ExperimentalFeaturesModal', () => {
             expect(screen.getByRole('checkbox')).toBeInTheDocument();
         });
 
-        it('checkbox can be toggled with keyboard', async () => {
+        it('Reports toggle can be toggled with keyboard', async () => {
             render(
                 <TestWrapper>
                     <ExperimentalFeaturesModal onClose={mockOnClose} />

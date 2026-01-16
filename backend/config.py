@@ -59,9 +59,14 @@ class Config:
                 },
             }
         else:
+            # SQLite configuration for better concurrency in development
             return {
                 "pool_pre_ping": True,
                 "pool_recycle": 300,
+                "connect_args": {
+                    "timeout": 30,  # Wait up to 30s for database lock
+                    "check_same_thread": False,  # Allow multi-threaded access
+                },
             }
 
     # Use property-like behavior via __init_subclass__ or direct assignment

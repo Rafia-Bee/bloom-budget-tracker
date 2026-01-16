@@ -362,6 +362,65 @@ EXCHANGE_API_FALLBACK = "https://{date}.currency-api.pages.dev"
 CACHE_EXPIRY_HOURS = 24
 
 
+def get_all_rates(base_currency: str = "EUR") -> Dict[str, float]:
+    """
+    Get all exchange rates for a base currency efficiently.
+
+    This function first checks the cache for all rates. If any rates are
+    missing or stale, it refreshes ALL rates with a single API call,
+    then returns from cache. This avoids N individual API calls.
+
+    Args:
+        base_currency: Base currency code (e.g., 'EUR')
+
+    Returns:
+        Dictionary mapping target currency codes to exchange rates
+    """
+    from datetime import date, datetime, timedelta, timezone
+
+    base = base_currency.upper()
+    today = date.today()
+    rates = {}
+
+    # First, try to get all rates from cache
+    cached_rates = ExchangeRate.query.filter_by(
+        base_currency=base, rate_date=today
+    ).all()
+
+    # Check if we have fresh cached rates
+    needs_refresh = False
+    if not cached_rates:
+        needs_refresh = True
+    else:
+        # Check if any cached rate is stale
+        for cached in cached_rates:
+            if cached.fetched_at:
+                expiry = cached.fetched_at + timedelta(hours=CACHE_EXPIRY_HOURS)
+                if expiry.tzinfo is None:
+                    expiry = expiry.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > expiry:
+                    needs_refresh = True
+                    break
+
+    # Refresh all rates with single API call if needed
+    if needs_refresh:
+        refresh_rates(base)
+        # Re-fetch from cache after refresh
+        cached_rates = ExchangeRate.query.filter_by(
+            base_currency=base, rate_date=today
+        ).all()
+
+    # Build rates dictionary from cache
+    for cached in cached_rates:
+        if (
+            cached.target_currency != base
+            and cached.target_currency in SUPPORTED_CURRENCIES
+        ):
+            rates[cached.target_currency] = round(cached.rate, 6)
+
+    return rates
+
+
 def get_supported_currencies() -> List[Dict]:
     """
     Get list of supported currencies with metadata.
