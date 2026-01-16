@@ -15,12 +15,11 @@ import { test, expect, loginAsTestUser, isMobileViewport, openMobileMenu } from 
 
 test.describe('Reports & Analytics', () => {
     test.beforeEach(async ({ page }) => {
-        // Enable experimental features and reports flag in localStorage
+        // Enable reports flag in localStorage
         await page.addInitScript(() => {
             localStorage.setItem(
                 'feature_flags',
                 JSON.stringify({
-                    experimentalFeaturesEnabled: true,
                     reportsEnabled: true,
                     budgetRecalculationEnabled: false,
                     flexibleSubPeriodsEnabled: false,

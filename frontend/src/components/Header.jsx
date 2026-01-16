@@ -19,7 +19,7 @@ function Header({ setIsAuthenticated, children }) {
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const navigate = useNavigate();
     const { isEnabled } = useFeatureFlag();
-    // Reports feature no longer requires master experimentalFeaturesEnabled toggle
+    // Reports feature uses the reportsEnabled flag directly
     const reportsEnabled = isEnabled('reportsEnabled');
 
     useEffect(() => {

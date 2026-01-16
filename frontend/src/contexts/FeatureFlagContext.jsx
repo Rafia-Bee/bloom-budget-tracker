@@ -20,7 +20,6 @@ export function FeatureFlagProvider({ children }) {
         return stored
             ? JSON.parse(stored)
             : {
-                  experimentalFeaturesEnabled: false,
                   budgetRecalculationEnabled: false,
                   flexibleSubPeriodsEnabled: false,
                   reportsEnabled: false,
@@ -47,7 +46,6 @@ export function FeatureFlagProvider({ children }) {
         flags,
         toggleFlag,
         isEnabled,
-        experimentalEnabled: flags.experimentalFeaturesEnabled,
     };
 
     return <FeatureFlagContext.Provider value={value}>{children}</FeatureFlagContext.Provider>;

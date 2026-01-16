@@ -6,13 +6,13 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ## 2026-01-16: Fix Production Issues from Render Logs (#174)
 
-**Session Summary:** Analyzed Render production logs and fixed multiple critical issues causing worker timeouts, navigation bugs, and PWA errors.
+**Session Summary:** Analyzed Render production logs and fixed multiple critical issues causing worker timeouts, navigation bugs, and PWA errors. Also removed the master `experimentalFeaturesEnabled` toggle.
 
 **Issues Fixed:**
 
 1. **CRITICAL: Worker timeout on currency rates** - Fetching 165 individual exchange rates caused 30s+ API delays → Added `get_all_rates()` batch function that fetches all rates in single API call with caching
 
-2. **Reports nav link not showing** - Required both `experimentalFeaturesEnabled` AND `reportsEnabled` flags → Changed to only check `reportsEnabled` directly
+2. **Reports nav link not showing** - Required both `experimentalFeaturesEnabled` AND `reportsEnabled` flags → **Removed the master toggle entirely**. Individual feature flags now work directly without needing to enable a parent toggle first.
 
 3. **Dashboard "Next" navigation wrong** - When on current period, clicking Next jumped to wrong period → Added `isCurrentPeriod` detection, uses today's date as reference
 
@@ -33,6 +33,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 -   `backend/app.py` - SQLite WAL mode pragmas
 -   `backend/config.py` - SQLite timeout config
 -   `backend/utils/rate_limiter.py` - Session rollback on error
+-   `frontend/src/contexts/FeatureFlagContext.jsx` - Removed experimentalFeaturesEnabled
+-   `frontend/src/components/ExperimentalFeaturesModal.jsx` - Removed master toggle, show features directly
+-   `docs/FEATURE_FLAGS.md` - Updated documentation
 
 **What's Next:**
 
