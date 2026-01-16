@@ -28,12 +28,15 @@ api.interceptors.request.use((config) => {
 
     config.metadata = { startTime: Date.now() };
 
-    const timeoutId = setTimeout(() => {
-        if (loadingCallback) {
-            loadingCallback(true);
-        }
-    }, 500);
-    config.metadata.timeoutId = timeoutId;
+    // Allow requests to skip the global loading indicator (e.g., background fetches)
+    if (!config.skipLoading) {
+        const timeoutId = setTimeout(() => {
+            if (loadingCallback) {
+                loadingCallback(true);
+            }
+        }, 500);
+        config.metadata.timeoutId = timeoutId;
+    }
 
     return config;
 });
@@ -43,7 +46,8 @@ api.interceptors.response.use(
         if (response.config.metadata?.timeoutId) {
             clearTimeout(response.config.metadata.timeoutId);
         }
-        if (loadingCallback) {
+        // Only call loadingCallback if this request participated in loading tracking
+        if (loadingCallback && !response.config.skipLoading) {
             loadingCallback(false);
         }
         return response;
@@ -52,7 +56,8 @@ api.interceptors.response.use(
         if (error.config?.metadata?.timeoutId) {
             clearTimeout(error.config.metadata.timeoutId);
         }
-        if (loadingCallback) {
+        // Only call loadingCallback if this request participated in loading tracking
+        if (loadingCallback && !error.config?.skipLoading) {
             loadingCallback(false);
         }
 
@@ -184,8 +189,12 @@ export const userAPI = {
 
 export const currencyAPI = {
     getSupportedCurrencies: () => api.get('/currencies'),
+    // Skip loading indicator for rates - they load in background with cached fallback
     getRates: (baseCurrency = 'EUR') =>
-        api.get('/currencies/rates', { params: { base: baseCurrency } }),
+        api.get('/currencies/rates', {
+            params: { base: baseCurrency },
+            skipLoading: true,
+        }),
     convert: (amount, fromCurrency, toCurrency, date = null) =>
         api.post('/currencies/convert', {
             amount,

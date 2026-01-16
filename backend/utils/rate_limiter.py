@@ -77,7 +77,8 @@ def rate_limit(endpoint_name=None):
                 db.session.commit()
 
             except Exception as e:
-                # Fallback if DB fails (e.g. during migration or connection issue)
+                # Fallback if DB fails (e.g. during migration, connection issue, or SQLite lock)
+                db.session.rollback()  # Clean up failed transaction
                 current_app.logger.error(f"Rate limiter error: {str(e)}")
                 # Allow request to proceed if rate limiter fails
                 pass

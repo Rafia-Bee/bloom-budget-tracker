@@ -4,6 +4,48 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-16: Fix Production Issues from Render Logs (#174)
+
+**Session Summary:** Analyzed Render production logs and fixed multiple critical issues causing worker timeouts, navigation bugs, and PWA errors.
+
+**Issues Fixed:**
+
+1. **CRITICAL: Worker timeout on currency rates** - Fetching 165 individual exchange rates caused 30s+ API delays → Added `get_all_rates()` batch function that fetches all rates in single API call with caching
+
+2. **Reports nav link not showing** - Required both `experimentalFeaturesEnabled` AND `reportsEnabled` flags → Changed to only check `reportsEnabled` directly
+
+3. **Dashboard "Next" navigation wrong** - When on current period, clicking Next jumped to wrong period → Added `isCurrentPeriod` detection, uses today's date as reference
+
+4. **PWA icons invalid** - `icon-192.png` and `icon-512.png` were actually SVG files → Regenerated as real PNGs using sharp from bloomLogo2.png
+
+5. **Background loading for currency** - Added `skipLoading` option to axios interceptors so currency rates load without blocking UI
+
+6. **SQLite concurrency issues (dev)** - Rate limiter left uncommitted transactions → Added `db.session.rollback()`, WAL mode, and 30s busy_timeout
+
+**Files Modified:**
+
+-   `backend/routes/currency.py` - Use batch rate fetching
+-   `backend/services/currency_service.py` - Added `get_all_rates()` function
+-   `frontend/src/components/Header.jsx` - Simplified reportsEnabled check
+-   `frontend/src/components/DateNavigator.jsx` - Added current period detection
+-   `frontend/src/api.js` - Added skipLoading interceptor option
+-   `frontend/public/icon-192.png`, `icon-512.png` - Real PNG icons
+-   `backend/app.py` - SQLite WAL mode pragmas
+-   `backend/config.py` - SQLite timeout config
+-   `backend/utils/rate_limiter.py` - Session rollback on error
+
+**What's Next:**
+
+-   Budget calculation discrepancy investigation (Issue #175)
+-   The "Overspent from previous periods" value differs by €33.54 between prod/dev
+
+**Related Issues:**
+
+-   #174 - Production issues tracking
+-   #175 - Budget calculation discrepancy
+
+---
+
 ## 2026-01-13: Fix Dependabot Security Alerts (#170)
 
 **Session Summary:** Fixed all 16 open Dependabot security alerts across Python and npm dependencies.

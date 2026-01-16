@@ -13,6 +13,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.services.currency_service import (
     get_supported_currencies,
     get_exchange_rate,
+    get_all_rates,
     convert_amount,
     refresh_rates,
     SUPPORTED_CURRENCIES,
@@ -49,18 +50,16 @@ def get_rates():
 
     Returns:
         JSON object with base currency and rates to all other currencies
+
+    Note: Uses batch fetching (single API call) to avoid worker timeouts.
     """
     base = request.args.get("base", "EUR").upper()
 
     if base not in SUPPORTED_CURRENCIES:
         return jsonify({"error": f"Unsupported currency: {base}"}), 400
 
-    rates = {}
-    for target in SUPPORTED_CURRENCIES:
-        if target != base:
-            rate = get_exchange_rate(base, target)
-            if rate is not None:
-                rates[target] = round(rate, 6)
+    # Use efficient batch fetch instead of individual API calls per currency
+    rates = get_all_rates(base)
 
     return jsonify({"base": base, "rates": rates}), 200
 

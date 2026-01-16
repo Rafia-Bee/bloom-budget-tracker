@@ -5,6 +5,10 @@
  * Shows Previous/Today/Next buttons to jump between dates that have transactions.
  * When a period is selected, Previous navigates to transactions before the period's start,
  * and Next navigates to transactions after the period's end.
+ *
+ * Special behavior for CURRENT period (period that contains today):
+ * - "Next" finds the next transaction date FROM TODAY (skips past dates)
+ * - This helps users quickly find their next scheduled payment
  */
 
 import { useMemo } from 'react';
@@ -31,9 +35,16 @@ function DateNavigator({
         };
     }, [selectedPeriod]);
 
+    // Check if the selected period is the CURRENT period (contains today)
+    const isCurrentPeriod = useMemo(() => {
+        if (!periodBoundaries) return false;
+        return today >= periodBoundaries.start && today <= periodBoundaries.end;
+    }, [periodBoundaries, today]);
+
     // Current date in ISO format for comparison
     // If viewing a period (currentViewDate is null) and we have period boundaries,
     // use the period's start date as the reference point for navigation
+    // EXCEPT for "Next" button in current period - that uses today (handled below)
     const currentDateISO = useMemo(() => {
         if (currentViewDate) return currentViewDate;
         // If no specific date selected but viewing a period, use period's start date
@@ -74,13 +85,18 @@ function DateNavigator({
         }
 
         // Find next date
+        // SPECIAL CASE: For current period with no specific date selected,
+        // "Next" should find the next transaction FROM TODAY, not from period start
         let next = null;
-        if (currentIndex >= 0 && currentIndex < sortedDates.length - 1) {
-            next = sortedDates[currentIndex + 1];
-        } else if (currentIndex === -1) {
-            // Current date not in list - find the closest next date
+        const nextReferenceDate = isCurrentPeriod && !currentViewDate ? today : currentDateISO;
+        const nextRefIndex = sortedDates.indexOf(nextReferenceDate);
+
+        if (nextRefIndex >= 0 && nextRefIndex < sortedDates.length - 1) {
+            next = sortedDates[nextRefIndex + 1];
+        } else if (nextRefIndex === -1) {
+            // Reference date not in list - find the closest next date
             // If we have period boundaries and are at/after end, find date after period end
-            if (periodBoundaries && currentDateISO >= periodBoundaries.end) {
+            if (periodBoundaries && nextReferenceDate >= periodBoundaries.end) {
                 for (let i = 0; i < sortedDates.length; i++) {
                     if (sortedDates[i] > periodBoundaries.end) {
                         next = sortedDates[i];
@@ -89,7 +105,7 @@ function DateNavigator({
                 }
             } else {
                 for (let i = 0; i < sortedDates.length; i++) {
-                    if (sortedDates[i] > currentDateISO) {
+                    if (sortedDates[i] > nextReferenceDate) {
                         next = sortedDates[i];
                         break;
                     }
@@ -102,7 +118,14 @@ function DateNavigator({
             nextDate: next,
             isOnToday: viewingToday,
         };
-    }, [transactionDates, currentDateISO, today, periodBoundaries]);
+    }, [
+        transactionDates,
+        currentDateISO,
+        today,
+        periodBoundaries,
+        isCurrentPeriod,
+        currentViewDate,
+    ]);
 
     // Format date for display
     const formatDisplayDate = (dateStr) => {

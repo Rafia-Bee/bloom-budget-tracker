@@ -1,0 +1,128 @@
+PRODUCTION ISSUES REPORT - 2026-01-16
+=====================================
+
+IDENTIFIED FROM: Render logs + Browser console
+
+================================================================================
+CRITICAL ISSUES
+================================================================================
+
+1. [CRITICAL] WORKER TIMEOUT ON /api/v1/currencies/rates
+   --------------------------------------------------------
+   - Status: Worker crash (SIGKILL) causing 500 error
+   - Location: backend/routes/currency.py, backend/services/currency_service.py
+   - Cause: Endpoint loops through 165 currencies, making individual API calls
+            Each external API call has 10s timeout, total exceeds gunicorn's 30s limit
+   - Error: "WORKER TIMEOUT (pid:39)" followed by SystemExit: 1
+   - Impact: Currency rates fail to load, CORS error shown to user (500 response)
+   - Fix: Refactor to use refresh_rates() which fetches ALL rates in single API call
+
+2. [CRITICAL] CORS ERROR ON CURRENCY RATES FAILURE
+   ------------------------------------------------
+   - Status: CORS policy blocking response
+   - Error: "Access-Control-Allow-Origin header not present on 500 response"
+   - Cause: When worker crashes, error response doesn't include CORS headers
+   - Impact: Users see currency fetch failure after login
+   - Fix: Ensure error responses include CORS headers OR fix root cause (#1)
+
+================================================================================
+HIGH PRIORITY ISSUES
+================================================================================
+
+3. [HIGH] PWA ICON ERROR - ROOT CAUSE FOUND
+   ------------------------------------------
+   - Status: Icon files are SVG masquerading as PNG!
+   - Error: "Error while trying to use icon from Manifest:
+            https://bloom-tracker.app/icon-192.png (Download error or not valid image)"
+   - Location: frontend/public/icon-192.png, frontend/public/icon-512.png
+   - ROOT CAUSE: Both icon files are SVG files with .png extension
+     * File header: 13,10,60,115,118,103 = "\r\n<svg" (SVG content)
+     * PNG header should be: 137,80,78,71 = "\x89PNG"
+   - Impact: PWA install experience degraded, icon shows error
+   - Fix: Convert bloomLogo2.png (which IS a real PNG) to 192x192 and 512x512
+   - Note: bloomLogo2.png (262KB) can be used as source image
+
+4. [HIGH] ALEMBIC MULTIPLE HEADS WARNING
+   --------------------------------------
+   - Status: Database migration state inconsistent
+   - Warning: "Version table 'alembic_version' has more than one head present"
+   - Location: Production PostgreSQL database
+   - Impact: Migrations may fail or behave unexpectedly
+   - Fix: Run alembic merge heads or manually clean up alembic_version table
+
+================================================================================
+MEDIUM PRIORITY ISSUES
+================================================================================
+
+5. [MEDIUM] SLOW REQUESTS (Performance)
+   -------------------------------------
+   - POST /api/v1/auth/login: 3.60s (bcrypt is slow by design, but may be too slow)
+   - GET /api/v1/budget-periods/active: 2.51s (database query optimization needed)
+   - GET /api/v1/salary-periods/current: 1.31s (database query optimization needed)
+   - GET /api/v1/salary-periods/2: 1.08s (database query optimization needed)
+   - Impact: Poor user experience on initial load
+   - Fix: Add database indexes, optimize queries, consider caching
+
+================================================================================
+LOW PRIORITY / EXPECTED BEHAVIOR
+================================================================================
+
+6. [LOW/EXPECTED] 401 ON /api/v1/auth/me
+   --------------------------------------
+   - Status: Expected behavior
+   - Cause: User not logged in when app loads, checking auth status
+   - Impact: None (normal authentication flow)
+
+================================================================================
+ADDITIONAL ISSUES (Reported Later)
+================================================================================
+
+7. [HIGH] REPORTS NAV LINK NOT SHOWING AFTER ENABLING FLAG
+   ---------------------------------------------------------
+   - Status: Feature flag logic bug
+   - Repro: Settings -> Experimental -> Enable Reports & Analytics -> Reports not in nav
+   - Cause: Header.jsx checks BOTH experimentalFeaturesEnabled AND reportsEnabled:
+            const reportsEnabled = experimentalEnabled && isEnabled('reportsEnabled');
+   - Problem: Settings experimental tab shows individual flags but NOT the master toggle
+   - Location: frontend/src/components/Header.jsx (line 24)
+               frontend/src/pages/Settings.jsx (experimental tab)
+   - Fix Options:
+     A) Add master "experimentalFeaturesEnabled" toggle to Settings experimental tab
+     B) Change Header.jsx to only check reportsEnabled (remove experimentalEnabled requirement)
+     C) Auto-enable experimentalFeaturesEnabled when any sub-feature is enabled
+   - Note: The ExperimentalFeaturesModal.jsx HAS the master toggle, Settings page doesn't
+
+8. [HIGH] DASHBOARD "NEXT" NAVIGATION WRONG FOR CURRENT SUB-PERIOD
+   ----------------------------------------------------------------
+   - Status: Logic bug in date navigation
+   - Repro: Dashboard (current sub-period) -> Press "Next" button
+   - Expected: Should go to NEXT scheduled transaction date FROM TODAY
+   - Actual: Goes to FIRST transaction date in sub-period (e.g., Jan 11),
+             then steps through past dates sequentially
+   - Context: For PAST sub-periods, stepping through all transaction dates is correct.
+              For CURRENT sub-period, "Next" should skip past dates and show
+              the next UPCOMING transaction date from today's date.
+   - Location: frontend/src/pages/Dashboard.jsx (date navigation logic)
+   - Fix: When in current sub-period, "Next" should compare against today's date
+          and find next transaction >= today
+
+================================================================================
+RECOMMENDED ACTION ORDER
+================================================================================
+
+1. IMMEDIATE: Fix currency rates timeout (#1) - This is crashing workers
+2. IMMEDIATE: Fix Reports nav link not showing (#7) - User-facing bug
+3. TODAY: Fix/verify PWA icon (#3)
+4. THIS WEEK: Clean up alembic heads (#4)
+5. BACKLOG: Optimize slow queries (#5)
+
+================================================================================
+FILES TO REVIEW
+================================================================================
+
+- backend/routes/currency.py (lines 40-65)
+- backend/services/currency_service.py (refresh_rates function at line 450)
+- frontend/src/components/Header.jsx (line 24 - feature flag logic)
+- frontend/src/pages/Settings.jsx (experimental tab - missing master toggle)
+- frontend/public/icon-192.png (verify exists and valid)
+- Production database: alembic_version table

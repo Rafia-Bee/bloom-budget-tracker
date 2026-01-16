@@ -113,6 +113,16 @@ def create_app(config_name="development"):
 
     db.init_app(app)
 
+    # Enable SQLite WAL mode for better concurrency in development
+    if "sqlite" in app.config.get("SQLALCHEMY_DATABASE_URI", ""):
+        with app.app_context():
+            from sqlalchemy import text
+
+            db.session.execute(text("PRAGMA journal_mode=WAL"))
+            db.session.execute(text("PRAGMA synchronous=NORMAL"))
+            db.session.execute(text("PRAGMA busy_timeout=30000"))  # 30 seconds
+            db.session.commit()
+
     # Security headers with Flask-Talisman (production only)
     if config_name == "production":
         Talisman(
