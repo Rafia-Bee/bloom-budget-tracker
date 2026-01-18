@@ -4,6 +4,59 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-19: Issue #177 - Recurring Income Feature (Phase 1 - Backend)
+
+**Session Summary:** Started implementing Recurring Income feature. Phase 1 completes the backend infrastructure.
+
+**Phase 1 Completed:**
+
+1. **RecurringIncome Model** - New model in database.py mirroring RecurringExpense structure
+   - Fields: name, amount, income_type, currency, frequency, day_of_month/week, start/end_date, next_due_date, is_active, notes
+   - Relationship to generated Income entries via `recurring_income_id`
+
+2. **Income Model Updated** - Added `recurring_income_id` foreign key to link generated income to templates
+
+3. **User Model Updated** - Added `payment_date_adjustment` preference (exact_date, previous_workday, next_workday)
+
+4. **New recurring_income.py Routes** - Full CRUD for recurring income templates
+   - GET/POST /recurring-income
+   - GET/PUT/DELETE /recurring-income/:id
+   - PUT /recurring-income/:id/toggle
+   - GET /recurring-income/deleted, POST /recurring-income/:id/restore
+
+5. **Updated recurring_generator.py** - Extended to handle income generation
+   - `generate_due_income()` - Generate income from templates
+   - `generate_all_recurring()` - Generate both expenses and income
+   - `get_upcoming_recurring_income()` - Preview upcoming income
+   - `get_all_upcoming_recurring()` - Preview both types combined
+
+6. **Updated recurring_generation.py Routes** - Extended for income
+   - `/generate` now generates both expenses and income by default
+   - Added `/preview-income` and `/preview-all` endpoints
+
+7. **User Settings Route** - Added payment-date-adjustment GET/PUT endpoints
+
+**Files Modified:**
+- `backend/models/database.py` - RecurringIncome model, Income.recurring_income_id, User.payment_date_adjustment
+- `backend/routes/recurring_income.py` (new)
+- `backend/routes/recurring_generation.py` - Extended for income
+- `backend/utils/recurring_generator.py` - Income generation functions
+- `backend/routes/api_v1.py` - Registered recurring_income blueprint
+- `backend/routes/user_data.py` - Payment date adjustment routes
+
+**What's Next:**
+- Phase 2: Database migration (local Flask-Migrate + SQL for production)
+- Phase 3: Frontend feature flag & settings UI
+- Phase 4: Unified Recurring page with Expenses/Income sub-tabs
+- Phase 5: AddIncomeModal recurring option
+- Phase 6: Dashboard scheduled integration
+- Phase 7: Tests (backend + E2E)
+- Phase 8: Final documentation
+
+**Related:** #177
+
+---
+
 ## 2026-01-16: Fix Production Issues from Render Logs (#174)
 
 **Session Summary:** Analyzed Render production logs and fixed multiple critical issues causing worker timeouts, navigation bugs, and PWA errors. Also removed the master `experimentalFeaturesEnabled` toggle.

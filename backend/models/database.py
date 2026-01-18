@@ -95,6 +95,11 @@ class User(db.Model):
     user_initial_credit_available = db.Column(db.Integer, default=0, nullable=False)
     # Balance mode: "sync" (cumulates across periods) or "budget" (isolated per period)
     balance_mode = db.Column(db.String(20), default="sync", nullable=False)
+    # Payment date adjustment preference for recurring income (Issue #177)
+    # Options: 'exact_date', 'previous_workday', 'next_workday'
+    payment_date_adjustment = db.Column(
+        db.String(20), default="exact_date", nullable=False
+    )
 
     budget_periods = db.relationship(
         "BudgetPeriod", backref="user", lazy=True, cascade="all, delete-orphan"
@@ -124,6 +129,10 @@ class User(db.Model):
         db.CheckConstraint(
             "balance_mode IN ('sync', 'budget')",
             name="check_user_balance_mode_valid",
+        ),
+        db.CheckConstraint(
+            "payment_date_adjustment IN ('exact_date', 'previous_workday', 'next_workday')",
+            name="check_user_payment_date_adjustment_valid",
         ),
     )
 
@@ -352,6 +361,13 @@ class Income(SoftDeleteMixin, db.Model):
     exchange_rate_used = db.Column(db.Float, nullable=True)
     scheduled_date = db.Column(db.Date, nullable=True, index=True)
     actual_date = db.Column(db.Date, nullable=True, index=True)
+    # Link to recurring income template (Issue #177)
+    recurring_income_id = db.Column(
+        db.Integer,
+        db.ForeignKey("recurring_income.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -447,6 +463,75 @@ class RecurringExpense(SoftDeleteMixin, db.Model):
         db.CheckConstraint(
             "frequency_value IS NULL OR frequency_value > 0",
             name="check_recurring_expense_frequency_value",
+        ),
+    )
+
+
+class RecurringIncome(SoftDeleteMixin, db.Model):
+    """
+    Recurring income template for automatic income generation.
+
+    Mirrors RecurringExpense structure for income entries like salary, freelance, etc.
+    Supports weekly, biweekly, monthly, and custom frequencies.
+    Issue #177 - Recurring Income Feature
+    """
+
+    __tablename__ = "recurring_income"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name = db.Column(db.String(200), nullable=False)  # e.g., "Monthly Salary"
+    amount = db.Column(db.Integer, nullable=False)  # In cents
+    # Income type (Salary, Bonus, Freelance, Other)
+    income_type = db.Column(db.String(50), default="Salary", nullable=False)
+    # Currency of the recurring income (ISO 4217 code)
+    currency = db.Column(db.String(3), default="EUR", nullable=False)
+    # 'weekly', 'biweekly', 'monthly', 'custom'
+    frequency = db.Column(db.String(20), nullable=False)
+    # For custom frequency (days)
+    frequency_value = db.Column(db.Integer, nullable=True)
+    day_of_month = db.Column(db.Integer, nullable=True)  # For monthly (1-31)
+    # For weekly (0=Monday, 6=Sunday)
+    day_of_week = db.Column(db.Integer, nullable=True)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)  # Optional end date
+    next_due_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationship to generated income entries
+    generated_income = db.relationship(
+        "Income",
+        backref="recurring_template",
+        lazy=True,
+        foreign_keys="Income.recurring_income_id",
+    )
+
+    __table_args__ = (
+        db.CheckConstraint("amount > 0", name="check_recurring_income_positive_amount"),
+        db.CheckConstraint(
+            "end_date IS NULL OR start_date < end_date",
+            name="check_recurring_income_date_range",
+        ),
+        db.CheckConstraint(
+            "day_of_month IS NULL OR (day_of_month BETWEEN 1 AND 31)",
+            name="check_recurring_income_day_of_month",
+        ),
+        db.CheckConstraint(
+            "day_of_week IS NULL OR (day_of_week BETWEEN 0 AND 6)",
+            name="check_recurring_income_day_of_week",
+        ),
+        db.CheckConstraint(
+            "frequency_value IS NULL OR frequency_value > 0",
+            name="check_recurring_income_frequency_value",
         ),
     )
 
