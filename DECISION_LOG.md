@@ -11,32 +11,33 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 **Phase 1 Completed:**
 
 1. **RecurringIncome Model** - New model in database.py mirroring RecurringExpense structure
-   - Fields: name, amount, income_type, currency, frequency, day_of_month/week, start/end_date, next_due_date, is_active, notes
-   - Relationship to generated Income entries via `recurring_income_id`
+    - Fields: name, amount, income_type, currency, frequency, day_of_month/week, start/end_date, next_due_date, is_active, notes
+    - Relationship to generated Income entries via `recurring_income_id`
 
 2. **Income Model Updated** - Added `recurring_income_id` foreign key to link generated income to templates
 
 3. **User Model Updated** - Added `payment_date_adjustment` preference (exact_date, previous_workday, next_workday)
 
 4. **New recurring_income.py Routes** - Full CRUD for recurring income templates
-   - GET/POST /recurring-income
-   - GET/PUT/DELETE /recurring-income/:id
-   - PUT /recurring-income/:id/toggle
-   - GET /recurring-income/deleted, POST /recurring-income/:id/restore
+    - GET/POST /recurring-income
+    - GET/PUT/DELETE /recurring-income/:id
+    - PUT /recurring-income/:id/toggle
+    - GET /recurring-income/deleted, POST /recurring-income/:id/restore
 
 5. **Updated recurring_generator.py** - Extended to handle income generation
-   - `generate_due_income()` - Generate income from templates
-   - `generate_all_recurring()` - Generate both expenses and income
-   - `get_upcoming_recurring_income()` - Preview upcoming income
-   - `get_all_upcoming_recurring()` - Preview both types combined
+    - `generate_due_income()` - Generate income from templates
+    - `generate_all_recurring()` - Generate both expenses and income
+    - `get_upcoming_recurring_income()` - Preview upcoming income
+    - `get_all_upcoming_recurring()` - Preview both types combined
 
 6. **Updated recurring_generation.py Routes** - Extended for income
-   - `/generate` now generates both expenses and income by default
-   - Added `/preview-income` and `/preview-all` endpoints
+    - `/generate` now generates both expenses and income by default
+    - Added `/preview-income` and `/preview-all` endpoints
 
 7. **User Settings Route** - Added payment-date-adjustment GET/PUT endpoints
 
 **Files Modified:**
+
 - `backend/models/database.py` - RecurringIncome model, Income.recurring_income_id, User.payment_date_adjustment
 - `backend/routes/recurring_income.py` (new)
 - `backend/routes/recurring_generation.py` - Extended for income
@@ -45,13 +46,18 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 - `backend/routes/user_data.py` - Payment date adjustment routes
 
 **What's Next:**
-- Phase 2: Database migration (local Flask-Migrate + SQL for production)
+
 - Phase 3: Frontend feature flag & settings UI
 - Phase 4: Unified Recurring page with Expenses/Income sub-tabs
 - Phase 5: AddIncomeModal recurring option
 - Phase 6: Dashboard scheduled integration
 - Phase 7: Tests (backend + E2E)
 - Phase 8: Final documentation
+
+**Phase 2 Completed:**
+
+- Flask-Migrate migration created and applied to local SQLite
+- SQL script for production: `docs/migrations/2026-01-19_recurring_income.sql`
 
 **Related:** #177
 
@@ -77,28 +83,28 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Files Modified:**
 
--   `backend/routes/currency.py` - Use batch rate fetching
--   `backend/services/currency_service.py` - Added `get_all_rates()` function
--   `frontend/src/components/Header.jsx` - Simplified reportsEnabled check
--   `frontend/src/components/DateNavigator.jsx` - Added current period detection
--   `frontend/src/api.js` - Added skipLoading interceptor option
--   `frontend/public/icon-192.png`, `icon-512.png` - Real PNG icons
--   `backend/app.py` - SQLite WAL mode pragmas
--   `backend/config.py` - SQLite timeout config
--   `backend/utils/rate_limiter.py` - Session rollback on error
--   `frontend/src/contexts/FeatureFlagContext.jsx` - Removed experimentalFeaturesEnabled
--   `frontend/src/components/ExperimentalFeaturesModal.jsx` - Removed master toggle, show features directly
--   `docs/FEATURE_FLAGS.md` - Updated documentation
+- `backend/routes/currency.py` - Use batch rate fetching
+- `backend/services/currency_service.py` - Added `get_all_rates()` function
+- `frontend/src/components/Header.jsx` - Simplified reportsEnabled check
+- `frontend/src/components/DateNavigator.jsx` - Added current period detection
+- `frontend/src/api.js` - Added skipLoading interceptor option
+- `frontend/public/icon-192.png`, `icon-512.png` - Real PNG icons
+- `backend/app.py` - SQLite WAL mode pragmas
+- `backend/config.py` - SQLite timeout config
+- `backend/utils/rate_limiter.py` - Session rollback on error
+- `frontend/src/contexts/FeatureFlagContext.jsx` - Removed experimentalFeaturesEnabled
+- `frontend/src/components/ExperimentalFeaturesModal.jsx` - Removed master toggle, show features directly
+- `docs/FEATURE_FLAGS.md` - Updated documentation
 
 **What's Next:**
 
--   Budget calculation discrepancy investigation (Issue #175)
--   The "Overspent from previous periods" value differs by €33.54 between prod/dev
+- Budget calculation discrepancy investigation (Issue #175)
+- The "Overspent from previous periods" value differs by €33.54 between prod/dev
 
 **Related Issues:**
 
--   #174 - Production issues tracking
--   #175 - Budget calculation discrepancy
+- #174 - Production issues tracking
+- #175 - Budget calculation discrepancy
 
 ---
 
@@ -109,15 +115,12 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 **Python Vulnerabilities Fixed (backend/requirements.txt & requirements.txt):**
 
 1. **Flask-CORS** (CVE-2024-6839, CVE-2024-6866, CVE-2024-6844) - Updated 5.0.0 → 6.0.0+
-
     - Path equivalence bypass, case sensitivity handling, URL path normalization
 
 2. **Black** (CVE-2024-21503) - Updated 23.12.1 → 24.3.0+
-
     - ReDoS vulnerability in code formatting
 
 3. **Marshmallow** (CVE-2025-68480) - Updated 3.23.2 → 3.26.2+
-
     - Denial of Service via deeply nested schema
 
 4. **Requests** (CVE-2024-47081) - Updated 2.32.3 → 2.32.4+
@@ -126,11 +129,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 **npm Vulnerabilities Fixed (frontend/package.json & package-lock.json):**
 
 1. **jsPDF** (GHSA-f8cm-6447-x5h2) - CRITICAL - Updated to 4.0.0
-
     - Arbitrary file write via PDF generation
 
 2. **react-router** (GHSA-2w69-qvjg-hvjx) - HIGH - Auto-fixed via npm audit
-
     - XSS vulnerability in route handling
 
 3. **glob** (GHSA-5j98-mcp5-4vw2) - HIGH - Auto-fixed via npm audit
@@ -138,19 +139,19 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Remaining (Dev-only, Accepted Risk):**
 
--   6 moderate esbuild/vite vulnerabilities - affects dev server only
--   Requires breaking vite 7.x upgrade; not worth stability risk
+- 6 moderate esbuild/vite vulnerabilities - affects dev server only
+- Requires breaking vite 7.x upgrade; not worth stability risk
 
 **Files Updated:**
 
--   backend/requirements.txt
--   requirements.txt (root)
--   frontend/package.json
--   frontend/package-lock.json
+- backend/requirements.txt
+- requirements.txt (root)
+- frontend/package.json
+- frontend/package-lock.json
 
 **What's Next:**
 
--   Security audit 100% complete! All critical/high production alerts resolved.
+- Security audit 100% complete! All critical/high production alerts resolved.
 
 **Current Branch:** `fix/security-audit-console-logging`
 
@@ -162,38 +163,38 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Phase 3.1 - Add Autocomplete Attributes to Register Form:**
 
--   Added `autoComplete="email"` to email input
--   Added `autoComplete="new-password"` to both password inputs
--   Improves password manager integration
--   Also fixed client-side validation message to match backend complexity requirements
+- Added `autoComplete="email"` to email input
+- Added `autoComplete="new-password"` to both password inputs
+- Improves password manager integration
+- Also fixed client-side validation message to match backend complexity requirements
 
 **Phase 3.2 - Add Password Change Endpoint:**
 
--   Added `POST /auth/change-password` endpoint in `backend/routes/auth.py`
--   Requires JWT authentication
--   Validates current password before allowing change
--   New password must meet complexity requirements
--   Rejects if new password matches current password
--   Added audit logging for password change attempts
--   Added 10 new tests for password change scenarios
+- Added `POST /auth/change-password` endpoint in `backend/routes/auth.py`
+- Requires JWT authentication
+- Validates current password before allowing change
+- New password must meet complexity requirements
+- Rejects if new password matches current password
+- Added audit logging for password change attempts
+- Added 10 new tests for password change scenarios
 
 **Phase 3.3 - Global Rate Limiting (Documented as Limitation):**
 
--   Auth endpoints (register, login, password reset) already have rate limiting
--   Global rate limiting for all endpoints not implemented
--   Accepted limitation for personal app - expensive endpoints (exports, bulk operations) are not rate limited
--   Recommendation: Add per-endpoint rate limits if app scales to multi-user
+- Auth endpoints (register, login, password reset) already have rate limiting
+- Global rate limiting for all endpoints not implemented
+- Accepted limitation for personal app - expensive endpoints (exports, bulk operations) are not rate limited
+- Recommendation: Add per-endpoint rate limits if app scales to multi-user
 
 **Files Updated:**
 
--   Frontend: Register.jsx (autocomplete + validation message)
--   Backend: auth.py (new change-password endpoint)
--   Tests: test_auth.py (10 new password change tests)
+- Frontend: Register.jsx (autocomplete + validation message)
+- Backend: auth.py (new change-password endpoint)
+- Tests: test_auth.py (10 new password change tests)
 
 **What's Next:**
 
--   Fix existing Dependabot alerts
--   All security audit items (#170) now complete!
+- Fix existing Dependabot alerts
+- All security audit items (#170) now complete!
 
 **Current Branch:** `fix/security-audit-console-logging`
 
@@ -205,40 +206,40 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Phase 2.1 - Reduce JWT Token Expiration:**
 
--   Changed `JWT_ACCESS_TOKEN_EXPIRES` from 24h to 1h in `backend/config.py`
--   Security benefit: Reduces window of exposure for compromised tokens
--   Refresh tokens (30 days) remain unchanged for user convenience
+- Changed `JWT_ACCESS_TOKEN_EXPIRES` from 24h to 1h in `backend/config.py`
+- Security benefit: Reduces window of exposure for compromised tokens
+- Refresh tokens (30 days) remain unchanged for user convenience
 
 **Phase 2.2 - Add Password Complexity Requirements:**
 
--   Added `validate_password_strength()` function in `backend/utils/validators.py`
--   Requirements: 8+ chars, uppercase, lowercase, number
--   Updated `backend/routes/auth.py` (registration) to use new validator
--   Updated `backend/routes/password_reset.py` (password reset) to use new validator
--   Added comprehensive tests for all password complexity rules
+- Added `validate_password_strength()` function in `backend/utils/validators.py`
+- Requirements: 8+ chars, uppercase, lowercase, number
+- Updated `backend/routes/auth.py` (registration) to use new validator
+- Updated `backend/routes/password_reset.py` (password reset) to use new validator
+- Added comprehensive tests for all password complexity rules
 
 **Phase 2.3 - Feature Flag Security Documentation:**
 
--   Added security note to `frontend/src/contexts/FeatureFlagContext.jsx`
--   Documents that localStorage flags can be manipulated by users
--   Accepted limitation: flags control UI/UX only, not security-sensitive operations
+- Added security note to `frontend/src/contexts/FeatureFlagContext.jsx`
+- Documents that localStorage flags can be manipulated by users
+- Accepted limitation: flags control UI/UX only, not security-sensitive operations
 
 **Test Updates:**
 
--   Updated 6 password reset tests to use complex passwords
--   Added 3 new auth tests for password complexity (no uppercase/lowercase/number)
--   Added 12 new validator tests for `validate_password_strength()`
+- Updated 6 password reset tests to use complex passwords
+- Added 3 new auth tests for password complexity (no uppercase/lowercase/number)
+- Added 12 new validator tests for `validate_password_strength()`
 
 **Files Updated:**
 
--   Backend: config.py, validators.py, auth.py, password_reset.py
--   Tests: test_auth.py, test_password_reset.py, test_validators.py
--   Frontend: FeatureFlagContext.jsx
+- Backend: config.py, validators.py, auth.py, password_reset.py
+- Tests: test_auth.py, test_password_reset.py, test_validators.py
+- Frontend: FeatureFlagContext.jsx
 
 **What's Next:**
 
--   Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
--   Fix existing Dependabot alerts (added to issue #170)
+- Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
+- Fix existing Dependabot alerts (added to issue #170)
 
 **Current Branch:** `fix/security-audit-console-logging`
 
@@ -250,37 +251,37 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Phase 1.1 - Replace Direct Console Logging:**
 
--   Replaced 14 instances of direct `console.error`/`console.warn` with `logError`/`logWarn` from `utils/logger.js`
--   Updated 7 files to import and use secure logging functions
--   Security benefit: Prevents sensitive data (headers, request bodies, stack traces) from leaking to browser DevTools in production
+- Replaced 14 instances of direct `console.error`/`console.warn` with `logError`/`logWarn` from `utils/logger.js`
+- Updated 7 files to import and use secure logging functions
+- Security benefit: Prevents sensitive data (headers, request bodies, stack traces) from leaking to browser DevTools in production
 
 **Phase 1.2 - Disable Source Maps in Production:**
 
--   Added `sourcemap: false` to `frontend/vite.config.js` build config
--   Prevents original source code from being exposed in production builds
--   Security benefit: Attackers cannot easily reverse-engineer application logic
+- Added `sourcemap: false` to `frontend/vite.config.js` build config
+- Prevents original source code from being exposed in production builds
+- Security benefit: Attackers cannot easily reverse-engineer application logic
 
 **Phase 1.3 - Add Security Headers with Flask-Talisman:**
 
--   Added `flask-talisman>=1.0.0` to `backend/requirements.txt`
--   Configured Talisman in `backend/app.py` (production only)
--   Implements CSP, HSTS, X-Frame-Options, X-Content-Type-Options headers
--   Security benefits:
-    -   **CSP**: Prevents XSS attacks by restricting script sources
-    -   **HSTS**: Forces HTTPS connections for 1 year
-    -   **X-Frame-Options**: Prevents clickjacking attacks
-    -   **X-Content-Type-Options**: Prevents MIME sniffing
+- Added `flask-talisman>=1.0.0` to `backend/requirements.txt`
+- Configured Talisman in `backend/app.py` (production only)
+- Implements CSP, HSTS, X-Frame-Options, X-Content-Type-Options headers
+- Security benefits:
+    - **CSP**: Prevents XSS attacks by restricting script sources
+    - **HSTS**: Forces HTTPS connections for 1 year
+    - **X-Frame-Options**: Prevents clickjacking attacks
+    - **X-Content-Type-Options**: Prevents MIME sniffing
 
 **Files Updated:**
 
--   Frontend (7 files): Reports.jsx, SalaryPeriodWizard.jsx, ExportAllReportsButton.jsx, ChartExportButton.jsx, PeriodComparisonCard.jsx, BalanceModeModal.jsx, PeriodInfoModal.jsx
--   Build: vite.config.js
--   Backend: app.py, requirements.txt
+- Frontend (7 files): Reports.jsx, SalaryPeriodWizard.jsx, ExportAllReportsButton.jsx, ChartExportButton.jsx, PeriodComparisonCard.jsx, BalanceModeModal.jsx, PeriodInfoModal.jsx
+- Build: vite.config.js
+- Backend: app.py, requirements.txt
 
 **What's Next:**
 
--   Phase 2 (MEDIUM priority): JWT token expiration, password complexity, feature flag validation
--   Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
+- Phase 2 (MEDIUM priority): JWT token expiration, password complexity, feature flag validation
+- Phase 3 (LOW priority): Form autocomplete, password change endpoint, global rate limiting
 
 **Current Branch:** `fix/security-audit-console-logging`
 
@@ -294,14 +295,14 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Bug Fix:**
 
--   `frontend/src/pages/Dashboard.jsx` - Removed `showRolloverPrompt` from FAB button's `disabled` prop
--   The rollover prompt is a non-blocking notification banner, not a modal requiring exclusive attention
--   FAB button now remains enabled when rollover prompt is visible
+- `frontend/src/pages/Dashboard.jsx` - Removed `showRolloverPrompt` from FAB button's `disabled` prop
+- The rollover prompt is a non-blocking notification banner, not a modal requiring exclusive attention
+- FAB button now remains enabled when rollover prompt is visible
 
 **Root Cause:**
 
--   `showRolloverPrompt` was included in disabled conditions alongside actual modals
--   Unlike modals that block interaction, the rollover prompt is informational only
+- `showRolloverPrompt` was included in disabled conditions alongside actual modals
+- Unlike modals that block interaction, the rollover prompt is informational only
 
 **What's Next:**
 
@@ -322,22 +323,22 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Phase 4 Changes:**
 
--   `frontend/src/pages/Debts.jsx` - Removed `loadCurrentPeriod()` function and `budgetPeriodAPI` import
--   Now uses `useSalaryPeriod()` context instead of making separate API call
--   Eliminated 1 additional `budgetPeriodAPI.getAll()` call per page load
+- `frontend/src/pages/Debts.jsx` - Removed `loadCurrentPeriod()` function and `budgetPeriodAPI` import
+- Now uses `useSalaryPeriod()` context instead of making separate API call
+- Eliminated 1 additional `budgetPeriodAPI.getAll()` call per page load
 
 **Frontend Security Audit Results:** ✅ No critical vulnerabilities
 
--   Passwords never stored in localStorage/sessionStorage
--   JWT tokens protected by HttpOnly cookies (implemented in Issue #80)
--   No XSS vulnerabilities (no dangerouslySetInnerHTML, eval, etc.)
--   Production logging properly sanitized via logger.js
+- Passwords never stored in localStorage/sessionStorage
+- JWT tokens protected by HttpOnly cookies (implemented in Issue #80)
+- No XSS vulnerabilities (no dangerouslySetInnerHTML, eval, etc.)
+- Production logging properly sanitized via logger.js
 
 **E2E Test Fixes:**
 
--   `balance-accumulation.spec.js` - Use dates 180-210 days ago to avoid conflicts with other tests
--   `debts.spec.js` - Replace `networkidle` with `domcontentloaded` to avoid slow currency API timeouts
--   `debts.spec.js` - Fix invalid selector syntax (use `Promise.race()` instead of comma-separated selectors)
+- `balance-accumulation.spec.js` - Use dates 180-210 days ago to avoid conflicts with other tests
+- `debts.spec.js` - Replace `networkidle` with `domcontentloaded` to avoid slow currency API timeouts
+- `debts.spec.js` - Fix invalid selector syntax (use `Promise.race()` instead of comma-separated selectors)
 
 **Test Results:** 280 passed, 2 failed (pre-existing test isolation issues), 5 flaky
 
@@ -361,23 +362,23 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Instruction Files Created:**
 
--   `.github/BACKEND_INSTRUCTIONS.md` - Flask routes, models, testing patterns
--   `.github/FRONTEND_INSTRUCTIONS.md` - React components, Tailwind styling, API integration
--   `.github/DATABASE_INSTRUCTIONS.md` - Schema reference, migrations, queries
--   `.github/prompts/backend.prompt.md` - Auto-attached context for backend files
--   `.github/prompts/frontend.prompt.md` - Auto-attached context for frontend files
--   `.github/prompts/database.prompt.md` - Auto-attached context for database files
+- `.github/BACKEND_INSTRUCTIONS.md` - Flask routes, models, testing patterns
+- `.github/FRONTEND_INSTRUCTIONS.md` - React components, Tailwind styling, API integration
+- `.github/DATABASE_INSTRUCTIONS.md` - Schema reference, migrations, queries
+- `.github/prompts/backend.prompt.md` - Auto-attached context for backend files
+- `.github/prompts/frontend.prompt.md` - Auto-attached context for frontend files
+- `.github/prompts/database.prompt.md` - Auto-attached context for database files
 
 **Bug Found During Testing:**
 
--   Issue #XXX: FAB (+) button disabled when rollover prompt showing
--   Root cause: `showRolloverPrompt` included in disabled conditions in Dashboard.jsx
+- Issue #XXX: FAB (+) button disabled when rollover prompt showing
+- Root cause: `showRolloverPrompt` included in disabled conditions in Dashboard.jsx
 
 **Manual Testing Results:** ✅ App working correctly
 
--   SharedDataContext caching working (no duplicate API calls for modals)
--   SalaryPeriodContext caching working (no duplicate salary period calls)
--   All CRUD operations functioning normally
+- SharedDataContext caching working (no duplicate API calls for modals)
+- SalaryPeriodContext caching working (no duplicate salary period calls)
+- All CRUD operations functioning normally
 
 **What's Next:**
 
@@ -395,9 +396,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **New Context Created:**
 
--   `SalaryPeriodContext.jsx` - Centralized caching for current salary period
--   Provides: `currentPeriod`, `currentWeek`, `salaryPeriodData`, `loading`, `loaded`, `refresh()`
--   Pattern matches SharedDataContext (load on auth, state tracking, refresh methods)
+- `SalaryPeriodContext.jsx` - Centralized caching for current salary period
+- Provides: `currentPeriod`, `currentWeek`, `salaryPeriodData`, `loading`, `loaded`, `refresh()`
+- Pattern matches SharedDataContext (load on auth, state tracking, refresh methods)
 
 **Components Updated to Use Context:**
 
@@ -408,14 +409,14 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Test Updates:**
 
--   Added `renderWithSalaryPeriod()` wrapper in `utils.jsx`
--   Rewrote `SalaryPeriodRolloverPrompt.test.jsx` to pass mock data as props
--   Simplified tests by bypassing context (component accepts `salaryPeriodData` prop)
+- Added `renderWithSalaryPeriod()` wrapper in `utils.jsx`
+- Rewrote `SalaryPeriodRolloverPrompt.test.jsx` to pass mock data as props
+- Simplified tests by bypassing context (component accepts `salaryPeriodData` prop)
 
 **API Calls Eliminated:**
 
--   `salaryPeriodAPI.getCurrent()` no longer called independently by Debts, Reports, SalaryPeriodRolloverPrompt
--   Single call at app load, data shared across all pages
+- `salaryPeriodAPI.getCurrent()` no longer called independently by Debts, Reports, SalaryPeriodRolloverPrompt
+- Single call at app load, data shared across all pages
 
 **Test Results:** ✅ 34/34 test files, 1032/1032 tests passing
 
@@ -426,8 +427,8 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Commits This Session:**
 
--   `af6afd4` - test: update modal tests to use renderWithSharedData (#164)
--   `3de3f8c` - feat: add SalaryPeriodContext for cross-page data caching (#164)
+- `af6afd4` - test: update modal tests to use renderWithSharedData (#164)
+- `3de3f8c` - feat: add SalaryPeriodContext for cross-page data caching (#164)
 
 **Current Branch:** `feat/optimize-dashboard-api-calls`
 
@@ -449,10 +450,10 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Static Code Analysis:**
 
--   `debtAPI.getAll()` called by 6 different modals
--   `subcategoryAPI.getAll()` called by 5 different locations
--   `goalAPI.getAll()` called by 3 different locations
--   `salaryPeriodAPI.getCurrent()` called by 4 different components
+- `debtAPI.getAll()` called by 6 different modals
+- `subcategoryAPI.getAll()` called by 5 different locations
+- `goalAPI.getAll()` called by 3 different locations
+- `salaryPeriodAPI.getCurrent()` called by 4 different components
 
 **Phase 1 Optimizations Implemented:**
 
@@ -475,16 +476,16 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Files Changed (Phase 2):**
 
--   `frontend/src/contexts/SharedDataContext.jsx` - NEW: Centralized data caching
--   `frontend/src/App.jsx` - Added SharedDataProvider wrapper
--   `frontend/src/components/AddExpenseModal.jsx` - Use SharedDataContext
--   `frontend/src/components/EditExpenseModal.jsx` - Use SharedDataContext
--   `frontend/src/components/FilterTransactionsModal.jsx` - Use SharedDataContext
--   `frontend/src/components/AddRecurringExpenseModal.jsx` - Use SharedDataContext
--   `frontend/src/components/AddDebtPaymentModal.jsx` - Use SharedDataContext
--   `frontend/src/pages/Debts.jsx` - Add refreshSharedDebts calls
--   `frontend/src/pages/Goals.jsx` - Add refreshSharedGoals calls
--   `frontend/src/pages/Settings.jsx` - Add refreshSharedSubcategories calls
+- `frontend/src/contexts/SharedDataContext.jsx` - NEW: Centralized data caching
+- `frontend/src/App.jsx` - Added SharedDataProvider wrapper
+- `frontend/src/components/AddExpenseModal.jsx` - Use SharedDataContext
+- `frontend/src/components/EditExpenseModal.jsx` - Use SharedDataContext
+- `frontend/src/components/FilterTransactionsModal.jsx` - Use SharedDataContext
+- `frontend/src/components/AddRecurringExpenseModal.jsx` - Use SharedDataContext
+- `frontend/src/components/AddDebtPaymentModal.jsx` - Use SharedDataContext
+- `frontend/src/pages/Debts.jsx` - Add refreshSharedDebts calls
+- `frontend/src/pages/Goals.jsx` - Add refreshSharedGoals calls
+- `frontend/src/pages/Settings.jsx` - Add refreshSharedSubcategories calls
 
 **What's Next (Resume Here Tomorrow):**
 
@@ -496,8 +497,8 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 **Key Files to Review:**
 
--   `frontend/src/contexts/SharedDataContext.jsx` - The new context for caching
--   `frontend/src/App.jsx` - Where SharedDataProvider is wrapped
+- `frontend/src/contexts/SharedDataContext.jsx` - The new context for caching
+- `frontend/src/App.jsx` - Where SharedDataProvider is wrapped
 
 **Current Branch:** `feat/optimize-dashboard-api-calls` (uncommitted changes)
 
