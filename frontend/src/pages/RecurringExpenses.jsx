@@ -129,7 +129,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
     const loadScheduledIncome = async () => {
         try {
-            const response = await recurringIncomeAPI.previewUpcoming();
+            const response = await recurringGenerationAPI.previewIncome();
             setScheduledIncome(response.data.upcoming || []);
         } catch (error) {
             logError('loadScheduledIncome', error);
