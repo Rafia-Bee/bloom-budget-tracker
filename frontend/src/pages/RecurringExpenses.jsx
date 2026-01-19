@@ -278,68 +278,33 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-8">
-                <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div>
-                        {/* View Toggle Buttons */}
-                        <div className="flex gap-2 mb-3">
-                            <button
-                                onClick={() => setView('active')}
-                                className={`px-4 py-2 rounded-lg transition font-semibold ${
-                                    view === 'active'
-                                        ? 'bg-bloom-pink text-white'
-                                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
-                                }`}
-                            >
-                                Active
-                            </button>
-                            <button
-                                onClick={() => setView('upcoming')}
-                                className={`px-4 py-2 rounded-lg transition font-semibold ${
-                                    view === 'upcoming'
-                                        ? 'bg-bloom-pink text-white'
-                                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
-                                }`}
-                            >
-                                Upcoming
-                            </button>
-                        </div>
-
-                        {/* Sub-tabs for Active view (when income enabled) */}
-                        {view === 'active' && recurringIncomeEnabled && (
-                            <div className="flex gap-1 mb-3">
-                                <button
-                                    onClick={() => setActiveSubTab('expenses')}
-                                    className={`px-3 py-1.5 text-sm rounded-md transition ${
-                                        activeSubTab === 'expenses'
-                                            ? 'bg-bloom-pink/20 text-bloom-pink dark:text-dark-pink font-semibold'
-                                            : 'text-gray-500 dark:text-dark-text-tertiary hover:text-gray-700 dark:hover:text-dark-text-secondary'
-                                    }`}
-                                >
-                                    💸 Expenses
-                                </button>
-                                <button
-                                    onClick={() => setActiveSubTab('income')}
-                                    className={`px-3 py-1.5 text-sm rounded-md transition ${
-                                        activeSubTab === 'income'
-                                            ? 'bg-bloom-mint/20 text-green-700 dark:text-bloom-mint font-semibold'
-                                            : 'text-gray-500 dark:text-dark-text-tertiary hover:text-gray-700 dark:hover:text-dark-text-secondary'
-                                    }`}
-                                >
-                                    💰 Income
-                                </button>
-                            </div>
-                        )}
-
-                        <p className="text-gray-600 dark:text-dark-text-secondary mt-1">
-                            {view === 'active'
-                                ? activeSubTab === 'income' && recurringIncomeEnabled
-                                    ? 'Manage your automatic income templates'
-                                    : 'Manage your automatic expense templates'
-                                : recurringIncomeEnabled
-                                  ? 'Preview scheduled expenses and income'
-                                  : 'Preview and confirm scheduled expenses'}
-                        </p>
+                {/* Top Row: Active/Upcoming tabs + Add Button */}
+                <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    {/* View Toggle Buttons */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setView('active')}
+                            className={`px-4 py-2 rounded-lg transition font-semibold ${
+                                view === 'active'
+                                    ? 'bg-bloom-pink text-white'
+                                    : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                            }`}
+                        >
+                            Active
+                        </button>
+                        <button
+                            onClick={() => setView('upcoming')}
+                            className={`px-4 py-2 rounded-lg transition font-semibold ${
+                                view === 'upcoming'
+                                    ? 'bg-bloom-pink text-white'
+                                    : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
+                            }`}
+                        >
+                            Upcoming
+                        </button>
                     </div>
+
+                    {/* Add Button */}
                     <div className="flex flex-col sm:flex-row gap-3">
                         {view === 'active' ? (
                             activeSubTab === 'income' && recurringIncomeEnabled ? (
@@ -405,6 +370,45 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             </button>
                         )}
                     </div>
+                </div>
+
+                {/* Second Row: Sub-tabs (when income enabled) + Description */}
+                <div className="mb-6">
+                    {/* Sub-tabs for Active view (when income enabled) */}
+                    {view === 'active' && recurringIncomeEnabled && (
+                        <div className="flex gap-2 mb-2">
+                            <button
+                                onClick={() => setActiveSubTab('expenses')}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition font-medium ${
+                                    activeSubTab === 'expenses'
+                                        ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
+                                }`}
+                            >
+                                Expenses
+                            </button>
+                            <button
+                                onClick={() => setActiveSubTab('income')}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition font-medium ${
+                                    activeSubTab === 'income'
+                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
+                                }`}
+                            >
+                                Income
+                            </button>
+                        </div>
+                    )}
+
+                    <p className="text-gray-600 dark:text-dark-text-secondary">
+                        {view === 'active'
+                            ? activeSubTab === 'income' && recurringIncomeEnabled
+                                ? 'Manage your automatic income templates'
+                                : 'Manage your automatic expense templates'
+                            : recurringIncomeEnabled
+                              ? 'Preview scheduled expenses and income'
+                              : 'Preview and confirm scheduled expenses'}
+                    </p>
                 </div>
 
                 {/* Generation Result */}
