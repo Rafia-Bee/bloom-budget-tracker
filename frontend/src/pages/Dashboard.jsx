@@ -11,7 +11,6 @@ import {
     incomeAPI,
     budgetPeriodAPI,
     salaryPeriodAPI,
-    recurringExpenseAPI,
     recurringGenerationAPI,
 } from '../api';
 import { logError } from '../utils/logger';
@@ -176,7 +175,7 @@ function Dashboard({ setIsAuthenticated }) {
 
     const loadScheduledExpenses = async () => {
         try {
-            const response = await recurringExpenseAPI.previewUpcoming();
+            const response = await recurringGenerationAPI.previewExpenses();
             setScheduledExpenses(response.data.upcoming || []);
         } catch (error) {
             logError('loadScheduledExpenses', error);

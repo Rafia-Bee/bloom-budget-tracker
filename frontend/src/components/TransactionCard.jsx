@@ -66,7 +66,7 @@ const TransactionCard = memo(function TransactionCard({
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h3 className="font-semibold text-gray-800 dark:text-dark-text">
                             {transaction.transactionType === 'income'
-                                ? transaction.type
+                                ? transaction.name || transaction.type
                                 : transaction.name}
                         </h3>
                         {isFuture && (

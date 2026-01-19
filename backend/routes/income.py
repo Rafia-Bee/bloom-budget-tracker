@@ -101,6 +101,13 @@ def get_income():
                             if entry.scheduled_date
                             else None
                         ),
+                        # Include name from recurring template if available
+                        "name": (
+                            entry.recurring_template.name
+                            if entry.recurring_template
+                            else None
+                        ),
+                        "recurring_income_id": entry.recurring_income_id,
                     }
                     for entry in income_entries
                 ],

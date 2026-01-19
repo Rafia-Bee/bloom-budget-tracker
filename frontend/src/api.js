@@ -138,21 +138,6 @@ export const recurringExpenseAPI = {
         api.patch(`/recurring-expenses/${id}/fixed-bill`, {
             is_fixed_bill: isFixedBill,
         }),
-    generateNow: (dryRun = false, daysAhead = null) =>
-        api.post(
-            `/recurring-generation/generate`,
-            {},
-            {
-                params: {
-                    dry_run: dryRun,
-                    ...(daysAhead && { days_ahead: daysAhead }),
-                },
-            }
-        ),
-    previewUpcoming: (days = null) =>
-        api.get(`/recurring-generation/preview`, {
-            params: days ? { days } : {},
-        }),
     // Soft delete endpoints
     getDeleted: () => api.get('/recurring-expenses/deleted'),
     restore: (id) => api.post(`/recurring-expenses/${id}/restore`),
@@ -171,8 +156,9 @@ export const recurringIncomeAPI = {
     restore: (id) => api.post(`/recurring-income/${id}/restore`),
 };
 
-// Recurring Generation API (supports both expenses and income)
+// Unified Recurring Generation API (supports both expenses and income)
 export const recurringGenerationAPI = {
+    // Generate all recurring transactions (expenses + optionally income)
     generate: (dryRun = false, daysAhead = null, includeIncome = true) =>
         api.post(
             `/recurring-generation/generate`,
@@ -185,14 +171,17 @@ export const recurringGenerationAPI = {
                 },
             }
         ),
+    // Preview upcoming scheduled expenses
     previewExpenses: (days = null) =>
         api.get(`/recurring-generation/preview`, {
             params: days ? { days } : {},
         }),
+    // Preview upcoming scheduled income
     previewIncome: (days = null) =>
         api.get(`/recurring-generation/preview-income`, {
             params: days ? { days } : {},
         }),
+    // Preview all (both expenses and income combined)
     previewAll: (days = null) =>
         api.get(`/recurring-generation/preview-all`, {
             params: days ? { days } : {},

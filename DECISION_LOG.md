@@ -4,6 +4,56 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-19: Bug Fixes - Import Constraint & API Cleanup
+
+**Session Summary:** Fixed production import failure and simplified recurring generation API.
+
+**Bug 1: Import Failing on Recurring Expense Date Constraint**
+
+- **Issue**: CHECK constraint `start_date < end_date` failed when importing recurring expense with `start_date == end_date`
+- **Root Cause**: Valid use case for one-time scheduled payments where both dates are equal
+- **Fix**: Changed constraint to `start_date <= end_date` in both `recurring_expenses` and `recurring_income` tables
+- **Files Changed**:
+    - `backend/models/database.py` - Model constraint updated
+    - `docs/migrations/FIX_RECURRING_DATE_CONSTRAINT_2026-01-19.sql` - Production SQL script (already applied)
+    - Local SQLite recreated with fixed constraint
+
+**Bug 2: Confirm Schedule Button Error**
+
+- **Issue**: `recurringGenerationAPI.generateIncome is not a function`
+- **Root Cause**: Non-existent API function was being called
+- **Fix**: Replaced with unified `recurringGenerationAPI.generate(false, null, includeIncome)`
+
+**API Cleanup: Simplified Recurring Generation**
+
+- **Removed duplicates**:
+    - `recurringExpenseAPI.generateNow()` → Use `recurringGenerationAPI.generate()`
+    - `recurringExpenseAPI.previewUpcoming()` → Use `recurringGenerationAPI.previewExpenses()`
+- **Clean API structure**:
+    - `recurringExpenseAPI` - CRUD for expense templates only
+    - `recurringIncomeAPI` - CRUD for income templates only
+    - `recurringGenerationAPI` - Unified generation/preview for both
+
+**Bug 3: Generated Income Showing Wrong Name**
+
+- **Issue**: Income generated from recurring template showed "Salary" instead of template's custom name
+- **Fix**: Backend `income.py` now returns `name` from linked recurring template
+- **Frontend**: All income displays use `name || type` pattern
+
+**Files Changed:**
+
+- `backend/models/database.py`
+- `backend/routes/income.py`
+- `frontend/src/api.js`
+- `frontend/src/pages/Dashboard.jsx`
+- `frontend/src/pages/RecurringExpenses.jsx`
+- `frontend/src/components/dashboard/TransactionList.jsx`
+- `frontend/src/components/dashboard/DashboardModals.jsx`
+- `frontend/src/components/TransactionCard.jsx`
+- `frontend/src/test/setup.js`
+
+---
+
 ## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-8 COMPLETE)
 
 **Session Summary:** Implementing Recurring Income feature. All 8 phases complete - backend, feature flag, unified recurring page, AddIncomeModal, dashboard, wizard, tests, and documentation.

@@ -93,8 +93,12 @@ vi.mock('../api', () => ({
         delete: vi.fn(() => Promise.resolve({ data: {} })),
         toggleActive: vi.fn(() => Promise.resolve({ data: {} })),
         toggleFixedBill: vi.fn(() => Promise.resolve({ data: {} })),
-        generateNow: vi.fn(() => Promise.resolve({ data: {} })),
-        previewUpcoming: vi.fn(() => Promise.resolve({ data: [] })),
+    },
+    recurringGenerationAPI: {
+        generate: vi.fn(() => Promise.resolve({ data: {} })),
+        previewExpenses: vi.fn(() => Promise.resolve({ data: [] })),
+        previewIncome: vi.fn(() => Promise.resolve({ data: [] })),
+        previewAll: vi.fn(() => Promise.resolve({ data: [] })),
     },
     expenseAPI: {
         getAll: vi.fn(() => Promise.resolve({ data: [] })),

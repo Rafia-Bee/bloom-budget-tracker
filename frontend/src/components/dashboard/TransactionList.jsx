@@ -275,7 +275,8 @@ const TransactionList = ({
                                                                 <h4 className="font-bold text-gray-800 dark:text-dark-text text-lg">
                                                                     {transaction.transactionType ===
                                                                     'income'
-                                                                        ? transaction.type
+                                                                        ? transaction.name ||
+                                                                          transaction.type
                                                                         : transaction.name}
                                                                 </h4>
                                                                 {transaction.is_fixed_bill && (
@@ -590,18 +591,12 @@ const TransactionList = ({
                                             <button
                                                 onClick={async () => {
                                                     try {
-                                                        // Generate both expenses and income
-                                                        const promises = [
-                                                            recurringExpenseAPI.generateNow(false),
-                                                        ];
-                                                        if (recurringIncomeEnabled) {
-                                                            promises.push(
-                                                                recurringGenerationAPI.generateIncome(
-                                                                    false
-                                                                )
-                                                            );
-                                                        }
-                                                        await Promise.all(promises);
+                                                        // Generate both expenses and income using unified API
+                                                        await recurringGenerationAPI.generate(
+                                                            false,
+                                                            null,
+                                                            recurringIncomeEnabled
+                                                        );
                                                         // Reload transactions and switch to transactions view
                                                         loadTransactionsAndBalances();
                                                         setTransactionView('transactions');

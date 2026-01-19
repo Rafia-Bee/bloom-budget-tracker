@@ -293,7 +293,8 @@ const DashboardModals = ({
                             </p>
                             <p className="font-semibold text-gray-800 dark:text-gray-100">
                                 {deleteConfirmation.type === 'income'
-                                    ? deleteConfirmation.transaction.type
+                                    ? deleteConfirmation.transaction.name ||
+                                      deleteConfirmation.transaction.type
                                     : deleteConfirmation.transaction.name}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Amount</p>
@@ -356,7 +357,7 @@ const DashboardModals = ({
                                     >
                                         <span className="text-gray-700 dark:text-dark-text-secondary">
                                             {txn.type === 'income'
-                                                ? transaction.type
+                                                ? transaction.name || transaction.type
                                                 : transaction.name}
                                         </span>
                                         <span className="font-semibold text-gray-800 dark:text-dark-text">

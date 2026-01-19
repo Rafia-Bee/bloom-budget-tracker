@@ -120,7 +120,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
     const loadScheduledExpenses = async () => {
         try {
-            const response = await recurringExpenseAPI.previewUpcoming();
+            const response = await recurringGenerationAPI.previewExpenses();
             setScheduledExpenses(response.data.upcoming || []);
         } catch (error) {
             logError('loadScheduledExpenses', error);
