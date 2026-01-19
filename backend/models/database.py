@@ -449,7 +449,7 @@ class RecurringExpense(SoftDeleteMixin, db.Model):
             "amount > 0", name="check_recurring_expense_positive_amount"
         ),
         db.CheckConstraint(
-            "end_date IS NULL OR start_date < end_date",
+            "end_date IS NULL OR start_date <= end_date",
             name="check_recurring_expense_date_range",
         ),
         db.CheckConstraint(
@@ -518,7 +518,7 @@ class RecurringIncome(SoftDeleteMixin, db.Model):
     __table_args__ = (
         db.CheckConstraint("amount > 0", name="check_recurring_income_positive_amount"),
         db.CheckConstraint(
-            "end_date IS NULL OR start_date < end_date",
+            "end_date IS NULL OR start_date <= end_date",
             name="check_recurring_income_date_range",
         ),
         db.CheckConstraint(
