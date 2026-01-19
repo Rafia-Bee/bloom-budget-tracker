@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { recurringIncomeAPI } from '../api';
-import { useFeatureFlags } from '../contexts/FeatureFlagContext';
+import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import CurrencySelector from './CurrencySelector';
 
 function AddIncomeModal({ onClose, onAdd }) {
@@ -26,7 +26,8 @@ function AddIncomeModal({ onClose, onAdd }) {
     const [dayOfWeek, setDayOfWeek] = useState(0);
     const [frequencyValue, setFrequencyValue] = useState(30);
 
-    const { recurringIncomeEnabled } = useFeatureFlags();
+    const { isEnabled } = useFeatureFlag();
+    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
 
     const incomeTypes = ['Salary', 'Bonus', 'Freelance', 'Rental', 'Dividends', 'Other'];
     const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
