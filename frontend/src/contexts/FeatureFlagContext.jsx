@@ -24,6 +24,7 @@ export function FeatureFlagProvider({ children }) {
                   flexibleSubPeriodsEnabled: false,
                   reportsEnabled: false,
                   balanceModeEnabled: false, // Issue #149 - Balance mode toggle
+                  recurringIncomeEnabled: false, // Issue #177 - Recurring Income feature
               };
     });
 

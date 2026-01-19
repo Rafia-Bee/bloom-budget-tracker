@@ -158,6 +158,47 @@ export const recurringExpenseAPI = {
     restore: (id) => api.post(`/recurring-expenses/${id}/restore`),
 };
 
+// Recurring Income API (Issue #177)
+export const recurringIncomeAPI = {
+    getAll: (params = {}) => api.get('/recurring-income', { params }),
+    getById: (id) => api.get(`/recurring-income/${id}`),
+    create: (data) => api.post('/recurring-income', data),
+    update: (id, data) => api.put(`/recurring-income/${id}`, data),
+    delete: (id) => api.delete(`/recurring-income/${id}`),
+    toggleActive: (id) => api.put(`/recurring-income/${id}/toggle`),
+    // Soft delete endpoints
+    getDeleted: () => api.get('/recurring-income/deleted'),
+    restore: (id) => api.post(`/recurring-income/${id}/restore`),
+};
+
+// Recurring Generation API (supports both expenses and income)
+export const recurringGenerationAPI = {
+    generate: (dryRun = false, daysAhead = null, includeIncome = true) =>
+        api.post(
+            `/recurring-generation/generate`,
+            {},
+            {
+                params: {
+                    dry_run: dryRun,
+                    include_income: includeIncome,
+                    ...(daysAhead && { days_ahead: daysAhead }),
+                },
+            }
+        ),
+    previewExpenses: (days = null) =>
+        api.get(`/recurring-generation/preview`, {
+            params: days ? { days } : {},
+        }),
+    previewIncome: (days = null) =>
+        api.get(`/recurring-generation/preview-income`, {
+            params: days ? { days } : {},
+        }),
+    previewAll: (days = null) =>
+        api.get(`/recurring-generation/preview-all`, {
+            params: days ? { days } : {},
+        }),
+};
+
 export const salaryPeriodAPI = {
     getCurrent: () => api.get('/salary-periods/current'),
     getById: (id) => api.get(`/salary-periods/${id}`),
@@ -184,6 +225,12 @@ export const userAPI = {
     updateBalanceMode: (mode) =>
         api.put('/user-data/settings/balance-mode', {
             balance_mode: mode,
+        }),
+    // Payment date adjustment settings (Issue #177 - Recurring Income)
+    getPaymentDateAdjustment: () => api.get('/user-data/settings/payment-date-adjustment'),
+    updatePaymentDateAdjustment: (mode) =>
+        api.put('/user-data/settings/payment-date-adjustment', {
+            payment_date_adjustment: mode,
         }),
 };
 

@@ -57,6 +57,12 @@ function Settings({ setIsAuthenticated }) {
     const [balanceModeSuccess, setBalanceModeSuccess] = useState('');
     const [showBalanceModeInfo, setShowBalanceModeInfo] = useState(false);
 
+    // Payment Date Adjustment state (Issue #177 - Recurring Income)
+    const [paymentDateAdjustment, setPaymentDateAdjustment] = useState('exact_date');
+    const [savingPaymentDate, setSavingPaymentDate] = useState(false);
+    const [paymentDateSuccess, setPaymentDateSuccess] = useState('');
+    const [showPaymentDateInfo, setShowPaymentDateInfo] = useState(false);
+
     const categories = [
         'Fixed Expenses',
         'Flexible Expenses',
@@ -85,6 +91,18 @@ function Settings({ setIsAuthenticated }) {
                     setBalanceMode(balanceModeRes.data.balance_mode || 'sync');
                 } catch (err) {
                     logError('loadBalanceMode', err);
+                }
+            }
+
+            // Load payment date adjustment if recurring income flag is enabled
+            if (flags.recurringIncomeEnabled) {
+                try {
+                    const paymentDateRes = await userAPI.getPaymentDateAdjustment();
+                    setPaymentDateAdjustment(
+                        paymentDateRes.data.payment_date_adjustment || 'exact_date'
+                    );
+                } catch (err) {
+                    logError('loadPaymentDateAdjustment', err);
                 }
             }
         } catch (err) {
@@ -192,6 +210,22 @@ function Settings({ setIsAuthenticated }) {
             setError(err.response?.data?.error || 'Failed to save balance mode');
         } finally {
             setSavingBalanceMode(false);
+        }
+    };
+
+    const handleSavePaymentDateAdjustment = async (newMode) => {
+        setSavingPaymentDate(true);
+        setPaymentDateSuccess('');
+        setError('');
+        try {
+            await userAPI.updatePaymentDateAdjustment(newMode);
+            setPaymentDateAdjustment(newMode);
+            setPaymentDateSuccess('Payment date setting saved successfully!');
+            setTimeout(() => setPaymentDateSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to save payment date setting');
+        } finally {
+            setSavingPaymentDate(false);
         }
     };
 
@@ -565,6 +599,116 @@ function Settings({ setIsAuthenticated }) {
                                         <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                                             <p className="text-green-700 dark:text-green-400 text-sm">
                                                 {balanceModeSuccess}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Payment Date Adjustment Setting (only when recurring income flag enabled) */}
+                            {flags.recurringIncomeEnabled && (
+                                <div className="border-b dark:border-gray-700 pb-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                            Income Payment Date
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPaymentDateInfo(!showPaymentDateInfo)
+                                            }
+                                            className="inline-flex items-center justify-center w-5 h-5 text-xs text-gray-500 dark:text-dark-text-secondary bg-gray-200 dark:bg-dark-elevated rounded-full hover:bg-gray-300 dark:hover:bg-dark-border transition-colors"
+                                        >
+                                            ?
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Control how recurring income dates are adjusted when they
+                                        fall on weekends.
+                                    </p>
+
+                                    {/* Payment Date Info Box */}
+                                    {showPaymentDateInfo && (
+                                        <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPaymentDateInfo(false)}
+                                                className="absolute top-2 right-2 text-emerald-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                            >
+                                                ✕
+                                            </button>
+                                            <h4 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-3">
+                                                Payment Date Adjustment Explained
+                                            </h4>
+                                            <div className="space-y-3 text-sm">
+                                                <div>
+                                                    <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                                                        📅 Exact Date
+                                                    </span>
+                                                    <p className="text-emerald-600 dark:text-emerald-400 mt-1">
+                                                        Income is scheduled on the exact date
+                                                        specified, even if it falls on a weekend.
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                                                        ⏪ Previous Business Day
+                                                    </span>
+                                                    <p className="text-emerald-600 dark:text-emerald-400 mt-1">
+                                                        If payday falls on Saturday or Sunday,
+                                                        income is scheduled for the previous Friday.
+                                                        Common for salary payments.
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                                                        ⏩ Next Business Day
+                                                    </span>
+                                                    <p className="text-emerald-600 dark:text-emerald-400 mt-1">
+                                                        If payday falls on Saturday or Sunday,
+                                                        income is scheduled for the following
+                                                        Monday.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-4">
+                                        <label
+                                            htmlFor="payment-date-adjustment"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                                        >
+                                            Adjustment:
+                                        </label>
+                                        <select
+                                            id="payment-date-adjustment"
+                                            value={paymentDateAdjustment}
+                                            onChange={(e) =>
+                                                handleSavePaymentDateAdjustment(e.target.value)
+                                            }
+                                            disabled={savingPaymentDate}
+                                            className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
+                                        >
+                                            <option value="exact_date">📅 Exact Date</option>
+                                            <option value="previous_business_day">
+                                                ⏪ Previous Business Day
+                                            </option>
+                                            <option value="next_business_day">
+                                                ⏩ Next Business Day
+                                            </option>
+                                        </select>
+                                        {savingPaymentDate && (
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                Saving...
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {paymentDateSuccess && (
+                                        <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                            <p className="text-green-700 dark:text-green-400 text-sm">
+                                                {paymentDateSuccess}
                                             </p>
                                         </div>
                                     )}

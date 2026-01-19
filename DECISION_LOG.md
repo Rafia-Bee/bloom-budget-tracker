@@ -4,11 +4,11 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-19: Issue #177 - Recurring Income Feature (Phase 1 - Backend)
+## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-3)
 
-**Session Summary:** Started implementing Recurring Income feature. Phase 1 completes the backend infrastructure.
+**Session Summary:** Implementing Recurring Income feature. Phases 1-3 complete the backend and feature flag infrastructure.
 
-**Phase 1 Completed:**
+**Phase 1 Completed: Backend Model & API**
 
 1. **RecurringIncome Model** - New model in database.py mirroring RecurringExpense structure
     - Fields: name, amount, income_type, currency, frequency, day_of_month/week, start/end_date, next_due_date, is_active, notes
@@ -16,7 +16,7 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 2. **Income Model Updated** - Added `recurring_income_id` foreign key to link generated income to templates
 
-3. **User Model Updated** - Added `payment_date_adjustment` preference (exact_date, previous_workday, next_workday)
+3. **User Model Updated** - Added `payment_date_adjustment` preference (exact_date, previous_business_day, next_business_day)
 
 4. **New recurring_income.py Routes** - Full CRUD for recurring income templates
     - GET/POST /recurring-income
@@ -36,28 +36,41 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 7. **User Settings Route** - Added payment-date-adjustment GET/PUT endpoints
 
-**Files Modified:**
+**Phase 2 Completed: Database Migration**
 
-- `backend/models/database.py` - RecurringIncome model, Income.recurring_income_id, User.payment_date_adjustment
-- `backend/routes/recurring_income.py` (new)
-- `backend/routes/recurring_generation.py` - Extended for income
-- `backend/utils/recurring_generator.py` - Income generation functions
-- `backend/routes/api_v1.py` - Registered recurring_income blueprint
-- `backend/routes/user_data.py` - Payment date adjustment routes
+- Flask-Migrate migration created and applied to local SQLite
+- SQL script for production: `docs/migrations/2026-01-19_recurring_income.sql`
+
+**Phase 3 Completed: Feature Flag & Settings UI**
+
+1. **Feature Flag Added** - `recurringIncomeEnabled` in FeatureFlagContext.jsx (default: false)
+
+2. **Experimental Features Modal** - Added Recurring Income toggle with BETA badge in ExperimentalFeaturesModal.jsx
+
+3. **API Functions Added** to api.js:
+    - `recurringIncomeAPI` - Full CRUD for recurring income templates
+    - `recurringGenerationAPI` - Generate/preview endpoints for both types
+    - `userAPI.getPaymentDateAdjustment()` / `updatePaymentDateAdjustment()`
+
+4. **Settings Preferences Tab** - Added "Income Payment Date" setting
+    - Only visible when recurringIncomeEnabled flag is true
+    - Options: Exact Date, Previous Business Day, Next Business Day
+    - Info box explaining each option
+
+**Files Modified in Phase 3:**
+
+- `frontend/src/contexts/FeatureFlagContext.jsx` - Added recurringIncomeEnabled flag
+- `frontend/src/components/ExperimentalFeaturesModal.jsx` - Added toggle UI
+- `frontend/src/api.js` - Added recurringIncomeAPI, recurringGenerationAPI, userAPI payment date functions
+- `frontend/src/pages/Settings.jsx` - Added payment date adjustment preference
 
 **What's Next:**
 
-- Phase 3: Frontend feature flag & settings UI
 - Phase 4: Unified Recurring page with Expenses/Income sub-tabs
 - Phase 5: AddIncomeModal recurring option
 - Phase 6: Dashboard scheduled integration
 - Phase 7: Tests (backend + E2E)
 - Phase 8: Final documentation
-
-**Phase 2 Completed:**
-
-- Flask-Migrate migration created and applied to local SQLite
-- SQL script for production: `docs/migrations/2026-01-19_recurring_income.sql`
 
 **Related:** #177
 
