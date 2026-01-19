@@ -15,6 +15,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { clickWithAct, typeWithAct, selectWithAct, clearWithAct } from './test-utils';
 import AddIncomeModal from '../components/AddIncomeModal';
+import { FeatureFlagProvider } from '../contexts/FeatureFlagContext';
+
+// Wrapper component with required providers
+const TestWrapper = ({ children }) => <FeatureFlagProvider>{children}</FeatureFlagProvider>;
+
+// Helper function to render with providers
+const renderWithProviders = (ui) => {
+    return render(<TestWrapper>{ui}</TestWrapper>);
+};
 
 describe('AddIncomeModal', () => {
     const mockOnClose = vi.fn();
@@ -31,40 +40,40 @@ describe('AddIncomeModal', () => {
 
     describe('Rendering', () => {
         it('renders the modal with title', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             expect(screen.getByRole('heading', { name: 'Add Income' })).toBeInTheDocument();
         });
 
         it('renders type select field', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             expect(screen.getByText('Type')).toBeInTheDocument();
             expect(screen.getAllByRole('combobox')[0]).toBeInTheDocument();
         });
 
         it('renders amount input field', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             expect(screen.getByText('Amount')).toBeInTheDocument();
             expect(screen.getByRole('spinbutton')).toBeInTheDocument();
         });
 
         it('renders date input field', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             expect(screen.getByText('Date')).toBeInTheDocument();
         });
 
         it('renders Add and Cancel buttons', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
         });
 
         it('renders X close button', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const buttons = screen.getAllByRole('button');
             const xButton = buttons.find(
@@ -79,14 +88,14 @@ describe('AddIncomeModal', () => {
 
     describe('Default Values', () => {
         it('has Salary selected by default', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             expect(typeSelect).toHaveValue('Salary');
         });
 
         it('has today date selected by default', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const today = new Date().toISOString().split('T')[0];
             const dateInput = screen.getByDisplayValue(today);
@@ -94,7 +103,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('has empty amount by default', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             expect(amountInput).toHaveValue(null);
@@ -103,7 +112,7 @@ describe('AddIncomeModal', () => {
 
     describe('Income Type Options', () => {
         it('has all income type options', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             const options = typeSelect.querySelectorAll('option');
@@ -116,7 +125,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('allows changing income type', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             await selectWithAct(typeSelect, 'Bonus');
@@ -127,7 +136,7 @@ describe('AddIncomeModal', () => {
 
     describe('Form Interactions', () => {
         it('allows entering amount', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1500.50');
@@ -136,7 +145,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('allows changing date', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const today = new Date().toISOString().split('T')[0];
             const dateInput = screen.getByDisplayValue(today);
@@ -147,7 +156,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('allows selecting Freelance type', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             await selectWithAct(typeSelect, 'Freelance');
@@ -156,7 +165,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('allows selecting Other type', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             await selectWithAct(typeSelect, 'Other');
@@ -167,7 +176,7 @@ describe('AddIncomeModal', () => {
 
     describe('Modal Close Actions', () => {
         it('calls onClose when Cancel button is clicked', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             await clickWithAct(screen.getByRole('button', { name: 'Cancel' }));
 
@@ -175,7 +184,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('calls onClose when X button is clicked', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const buttons = screen.getAllByRole('button');
             const xButton = buttons.find(
@@ -192,7 +201,7 @@ describe('AddIncomeModal', () => {
 
     describe('Form Submission', () => {
         it('calls onAdd with income data on submit', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '2500');
@@ -211,7 +220,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('converts amount to cents before submission', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '123.45');
@@ -228,7 +237,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('includes selected type in submission', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const typeSelect = screen.getAllByRole('combobox')[0];
             await selectWithAct(typeSelect, 'Bonus');
@@ -248,7 +257,7 @@ describe('AddIncomeModal', () => {
         });
 
         it('includes date in submission', async () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const today = new Date().toISOString().split('T')[0];
             const dateInput = screen.getByDisplayValue(today);
@@ -278,7 +287,7 @@ describe('AddIncomeModal', () => {
                     })
             );
 
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1000');
@@ -300,7 +309,7 @@ describe('AddIncomeModal', () => {
                     })
             );
 
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1000');
@@ -321,7 +330,7 @@ describe('AddIncomeModal', () => {
                 response: { data: { error: 'Invalid income data' } },
             });
 
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1000');
@@ -336,7 +345,7 @@ describe('AddIncomeModal', () => {
         it('shows generic error when no response error message', async () => {
             mockOnAdd.mockRejectedValueOnce(new Error('Network error'));
 
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1000');
@@ -353,7 +362,7 @@ describe('AddIncomeModal', () => {
                 response: { data: { error: 'Test error' } },
             });
 
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             await typeWithAct(amountInput, '1000');
@@ -375,21 +384,21 @@ describe('AddIncomeModal', () => {
 
     describe('Amount Validation', () => {
         it('amount input has min value of 0.01', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             expect(amountInput).toHaveAttribute('min', '0.01');
         });
 
         it('amount input has step of 0.01', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             expect(amountInput).toHaveAttribute('step', '0.01');
         });
 
         it('amount input is required', () => {
-            render(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
+            renderWithProviders(<AddIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />);
 
             const amountInput = screen.getByRole('spinbutton');
             expect(amountInput).toBeRequired();
