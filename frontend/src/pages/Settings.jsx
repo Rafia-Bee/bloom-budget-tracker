@@ -876,6 +876,41 @@ function Settings({ setIsAuthenticated }) {
                                     />
                                 </button>
                             </div>
+
+                            {/* Recurring Income Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-emerald-500">💰</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">
+                                            Recurring Income
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded">
+                                            BETA
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        Set up recurring income templates like monthly salary to
+                                        automatically generate income entries
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => toggleFlag('recurringIncomeEnabled')}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        flags.recurringIncomeEnabled
+                                            ? 'bg-emerald-500 dark:bg-emerald-600'
+                                            : 'bg-gray-300 dark:bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            flags.recurringIncomeEnabled
+                                                ? 'translate-x-6'
+                                                : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
