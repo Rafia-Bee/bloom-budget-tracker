@@ -6,9 +6,9 @@ Feature flags allow you to enable/disable experimental or beta features without 
 
 ## Architecture
 
--   **Context**: `FeatureFlagContext.jsx` - Global state management with localStorage persistence
--   **Hook**: `useFeatureFlag()` - Access feature flags in any component
--   **UI**: Settings page -> Experimental tab
+- **Context**: `FeatureFlagContext.jsx` - Global state management with localStorage persistence
+- **Hook**: `useFeatureFlag()` - Access feature flags in any component
+- **UI**: Settings page -> Experimental tab
 
 ## Usage
 
@@ -20,11 +20,7 @@ import { useFeatureFlag } from "../contexts/FeatureFlagContext";
 function MyComponent() {
     const { isEnabled } = useFeatureFlag();
 
-    return (
-        <div>
-            {isEnabled("reportsEnabled") && <ReportsPage />}
-        </div>
-    );
+    return <div>{isEnabled("reportsEnabled") && <ReportsPage />}</div>;
 }
 ```
 
@@ -54,35 +50,45 @@ const [flags, setFlags] = useState(() => {
 ```jsx
 const { isEnabled } = useFeatureFlag();
 
-{isEnabled("newFeatureName") && <NewFeatureComponent />}
+{
+    isEnabled("newFeatureName") && <NewFeatureComponent />;
+}
 ```
 
 ## Current Flags
 
 ### `reportsEnabled`
 
--   **Type**: Feature flag
--   **Description**: Enables Reports & Analytics feature
--   **Default**: `false`
--   **Access**: Settings -> Experimental -> Reports & Analytics
+- **Type**: Feature flag
+- **Description**: Enables Reports & Analytics feature
+- **Default**: `false`
+- **Access**: Settings -> Experimental -> Reports & Analytics
 
 ### `balanceModeEnabled`
 
--   **Type**: Feature flag  
--   **Description**: Enables budget vs sync balance mode toggle
--   **Default**: `false`
+- **Type**: Feature flag
+- **Description**: Enables budget vs sync balance mode toggle
+- **Default**: `false`
 
 ### `budgetRecalculationEnabled`
 
--   **Type**: Feature flag
--   **Description**: Enables automatic budget recalculation
--   **Default**: `false`
+- **Type**: Feature flag
+- **Description**: Enables automatic budget recalculation
+- **Default**: `false`
 
 ### `flexibleSubPeriodsEnabled`
 
--   **Type**: Feature flag
--   **Description**: Enables flexible sub-periods configuration
--   **Default**: `false`
+- **Type**: Feature flag
+- **Description**: Enables flexible sub-periods configuration
+- **Default**: `false`
+
+### `recurringIncomeEnabled`
+
+- **Type**: Feature flag
+- **Description**: Enables recurring income feature (recurring income templates, recurring toggle in AddIncomeModal, recurring income tab on Recurring page, scheduled income in Dashboard)
+- **Default**: `false`
+- **Access**: Settings -> Experimental -> Recurring Income
+- **Added**: Issue #177
 
 ## Best Practices
 
@@ -101,7 +107,8 @@ Feature flags are stored in `localStorage` under the key `feature_flags`:
     "reportsEnabled": false,
     "budgetRecalculationEnabled": false,
     "flexibleSubPeriodsEnabled": false,
-    "balanceModeEnabled": false
+    "balanceModeEnabled": false,
+    "recurringIncomeEnabled": false
 }
 ```
 

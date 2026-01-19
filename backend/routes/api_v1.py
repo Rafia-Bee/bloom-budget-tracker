@@ -12,6 +12,7 @@ from backend.routes.income import income_bp
 from backend.routes.budget_periods import budget_periods_bp
 from backend.routes.debts import debts_bp
 from backend.routes.recurring_expenses import recurring_expenses_bp
+from backend.routes.recurring_income import recurring_income_bp
 from backend.routes.recurring_generation import recurring_generation_bp
 from backend.routes.salary_periods import salary_periods_bp
 from backend.routes.password_reset import password_reset_bp
@@ -36,6 +37,7 @@ def create_v1_blueprint():
     v1_bp.register_blueprint(budget_periods_bp)
     v1_bp.register_blueprint(debts_bp)
     v1_bp.register_blueprint(recurring_expenses_bp, url_prefix="/recurring-expenses")
+    v1_bp.register_blueprint(recurring_income_bp, url_prefix="/recurring-income")
     v1_bp.register_blueprint(
         recurring_generation_bp, url_prefix="/recurring-generation"
     )

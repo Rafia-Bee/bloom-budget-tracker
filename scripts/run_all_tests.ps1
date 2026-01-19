@@ -190,6 +190,13 @@ $testOutputDir = Join-Path $projectRoot "testOutput"
 if (-not (Test-Path $testOutputDir)) {
     New-Item -ItemType Directory -Path $testOutputDir | Out-Null
     Write-Info "Created testOutput directory"
+} else {
+    # Clean up existing test output files to prevent stale results
+    $existingFiles = Get-ChildItem -Path $testOutputDir -File -ErrorAction SilentlyContinue
+    if ($existingFiles.Count -gt 0) {
+        Remove-Item -Path "$testOutputDir\*" -Force -ErrorAction SilentlyContinue
+        Write-Info "Cleaned up $($existingFiles.Count) stale test output file(s)"
+    }
 }
 
 # Log file paths (all go to testOutput/)

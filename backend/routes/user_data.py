@@ -429,3 +429,103 @@ def update_balance_mode():
         return jsonify({"error": "Failed to update settings. Please try again."}), 500
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+
+# Valid payment date adjustment modes (Issue #177)
+VALID_PAYMENT_DATE_ADJUSTMENTS = ["exact_date", "previous_workday", "next_workday"]
+
+
+@user_data_bp.route("/settings/payment-date-adjustment", methods=["GET"])
+@jwt_required()
+def get_payment_date_adjustment():
+    """
+    Get the user's payment date adjustment setting for recurring income.
+
+    Adjustment Modes:
+    - "exact_date": No adjustment - use scheduled date as-is
+    - "previous_workday": If falls on weekend, use Friday before
+    - "next_workday": If falls on weekend, use Monday after
+
+    Returns:
+        - payment_date_adjustment: Current setting
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = db.session.get(User, current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        return (
+            jsonify(
+                {
+                    "payment_date_adjustment": user.payment_date_adjustment,
+                }
+            ),
+            200,
+        )
+
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"[get_payment_date_adjustment] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load settings. Please try again."}), 500
+
+
+@user_data_bp.route("/settings/payment-date-adjustment", methods=["PUT"])
+@jwt_required()
+def update_payment_date_adjustment():
+    """
+    Update the user's payment date adjustment setting for recurring income.
+
+    Body:
+        - payment_date_adjustment: "exact_date", "previous_workday", or "next_workday"
+
+    Returns:
+        - Success message with updated value
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = db.session.get(User, current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        data = request.get_json()
+        adjustment = data.get("payment_date_adjustment")
+
+        if not adjustment:
+            return jsonify({"error": "payment_date_adjustment is required"}), 400
+
+        adjustment = adjustment.lower()
+        if adjustment not in VALID_PAYMENT_DATE_ADJUSTMENTS:
+            return (
+                jsonify(
+                    {
+                        "error": f"Invalid adjustment. Must be one of: {', '.join(VALID_PAYMENT_DATE_ADJUSTMENTS)}"
+                    }
+                ),
+                400,
+            )
+
+        user.payment_date_adjustment = adjustment
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Payment date adjustment updated successfully",
+                    "payment_date_adjustment": adjustment,
+                }
+            ),
+            200,
+        )
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f"[update_payment_date_adjustment] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to update settings. Please try again."}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400

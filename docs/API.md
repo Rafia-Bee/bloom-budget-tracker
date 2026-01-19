@@ -10,15 +10,16 @@ All endpoints require JWT authentication unless otherwise specified.
 
 ## Table of Contents
 
--   [Authentication](#authentication)
--   [Expenses](#expenses)
--   [Income](#income)
--   [Debts](#debts)
--   [Budget Periods](#budget-periods)
--   [Salary Periods](#salary-periods)
--   [Recurring Expenses](#recurring-expenses)
--   [Import/Export](#importexport)
--   [Error Responses](#error-responses)
+- [Authentication](#authentication)
+- [Expenses](#expenses)
+- [Income](#income)
+- [Debts](#debts)
+- [Budget Periods](#budget-periods)
+- [Salary Periods](#salary-periods)
+- [Recurring Expenses](#recurring-expenses)
+- [Recurring Income](#recurring-income)
+- [Import/Export](#importexport)
+- [Error Responses](#error-responses)
 
 ---
 
@@ -170,17 +171,17 @@ Retrieve expenses with optional filtering and pagination.
 
 **Query Parameters:**
 
--   `page` (integer, default: 1) - Page number
--   `limit` (integer, default: 50) - Items per page
--   `budget_period_id` (integer) - Filter by budget period
--   `category` (string) - Filter by category
--   `subcategory` (string) - Filter by subcategory
--   `payment_method` (string) - "debit" or "credit"
--   `start_date` (string) - YYYY-MM-DD format
--   `end_date` (string) - YYYY-MM-DD format
--   `min_amount` (number) - Minimum amount in cents
--   `max_amount` (number) - Maximum amount in cents
--   `search` (string) - Search in name/notes
+- `page` (integer, default: 1) - Page number
+- `limit` (integer, default: 50) - Items per page
+- `budget_period_id` (integer) - Filter by budget period
+- `category` (string) - Filter by category
+- `subcategory` (string) - Filter by subcategory
+- `payment_method` (string) - "debit" or "credit"
+- `start_date` (string) - YYYY-MM-DD format
+- `end_date` (string) - YYYY-MM-DD format
+- `min_amount` (number) - Minimum amount in cents
+- `max_amount` (number) - Maximum amount in cents
+- `search` (string) - Search in name/notes
 
 **Response:** `200 OK`
 
@@ -299,11 +300,11 @@ Retrieve all income transactions.
 
 **Query Parameters:**
 
--   `page` (integer, default: 1)
--   `limit` (integer, default: 50)
--   `type` (string) - "Salary", "Side Hustle", "Gift", "Other"
--   `start_date` (string) - YYYY-MM-DD
--   `end_date` (string) - YYYY-MM-DD
+- `page` (integer, default: 1)
+- `limit` (integer, default: 50)
+- `type` (string) - "Salary", "Side Hustle", "Gift", "Other"
+- `start_date` (string) - YYYY-MM-DD
+- `end_date` (string) - YYYY-MM-DD
 
 **Response:** `200 OK`
 
@@ -375,7 +376,7 @@ Retrieve all debts including archived.
 
 **Query Parameters:**
 
--   `active_only` (boolean, default: false) - Show only active debts
+- `active_only` (boolean, default: false) - Show only active debts
 
 **Response:** `200 OK`
 
@@ -465,8 +466,8 @@ Retrieve all weekly/custom budget periods.
 
 **Query Parameters:**
 
--   `salary_period_id` (integer) - Filter by salary period
--   `active_only` (boolean) - Current period only
+- `salary_period_id` (integer) - Filter by salary period
+- `active_only` (boolean) - Current period only
 
 **Response:** `200 OK`
 
@@ -521,7 +522,7 @@ Retrieve all monthly salary periods with 4-week budgets.
 
 **Query Parameters:**
 
--   `active_only` (boolean) - Current period only
+- `active_only` (boolean) - Current period only
 
 **Response:** `200 OK`
 
@@ -644,7 +645,7 @@ Preview 4-week budget breakdown before creation.
 
 **Query Parameters:**
 
--   `active_only` (boolean) - Exclude paused templates
+- `active_only` (boolean) - Exclude paused templates
 
 **Response:** `200 OK`
 
@@ -696,10 +697,10 @@ Preview 4-week budget breakdown before creation.
 
 **Frequency Options:**
 
--   `weekly` - Requires `day_of_week` (0-6, Monday=0)
--   `biweekly` - Requires `day_of_week`
--   `monthly` - Requires `day_of_month` (1-31)
--   `custom` - Requires `interval` (number of days)
+- `weekly` - Requires `day_of_week` (0-6, Monday=0)
+- `biweekly` - Requires `day_of_week`
+- `monthly` - Requires `day_of_month` (1-31)
+- `custom` - Requires `interval` (number of days)
 
 **Response:** `201 Created`
 
@@ -723,6 +724,164 @@ Generate expenses from recurring templates for next 60 days.
 
 ---
 
+## Recurring Income
+
+> **Feature Flag**: `recurringIncomeEnabled` must be enabled
+
+### Get All Recurring Income
+
+**Endpoint:** `GET /recurring-income`
+
+**Authentication:** Required
+
+**Query Parameters:**
+
+- `active_only` (boolean) - Exclude paused templates
+
+**Response:** `200 OK`
+
+```json
+{
+    "recurring_income": [
+        {
+            "id": 1,
+            "source": "Salary",
+            "amount": 500000,
+            "category": "Employment",
+            "frequency": "monthly",
+            "frequency_value": null,
+            "start_date": "2025-01-01",
+            "end_date": null,
+            "day_of_month": 25,
+            "day_of_week": null,
+            "is_active": true,
+            "next_due_date": "2025-01-25",
+            "notes": "Monthly salary"
+        }
+    ]
+}
+```
+
+### Create Recurring Income
+
+**Endpoint:** `POST /recurring-income`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+    "source": "Freelance Work",
+    "amount": 150000,
+    "category": "Freelance",
+    "frequency": "monthly",
+    "start_date": "2025-01-01",
+    "day_of_month": 15,
+    "notes": "Retainer payment"
+}
+```
+
+**Frequency Options:**
+
+- `weekly` - Requires `day_of_week` (0-6, Monday=0)
+- `biweekly` - Requires `day_of_week`
+- `monthly` - Requires `day_of_month` (1-31)
+- `custom` - Requires `frequency_value` (number of days)
+
+**Response:** `201 Created`
+
+### Get Single Recurring Income
+
+**Endpoint:** `GET /recurring-income/:id`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+
+### Update Recurring Income
+
+**Endpoint:** `PUT /recurring-income/:id`
+
+**Authentication:** Required
+
+**Request Body:** Same as Create
+
+**Response:** `200 OK`
+
+### Delete Recurring Income
+
+**Endpoint:** `DELETE /recurring-income/:id`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+
+### Toggle Recurring Income Status
+
+**Endpoint:** `PATCH /recurring-income/:id/toggle`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+
+```json
+{
+    "message": "Recurring income paused",
+    "recurring_income": { ... }
+}
+```
+
+### Generate Recurring Income
+
+Generate income from recurring templates for next 60 days.
+
+**Endpoint:** `POST /recurring-income/generate`
+
+**Authentication:** Required
+
+**Response:** `200 OK`
+
+```json
+{
+    "message": "Recurring income generated successfully",
+    "generated_count": 3,
+    "period": "Next 60 days"
+}
+```
+
+### Preview Recurring Income
+
+Preview what income will be generated.
+
+**Endpoint:** `GET /recurring-income/preview`
+
+**Authentication:** Required
+
+**Query Parameters:**
+
+- `days` (integer, default: 30) - Number of days to look ahead
+
+**Response:** `200 OK`
+
+```json
+{
+    "preview": [
+        {
+            "source": "Salary",
+            "amount": 500000,
+            "category": "Employment",
+            "due_date": "2025-01-25",
+            "template_id": 1
+        }
+    ],
+    "count": 1,
+    "period_days": 30
+}
+```
+
+---
+
 ## Import/Export
 
 ### Export Data
@@ -735,10 +894,10 @@ Export all user data in JSON format.
 
 **Query Parameters:**
 
--   `include_expenses` (boolean, default: true)
--   `include_income` (boolean, default: true)
--   `include_debts` (boolean, default: true)
--   `include_recurring` (boolean, default: true)
+- `include_expenses` (boolean, default: true)
+- `include_income` (boolean, default: true)
+- `include_debts` (boolean, default: true)
+- `include_recurring` (boolean, default: true)
 
 **Response:** `200 OK`
 
@@ -817,9 +976,9 @@ Import transactions from bank CSV file.
 
 **Request:** `multipart/form-data`
 
--   `file` - CSV file
--   `bank` - "nordea", "op", or "generic"
--   `default_category` - Category for imported items
+- `file` - CSV file
+- `bank` - "nordea", "op", or "generic"
+- `default_category` - Category for imported items
 
 **Response:** `200 OK`
 
@@ -902,9 +1061,9 @@ All endpoints return consistent error responses.
 
 Rate limits are enforced on authentication endpoints:
 
--   **Register:** 3 requests per hour
--   **Login:** 5 requests per minute
--   **Password Reset:** 3 requests per hour
+- **Register:** 3 requests per hour
+- **Login:** 5 requests per minute
+- **Password Reset:** 3 requests per hour
 
 ---
 
@@ -914,9 +1073,9 @@ All monetary amounts are stored and returned in **cents** (integers).
 
 **Examples:**
 
--   €50.00 = `5000`
--   €1,234.56 = `123456`
--   €0.99 = `99`
+- €50.00 = `5000`
+- €1,234.56 = `123456`
+- €0.99 = `99`
 
 ---
 
@@ -1052,8 +1211,8 @@ Get system and user custom subcategories.
 
 **Query Parameters:**
 
--   `category` (string) - Filter by category
--   `active_only` (boolean, default: true) - Only active subcategories
+- `category` (string) - Filter by category
+- `active_only` (boolean, default: true) - Only active subcategories
 
 **Response:** `200 OK`
 
@@ -1130,8 +1289,8 @@ All dates use **ISO 8601** format: `YYYY-MM-DD`
 
 **Examples:**
 
--   `2025-12-02`
--   `2025-01-15`
+- `2025-12-02`
+- `2025-01-15`
 
 ---
 
@@ -1141,14 +1300,14 @@ Authentication uses **HttpOnly cookies** (set automatically on login/register).
 
 **For API calls:**
 
--   Include `credentials: 'include'` in fetch requests
--   Cookies are sent automatically by the browser
--   No manual Authorization header needed
+- Include `credentials: 'include'` in fetch requests
+- Cookies are sent automatically by the browser
+- No manual Authorization header needed
 
 **Token Expiration:**
 
--   Access tokens: 24 hours
--   Refresh tokens: 30 days
+- Access tokens: 24 hours
+- Refresh tokens: 30 days
 
 **Example fetch call:**
 
@@ -1194,8 +1353,8 @@ Legacy endpoints (without version prefix) are deprecated and will be removed in 
 
 For API questions or issues:
 
--   Email: support@bloom-tracker.app
--   GitHub: [bloom-budget-tracker](https://github.com/Rafia-Bee/bloom-budget-tracker)
+- Email: support@bloom-tracker.app
+- GitHub: [bloom-budget-tracker](https://github.com/Rafia-Bee/bloom-budget-tracker)
 
 ---
 

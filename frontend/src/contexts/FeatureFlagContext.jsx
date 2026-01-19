@@ -14,17 +14,24 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const FeatureFlagContext = createContext();
 
+// Default flags - new flags MUST be added here with default value
+const DEFAULT_FLAGS = {
+    budgetRecalculationEnabled: false,
+    flexibleSubPeriodsEnabled: false,
+    reportsEnabled: false,
+    balanceModeEnabled: false, // Issue #149 - Balance mode toggle
+    recurringIncomeEnabled: false, // Issue #177 - Recurring Income feature
+};
+
 export function FeatureFlagProvider({ children }) {
     const [flags, setFlags] = useState(() => {
         const stored = localStorage.getItem('feature_flags');
-        return stored
-            ? JSON.parse(stored)
-            : {
-                  budgetRecalculationEnabled: false,
-                  flexibleSubPeriodsEnabled: false,
-                  reportsEnabled: false,
-                  balanceModeEnabled: false, // Issue #149 - Balance mode toggle
-              };
+        if (stored) {
+            // Merge stored flags with defaults to ensure new flags are included
+            const storedFlags = JSON.parse(stored);
+            return { ...DEFAULT_FLAGS, ...storedFlags };
+        }
+        return DEFAULT_FLAGS;
     });
 
     useEffect(() => {

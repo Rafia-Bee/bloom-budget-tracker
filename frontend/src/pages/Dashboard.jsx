@@ -12,9 +12,11 @@ import {
     budgetPeriodAPI,
     salaryPeriodAPI,
     recurringExpenseAPI,
+    recurringGenerationAPI,
 } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
 import Header from '../components/Header';
 import PeriodSelector from '../components/PeriodSelector';
@@ -35,6 +37,7 @@ function Dashboard({ setIsAuthenticated }) {
     const [filter, setFilter] = useState('all'); // eslint-disable-line no-unused-vars -- Reserved for future filter feature
     const [transactionView, setTransactionView] = useState('transactions'); // 'transactions' or 'scheduled'
     const [scheduledExpenses, setScheduledExpenses] = useState([]);
+    const [scheduledIncome, setScheduledIncome] = useState([]); // Issue #177 - Recurring Income
     const [selectedScheduled, setSelectedScheduled] = useState([]); // Array of template_ids for scheduled view
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -77,6 +80,10 @@ function Dashboard({ setIsAuthenticated }) {
 
     // Currency context for multi-currency support
     const { defaultCurrency, convertAmount } = useCurrency();
+
+    // Feature flags for recurring income
+    const { isEnabled } = useFeatureFlag();
+    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
 
     // Helper to convert EUR amounts to user's currency and format
     // Used for balances/totals stored in EUR on backend
@@ -173,6 +180,20 @@ function Dashboard({ setIsAuthenticated }) {
             setScheduledExpenses(response.data.upcoming || []);
         } catch (error) {
             logError('loadScheduledExpenses', error);
+        }
+    };
+
+    // Issue #177 - Load scheduled income when recurring income feature is enabled
+    const loadScheduledIncome = async () => {
+        if (!recurringIncomeEnabled) {
+            setScheduledIncome([]);
+            return;
+        }
+        try {
+            const response = await recurringGenerationAPI.previewIncome();
+            setScheduledIncome(response.data.upcoming || []);
+        } catch (error) {
+            logError('loadScheduledIncome', error);
         }
     };
 
@@ -322,14 +343,15 @@ function Dashboard({ setIsAuthenticated }) {
     }, [filter]);
 
     useEffect(() => {
-        // Load scheduled expenses when switching to scheduled view
+        // Load scheduled expenses (and income if enabled) when switching to scheduled view
         if (transactionView === 'scheduled') {
             loadScheduledExpenses();
+            loadScheduledIncome();
             setSelectedScheduled([]);
         } else {
             setSelectedScheduled([]);
         }
-    }, [transactionView]);
+    }, [transactionView, recurringIncomeEnabled]);
 
     useEffect(() => {
         // Reload transactions when active filters change
@@ -1147,6 +1169,8 @@ function Dashboard({ setIsAuthenticated }) {
                             setTransactionView={setTransactionView}
                             transactions={transactions}
                             scheduledExpenses={scheduledExpenses}
+                            scheduledIncome={scheduledIncome}
+                            recurringIncomeEnabled={recurringIncomeEnabled}
                             isLoadingMore={isLoadingMore}
                             handleLoadMore={handleLoadMore}
                             hasMoreExpenses={hasMoreExpenses}
@@ -1169,6 +1193,7 @@ function Dashboard({ setIsAuthenticated }) {
                             selectedScheduled={selectedScheduled}
                             setSelectedScheduled={setSelectedScheduled}
                             loadScheduledExpenses={loadScheduledExpenses}
+                            loadScheduledIncome={loadScheduledIncome}
                             loadTransactionsAndBalances={loadTransactionsAndBalances}
                             defaultCurrency={defaultCurrency}
                             convertAmount={convertAmount}

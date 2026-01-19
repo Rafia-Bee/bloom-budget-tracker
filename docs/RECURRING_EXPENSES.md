@@ -1,11 +1,17 @@
-# Recurring Expenses - On-Demand Generation
+# Recurring Transactions - On-Demand Generation
 
-This document explains how recurring expenses work in Bloom.
+This document explains how recurring expenses and recurring income work in Bloom.
+
+## Overview
+
+Bloom supports two types of recurring transactions:
+
+- **Recurring Expenses**: Automatically generate expense entries from templates
+- **Recurring Income**: Automatically generate income entries from templates (Feature Flag: `recurringIncomeEnabled`)
 
 ## How It Works
 
-1. **Templates**: Users create recurring expense templates with:
-
+1. **Templates**: Users create recurring transaction templates with:
     - Frequency (weekly, biweekly, monthly, custom)
     - Scheduling details (day of week, day of month, custom interval)
     - Start/end dates
@@ -22,9 +28,9 @@ This document explains how recurring expenses work in Bloom.
 
 Users click the **"⚡ Generate Now"** button on the Recurring Expenses page to:
 
--   Check all templates where `next_due_date <= today`
--   Create actual expenses from due templates
--   Update `next_due_date` for each generated expense
+- Check all templates where `next_due_date <= today`
+- Create actual expenses from due templates
+- Update `next_due_date` for each generated expense
 
 This approach gives users full control over when expenses are created.
 
@@ -55,14 +61,14 @@ POST /api/v1/recurring-generation/generate?dry_run=true
 
 ## Features
 
--   ✅ On-demand expense generation from templates
--   ✅ Smart date calculation (handles month boundaries, leap years)
--   ✅ Duplicate prevention (won't generate twice for same date)
--   ✅ Auto-deactivation when end_date is reached
--   ✅ Manual "Generate Now" button
--   ✅ Active/Paused status for templates
--   ✅ Preview upcoming expenses
--   ✅ Fixed bill support (deducted from weekly budget)
+- ✅ On-demand expense generation from templates
+- ✅ Smart date calculation (handles month boundaries, leap years)
+- ✅ Duplicate prevention (won't generate twice for same date)
+- ✅ Auto-deactivation when end_date is reached
+- ✅ Manual "Generate Now" button
+- ✅ Active/Paused status for templates
+- ✅ Preview upcoming expenses
+- ✅ Fixed bill support (deducted from weekly budget)
 
 ## Data Model
 
@@ -96,7 +102,76 @@ POST /api/v1/recurring-generation/generate?dry_run=true
 
 ## Best Practices
 
--   **Fixed Bills**: Mark rent, subscriptions, and utilities as fixed bills so they're deducted from your weekly budget automatically
--   **Frequency**: Use weekly for regular expenses, monthly for bills
--   **End Dates**: Set end dates for temporary recurring expenses (e.g., loan payments)
--   **Pausing**: Use the active/pause toggle to temporarily stop generation without deleting the template
+- **Fixed Bills**: Mark rent, subscriptions, and utilities as fixed bills so they're deducted from your weekly budget automatically
+- **Frequency**: Use weekly for regular expenses, monthly for bills
+- **End Dates**: Set end dates for temporary recurring expenses (e.g., loan payments)
+- **Pausing**: Use the active/pause toggle to temporarily stop generation without deleting the template
+
+---
+
+## Recurring Income (Feature Flag)
+
+> **Feature Flag**: `recurringIncomeEnabled` - Enable in Settings → Experimental
+
+### Overview
+
+Recurring income works identically to recurring expenses but for income entries. Use it to automate regular income like:
+
+- Salary payments
+- Freelance retainers
+- Rental income
+- Dividends
+
+### Accessing Recurring Income
+
+1. **Enable the flag**: Settings → Experimental → Recurring Income
+2. **Recurring Page**: The page now has "Expenses" and "Income" tabs
+3. **AddIncomeModal**: Shows "Make this recurring" toggle when enabled
+4. **Dashboard Scheduled Tab**: Shows both scheduled expenses and income
+
+### RecurringIncome Data Model
+
+| Field             | Type    | Description                    |
+| ----------------- | ------- | ------------------------------ |
+| `id`              | Integer | Primary key                    |
+| `user_id`         | Integer | Owner (FK to User)             |
+| `source`          | String  | Income source name             |
+| `amount`          | Integer | Amount in cents                |
+| `category`        | String  | Income category (optional)     |
+| `frequency`       | String  | weekly/biweekly/monthly/custom |
+| `frequency_value` | Integer | Custom interval days           |
+| `day_of_month`    | Integer | 1-31 for monthly               |
+| `day_of_week`     | Integer | 0-6 for weekly                 |
+| `start_date`      | Date    | Template start                 |
+| `end_date`        | Date    | Template end (optional)        |
+| `next_due_date`   | Date    | Next generation date           |
+| `is_active`       | Boolean | Active/paused state            |
+| `notes`           | String  | Optional notes                 |
+
+### API Endpoints
+
+**CRUD Operations:**
+
+```bash
+GET    /api/v1/recurring-income           # List all templates
+POST   /api/v1/recurring-income           # Create template
+GET    /api/v1/recurring-income/:id       # Get single template
+PUT    /api/v1/recurring-income/:id       # Update template
+DELETE /api/v1/recurring-income/:id       # Delete template
+PATCH  /api/v1/recurring-income/:id/toggle # Toggle active/paused
+```
+
+**Generation:**
+
+```bash
+POST /api/v1/recurring-income/generate    # Generate due income
+GET  /api/v1/recurring-income/preview     # Preview upcoming
+```
+
+### Testing Recurring Income
+
+1. Enable `recurringIncomeEnabled` in Settings → Experimental
+2. Go to Recurring page → Income tab
+3. Create a recurring income template with today as start date
+4. Click "⚡ Generate Now"
+5. Check Dashboard → Income or Scheduled tab for the generated entry

@@ -12,6 +12,7 @@ from backend.models.database import (
     SalaryPeriod,
     BudgetPeriod,
     RecurringExpense,
+    RecurringIncome,
     Expense,
     Income,
     Debt,
@@ -630,10 +631,18 @@ def preview_salary_period():
             .all()
         )
 
+        # Auto-detect expected income from recurring income
+        expected_income_list = RecurringIncome.query.filter_by(
+            user_id=current_user_id, is_active=True
+        ).all()
+
         # Allow manual adjustments to fixed bills
         fixed_bill_adjustments = data.get("fixed_bills", [])
 
-        # Calculate total - use adjustments if provided, otherwise use auto-detected
+        # Allow manual adjustments to expected income
+        expected_income_adjustments = data.get("expected_income", [])
+
+        # Calculate fixed bills total - use adjustments if provided, otherwise use auto-detected
         if fixed_bill_adjustments:
             fixed_bills_total = sum(bill["amount"] for bill in fixed_bill_adjustments)
             bills_list = fixed_bill_adjustments
@@ -649,8 +658,28 @@ def preview_salary_period():
                 for bill in fixed_bills
             ]
 
-        # Calculate budget: debit + credit allowance - fixed bills
-        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        # Calculate expected income total - use adjustments if provided, otherwise use auto-detected
+        if expected_income_adjustments:
+            expected_income_total = sum(
+                inc["amount"] for inc in expected_income_adjustments
+            )
+            income_list = expected_income_adjustments
+        else:
+            expected_income_total = sum(inc.amount for inc in expected_income_list)
+            income_list = [
+                {
+                    "id": inc.id,
+                    "name": inc.name,
+                    "amount": inc.amount,
+                    "income_type": inc.income_type,
+                }
+                for inc in expected_income_list
+            ]
+
+        # Calculate budget: debit + credit allowance + expected income - fixed bills
+        total_budget = (
+            debit_balance + credit_allowance + expected_income_total - fixed_bills_total
+        )
         remaining_amount = total_budget
         weekly_budget = remaining_amount // num_sub_periods
 
@@ -723,6 +752,8 @@ def preview_salary_period():
                     "total_budget": total_budget,
                     "fixed_bills_total": fixed_bills_total,
                     "fixed_bills": bills_list,
+                    "expected_income_total": expected_income_total,
+                    "expected_income": income_list,
                     "remaining_amount": remaining_amount,
                     "weekly_budget": weekly_budget,
                     "weekly_debit_budget": weekly_debit_budget,
