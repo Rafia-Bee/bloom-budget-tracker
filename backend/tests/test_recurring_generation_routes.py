@@ -85,7 +85,8 @@ class TestGenerateEndpoint:
         data = response.json
         assert data["success"] is True
         assert "Generated" in data["message"]
-        assert data["data"]["generated_count"] >= 1
+        # API now returns total_generated and nested expenses/income counts
+        assert data["data"]["total_generated"] >= 1
 
         # Verify expense was created
         expenses = Expense.query.filter_by(user_id=user_id).all()
@@ -141,7 +142,7 @@ class TestGenerateEndpoint:
         assert response.status_code == 200
         data = response.json
         assert data["success"] is True
-        assert data["data"]["generated_count"] == 0
+        assert data["data"]["total_generated"] == 0
 
 
 class TestGenerateAllEndpoint:
@@ -308,3 +309,158 @@ class TestUserNotFound:
 
         assert response.status_code == 404
         assert "User not found" in response.json["error"]
+
+
+# ===========================================================================
+# RECURRING INCOME GENERATION TESTS
+# ===========================================================================
+
+from backend.models.database import RecurringIncome, Income
+
+
+def create_recurring_income_template(user_id, **kwargs):
+    """Helper to create a RecurringIncome template with defaults."""
+    today = date.today()
+    defaults = {
+        "user_id": user_id,
+        "name": "Test Recurring Income",
+        "amount": 300000,  # €3000
+        "income_type": "salary",
+        "frequency": "monthly",
+        "day_of_month": today.day,
+        "start_date": today,
+        "next_due_date": today,
+        "is_active": True,
+    }
+    defaults.update(kwargs)
+    template = RecurringIncome(**defaults)
+    db.session.add(template)
+    db.session.commit()
+    return template
+
+
+class TestGenerateWithIncomeEndpoint:
+    """Tests for POST /api/v1/recurring-generation/generate with include_income=true"""
+
+    def test_generate_with_income_creates_both(self, client, auth_headers, user_id):
+        """Should generate both expenses and income when include_income=true"""
+        # Create templates due today
+        create_recurring_template(
+            user_id,
+            name="Expense Template",
+            amount=5000,
+            next_due_date=date.today(),
+        )
+        create_recurring_income_template(
+            user_id,
+            name="Income Template",
+            amount=300000,
+            next_due_date=date.today(),
+        )
+
+        response = client.post(
+            "/api/v1/recurring-generation/generate?include_income=true",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        assert data["success"] is True
+        # Check structure shows both expense and income counts
+        assert "expenses" in data["data"]
+        assert "income" in data["data"]
+
+    def test_generate_without_income_only_expenses(self, client, auth_headers, user_id):
+        """Should only generate expenses when include_income=false"""
+        # Create both types of templates
+        create_recurring_template(
+            user_id, name="Expense Only", next_due_date=date.today()
+        )
+        create_recurring_income_template(
+            user_id, name="Income Only", next_due_date=date.today()
+        )
+
+        response = client.post(
+            "/api/v1/recurring-generation/generate?include_income=false",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        assert data["success"] is True
+        # When include_income=false, should have generated_count (backwards compatible)
+        assert "generated_count" in data["data"]
+
+
+class TestPreviewIncomeEndpoint:
+    """Tests for GET /api/v1/recurring-generation/preview-income"""
+
+    def test_preview_income_requires_auth(self, client):
+        """Should require authentication"""
+        response = client.get("/api/v1/recurring-generation/preview-income")
+        assert response.status_code == 401
+
+    def test_preview_income_returns_upcoming(self, client, auth_headers, user_id):
+        """Should return list of upcoming income"""
+        # Create a template
+        template = create_recurring_income_template(
+            user_id,
+            name="Preview Salary",
+            amount=250000,
+            next_due_date=date.today(),
+        )
+
+        response = client.get(
+            "/api/v1/recurring-generation/preview-income",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        assert "upcoming" in data
+        # Should include our template
+        names = [item["name"] for item in data["upcoming"]]
+        assert "Preview Salary" in names
+
+    def test_preview_income_excludes_inactive(self, client, auth_headers, user_id):
+        """Should not include inactive templates"""
+        # Create inactive template
+        create_recurring_income_template(
+            user_id,
+            name="Inactive Income",
+            is_active=False,
+            next_due_date=date.today(),
+        )
+
+        response = client.get(
+            "/api/v1/recurring-generation/preview-income",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        names = [item["name"] for item in data["upcoming"]]
+        assert "Inactive Income" not in names
+
+    def test_preview_income_respects_lookahead_days(
+        self, client, auth_headers, user_id
+    ):
+        """Should only include income within lookahead window"""
+        # Create template due far in the future
+        far_future = date.today() + timedelta(days=365)
+        create_recurring_income_template(
+            user_id,
+            name="Far Future Income",
+            next_due_date=far_future,
+        )
+
+        response = client.get(
+            "/api/v1/recurring-generation/preview-income",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json
+        names = [item["name"] for item in data["upcoming"]]
+        # Default lookahead is typically 7-30 days, so far future shouldn't show
+        assert "Far Future Income" not in names
