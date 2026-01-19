@@ -4,9 +4,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-4)
+## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-5)
 
-**Session Summary:** Implementing Recurring Income feature. Phases 1-4 complete backend, feature flag, and unified recurring page.
+**Session Summary:** Implementing Recurring Income feature. Phases 1-5 complete backend, feature flag, unified recurring page, and AddIncomeModal recurring option.
 
 **Phase 1 Completed: Backend Model & API**
 
@@ -37,8 +37,8 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
     - Green/mint theme to distinguish from expenses
 
 2. **RecurringExpenses.jsx Upgraded** - Now handles both expenses and income
-    - Added Expenses/Income sub-tabs in Active view (when feature flag enabled)
-    - Sub-tabs appear below main Active/Upcoming tabs
+    - Layout restructured: Active/Upcoming tabs + Add button on same row (proper alignment)
+    - Sub-tabs (Expenses/Income) appear in second row with pastel colors (rose-50, emerald-50)
     - Active > Expenses: Shows expense templates (unchanged behavior when flag off)
     - Active > Income: Shows income templates with green styling
     - Upcoming tab: Combined view with color-coded items (💸 expenses, 💰 income)
@@ -56,14 +56,27 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
     - Add Income button not shown
     - Upcoming view only shows expenses
 
-**Files Modified in Phase 4:**
+**Phase 5 Completed: AddIncomeModal Recurring Option**
 
-- `frontend/src/components/AddRecurringIncomeModal.jsx` (new)
-- `frontend/src/pages/RecurringExpenses.jsx` - Major upgrade for dual support
+1. **AddIncomeModal.jsx Upgraded** - Added "Make this a recurring income" checkbox
+    - Only shown when `recurringIncomeEnabled` feature flag is on
+    - Same frequency options as AddExpenseModal (weekly, biweekly, monthly, custom)
+    - Green/emerald theme for recurring options panel
+    - Button text changes to "Create Template" when recurring is checked
+    - Modal now supports scrolling with fixed footer (like AddExpenseModal)
+    - Extended income types: Salary, Bonus, Freelance, Rental, Dividends, Other
+
+2. **Implementation Pattern** - Mirrors AddExpenseModal:
+    - `isRecurring` state controls visibility of frequency options
+    - When checked: calls `recurringIncomeAPI.create()` instead of `onAdd()`
+    - Uses form ID for external submit button
+
+**Files Modified in Phase 5:**
+
+- `frontend/src/components/AddIncomeModal.jsx` - Added recurring option
 
 **What's Next:**
 
-- Phase 5: AddIncomeModal recurring option (checkbox like AddExpenseModal)
 - Phase 6: Dashboard scheduled tab integration
 - Phase 7: Tests (backend + E2E)
 - Phase 8: Final documentation

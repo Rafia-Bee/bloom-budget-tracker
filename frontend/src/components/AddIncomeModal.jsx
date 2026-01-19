@@ -1,11 +1,14 @@
 /**
  * Bloom - Add Income Modal
  *
- * Modal dialog for adding income entries (salary, other income).
- * Simple form with type, amount, date, and optional notes.
+ * Modal dialog for adding income entries (salary, bonus, freelance, other).
+ * Supports creating one-time income or recurring income templates.
+ * Recurring option only visible when recurringIncomeEnabled feature flag is on.
  */
 
 import { useState } from 'react';
+import { recurringIncomeAPI } from '../api';
+import { useFeatureFlags } from '../contexts/FeatureFlagContext';
 import CurrencySelector from './CurrencySelector';
 
 function AddIncomeModal({ onClose, onAdd }) {
@@ -16,7 +19,17 @@ function AddIncomeModal({ onClose, onAdd }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const incomeTypes = ['Salary', 'Bonus', 'Freelance', 'Other'];
+    // Recurring income states
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [frequency, setFrequency] = useState('monthly');
+    const [dayOfMonth, setDayOfMonth] = useState(new Date().getDate());
+    const [dayOfWeek, setDayOfWeek] = useState(0);
+    const [frequencyValue, setFrequencyValue] = useState(30);
+
+    const { recurringIncomeEnabled } = useFeatureFlags();
+
+    const incomeTypes = ['Salary', 'Bonus', 'Freelance', 'Rental', 'Dividends', 'Other'];
+    const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,12 +38,33 @@ function AddIncomeModal({ onClose, onAdd }) {
 
         try {
             const amountInCents = Math.round(parseFloat(amount) * 100);
-            await onAdd({
-                type,
-                amount: amountInCents,
-                currency,
-                date,
-            });
+
+            if (isRecurring && recurringIncomeEnabled) {
+                // Create recurring income template
+                const recurringData = {
+                    name: type, // Use type as name for recurring income
+                    amount: amountInCents,
+                    income_type: type,
+                    frequency,
+                    frequency_value: frequency === 'custom' ? frequencyValue : null,
+                    day_of_month: frequency === 'monthly' ? dayOfMonth : null,
+                    day_of_week:
+                        frequency === 'weekly' || frequency === 'biweekly' ? dayOfWeek : null,
+                    start_date: date,
+                    is_active: true,
+                };
+
+                await recurringIncomeAPI.create(recurringData);
+                onClose();
+            } else {
+                // Create one-time income
+                await onAdd({
+                    type,
+                    amount: amountInCents,
+                    currency,
+                    date,
+                });
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to add income');
             setLoading(false);
@@ -38,9 +72,9 @@ function AddIncomeModal({ onClose, onAdd }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-                <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center p-6 pb-4 border-b dark:border-dark-border">
                     <h2 className="text-2xl font-bold text-bloom-mint dark:text-bloom-mint">
                         Add Income
                     </h2>
@@ -64,7 +98,11 @@ function AddIncomeModal({ onClose, onAdd }) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form
+                    id="add-income-form"
+                    onSubmit={handleSubmit}
+                    className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+                >
                     {error && (
                         <div className="bg-red-100 dark:bg-red-950/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-dark-danger px-4 py-2 rounded flex justify-between items-start">
                             <span>{error}</span>
@@ -145,7 +183,111 @@ function AddIncomeModal({ onClose, onAdd }) {
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    {/* Recurring Income Toggle - only shown when feature enabled */}
+                    {recurringIncomeEnabled && (
+                        <div className="border-t dark:border-dark-border pt-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={isRecurring}
+                                    onChange={(e) => setIsRecurring(e.target.checked)}
+                                    className="w-5 h-5 text-bloom-mint focus:ring-bloom-mint rounded"
+                                />
+                                <span className="text-gray-700 dark:text-dark-text font-semibold">
+                                    Make this a recurring income
+                                </span>
+                            </label>
+                        </div>
+                    )}
+
+                    {/* Recurring Income Options */}
+                    {isRecurring && recurringIncomeEnabled && (
+                        <div className="bg-emerald-50 dark:bg-dark-elevated border border-emerald-200 dark:border-dark-border rounded-lg p-4 space-y-3">
+                            <h3 className="font-semibold text-emerald-900 dark:text-bloom-mint mb-2">
+                                Recurrence Schedule
+                            </h3>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
+                                    Frequency
+                                </label>
+                                <select
+                                    value={frequency}
+                                    onChange={(e) => setFrequency(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint text-sm"
+                                >
+                                    <option value="weekly">Weekly</option>
+                                    <option value="biweekly">Biweekly (Every 2 weeks)</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="custom">Custom (Every X days)</option>
+                                </select>
+                            </div>
+
+                            {(frequency === 'weekly' || frequency === 'biweekly') && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
+                                        Day of Week
+                                    </label>
+                                    <select
+                                        value={dayOfWeek}
+                                        onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint text-sm"
+                                    >
+                                        {weekDays.map((day, index) => (
+                                            <option key={index} value={index}>
+                                                {day}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {frequency === 'monthly' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
+                                        Day of Month
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        value={dayOfMonth}
+                                        onChange={(e) => setDayOfMonth(parseInt(e.target.value))}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint text-sm"
+                                    />
+                                </div>
+                            )}
+
+                            {frequency === 'custom' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
+                                        Repeat every X days
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={frequencyValue}
+                                        onChange={(e) =>
+                                            setFrequencyValue(parseInt(e.target.value))
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-base text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-mint text-sm"
+                                    />
+                                </div>
+                            )}
+
+                            <p className="text-xs text-emerald-700 dark:text-dark-text-secondary mt-2">
+                                Start date will be:{' '}
+                                {(() => {
+                                    const d = new Date(date);
+                                    return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`;
+                                })()}
+                            </p>
+                        </div>
+                    )}
+                </form>
+
+                <div className="border-t dark:border-dark-border p-6 pt-4">
+                    <div className="flex gap-3">
                         <button
                             type="button"
                             onClick={onClose}
@@ -155,13 +297,18 @@ function AddIncomeModal({ onClose, onAdd }) {
                         </button>
                         <button
                             type="submit"
+                            form="add-income-form"
                             disabled={loading}
                             className="flex-1 bg-bloom-mint text-green-800 dark:text-green-900 px-4 py-2 rounded-lg hover:bg-bloom-mint/80 transition disabled:opacity-50 font-semibold"
                         >
-                            {loading ? 'Adding...' : 'Add'}
+                            {loading
+                                ? 'Adding...'
+                                : isRecurring && recurringIncomeEnabled
+                                  ? 'Create Template'
+                                  : 'Add'}
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );
