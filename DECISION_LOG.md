@@ -4,71 +4,67 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-3)
+## 2026-01-19: Issue #177 - Recurring Income Feature (Phases 1-4)
 
-**Session Summary:** Implementing Recurring Income feature. Phases 1-3 complete the backend and feature flag infrastructure.
+**Session Summary:** Implementing Recurring Income feature. Phases 1-4 complete backend, feature flag, and unified recurring page.
 
 **Phase 1 Completed: Backend Model & API**
 
 1. **RecurringIncome Model** - New model in database.py mirroring RecurringExpense structure
-    - Fields: name, amount, income_type, currency, frequency, day_of_month/week, start/end_date, next_due_date, is_active, notes
-    - Relationship to generated Income entries via `recurring_income_id`
-
-2. **Income Model Updated** - Added `recurring_income_id` foreign key to link generated income to templates
-
-3. **User Model Updated** - Added `payment_date_adjustment` preference (exact_date, previous_business_day, next_business_day)
-
+2. **Income Model Updated** - Added `recurring_income_id` foreign key
+3. **User Model Updated** - Added `payment_date_adjustment` preference
 4. **New recurring_income.py Routes** - Full CRUD for recurring income templates
-    - GET/POST /recurring-income
-    - GET/PUT/DELETE /recurring-income/:id
-    - PUT /recurring-income/:id/toggle
-    - GET /recurring-income/deleted, POST /recurring-income/:id/restore
-
 5. **Updated recurring_generator.py** - Extended to handle income generation
-    - `generate_due_income()` - Generate income from templates
-    - `generate_all_recurring()` - Generate both expenses and income
-    - `get_upcoming_recurring_income()` - Preview upcoming income
-    - `get_all_upcoming_recurring()` - Preview both types combined
-
 6. **Updated recurring_generation.py Routes** - Extended for income
-    - `/generate` now generates both expenses and income by default
-    - Added `/preview-income` and `/preview-all` endpoints
-
-7. **User Settings Route** - Added payment-date-adjustment GET/PUT endpoints
 
 **Phase 2 Completed: Database Migration**
 
-- Flask-Migrate migration created and applied to local SQLite
+- Flask-Migrate migration applied to local SQLite
 - SQL script for production: `docs/migrations/2026-01-19_recurring_income.sql`
 
 **Phase 3 Completed: Feature Flag & Settings UI**
 
-1. **Feature Flag Added** - `recurringIncomeEnabled` in FeatureFlagContext.jsx (default: false)
-
-2. **Experimental Features Modal** - Added Recurring Income toggle with BETA badge in ExperimentalFeaturesModal.jsx
-
-3. **API Functions Added** to api.js:
-    - `recurringIncomeAPI` - Full CRUD for recurring income templates
-    - `recurringGenerationAPI` - Generate/preview endpoints for both types
-    - `userAPI.getPaymentDateAdjustment()` / `updatePaymentDateAdjustment()`
-
+1. **Feature Flag Added** - `recurringIncomeEnabled` in FeatureFlagContext.jsx
+2. **Experimental Features Modal** - Added Recurring Income toggle with BETA badge
+3. **API Functions Added** - `recurringIncomeAPI`, `recurringGenerationAPI`, payment date functions
 4. **Settings Preferences Tab** - Added "Income Payment Date" setting
-    - Only visible when recurringIncomeEnabled flag is true
-    - Options: Exact Date, Previous Business Day, Next Business Day
-    - Info box explaining each option
 
-**Files Modified in Phase 3:**
+**Phase 4 Completed: Unified Recurring Page**
 
-- `frontend/src/contexts/FeatureFlagContext.jsx` - Added recurringIncomeEnabled flag
-- `frontend/src/components/ExperimentalFeaturesModal.jsx` - Added toggle UI
-- `frontend/src/api.js` - Added recurringIncomeAPI, recurringGenerationAPI, userAPI payment date functions
-- `frontend/src/pages/Settings.jsx` - Added payment date adjustment preference
+1. **AddRecurringIncomeModal.jsx** - New modal for creating/editing recurring income templates
+    - Similar structure to AddRecurringExpenseModal
+    - Income types: Salary, Bonus, Freelance, Rental, Dividends, Other
+    - Green/mint theme to distinguish from expenses
+
+2. **RecurringExpenses.jsx Upgraded** - Now handles both expenses and income
+    - Added Expenses/Income sub-tabs in Active view (when feature flag enabled)
+    - Sub-tabs appear below main Active/Upcoming tabs
+    - Active > Expenses: Shows expense templates (unchanged behavior when flag off)
+    - Active > Income: Shows income templates with green styling
+    - Upcoming tab: Combined view with color-coded items (💸 expenses, 💰 income)
+    - Sorted by date, income shown with green border/background
+    - All CRUD operations working for both types
+
+3. **State Management** - Added:
+    - `recurringIncome`, `scheduledIncome` arrays
+    - `activeSubTab` for expenses/income toggle
+    - `editingIncome`, `deleteIncomeConfirm` states
+    - Handler functions for income operations
+
+4. **Feature Flag Integration** - All income features hidden when flag is off:
+    - Sub-tabs not shown
+    - Add Income button not shown
+    - Upcoming view only shows expenses
+
+**Files Modified in Phase 4:**
+
+- `frontend/src/components/AddRecurringIncomeModal.jsx` (new)
+- `frontend/src/pages/RecurringExpenses.jsx` - Major upgrade for dual support
 
 **What's Next:**
 
-- Phase 4: Unified Recurring page with Expenses/Income sub-tabs
-- Phase 5: AddIncomeModal recurring option
-- Phase 6: Dashboard scheduled integration
+- Phase 5: AddIncomeModal recurring option (checkbox like AddExpenseModal)
+- Phase 6: Dashboard scheduled tab integration
 - Phase 7: Tests (backend + E2E)
 - Phase 8: Final documentation
 
