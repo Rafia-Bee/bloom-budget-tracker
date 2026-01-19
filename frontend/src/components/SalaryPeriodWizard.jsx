@@ -22,6 +22,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const { isEnabled } = useFeatureFlag();
     const flexibleSubPeriodsEnabled = isEnabled('flexibleSubPeriodsEnabled');
     const balanceModeEnabled = isEnabled('balanceModeEnabled');
+    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
     const currencySymbol = getCurrencySymbol(defaultCurrency);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const [numSubPeriods, setNumSubPeriods] = useState(4);
     const [preview, setPreview] = useState(null);
     const [fixedBills, setFixedBills] = useState([]);
+    const [expectedIncome, setExpectedIncome] = useState([]);
 
     // Calculate max sub-periods based on date range
     const maxSubPeriods = useMemo(() => {
@@ -273,6 +275,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
             setPreview(response.data);
             setFixedBills(response.data.fixed_bills);
+            setExpectedIncome(response.data.expected_income || []);
             setStep(2);
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to preview budget period');
@@ -295,6 +298,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 credit_allowance: toEur(creditAllowance),
                 start_date: startDate,
                 fixed_bills: fixedBills,
+                expected_income: recurringIncomeEnabled ? expectedIncome : [],
             };
 
             // Add flexible sub-periods params when feature is enabled
@@ -436,6 +440,17 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
     const removeFixedBill = (index) => {
         setFixedBills(fixedBills.filter((_, i) => i !== index));
+    };
+
+    const updateExpectedIncomeAmount = (index, value) => {
+        const newIncome = [...expectedIncome];
+        // User edits in their currency, convert to EUR for storage
+        newIncome[index].amount = toEur(parseCurrency(value));
+        setExpectedIncome(newIncome);
+    };
+
+    const removeExpectedIncome = (index) => {
+        setExpectedIncome(expectedIncome.filter((_, i) => i !== index));
     };
 
     return (
@@ -1098,6 +1113,90 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </div>
                             </div>
 
+                            {/* Expected Income Section - Only when feature is enabled */}
+                            {recurringIncomeEnabled && (
+                                <>
+                                    <div className="border-t border-gray-200 dark:border-dark-border pt-6 mt-6">
+                                        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">
+                                            Expected Income 💰
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
+                                            Recurring income will be added to your available budget.
+                                        </p>
+                                    </div>
+
+                                    {expectedIncome.length === 0 ? (
+                                        <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-4">
+                                            <p className="text-sm text-gray-500 dark:text-dark-text-secondary text-center">
+                                                No recurring income set up yet. You can add
+                                                recurring income from the Recurring page.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {expectedIncome.map((income, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg"
+                                                >
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-800 dark:text-dark-text">
+                                                            {income.name}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500 dark:text-dark-text-secondary capitalize">
+                                                            {income.income_type || 'Other'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="relative w-32">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                                            {currencySymbol}
+                                                        </span>
+                                                        <input
+                                                            type="text"
+                                                            value={(
+                                                                fromEur(income.amount) / 100
+                                                            ).toFixed(2)}
+                                                            onChange={(e) =>
+                                                                updateExpectedIncomeAmount(
+                                                                    index,
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            className="w-full pl-7 pr-3 py-2 border border-emerald-300 dark:border-emerald-700 rounded text-sm bg-white dark:bg-dark-surface"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removeExpectedIncome(index)}
+                                                        className="text-red-500 hover:text-red-700 px-2"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="font-medium text-gray-700 dark:text-dark-text">
+                                                Total Expected Income
+                                            </span>
+                                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                                                +
+                                                {formatCurrency(
+                                                    fromEur(
+                                                        expectedIncome.reduce(
+                                                            (sum, inc) => sum + inc.amount,
+                                                            0
+                                                        )
+                                                    )
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setStep(1)}
@@ -1144,6 +1243,15 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                         <span className="opacity-90">+ Credit Allowance</span>
                                         <span className="text-xl">
                                             +{formatCurrency(fromEur(preview.credit_allowance))}
+                                        </span>
+                                    </div>
+                                )}
+                                {preview.expected_income_total > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="opacity-90">+ Expected Income</span>
+                                        <span className="text-xl">
+                                            +
+                                            {formatCurrency(fromEur(preview.expected_income_total))}
                                         </span>
                                     </div>
                                 )}

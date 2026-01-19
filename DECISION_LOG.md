@@ -93,6 +93,34 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 - `frontend/src/pages/Dashboard.jsx` - Added scheduled income support
 - `frontend/src/components/dashboard/TransactionList.jsx` - Unified scheduled view
 
+**Phase 6.5 Completed: Budget Period Wizard Integration**
+
+1. **Backend preview endpoint Updated** - `/salary-periods/preview` now includes expected income:
+    - Queries `RecurringIncome` templates for user
+    - Returns `expected_income` array and `expected_income_total`
+    - Budget calculation: `debit + credit_allowance + expected_income - fixed_bills`
+    - Accepts `expected_income` adjustments from frontend (like fixed_bills)
+
+2. **SalaryPeriodWizard.jsx Updated** - Shows expected income in Step 2:
+    - New `recurringIncomeEnabled` feature flag check
+    - New `expectedIncome` state array
+    - Step 2 shows "Expected Income" section (green/emerald theme) after Fixed Bills
+    - Users can adjust or remove expected income amounts
+    - Total Expected Income displayed with +amount format
+    - Step 3 calculation now shows "+ Expected Income" in breakdown
+
+3. **User Flow:**
+    - Wizard auto-detects recurring income templates from database
+    - Income shown in green/emerald styling (vs pink for expenses)
+    - Users can edit amounts for this period only (doesn't change template)
+    - Expected income adds to available budget
+    - Formula: Total Budget = Debit + Credit Allowance + Expected Income - Fixed Bills
+
+**Files Modified in Phase 6.5:**
+
+- `backend/routes/salary_periods.py` - Added RecurringIncome import, expected income to preview
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Added expected income state, display, and handlers
+
 **What's Next:**
 
 - Phase 7: Tests (backend + E2E)
