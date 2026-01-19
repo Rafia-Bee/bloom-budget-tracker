@@ -1118,7 +1118,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 <>
                                     <div className="border-t border-gray-200 dark:border-dark-border pt-6 mt-6">
                                         <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">
-                                            Expected Income 💰
+                                            Expected Income
                                         </h3>
                                         <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                                             Recurring income will be added to your available budget.
@@ -1148,7 +1148,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                         </div>
                                                     </div>
                                                     <div className="relative w-32">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
                                                             {currencySymbol}
                                                         </span>
                                                         <input
@@ -1162,7 +1162,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                                     e.target.value
                                                                 )
                                                             }
-                                                            className="w-full pl-7 pr-3 py-2 border border-emerald-300 dark:border-emerald-700 rounded text-sm bg-white dark:bg-dark-surface"
+                                                            className="w-full pl-7 pr-3 py-2 border border-emerald-300 dark:border-emerald-700 rounded text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
                                                         />
                                                     </div>
                                                     <button
