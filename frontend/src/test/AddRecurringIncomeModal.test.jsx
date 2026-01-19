@@ -336,9 +336,7 @@ describe('AddRecurringIncomeModal', () => {
                 <AddRecurringIncomeModal onClose={mockOnClose} onAdd={mockOnAdd} />
             );
 
-            // Find the start date input by its type and verify it has today's date
-            const dateInputs = screen.getAllByRole('textbox', { hidden: true });
-            // Alternative: find by text label
+            // Find the start date label
             expect(screen.getByText('Start Date')).toBeInTheDocument();
         });
 
