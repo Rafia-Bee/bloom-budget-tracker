@@ -691,10 +691,10 @@ function Settings({ setIsAuthenticated }) {
                                             className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
                                         >
                                             <option value="exact_date">📅 Exact Date</option>
-                                            <option value="previous_business_day">
+                                            <option value="previous_workday">
                                                 ⏪ Previous Business Day
                                             </option>
-                                            <option value="next_business_day">
+                                            <option value="next_workday">
                                                 ⏩ Next Business Day
                                             </option>
                                         </select>
