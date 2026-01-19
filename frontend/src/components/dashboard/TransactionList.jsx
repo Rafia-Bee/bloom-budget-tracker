@@ -1,5 +1,5 @@
 import React from 'react';
-import { recurringExpenseAPI } from '../../api';
+import { recurringExpenseAPI, recurringGenerationAPI, recurringIncomeAPI } from '../../api';
 import { logError } from '../../utils/logger';
 import { formatCurrency, formatTransactionAmount } from '../../utils/formatters';
 import DateNavigator from '../DateNavigator';
@@ -9,6 +9,8 @@ const TransactionList = ({
     setTransactionView,
     transactions,
     scheduledExpenses,
+    scheduledIncome = [],
+    recurringIncomeEnabled = false,
     isLoadingMore,
     handleLoadMore,
     hasMoreExpenses,
@@ -31,6 +33,7 @@ const TransactionList = ({
     selectedScheduled,
     setSelectedScheduled,
     loadScheduledExpenses,
+    loadScheduledIncome,
     loadTransactionsAndBalances,
     defaultCurrency,
     convertAmount,
@@ -495,165 +498,255 @@ const TransactionList = ({
             {/* Scheduled View */}
             {transactionView === 'scheduled' && (
                 <>
-                    {/* Scheduled Actions */}
-                    {scheduledExpenses.length > 0 && (
-                        <div className="flex justify-between items-center mb-4">
-                            {selectionMode ? (
-                                <>
-                                    {selectedScheduled.length > 0 && (
-                                        <>
-                                            <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                                                {selectedScheduled.length} selected
-                                            </span>
+                    {/* Combine and sort scheduled items */}
+                    {(() => {
+                        // Combine expenses and income with type markers
+                        const allScheduledItems = [
+                            ...scheduledExpenses.map((item) => ({ ...item, itemType: 'expense' })),
+                            ...(recurringIncomeEnabled
+                                ? scheduledIncome.map((item) => ({ ...item, itemType: 'income' }))
+                                : []),
+                        ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        const hasItems = allScheduledItems.length > 0;
+
+                        return (
+                            <>
+                                {/* Scheduled Actions */}
+                                {hasItems && (
+                                    <div className="flex justify-between items-center mb-4">
+                                        {selectionMode ? (
+                                            <>
+                                                {selectedScheduled.length > 0 && (
+                                                    <>
+                                                        <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                                                            {selectedScheduled.length} selected
+                                                        </span>
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    // Separate expense and income IDs
+                                                                    const expenseIds =
+                                                                        selectedScheduled.filter(
+                                                                            (id) =>
+                                                                                scheduledExpenses.some(
+                                                                                    (e) =>
+                                                                                        e.template_id ===
+                                                                                        id
+                                                                                )
+                                                                        );
+                                                                    const incomeIds =
+                                                                        selectedScheduled.filter(
+                                                                            (id) =>
+                                                                                scheduledIncome.some(
+                                                                                    (i) =>
+                                                                                        i.template_id ===
+                                                                                        id
+                                                                                )
+                                                                        );
+
+                                                                    // Delete selected items from respective APIs
+                                                                    await Promise.all([
+                                                                        ...expenseIds.map((id) =>
+                                                                            recurringExpenseAPI.delete(
+                                                                                id
+                                                                            )
+                                                                        ),
+                                                                        ...incomeIds.map((id) =>
+                                                                            recurringIncomeAPI.delete(
+                                                                                id
+                                                                            )
+                                                                        ),
+                                                                    ]);
+                                                                    loadScheduledExpenses();
+                                                                    if (loadScheduledIncome)
+                                                                        loadScheduledIncome();
+                                                                    setSelectedScheduled([]);
+                                                                    setSelectionMode(false);
+                                                                } catch (error) {
+                                                                    logError(
+                                                                        'deleteScheduledItems',
+                                                                        error
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
+                                                        >
+                                                            Delete Selected
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectionMode(false);
+                                                        setSelectedScheduled([]);
+                                                    }}
+                                                    className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </>
+                                        ) : (
                                             <button
                                                 onClick={async () => {
                                                     try {
-                                                        // Delete selected scheduled items from recurring templates
-                                                        await Promise.all(
-                                                            selectedScheduled.map((id) =>
-                                                                recurringExpenseAPI.delete(id)
-                                                            )
-                                                        );
-                                                        loadScheduledExpenses();
-                                                        setSelectedScheduled([]);
-                                                        setSelectionMode(false);
+                                                        // Generate both expenses and income
+                                                        const promises = [
+                                                            recurringExpenseAPI.generateNow(false),
+                                                        ];
+                                                        if (recurringIncomeEnabled) {
+                                                            promises.push(
+                                                                recurringGenerationAPI.generateIncome(
+                                                                    false
+                                                                )
+                                                            );
+                                                        }
+                                                        await Promise.all(promises);
+                                                        // Reload transactions and switch to transactions view
+                                                        loadTransactionsAndBalances();
+                                                        setTransactionView('transactions');
                                                     } catch (error) {
-                                                        logError('deleteScheduledExpenses', error);
+                                                        logError('confirmScheduledItems', error);
                                                     }
                                                 }}
-                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-semibold"
+                                                className="px-4 py-2 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition font-semibold flex items-center gap-2"
                                             >
-                                                Delete Selected
+                                                <svg
+                                                    className="w-5 h-5"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M5 13l4 4L19 7"
+                                                    />
+                                                </svg>
+                                                Confirm Schedule
                                             </button>
-                                        </>
-                                    )}
-                                    <button
-                                        onClick={() => {
-                                            setSelectionMode(false);
-                                            setSelectedScheduled([]);
-                                        }}
-                                        className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
-                                    >
-                                        Cancel
-                                    </button>
-                                </>
-                            ) : (
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            await recurringExpenseAPI.generateNow(false);
-                                            // Reload transactions and switch to transactions view
-                                            loadTransactionsAndBalances();
-                                            setTransactionView('transactions');
-                                        } catch (error) {
-                                            logError('confirmScheduledExpenses', error);
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition font-semibold flex items-center gap-2"
-                                >
-                                    <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                    Confirm Schedule
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Scheduled Expenses List */}
-                    {scheduledExpenses.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
-                            <svg
-                                className="w-16 h-16 mb-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                            </svg>
-                            <p>No upcoming scheduled expenses</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {scheduledExpenses.map((expense, idx) => {
-                                const isSelected = selectedScheduled.includes(expense.template_id);
-                                return (
-                                    <div
-                                        key={`scheduled-${expense.template_id}-${idx}`}
-                                        className={`bg-gray-50 dark:bg-dark-elevated rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
-                                            isSelected ? 'ring-2 ring-bloom-pink' : ''
-                                        }`}
-                                        onClick={() => {
-                                            if (selectionMode) {
-                                                setSelectedScheduled((prev) =>
-                                                    prev.includes(expense.template_id)
-                                                        ? prev.filter(
-                                                              (id) => id !== expense.template_id
-                                                          )
-                                                        : [...prev, expense.template_id]
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {selectionMode && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => {}}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
-                                                />
-                                            )}
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div>
-                                                        <h4 className="font-semibold text-gray-800 dark:text-dark-text">
-                                                            {expense.name}
-                                                        </h4>
-                                                        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
-                                                            {expense.category}{' '}
-                                                            {expense.subcategory &&
-                                                                `• ${expense.subcategory}`}
-                                                        </p>
-                                                    </div>
-                                                    <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                                                        -{fcEur(expense.amount * 100)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
-                                                    <span>
-                                                        {(() => {
-                                                            const d = new Date(expense.date);
-                                                            return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`;
-                                                        })()}
-                                                    </span>
-                                                    <span className="capitalize">
-                                                        {expense.frequency}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                )}
+
+                                {/* Scheduled Items List */}
+                                {!hasItems ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
+                                        <svg
+                                            className="w-16 h-16 mb-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                            />
+                                        </svg>
+                                        <p>
+                                            No upcoming scheduled{' '}
+                                            {recurringIncomeEnabled ? 'transactions' : 'expenses'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {allScheduledItems.map((item, idx) => {
+                                            const isSelected = selectedScheduled.includes(
+                                                item.template_id
+                                            );
+                                            const isIncome = item.itemType === 'income';
+                                            return (
+                                                <div
+                                                    key={`scheduled-${item.itemType}-${item.template_id}-${idx}`}
+                                                    className={`bg-gray-50 dark:bg-dark-elevated rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
+                                                        isSelected ? 'ring-2 ring-bloom-pink' : ''
+                                                    } ${isIncome ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}
+                                                    onClick={() => {
+                                                        if (selectionMode) {
+                                                            setSelectedScheduled((prev) =>
+                                                                prev.includes(item.template_id)
+                                                                    ? prev.filter(
+                                                                          (id) =>
+                                                                              id !==
+                                                                              item.template_id
+                                                                      )
+                                                                    : [...prev, item.template_id]
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        {selectionMode && (
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => {}}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
+                                                            />
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h4 className="font-semibold text-gray-800 dark:text-dark-text">
+                                                                            {item.name}
+                                                                        </h4>
+                                                                        <span
+                                                                            className={`text-xs px-2 py-0.5 rounded-full ${
+                                                                                isIncome
+                                                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                            }`}
+                                                                        >
+                                                                            {isIncome
+                                                                                ? 'Income'
+                                                                                : 'Expense'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                                                                        {item.category}{' '}
+                                                                        {item.subcategory &&
+                                                                            `• ${item.subcategory}`}
+                                                                    </p>
+                                                                </div>
+                                                                <span
+                                                                    className={`text-lg font-bold ${
+                                                                        isIncome
+                                                                            ? 'text-green-600 dark:text-green-400'
+                                                                            : 'text-red-600 dark:text-red-400'
+                                                                    }`}
+                                                                >
+                                                                    {isIncome ? '+' : '-'}
+                                                                    {fcEur(item.amount * 100)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-xs text-gray-500 dark:text-dark-text-tertiary">
+                                                                <span>
+                                                                    {(() => {
+                                                                        const d = new Date(
+                                                                            item.date
+                                                                        );
+                                                                        return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`;
+                                                                    })()}
+                                                                </span>
+                                                                <span className="capitalize">
+                                                                    {item.frequency}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                 </>
             )}
         </div>

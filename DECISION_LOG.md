@@ -71,13 +71,30 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
     - When checked: calls `recurringIncomeAPI.create()` instead of `onAdd()`
     - Uses form ID for external submit button
 
-**Files Modified in Phase 5:**
+**Phase 6 Completed: Dashboard Scheduled Tab Integration**
 
-- `frontend/src/components/AddIncomeModal.jsx` - Added recurring option
+1. **Dashboard.jsx Updated** - Added support for scheduled income
+    - Added `scheduledIncome` state and `loadScheduledIncome()` function
+    - Uses `recurringGenerationAPI.previewIncome()` API
+    - Passes new props to TransactionList: `scheduledIncome`, `recurringIncomeEnabled`, `loadScheduledIncome`
+    - Loads scheduled income when switching to scheduled view
+
+2. **TransactionList.jsx Upgraded** - Unified scheduled items view
+    - Combines `scheduledExpenses` and `scheduledIncome` into sorted list
+    - Color-coded items: green border for income, red for expenses
+    - Type badges show "Income" or "Expense" for each item
+    - "Confirm Schedule" button generates both types simultaneously
+    - Delete selection properly identifies expense vs income IDs
+    - Empty state message adapts: "transactions" when flag on, "expenses" when off
+    - Feature flag gating: income items only shown when `recurringIncomeEnabled` is true
+
+**Files Modified in Phase 6:**
+
+- `frontend/src/pages/Dashboard.jsx` - Added scheduled income support
+- `frontend/src/components/dashboard/TransactionList.jsx` - Unified scheduled view
 
 **What's Next:**
 
-- Phase 6: Dashboard scheduled tab integration
 - Phase 7: Tests (backend + E2E)
 - Phase 8: Final documentation
 
