@@ -143,6 +143,7 @@ def get_current_salary_period():
                         Expense.date >= current_week.start_date,
                         Expense.date <= current_week.end_date,
                         Expense.is_fixed_bill == False,
+                        Expense.deleted_at.is_(None),
                     )
                 )
                 .scalar()
@@ -166,6 +167,7 @@ def get_current_salary_period():
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(BudgetPeriod.salary_period_id == salary_period.id)
@@ -204,6 +206,7 @@ def get_current_salary_period():
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Debit card",
                 )
             )
@@ -219,6 +222,7 @@ def get_current_salary_period():
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Credit card",
                 )
             )
@@ -383,6 +387,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(BudgetPeriod.salary_period_id == salary_period.id)
@@ -421,6 +426,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Debit card",
                 )
             )
@@ -436,6 +442,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Credit card",
                 )
             )
@@ -525,6 +532,7 @@ def get_salary_period_by_id(id):
                         Expense.date >= current_week.start_date,
                         Expense.date <= current_week.end_date,
                         Expense.is_fixed_bill == False,
+                        Expense.deleted_at.is_(None),
                     )
                 )
                 .scalar()
@@ -1108,6 +1116,7 @@ def get_week_leftover(id, week_number):
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(

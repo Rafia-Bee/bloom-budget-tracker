@@ -30,20 +30,20 @@
 
 ## 🏗️ Architecture Essentials
 
--   **Money:** All amounts stored as integer cents (`1500` = €15.00)
--   **Two-tier periods:** SalaryPeriod (parent) → BudgetPeriods (auto-created children). Never create BudgetPeriods manually.
--   **Balance modes:** `sync` (cumulative) vs `budget` (isolated per period)
--   **Database:** SQLite dev (`instance/bloom.db`), PostgreSQL prod (Neon)
--   **Production migrations:** Write SQL scripts manually → run on Neon SQL Editor
+- **Money:** All amounts stored as integer cents (`1500` = €15.00)
+- **Two-tier periods:** SalaryPeriod (parent) → BudgetPeriods (auto-created children). Never create BudgetPeriods manually.
+- **Balance modes:** `sync` (cumulative) vs `budget` (isolated per period)
+- **Database:** SQLite dev (`instance/bloom.db`), PostgreSQL prod (Neon)
+- **Production migrations:** Write SQL scripts manually → run on Neon SQL Editor
 
 ---
 
 ## 📝 Code & Commit Style
 
--   Keep files under 300 lines
--   File header documentation (no inline comments)
--   Commit format: `feat: description (#XX)`
--   Use `.venv` for Python
+- Keep files under 300 lines
+- File header documentation (no inline comments)
+- Commit format: `feat: description (#XX)`
+- Use `.venv` for Python
 
 ---
 
@@ -75,10 +75,24 @@ Update docs based on change type - see `docs/` for specific guides. Always updat
 
 **Rules:**
 
--   If editing files in `backend/` → read BACKEND_INSTRUCTIONS.md
--   If editing files in `frontend/` → read FRONTEND_INSTRUCTIONS.md
--   If writing SQL or changing database schema → read DATABASE_INSTRUCTIONS.md
--   Do NOT read instruction files for areas you're not working on
+- If editing files in `backend/` → read BACKEND_INSTRUCTIONS.md
+- If editing files in `frontend/` → read FRONTEND_INSTRUCTIONS.md
+- If writing SQL or changing database schema → read DATABASE_INSTRUCTIONS.md
+- Do NOT read instruction files for areas you're not working on
+
+---
+
+## ✅ Feature Change Checklists
+
+**ALWAYS read `.github/FEATURE_CHANGE_CHECKLISTS.md` when:**
+
+- Adding/modifying transactions (expenses, income)
+- Changing salary periods or budget periods
+- Working on recurring transactions
+- Modifying balance calculations
+- Adding new features that touch multiple areas
+
+This ensures all related code areas are updated consistently.
 
 ---
 
@@ -86,10 +100,11 @@ Update docs based on change type - see `docs/` for specific guides. Always updat
 
 Read these as needed for specific tasks:
 
--   Architecture: `docs/ARCHITECTURE.md`
--   API: `docs/API.md`
--   Testing: `docs/TESTING.md`, `frontend/TEST_COVERAGE.md`
--   Deployment: `docs/DEPLOYMENT.md`
--   Security: `docs/SECURITY.md`
--   Feature Flags: `docs/FEATURE_FLAGS.md`
--   Design colors: `tailwind.config.js`
+- Architecture: `docs/ARCHITECTURE.md`
+- API: `docs/API.md`
+- Testing: `docs/TESTING.md`, `frontend/TEST_COVERAGE.md`
+- Deployment: `docs/DEPLOYMENT.md`
+- Security: `docs/SECURITY.md`
+- Feature Flags: `docs/FEATURE_FLAGS.md`
+
+- Design colors: `tailwind.config.js`
