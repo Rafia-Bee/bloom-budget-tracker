@@ -9,12 +9,18 @@
  * Special behavior for CURRENT period (period that contains today):
  * - "Next" finds the next transaction date FROM TODAY (skips past dates)
  * - This helps users quickly find their next scheduled payment
+ *
+ * No-period mode:
+ * - Shows all transactions up to today
+ * - "Previous" navigates to past transaction dates
+ * - "Next" navigates to scheduled transaction dates (future)
  */
 
 import { useMemo } from 'react';
 
 function DateNavigator({
     transactionDates = [],
+    scheduledDates = [],
     currentViewDate,
     onDateChange,
     className = '',
@@ -52,6 +58,9 @@ function DateNavigator({
         return today;
     }, [currentViewDate, periodBoundaries, today]);
 
+    // Check if we're in no-period mode (no selectedPeriod)
+    const isNoPeriodMode = !selectedPeriod;
+
     // Find previous and next dates with transactions
     const { prevDate, nextDate, isOnToday } = useMemo(() => {
         const sortedDates = [...transactionDates].sort();
@@ -85,29 +94,45 @@ function DateNavigator({
         }
 
         // Find next date
-        // SPECIAL CASE: For current period with no specific date selected,
+        // SPECIAL CASE 1: For current period with no specific date selected,
         // "Next" should find the next transaction FROM TODAY, not from period start
+        // SPECIAL CASE 2: For no-period mode, "Next" should look at scheduled dates (future)
         let next = null;
-        const nextReferenceDate = isCurrentPeriod && !currentViewDate ? today : currentDateISO;
-        const nextRefIndex = sortedDates.indexOf(nextReferenceDate);
 
-        if (nextRefIndex >= 0 && nextRefIndex < sortedDates.length - 1) {
-            next = sortedDates[nextRefIndex + 1];
-        } else if (nextRefIndex === -1) {
-            // Reference date not in list - find the closest next date
-            // If we have period boundaries and are at/after end, find date after period end
-            if (periodBoundaries && nextReferenceDate >= periodBoundaries.end) {
-                for (let i = 0; i < sortedDates.length; i++) {
-                    if (sortedDates[i] > periodBoundaries.end) {
-                        next = sortedDates[i];
-                        break;
-                    }
+        if (isNoPeriodMode) {
+            // In no-period mode, "Next" looks for scheduled (future) transactions
+            const sortedScheduledDates = [...scheduledDates].sort();
+            const referenceDate = currentViewDate || today;
+
+            for (let i = 0; i < sortedScheduledDates.length; i++) {
+                if (sortedScheduledDates[i] > referenceDate) {
+                    next = sortedScheduledDates[i];
+                    break;
                 }
-            } else {
-                for (let i = 0; i < sortedDates.length; i++) {
-                    if (sortedDates[i] > nextReferenceDate) {
-                        next = sortedDates[i];
-                        break;
+            }
+        } else {
+            // Period mode: use existing logic
+            const nextReferenceDate = isCurrentPeriod && !currentViewDate ? today : currentDateISO;
+            const nextRefIndex = sortedDates.indexOf(nextReferenceDate);
+
+            if (nextRefIndex >= 0 && nextRefIndex < sortedDates.length - 1) {
+                next = sortedDates[nextRefIndex + 1];
+            } else if (nextRefIndex === -1) {
+                // Reference date not in list - find the closest next date
+                // If we have period boundaries and are at/after end, find date after period end
+                if (periodBoundaries && nextReferenceDate >= periodBoundaries.end) {
+                    for (let i = 0; i < sortedDates.length; i++) {
+                        if (sortedDates[i] > periodBoundaries.end) {
+                            next = sortedDates[i];
+                            break;
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < sortedDates.length; i++) {
+                        if (sortedDates[i] > nextReferenceDate) {
+                            next = sortedDates[i];
+                            break;
+                        }
                     }
                 }
             }
@@ -120,8 +145,10 @@ function DateNavigator({
         };
     }, [
         transactionDates,
+        scheduledDates,
         currentDateISO,
         today,
+        isNoPeriodMode,
         periodBoundaries,
         isCurrentPeriod,
         currentViewDate,

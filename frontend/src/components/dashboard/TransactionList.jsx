@@ -114,6 +114,10 @@ const TransactionList = ({
                 {transactionView === 'transactions' && (
                     <DateNavigator
                         transactionDates={transactionDates}
+                        scheduledDates={[
+                            ...scheduledExpenses.map((e) => e.date),
+                            ...scheduledIncome.map((i) => i.date),
+                        ]}
                         currentViewDate={currentViewDate}
                         onDateChange={handleDateNavigate}
                         selectedPeriod={currentPeriod}

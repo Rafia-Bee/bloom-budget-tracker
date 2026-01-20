@@ -132,21 +132,16 @@ function Dashboard({ setIsAuthenticated }) {
     }, []);
 
     useEffect(() => {
-        if (currentPeriod) {
-            loadIncomeStats();
-        }
+        loadIncomeStats();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPeriod]);
 
     useEffect(() => {
-        if (currentPeriod) {
-            loadTransactionsAndBalances();
-        }
+        loadTransactionsAndBalances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPeriod]);
 
     const loadTransactionsAndBalances = async () => {
-        if (!currentPeriod) return;
         try {
             // Load based on transactionType filter
             const promises = [];
@@ -198,7 +193,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadExpenses = async (page = 1, append = false) => {
-        if (!currentPeriod) return;
         try {
             // Build query params with filters
             const params = {
@@ -218,9 +212,14 @@ function Dashboard({ setIsAuthenticated }) {
                 activeFilters.search;
 
             if (!hasActiveFilters) {
-                // Use date range filtering instead of budget_period_id
-                params.start_date = currentPeriod.start_date;
-                params.end_date = currentPeriod.end_date;
+                if (currentPeriod) {
+                    // Use date range filtering based on period
+                    params.start_date = currentPeriod.start_date;
+                    params.end_date = currentPeriod.end_date;
+                } else {
+                    // No period: show all transactions up to today
+                    params.end_date = new Date().toISOString().split('T')[0];
+                }
             }
 
             // Apply active filters
@@ -265,7 +264,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadIncome = async (page = 1, append = false) => {
-        if (!currentPeriod) return;
         try {
             // Build query params with filters
             const params = {
@@ -282,9 +280,14 @@ function Dashboard({ setIsAuthenticated }) {
                 activeFilters.search;
 
             if (!hasActiveFilters) {
-                // Use date range filtering instead of budget_period_id
-                params.start_date = currentPeriod.start_date;
-                params.end_date = currentPeriod.end_date;
+                if (currentPeriod) {
+                    // Use date range filtering based on period
+                    params.start_date = currentPeriod.start_date;
+                    params.end_date = currentPeriod.end_date;
+                } else {
+                    // No period: show all transactions up to today
+                    params.end_date = new Date().toISOString().split('T')[0];
+                }
             }
 
             // Apply active filters
@@ -351,13 +354,19 @@ function Dashboard({ setIsAuthenticated }) {
         } else {
             setSelectedScheduled([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [transactionView, recurringIncomeEnabled]);
 
     useEffect(() => {
+        // Load scheduled data on initial mount for DateNavigator (no-period mode needs it)
+        // Note: Functions already check recurringIncomeEnabled internally
+        loadScheduledExpenses();
+        loadScheduledIncome();
+    }, [recurringIncomeEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
         // Reload transactions when active filters change
-        if (currentPeriod) {
-            loadTransactionsAndBalances();
-        }
+        loadTransactionsAndBalances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeFilters]);
 
@@ -564,8 +573,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadIncomeStats = async () => {
-        if (!currentPeriod) return;
-
         try {
             const response = await incomeAPI.getStats();
             setTotalIncome(response.data.total_income / 100); // Convert cents to euros
@@ -1190,44 +1197,49 @@ function Dashboard({ setIsAuthenticated }) {
                                 creditDebt={getCreditDebt()}
                             />
                         </div>
-
-                        {/* Transactions Section */}
-                        <TransactionList
-                            transactionView={transactionView}
-                            setTransactionView={setTransactionView}
-                            transactions={transactions}
-                            scheduledExpenses={scheduledExpenses}
-                            scheduledIncome={scheduledIncome}
-                            recurringIncomeEnabled={recurringIncomeEnabled}
-                            isLoadingMore={isLoadingMore}
-                            handleLoadMore={handleLoadMore}
-                            hasMoreExpenses={hasMoreExpenses}
-                            hasMoreIncome={hasMoreIncome}
-                            selectionMode={selectionMode}
-                            setSelectionMode={setSelectionMode}
-                            selectedTransactions={selectedTransactions}
-                            toggleTransactionSelection={toggleTransactionSelection}
-                            toggleSelectAll={toggleSelectAll}
-                            setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
-                            setSelectedTransaction={setSelectedTransaction}
-                            setEditType={setEditType}
-                            setShowEditModal={setShowEditModal}
-                            setDeleteConfirmation={setDeleteConfirmation}
-                            transactionDates={transactionDates}
-                            currentViewDate={currentViewDate}
-                            handleDateNavigate={handleDateNavigate}
-                            activeFilters={activeFilters}
-                            setShowFilterModal={setShowFilterModal}
-                            selectedScheduled={selectedScheduled}
-                            setSelectedScheduled={setSelectedScheduled}
-                            loadScheduledExpenses={loadScheduledExpenses}
-                            loadScheduledIncome={loadScheduledIncome}
-                            loadTransactionsAndBalances={loadTransactionsAndBalances}
-                            defaultCurrency={defaultCurrency}
-                            convertAmount={convertAmount}
-                            currentPeriod={currentPeriod}
-                        />
                     </>
+                )}
+
+                {/* Transactions Section - Show when there are transactions or scheduled items */}
+                {(transactions.length > 0 ||
+                    scheduledExpenses.length > 0 ||
+                    scheduledIncome.length > 0 ||
+                    currentPeriod) && (
+                    <TransactionList
+                        transactionView={transactionView}
+                        setTransactionView={setTransactionView}
+                        transactions={transactions}
+                        scheduledExpenses={scheduledExpenses}
+                        scheduledIncome={scheduledIncome}
+                        recurringIncomeEnabled={recurringIncomeEnabled}
+                        isLoadingMore={isLoadingMore}
+                        handleLoadMore={handleLoadMore}
+                        hasMoreExpenses={hasMoreExpenses}
+                        hasMoreIncome={hasMoreIncome}
+                        selectionMode={selectionMode}
+                        setSelectionMode={setSelectionMode}
+                        selectedTransactions={selectedTransactions}
+                        toggleTransactionSelection={toggleTransactionSelection}
+                        toggleSelectAll={toggleSelectAll}
+                        setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
+                        setSelectedTransaction={setSelectedTransaction}
+                        setEditType={setEditType}
+                        setShowEditModal={setShowEditModal}
+                        setDeleteConfirmation={setDeleteConfirmation}
+                        transactionDates={transactionDates}
+                        currentViewDate={currentViewDate}
+                        handleDateNavigate={handleDateNavigate}
+                        activeFilters={activeFilters}
+                        setShowFilterModal={setShowFilterModal}
+                        selectedScheduled={selectedScheduled}
+                        setSelectedScheduled={setSelectedScheduled}
+                        loadScheduledExpenses={loadScheduledExpenses}
+                        loadScheduledIncome={loadScheduledIncome}
+                        loadTransactionsAndBalances={loadTransactionsAndBalances}
+                        defaultCurrency={defaultCurrency}
+                        convertAmount={convertAmount}
+                        currentPeriod={currentPeriod}
+                    />
                 )}
             </main>
 
