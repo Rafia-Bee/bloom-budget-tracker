@@ -125,7 +125,11 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    if (!currentPeriod) {
+    // Check if there are any existing salary periods to show
+    const hasSalaryPeriods = periods.some((p) => p.weekly_budget !== undefined);
+
+    if (!currentPeriod && !hasSalaryPeriods) {
+        // No current period AND no past periods - just show create button
         return (
             <div className="bg-white dark:bg-dark-surface rounded-lg shadow px-4 py-2">
                 <button
@@ -145,29 +149,42 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                 className="bg-white dark:bg-dark-surface border-2 border-gray-300 dark:border-dark-border rounded-lg shadow px-4 py-2 hover:border-bloom-pink dark:hover:border-dark-pink hover:shadow-md transition flex items-center gap-3"
             >
                 <div className="text-left">
-                    <div className="flex items-center gap-2">
-                        <p className="text-xs text-bloom-pink dark:text-dark-pink font-semibold uppercase">
-                            {getPeriodTypeLabel(currentPeriod)}
-                        </p>
-                        {isPeriodCurrent(currentPeriod) && (
-                            <span className="bg-bloom-mint text-green-800 text-xs px-2 py-0.5 rounded-full">
-                                Current
-                            </span>
-                        )}
-                        {isPeriodPast(currentPeriod) && (
-                            <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                                Past
-                            </span>
-                        )}
-                        {isPeriodFuture(currentPeriod) && (
-                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
-                                Future
-                            </span>
-                        )}
-                    </div>
-                    <p className="font-semibold text-gray-800 dark:text-dark-text">
-                        {getPeriodLabel(currentPeriod)}
-                    </p>
+                    {currentPeriod ? (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs text-bloom-pink dark:text-dark-pink font-semibold uppercase">
+                                    {getPeriodTypeLabel(currentPeriod)}
+                                </p>
+                                {isPeriodCurrent(currentPeriod) && (
+                                    <span className="bg-bloom-mint text-green-800 text-xs px-2 py-0.5 rounded-full">
+                                        Current
+                                    </span>
+                                )}
+                                {isPeriodPast(currentPeriod) && (
+                                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                                        Past
+                                    </span>
+                                )}
+                                {isPeriodFuture(currentPeriod) && (
+                                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                                        Future
+                                    </span>
+                                )}
+                            </div>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text">
+                                {getPeriodLabel(currentPeriod)}
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-xs text-bloom-pink dark:text-dark-pink font-semibold uppercase">
+                                View Past Periods
+                            </p>
+                            <p className="font-semibold text-gray-800 dark:text-dark-text">
+                                Select a period
+                            </p>
+                        </>
+                    )}
                 </div>
                 <svg
                     className={`w-5 h-5 text-gray-500 dark:text-dark-text-tertiary transition-transform ${showCalendar ? 'rotate-180' : ''}`}
@@ -198,17 +215,18 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                 </p>
                             </div>
                             {/* Show "Current Period" button only when viewing a non-current period */}
-                            {getCurrentPeriodFromList() && !isPeriodCurrent(currentPeriod) && (
-                                <button
-                                    onClick={() => {
-                                        onPeriodChange(getCurrentPeriodFromList());
-                                        closeCalendar();
-                                    }}
-                                    className="text-xs text-white bg-green-600 hover:bg-green-700 transition px-3 py-1 rounded"
-                                >
-                                    ← Current Period
-                                </button>
-                            )}
+                            {getCurrentPeriodFromList() &&
+                                (!currentPeriod || !isPeriodCurrent(currentPeriod)) && (
+                                    <button
+                                        onClick={() => {
+                                            onPeriodChange(getCurrentPeriodFromList());
+                                            closeCalendar();
+                                        }}
+                                        className="text-xs text-white bg-green-600 hover:bg-green-700 transition px-3 py-1 rounded"
+                                    >
+                                        ← Current Period
+                                    </button>
+                                )}
                         </div>
                     </div>
 
@@ -223,7 +241,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                     const isCurrent = isPeriodCurrent(salaryPeriod);
                                     const isPast = isPeriodPast(salaryPeriod);
                                     const isFuture = isPeriodFuture(salaryPeriod);
-                                    const isSelected = currentPeriod.id === salaryPeriod.id;
+                                    const isSelected = currentPeriod?.id === salaryPeriod.id;
 
                                     // Find weeks that belong to this salary period
                                     const relatedWeeks = periods
@@ -405,7 +423,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                                 const weekCurrent =
                                                                     isPeriodCurrent(week);
                                                                 const weekSelected =
-                                                                    currentPeriod.id === week.id;
+                                                                    currentPeriod?.id === week.id;
 
                                                                 return (
                                                                     <button

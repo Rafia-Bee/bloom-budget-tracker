@@ -450,14 +450,19 @@ function Dashboard({ setIsAuthenticated }) {
                 // Use current week for both display AND expense tracking
                 setCurrentPeriod(weekPeriod);
             } else {
-                // Fall back to old system if no salary period
+                // No current salary period - don't fall back to past periods
+                // This ensures user sees "No Current Period" prompt
                 setCurrentWeekPeriod(null);
                 setViewingSalaryPeriodId(null);
                 setIsViewingCurrentPeriod(true);
+                setSalaryPeriodData(null); // Clear cached salary period data
+                // Only set currentPeriod if there's a true active standalone period (not from salary period)
+                // Don't fall back to allPeriodsRes.data[0] which might be a past period
                 if (activeRes?.data) {
                     setCurrentPeriod(activeRes.data);
-                } else if (allPeriodsRes.data.length > 0) {
-                    setCurrentPeriod(allPeriodsRes.data[0]);
+                } else {
+                    // Explicitly reset currentPeriod to null to show "No Current Period" prompt
+                    setCurrentPeriod(null);
                 }
 
                 // In sync mode with no active salary period, load global balances
@@ -702,8 +707,14 @@ function Dashboard({ setIsAuthenticated }) {
 
     // Determine if we're viewing the "today" period
     // Show indicator when viewing ANY period other than the current sub-period
+    // Also show when viewing a past/future period when there's NO current period
     const isViewingTodaysPeriod = () => {
-        if (!currentPeriod || !currentWeekPeriod) return true;
+        // If no current period selected, we're at "today" (the no-period state)
+        if (!currentPeriod) return true;
+
+        // If there's no current week (no active salary period), but we have a selected period,
+        // we're viewing a past/future period
+        if (!currentWeekPeriod) return false;
 
         // If selected is a sub-period (has week_number), compare with currentWeekPeriod
         if (currentPeriod.week_number) {
