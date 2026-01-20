@@ -221,6 +221,8 @@ export const userAPI = {
         api.put('/user-data/settings/payment-date-adjustment', {
             payment_date_adjustment: mode,
         }),
+    // Global balances (for when no salary period exists)
+    getGlobalBalances: () => api.get('/user-data/settings/global-balances'),
 };
 
 export const currencyAPI = {

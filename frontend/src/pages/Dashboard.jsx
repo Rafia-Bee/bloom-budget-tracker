@@ -12,6 +12,7 @@ import {
     budgetPeriodAPI,
     salaryPeriodAPI,
     recurringGenerationAPI,
+    userAPI,
 } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -457,6 +458,26 @@ function Dashboard({ setIsAuthenticated }) {
                     setCurrentPeriod(activeRes.data);
                 } else if (allPeriodsRes.data.length > 0) {
                     setCurrentPeriod(allPeriodsRes.data[0]);
+                }
+
+                // In sync mode with no active salary period, load global balances
+                // so user can still see their current balance state
+                try {
+                    const globalBalancesRes = await userAPI.getGlobalBalances();
+                    if (globalBalancesRes?.data?.has_initial_balances) {
+                        const gb = globalBalancesRes.data;
+                        setDebitBalance(gb.debit_balance / 100); // Convert cents to euros
+                        setCreditAvailable(gb.credit_available / 100);
+                        setCreditLimit(gb.credit_limit / 100);
+                        setTotalIncome(gb.total_income / 100);
+                        setAllTimeSpent(gb.all_time_spent / 100);
+                        setCurrentPeriodIncome(0);
+                        setCurrentPeriodDebitSpent(0);
+                        setCurrentPeriodCreditSpent(0);
+                    }
+                } catch (err) {
+                    // Silently fail - balances just won't show
+                    logError('loadGlobalBalances', err);
                 }
             }
 
@@ -1008,8 +1029,9 @@ function Dashboard({ setIsAuthenticated }) {
             <main className="max-w-7xl mx-auto px-4 py-8">
                 {!currentPeriod ? (
                     <>
-                        {/* Weekly Budget Card - shown even without period to trigger setup */}
-                        <div className="max-w-md mx-auto mb-8">
+                        {/* Balance Cards shown even without period when user has balances (sync mode) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Weekly Budget Card - shown even without period to trigger setup */}
                             <WeeklyBudgetCard
                                 ref={weeklyBudgetCardRef}
                                 onSetupClick={() => {
@@ -1032,28 +1054,23 @@ function Dashboard({ setIsAuthenticated }) {
                                     setCurrentPeriod(weekPeriod);
                                 }}
                                 initialSalaryPeriodData={salaryPeriodData}
+                                hasExistingPeriods={salaryPeriods.length > 0}
                             />
-                        </div>
-                        <div className="text-center py-12">
-                            <svg
-                                className="w-16 h-16 mx-auto mb-4 text-gray-300"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+
+                            {/* Show Balance Cards if user has set up initial balances (sync mode without period) */}
+                            {(creditLimit !== null || debitBalance > 0) && (
+                                <BalanceCards
+                                    currentPeriodDebitSpent={currentPeriodDebitSpent}
+                                    debitAvailable={getDebitAvailable()}
+                                    currentPeriodIncome={currentPeriodIncome}
+                                    totalIncome={totalIncome}
+                                    allTimeSpent={allTimeSpent}
+                                    creditLimit={creditLimit}
+                                    currentPeriodCreditSpent={currentPeriodCreditSpent}
+                                    creditAvailable={getCreditAvailable()}
+                                    creditDebt={getCreditDebt()}
                                 />
-                            </svg>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                No Budget Period
-                            </h2>
-                            <p className="text-gray-600 mb-4">
-                                Click "Set Up Weekly Budget" above to get started
-                            </p>
+                            )}
                         </div>
                     </>
                 ) : (
@@ -1147,6 +1164,7 @@ function Dashboard({ setIsAuthenticated }) {
                                 }}
                                 selectedPeriod={currentPeriod}
                                 initialSalaryPeriodData={salaryPeriodData}
+                                hasExistingPeriods={salaryPeriods.length > 0}
                             />
 
                             <BalanceCards
