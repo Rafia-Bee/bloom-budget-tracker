@@ -841,8 +841,23 @@ def create_salary_period():
             )
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
-        # Calculate budget: debit + credit allowance - fixed bills
-        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        # Get expected income (either from payload or auto-detect)
+        expected_income_list = data.get("expected_income", [])
+        if expected_income_list:
+            expected_income_total = sum(inc["amount"] for inc in expected_income_list)
+        else:
+            # Auto-detect from recurring income
+            recurring_incomes = (
+                RecurringIncome.active()
+                .filter_by(user_id=current_user_id, is_active=True)
+                .all()
+            )
+            expected_income_total = sum(inc.amount for inc in recurring_incomes)
+
+        # Calculate budget: debit + credit allowance + expected income - fixed bills
+        total_budget = (
+            debit_balance + credit_allowance + expected_income_total - fixed_bills_total
+        )
         remaining_amount = total_budget
         weekly_budget = remaining_amount // num_sub_periods
 

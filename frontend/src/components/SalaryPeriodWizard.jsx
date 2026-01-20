@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import api, { recurringExpenseAPI, userAPI, incomeAPI } from '../api';
+import api, { recurringExpenseAPI, userAPI, incomeAPI, expenseAPI } from '../api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { logError } from '../utils/logger';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
@@ -49,6 +49,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const [preview, setPreview] = useState(null);
     const [fixedBills, setFixedBills] = useState([]);
     const [expectedIncome, setExpectedIncome] = useState([]);
+    const [preExistingExpenses, setPreExistingExpenses] = useState({ count: 0, total: 0 });
 
     // Calculate max sub-periods based on date range
     const maxSubPeriods = useMemo(() => {
@@ -334,6 +335,23 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             const response = await api.post('/salary-periods/preview', payload);
 
             setPreview(response.data);
+
+            // Fetch pre-existing expenses in this date range (non-fixed bills only)
+            // These are expenses that already exist and will count toward the budget
+            try {
+                const expensesResponse = await expenseAPI.getAll({
+                    start_date: startDate,
+                    end_date: flexibleSubPeriodsEnabled ? endDate : response.data.end_date,
+                    is_fixed_bill: 'false',
+                });
+                const expenses = expensesResponse.data.expenses || [];
+                const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+                setPreExistingExpenses({ count: expenses.length, total });
+            } catch (expErr) {
+                logError('fetchPreExistingExpenses', expErr);
+                setPreExistingExpenses({ count: 0, total: 0 });
+            }
+
             setStep(3);
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to recalculate budget');
@@ -418,6 +436,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 credit_allowance: toEur(creditAllowance),
                 start_date: startDate,
                 fixed_bills: fixedBills,
+                expected_income: recurringIncomeEnabled ? expectedIncome : [],
             };
 
             // Add flexible sub-periods params when feature is enabled
@@ -1329,6 +1348,37 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     </div>
                                 )}
                             </div>
+
+                            {/* Pre-existing expenses warning */}
+                            {preExistingExpenses.count > 0 && (
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-amber-600 dark:text-amber-400 text-xl">
+                                            ⚠️
+                                        </span>
+                                        <div>
+                                            <p className="font-semibold text-amber-800 dark:text-amber-300">
+                                                Pre-existing Expenses Found
+                                            </p>
+                                            <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                                                You have{' '}
+                                                <span className="font-semibold">
+                                                    {preExistingExpenses.count} expense
+                                                    {preExistingExpenses.count > 1 ? 's' : ''}
+                                                </span>{' '}
+                                                totaling{' '}
+                                                <span className="font-semibold">
+                                                    {formatCurrency(fromEur(preExistingExpenses.total))}
+                                                </span>{' '}
+                                                already recorded in this date range. These will count
+                                                toward your{' '}
+                                                {flexibleSubPeriodsEnabled ? 'period' : 'weekly'}{' '}
+                                                budget.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             <div>
                                 <div className="flex justify-between items-center mb-3">

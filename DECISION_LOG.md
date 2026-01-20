@@ -4,48 +4,42 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-20: Production DB Replication & No Current Period Handling
+## 2026-01-20: Production Issues - No Period Mode & Wizard Fixes
 
-**Session Summary:** Created production-to-dev database replication with exact IDs, fixed dashboard display when no current salary period exists.
+**Session Summary:** Fixed multiple production issues for scenario where user's last period ended and needs to create a new one.
 
-**Production DB Replication Script**
+**Commits on branch `fix/production-issues-jan-2026`:**
 
-- **Problem**: Needed to replicate production user data to dev with exact primary keys/foreign keys preserved
-- **Solution**: Two-part script - SQL export query for Neon, Python import script for local SQLite
-- **Files Created**:
-    - `scripts/replicate_production_user.py` - Imports JSON export to local SQLite with exact IDs
-    - `scripts/neon_export_query.sql` - Combined SQL query for Neon export (gitignored)
-- **Usage**:
-    1. Run SQL query in Neon SQL Editor
-    2. Save result as `production_export.json`
-    3. Run `python scripts/replicate_production_user.py`
-- **Tables exported**: users, salary_periods, budget_periods, expenses, income, debts, recurring_expenses, recurring_income, goals, subcategories, user_defaults, credit_card_settings
+1. **Show transactions when no current period** - TransactionList now visible with day navigation even without active period
+2. **Fix recurring badge for income** - Badge now shows for income transactions with `recurring_income_id`
+3. **Exclude soft-deleted recurring income from wizard** - Changed to use `.active()` filter
+4. **Pre-fill balances in wizard** - Fetches global balances when no edit/rollover data
+5. **Pre-existing expenses warning** - Shows count/total of non-fixed-bill expenses in wizard step 3
+6. **Fix budget calculation** - Create endpoint now includes `expected_income` (was missing, causing negative budget error)
 
-**No Current Period Dashboard Fix**
+**Key Bug: Budget Creation Failed with Negative Budget**
 
-- **Problem**: When user's last salary period ended (no current period covering today):
-    - Dashboard was loading and displaying a past period instead of showing "No Current Period" prompt
-    - Balance cards weren't showing global balances correctly
-    - Credit card balance calculation was missing credit card payments
-- **Root Cause**: `loadPeriodsAndCurrentWeek()` fell back to `allPeriodsRes.data[0]` (most recent past period)
-- **Fixes**:
-    1. Removed fallback to past periods - now explicitly sets `currentPeriod` to `null`
-    2. Added `userAPI.getGlobalBalances()` endpoint for sync mode balances without active period
-    3. Fixed credit available calculation: `initial + payments - expenses`
-    4. PeriodSelector now shows dropdown with past periods even when `currentPeriod` is null
-    5. WeeklyBudgetCard shows contextual "No Current Period" message when past periods exist
-    6. `isViewingTodaysPeriod()` returns false when viewing past period with no current period
-    7. "Return to Today" button properly resets to no-period state
+- **Problem**: Preview showed €1,217.86 budget, but create failed with CHECK constraint (negative budget)
+- **Root Cause**: Preview calculated `debit + credit + expected_income - fixed_bills`, but create was missing `expected_income`
+- **Fix**: Added `expected_income` handling to create endpoint, frontend now passes it in payload
+
+**New Backend Feature: is_fixed_bill Filter**
+
+- Added `is_fixed_bill` query param to `/expenses` endpoint for server-side filtering
+- Used by wizard to fetch only non-fixed-bill expenses for pre-existing expense preview
+
+**GitHub Issue Created:** Orphaned Transactions Warning Banner (#XX) - for handling transactions in date gaps between periods
 
 **Files Changed:**
 
-- `backend/routes/user_data.py` - Added `/global-balances` endpoint
-- `frontend/src/api.js` - Added `userAPI.getGlobalBalances()`
-- `frontend/src/pages/Dashboard.jsx` - No-period handling, global balances loading
-- `frontend/src/components/WeeklyBudgetCard.jsx` - Contextual no-period messaging
-- `frontend/src/components/PeriodSelector.jsx` - Works when currentPeriod is null
+- `backend/routes/expenses.py` - Added `is_fixed_bill` filter param
+- `backend/routes/salary_periods.py` - Fixed soft-delete filter, added expected_income to create
+- `frontend/src/pages/Dashboard.jsx` - No-period transaction loading
+- `frontend/src/components/DateNavigator.jsx` - scheduledDates for no-period mode
+- `frontend/src/components/dashboard/TransactionList.jsx` - Fixed recurring badge for income
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Balance pre-fill, expected_income payload, pre-existing expenses preview
 
-**What's Next:** Testing balance calculations across different scenarios (sync vs budget mode)
+**What's Next:** Push branch and create PR when ready
 
 ---
 
