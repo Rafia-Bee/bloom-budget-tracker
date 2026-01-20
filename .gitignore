@@ -70,6 +70,9 @@ frontend/e2e/.auth/
 *.sqlite
 *.sqlite3
 
+# Development logs
+logs/
+
 # Production data exports (sensitive)
 production_export.json
 productionexport.json

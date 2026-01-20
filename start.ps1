@@ -51,12 +51,20 @@ if ($localIP) {
     Write-Host "🌐 Auto-detected LAN IP: $localIP" -ForegroundColor Yellow
 }
 
-# Start Flask Backend
+# Create logs directory if it doesn't exist
+$LogsDir = Join-Path $BloomDir "logs"
+if (-not (Test-Path $LogsDir)) {
+    New-Item -ItemType Directory -Path $LogsDir | Out-Null
+}
+$BackendLogFile = Join-Path $LogsDir "backend.log"
+
+# Start Flask Backend (with logging to file)
 Write-Host "`n🔧 Starting Flask Backend (Port 5000, Network Accessible)..." -ForegroundColor Cyan
+Write-Host "   📝 Logs: $BackendLogFile" -ForegroundColor DarkGray
 $backendJob = Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; `$env:DEV_MOBILE_ORIGINS='$devMobileOrigins'; python run.py --host=0.0.0.0"
+    "cd '$BloomDir'; & '$VenvPath\Scripts\Activate.ps1'; `$env:PYTHONPATH='$BloomDir'; `$env:DEV_MOBILE_ORIGINS='$devMobileOrigins'; python run.py --host=0.0.0.0 2>&1 | Tee-Object -FilePath '$BackendLogFile'"
 ) -PassThru -WindowStyle Normal
 
 Start-Sleep -Seconds 2
