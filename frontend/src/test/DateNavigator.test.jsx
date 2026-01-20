@@ -119,11 +119,13 @@ describe('DateNavigator', () => {
         });
 
         it('enables Next button when next dates exist', () => {
+            // When selectedPeriod is provided, Next uses transactionDates
             render(
                 <DateNavigator
                     transactionDates={['2024-12-20', '2024-12-24', '2024-12-26']}
                     currentViewDate="2024-12-24"
                     onDateChange={mockOnDateChange}
+                    selectedPeriod={{ start_date: '2024-12-01', end_date: '2024-12-31' }}
                 />
             );
 
@@ -198,11 +200,13 @@ describe('DateNavigator', () => {
         });
 
         it('navigates to next date on Next click', async () => {
+            // When selectedPeriod is provided, Next uses transactionDates
             render(
                 <DateNavigator
                     transactionDates={['2024-12-20', '2024-12-22', '2024-12-24', '2024-12-26']}
                     currentViewDate="2024-12-22"
                     onDateChange={mockOnDateChange}
+                    selectedPeriod={{ start_date: '2024-12-01', end_date: '2024-12-31' }}
                 />
             );
 
@@ -281,11 +285,13 @@ describe('DateNavigator', () => {
         });
 
         it('handles viewing date between transaction dates', async () => {
+            // When selectedPeriod is provided, Next uses transactionDates
             render(
                 <DateNavigator
                     transactionDates={['2024-12-20', '2024-12-26']}
                     currentViewDate="2024-12-23"
                     onDateChange={mockOnDateChange}
+                    selectedPeriod={{ start_date: '2024-12-01', end_date: '2024-12-31' }}
                 />
             );
 

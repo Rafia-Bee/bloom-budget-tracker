@@ -134,9 +134,28 @@ vi.mock('../api', () => ({
         updateRecurringLookahead: vi.fn(() => Promise.resolve({ data: {} })),
         getDefaultCurrency: vi.fn(() => Promise.resolve({ data: { default_currency: 'EUR' } })),
         setDefaultCurrency: vi.fn(() => Promise.resolve({ data: {} })),
+        getGlobalBalances: vi.fn(() =>
+            Promise.resolve({
+                data: {
+                    balance_start_date: null,
+                    user_initial_debit_balance: 0,
+                    user_initial_credit_limit: 150000,
+                    user_initial_credit_available: 150000,
+                    balance_mode: 'sync',
+                },
+            })
+        ),
     },
     currencyAPI: {
         getRates: vi.fn(() => Promise.resolve({ data: { rates: {} } })),
+        getSupportedCurrencies: vi.fn(() =>
+            Promise.resolve({
+                data: {
+                    currencies: ['EUR', 'USD', 'GBP'],
+                    default_currency: 'EUR',
+                },
+            })
+        ),
     },
     authAPI: {
         register: vi.fn(() => Promise.resolve({ data: {} })),
