@@ -631,10 +631,12 @@ def preview_salary_period():
             .all()
         )
 
-        # Auto-detect expected income from recurring income
-        expected_income_list = RecurringIncome.query.filter_by(
-            user_id=current_user_id, is_active=True
-        ).all()
+        # Auto-detect expected income from recurring income (exclude soft-deleted)
+        expected_income_list = (
+            RecurringIncome.active()
+            .filter_by(user_id=current_user_id, is_active=True)
+            .all()
+        )
 
         # Allow manual adjustments to fixed bills
         fixed_bill_adjustments = data.get("fixed_bills", [])

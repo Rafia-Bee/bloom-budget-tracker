@@ -131,6 +131,30 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editPeriod, rolloverData]);
 
+    // Fetch current global balances when creating new period (no edit/rollover)
+    useEffect(() => {
+        if (!editPeriod && !rolloverData) {
+            userAPI
+                .getGlobalBalances()
+                .then((response) => {
+                    const data = response.data;
+                    if (data.has_initial_balances) {
+                        // Pre-fill with current calculated balances
+                        setDebitBalance((fromEur(data.debit_balance) / 100).toFixed(2));
+                        setCreditAvailable((fromEur(data.credit_available) / 100).toFixed(2));
+                        if (data.credit_limit > 0) {
+                            setCreditLimit((fromEur(data.credit_limit) / 100).toFixed(2));
+                        }
+                    }
+                })
+                .catch((err) => {
+                    logError('loadGlobalBalances', err);
+                });
+        }
+        // Note: fromEur is stable (from context), so not needed in deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editPeriod, rolloverData]);
+
     // Load user's balance mode preference and balance_start_date when feature is enabled
     useEffect(() => {
         if (balanceModeEnabled) {
