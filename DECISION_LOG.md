@@ -4,6 +4,51 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-20: Production DB Replication & No Current Period Handling
+
+**Session Summary:** Created production-to-dev database replication with exact IDs, fixed dashboard display when no current salary period exists.
+
+**Production DB Replication Script**
+
+- **Problem**: Needed to replicate production user data to dev with exact primary keys/foreign keys preserved
+- **Solution**: Two-part script - SQL export query for Neon, Python import script for local SQLite
+- **Files Created**:
+    - `scripts/replicate_production_user.py` - Imports JSON export to local SQLite with exact IDs
+    - `scripts/neon_export_query.sql` - Combined SQL query for Neon export (gitignored)
+- **Usage**:
+    1. Run SQL query in Neon SQL Editor
+    2. Save result as `production_export.json`
+    3. Run `python scripts/replicate_production_user.py`
+- **Tables exported**: users, salary_periods, budget_periods, expenses, income, debts, recurring_expenses, recurring_income, goals, subcategories, user_defaults, credit_card_settings
+
+**No Current Period Dashboard Fix**
+
+- **Problem**: When user's last salary period ended (no current period covering today):
+    - Dashboard was loading and displaying a past period instead of showing "No Current Period" prompt
+    - Balance cards weren't showing global balances correctly
+    - Credit card balance calculation was missing credit card payments
+- **Root Cause**: `loadPeriodsAndCurrentWeek()` fell back to `allPeriodsRes.data[0]` (most recent past period)
+- **Fixes**:
+    1. Removed fallback to past periods - now explicitly sets `currentPeriod` to `null`
+    2. Added `userAPI.getGlobalBalances()` endpoint for sync mode balances without active period
+    3. Fixed credit available calculation: `initial + payments - expenses`
+    4. PeriodSelector now shows dropdown with past periods even when `currentPeriod` is null
+    5. WeeklyBudgetCard shows contextual "No Current Period" message when past periods exist
+    6. `isViewingTodaysPeriod()` returns false when viewing past period with no current period
+    7. "Return to Today" button properly resets to no-period state
+
+**Files Changed:**
+
+- `backend/routes/user_data.py` - Added `/global-balances` endpoint
+- `frontend/src/api.js` - Added `userAPI.getGlobalBalances()`
+- `frontend/src/pages/Dashboard.jsx` - No-period handling, global balances loading
+- `frontend/src/components/WeeklyBudgetCard.jsx` - Contextual no-period messaging
+- `frontend/src/components/PeriodSelector.jsx` - Works when currentPeriod is null
+
+**What's Next:** Testing balance calculations across different scenarios (sync vs budget mode)
+
+---
+
 ## 2026-01-19: Bug Fixes - Import Constraint & API Cleanup
 
 **Session Summary:** Fixed production import failure and simplified recurring generation API.
