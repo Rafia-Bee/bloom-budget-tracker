@@ -70,6 +70,17 @@ frontend/e2e/.auth/
 *.sqlite
 *.sqlite3
 
+# Development logs
+logs/
+
+# Production data exports (sensitive)
+production_export.json
+productionexport.json
+*production*.json
+
+# Production export query (contains user ID)
+scripts/neon_export_query.sql
+
 # OS
 .DS_Store
 Thumbs.db

@@ -42,6 +42,7 @@ def get_expenses():
     max_amount = request.args.get("max_amount", type=int)
     search = request.args.get("search")  # Search in name/notes
     include_markers = request.args.get("include_markers", "false").lower() == "true"
+    is_fixed_bill = request.args.get("is_fixed_bill")  # Filter by fixed bill status
 
     query = Expense.active().filter_by(user_id=current_user_id)
 
@@ -49,6 +50,11 @@ def get_expenses():
     # These are internal markers used for balance calculation, not real expenses
     if not include_markers:
         query = query.filter(Expense.name != "Pre-existing Credit Card Debt")
+
+    # Filter by is_fixed_bill if specified
+    if is_fixed_bill is not None:
+        is_fixed = is_fixed_bill.lower() == "true"
+        query = query.filter(Expense.is_fixed_bill == is_fixed)
 
     # Apply filters
     # Note: period_id parameter is deprecated - use start_date/end_date instead

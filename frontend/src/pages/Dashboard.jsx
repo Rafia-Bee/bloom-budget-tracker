@@ -12,6 +12,7 @@ import {
     budgetPeriodAPI,
     salaryPeriodAPI,
     recurringGenerationAPI,
+    userAPI,
 } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -131,21 +132,16 @@ function Dashboard({ setIsAuthenticated }) {
     }, []);
 
     useEffect(() => {
-        if (currentPeriod) {
-            loadIncomeStats();
-        }
+        loadIncomeStats();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPeriod]);
 
     useEffect(() => {
-        if (currentPeriod) {
-            loadTransactionsAndBalances();
-        }
+        loadTransactionsAndBalances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPeriod]);
 
     const loadTransactionsAndBalances = async () => {
-        if (!currentPeriod) return;
         try {
             // Load based on transactionType filter
             const promises = [];
@@ -197,7 +193,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadExpenses = async (page = 1, append = false) => {
-        if (!currentPeriod) return;
         try {
             // Build query params with filters
             const params = {
@@ -217,9 +212,14 @@ function Dashboard({ setIsAuthenticated }) {
                 activeFilters.search;
 
             if (!hasActiveFilters) {
-                // Use date range filtering instead of budget_period_id
-                params.start_date = currentPeriod.start_date;
-                params.end_date = currentPeriod.end_date;
+                if (currentPeriod) {
+                    // Use date range filtering based on period
+                    params.start_date = currentPeriod.start_date;
+                    params.end_date = currentPeriod.end_date;
+                } else {
+                    // No period: show all transactions up to today
+                    params.end_date = new Date().toISOString().split('T')[0];
+                }
             }
 
             // Apply active filters
@@ -264,7 +264,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadIncome = async (page = 1, append = false) => {
-        if (!currentPeriod) return;
         try {
             // Build query params with filters
             const params = {
@@ -281,9 +280,14 @@ function Dashboard({ setIsAuthenticated }) {
                 activeFilters.search;
 
             if (!hasActiveFilters) {
-                // Use date range filtering instead of budget_period_id
-                params.start_date = currentPeriod.start_date;
-                params.end_date = currentPeriod.end_date;
+                if (currentPeriod) {
+                    // Use date range filtering based on period
+                    params.start_date = currentPeriod.start_date;
+                    params.end_date = currentPeriod.end_date;
+                } else {
+                    // No period: show all transactions up to today
+                    params.end_date = new Date().toISOString().split('T')[0];
+                }
             }
 
             // Apply active filters
@@ -350,13 +354,19 @@ function Dashboard({ setIsAuthenticated }) {
         } else {
             setSelectedScheduled([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [transactionView, recurringIncomeEnabled]);
 
     useEffect(() => {
+        // Load scheduled data on initial mount for DateNavigator (no-period mode needs it)
+        // Note: Functions already check recurringIncomeEnabled internally
+        loadScheduledExpenses();
+        loadScheduledIncome();
+    }, [recurringIncomeEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
         // Reload transactions when active filters change
-        if (currentPeriod) {
-            loadTransactionsAndBalances();
-        }
+        loadTransactionsAndBalances();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeFilters]);
 
@@ -449,14 +459,39 @@ function Dashboard({ setIsAuthenticated }) {
                 // Use current week for both display AND expense tracking
                 setCurrentPeriod(weekPeriod);
             } else {
-                // Fall back to old system if no salary period
+                // No current salary period - don't fall back to past periods
+                // This ensures user sees "No Current Period" prompt
                 setCurrentWeekPeriod(null);
                 setViewingSalaryPeriodId(null);
                 setIsViewingCurrentPeriod(true);
+                setSalaryPeriodData(null); // Clear cached salary period data
+                // Only set currentPeriod if there's a true active standalone period (not from salary period)
+                // Don't fall back to allPeriodsRes.data[0] which might be a past period
                 if (activeRes?.data) {
                     setCurrentPeriod(activeRes.data);
-                } else if (allPeriodsRes.data.length > 0) {
-                    setCurrentPeriod(allPeriodsRes.data[0]);
+                } else {
+                    // Explicitly reset currentPeriod to null to show "No Current Period" prompt
+                    setCurrentPeriod(null);
+                }
+
+                // In sync mode with no active salary period, load global balances
+                // so user can still see their current balance state
+                try {
+                    const globalBalancesRes = await userAPI.getGlobalBalances();
+                    if (globalBalancesRes?.data?.has_initial_balances) {
+                        const gb = globalBalancesRes.data;
+                        setDebitBalance(gb.debit_balance / 100); // Convert cents to euros
+                        setCreditAvailable(gb.credit_available / 100);
+                        setCreditLimit(gb.credit_limit / 100);
+                        setTotalIncome(gb.total_income / 100);
+                        setAllTimeSpent(gb.all_time_spent / 100);
+                        setCurrentPeriodIncome(0);
+                        setCurrentPeriodDebitSpent(0);
+                        setCurrentPeriodCreditSpent(0);
+                    }
+                } catch (err) {
+                    // Silently fail - balances just won't show
+                    logError('loadGlobalBalances', err);
                 }
             }
 
@@ -538,8 +573,6 @@ function Dashboard({ setIsAuthenticated }) {
     };
 
     const loadIncomeStats = async () => {
-        if (!currentPeriod) return;
-
         try {
             const response = await incomeAPI.getStats();
             setTotalIncome(response.data.total_income / 100); // Convert cents to euros
@@ -681,8 +714,14 @@ function Dashboard({ setIsAuthenticated }) {
 
     // Determine if we're viewing the "today" period
     // Show indicator when viewing ANY period other than the current sub-period
+    // Also show when viewing a past/future period when there's NO current period
     const isViewingTodaysPeriod = () => {
-        if (!currentPeriod || !currentWeekPeriod) return true;
+        // If no current period selected, we're at "today" (the no-period state)
+        if (!currentPeriod) return true;
+
+        // If there's no current week (no active salary period), but we have a selected period,
+        // we're viewing a past/future period
+        if (!currentWeekPeriod) return false;
 
         // If selected is a sub-period (has week_number), compare with currentWeekPeriod
         if (currentPeriod.week_number) {
@@ -1008,8 +1047,9 @@ function Dashboard({ setIsAuthenticated }) {
             <main className="max-w-7xl mx-auto px-4 py-8">
                 {!currentPeriod ? (
                     <>
-                        {/* Weekly Budget Card - shown even without period to trigger setup */}
-                        <div className="max-w-md mx-auto mb-8">
+                        {/* Balance Cards shown even without period when user has balances (sync mode) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Weekly Budget Card - shown even without period to trigger setup */}
                             <WeeklyBudgetCard
                                 ref={weeklyBudgetCardRef}
                                 onSetupClick={() => {
@@ -1032,28 +1072,23 @@ function Dashboard({ setIsAuthenticated }) {
                                     setCurrentPeriod(weekPeriod);
                                 }}
                                 initialSalaryPeriodData={salaryPeriodData}
+                                hasExistingPeriods={salaryPeriods.length > 0}
                             />
-                        </div>
-                        <div className="text-center py-12">
-                            <svg
-                                className="w-16 h-16 mx-auto mb-4 text-gray-300"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+
+                            {/* Show Balance Cards if user has set up initial balances (sync mode without period) */}
+                            {(creditLimit !== null || debitBalance > 0) && (
+                                <BalanceCards
+                                    currentPeriodDebitSpent={currentPeriodDebitSpent}
+                                    debitAvailable={getDebitAvailable()}
+                                    currentPeriodIncome={currentPeriodIncome}
+                                    totalIncome={totalIncome}
+                                    allTimeSpent={allTimeSpent}
+                                    creditLimit={creditLimit}
+                                    currentPeriodCreditSpent={currentPeriodCreditSpent}
+                                    creditAvailable={getCreditAvailable()}
+                                    creditDebt={getCreditDebt()}
                                 />
-                            </svg>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                No Budget Period
-                            </h2>
-                            <p className="text-gray-600 mb-4">
-                                Click "Set Up Weekly Budget" above to get started
-                            </p>
+                            )}
                         </div>
                     </>
                 ) : (
@@ -1147,6 +1182,7 @@ function Dashboard({ setIsAuthenticated }) {
                                 }}
                                 selectedPeriod={currentPeriod}
                                 initialSalaryPeriodData={salaryPeriodData}
+                                hasExistingPeriods={salaryPeriods.length > 0}
                             />
 
                             <BalanceCards
@@ -1161,44 +1197,49 @@ function Dashboard({ setIsAuthenticated }) {
                                 creditDebt={getCreditDebt()}
                             />
                         </div>
-
-                        {/* Transactions Section */}
-                        <TransactionList
-                            transactionView={transactionView}
-                            setTransactionView={setTransactionView}
-                            transactions={transactions}
-                            scheduledExpenses={scheduledExpenses}
-                            scheduledIncome={scheduledIncome}
-                            recurringIncomeEnabled={recurringIncomeEnabled}
-                            isLoadingMore={isLoadingMore}
-                            handleLoadMore={handleLoadMore}
-                            hasMoreExpenses={hasMoreExpenses}
-                            hasMoreIncome={hasMoreIncome}
-                            selectionMode={selectionMode}
-                            setSelectionMode={setSelectionMode}
-                            selectedTransactions={selectedTransactions}
-                            toggleTransactionSelection={toggleTransactionSelection}
-                            toggleSelectAll={toggleSelectAll}
-                            setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
-                            setSelectedTransaction={setSelectedTransaction}
-                            setEditType={setEditType}
-                            setShowEditModal={setShowEditModal}
-                            setDeleteConfirmation={setDeleteConfirmation}
-                            transactionDates={transactionDates}
-                            currentViewDate={currentViewDate}
-                            handleDateNavigate={handleDateNavigate}
-                            activeFilters={activeFilters}
-                            setShowFilterModal={setShowFilterModal}
-                            selectedScheduled={selectedScheduled}
-                            setSelectedScheduled={setSelectedScheduled}
-                            loadScheduledExpenses={loadScheduledExpenses}
-                            loadScheduledIncome={loadScheduledIncome}
-                            loadTransactionsAndBalances={loadTransactionsAndBalances}
-                            defaultCurrency={defaultCurrency}
-                            convertAmount={convertAmount}
-                            currentPeriod={currentPeriod}
-                        />
                     </>
+                )}
+
+                {/* Transactions Section - Show when there are transactions or scheduled items */}
+                {(transactions.length > 0 ||
+                    scheduledExpenses.length > 0 ||
+                    scheduledIncome.length > 0 ||
+                    currentPeriod) && (
+                    <TransactionList
+                        transactionView={transactionView}
+                        setTransactionView={setTransactionView}
+                        transactions={transactions}
+                        scheduledExpenses={scheduledExpenses}
+                        scheduledIncome={scheduledIncome}
+                        recurringIncomeEnabled={recurringIncomeEnabled}
+                        isLoadingMore={isLoadingMore}
+                        handleLoadMore={handleLoadMore}
+                        hasMoreExpenses={hasMoreExpenses}
+                        hasMoreIncome={hasMoreIncome}
+                        selectionMode={selectionMode}
+                        setSelectionMode={setSelectionMode}
+                        selectedTransactions={selectedTransactions}
+                        toggleTransactionSelection={toggleTransactionSelection}
+                        toggleSelectAll={toggleSelectAll}
+                        setShowBulkDeleteConfirm={setShowBulkDeleteConfirm}
+                        setSelectedTransaction={setSelectedTransaction}
+                        setEditType={setEditType}
+                        setShowEditModal={setShowEditModal}
+                        setDeleteConfirmation={setDeleteConfirmation}
+                        transactionDates={transactionDates}
+                        currentViewDate={currentViewDate}
+                        handleDateNavigate={handleDateNavigate}
+                        activeFilters={activeFilters}
+                        setShowFilterModal={setShowFilterModal}
+                        selectedScheduled={selectedScheduled}
+                        setSelectedScheduled={setSelectedScheduled}
+                        loadScheduledExpenses={loadScheduledExpenses}
+                        loadScheduledIncome={loadScheduledIncome}
+                        loadTransactionsAndBalances={loadTransactionsAndBalances}
+                        defaultCurrency={defaultCurrency}
+                        convertAmount={convertAmount}
+                        currentPeriod={currentPeriod}
+                    />
                 )}
             </main>
 

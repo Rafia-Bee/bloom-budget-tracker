@@ -20,6 +20,7 @@ from backend.models.database import (
     Goal,
 )
 from backend.services.audit_service import log_admin_event
+from sqlalchemy import func, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 user_data_bp = Blueprint("user_data", __name__)
@@ -429,6 +430,188 @@ def update_balance_mode():
         return jsonify({"error": "Failed to update settings. Please try again."}), 500
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+
+@user_data_bp.route("/settings/global-balances", methods=["GET"])
+@jwt_required()
+def get_global_balances():
+    """
+    Get the user's current global balances (for use when no salary period exists).
+
+    In SYNC mode, this calculates the running balance from:
+    - User's initial balance settings
+    - All income (excluding 'Initial Balance' type which is already in initial balance)
+    - All expenses
+
+    Returns:
+        - debit_balance: Current debit card balance (cents)
+        - credit_available: Available credit (cents)
+        - credit_limit: Credit card limit (cents)
+        - balance_mode: Current mode
+        - has_initial_balances: Whether user has set up initial balances
+        - period_income: Income in viewing window (0 if no period)
+        - all_time_spent: Total debit spending ever
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        user = db.session.get(User, current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Check if user has set up initial balances
+        has_initial_balances = user.balance_start_date is not None
+
+        if not has_initial_balances:
+            return (
+                jsonify(
+                    {
+                        "debit_balance": 0,
+                        "credit_available": 0,
+                        "credit_limit": 0,
+                        "balance_mode": user.balance_mode,
+                        "has_initial_balances": False,
+                        "period_income": 0,
+                        "all_time_spent": 0,
+                    }
+                ),
+                200,
+            )
+
+        # Calculate global balance based on mode
+        if user.balance_mode == "sync":
+            # SYNC MODE: Calculate cumulative balance from all time
+
+            # Total income (excluding 'Initial Balance' entries)
+            total_income = (
+                db.session.query(func.coalesce(func.sum(Income.amount), 0))
+                .filter(
+                    and_(
+                        Income.user_id == current_user_id,
+                        Income.deleted_at.is_(None),
+                        Income.type != "Initial Balance",
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            # Total debit expenses
+            total_debit_expenses = (
+                db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == current_user_id,
+                        Expense.deleted_at.is_(None),
+                        Expense.payment_method == "Debit card",
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            # Total credit expenses (exclude Debt category - those are just markers)
+            total_credit_expenses = (
+                db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == current_user_id,
+                        Expense.deleted_at.is_(None),
+                        Expense.payment_method == "Credit card",
+                        Expense.category != "Debt",  # Exclude debt markers
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            # Total credit card payments (reduce debt, increase available)
+            total_credit_payments = (
+                db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+                .filter(
+                    and_(
+                        Expense.user_id == current_user_id,
+                        Expense.deleted_at.is_(None),
+                        Expense.category == "Debt Payments",
+                        Expense.subcategory == "Credit Card",
+                    )
+                )
+                .scalar()
+                or 0
+            )
+
+            # Calculate debit balance: initial + income - debit expenses
+            debit_balance = (
+                user.user_initial_debit_balance + total_income - total_debit_expenses
+            )
+
+            # Calculate credit available: initial available + payments - expenses
+            credit_available = (
+                user.user_initial_credit_available
+                + total_credit_payments
+                - total_credit_expenses
+            )
+
+            # Cap at limit (can't have more available than limit)
+            credit_limit = user.user_initial_credit_limit
+            credit_available = min(credit_available, credit_limit)
+            credit_available = max(credit_available, 0)  # Can't be negative
+
+        else:
+            # BUDGET MODE: No global balance concept, just return initial settings
+            debit_balance = user.user_initial_debit_balance
+            credit_available = user.user_initial_credit_available
+            credit_limit = user.user_initial_credit_limit
+
+        # All-time debit spending (excluding fixed bills)
+        all_time_spent = (
+            db.session.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(
+                and_(
+                    Expense.user_id == current_user_id,
+                    Expense.deleted_at.is_(None),
+                    Expense.payment_method == "Debit card",
+                    Expense.is_fixed_bill == False,
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        # Total income (all time)
+        total_income_all_time = (
+            db.session.query(func.coalesce(func.sum(Income.amount), 0))
+            .filter(
+                and_(
+                    Income.user_id == current_user_id,
+                    Income.deleted_at.is_(None),
+                )
+            )
+            .scalar()
+            or 0
+        )
+
+        return (
+            jsonify(
+                {
+                    "debit_balance": debit_balance,
+                    "credit_available": credit_available,
+                    "credit_limit": credit_limit,
+                    "balance_mode": user.balance_mode,
+                    "has_initial_balances": True,
+                    "period_income": 0,  # No period, so 0
+                    "all_time_spent": all_time_spent,
+                    "total_income": total_income_all_time,
+                }
+            ),
+            200,
+        )
+
+    except SQLAlchemyError as e:
+        current_app.logger.error(
+            f"[get_global_balances] Error: {str(e)}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load balances. Please try again."}), 500
 
 
 # Valid payment date adjustment modes (Issue #177)

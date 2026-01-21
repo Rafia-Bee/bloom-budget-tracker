@@ -5,6 +5,7 @@
  * Shows progress bar and prompts user to create salary period if none exists.
  * Supports flexible sub-periods when experimental feature is enabled.
  * Can display data for selected period when passed from parent (PeriodSelector).
+ * Shows contextual message when past periods exist but no current period is active.
  */
 
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
@@ -15,7 +16,14 @@ import { formatCurrency } from '../utils/formatters';
 
 const WeeklyBudgetCard = forwardRef(
     (
-        { onSetupClick, onAllocateClick, onWeekChange, selectedPeriod, initialSalaryPeriodData },
+        {
+            onSetupClick,
+            onAllocateClick,
+            onWeekChange,
+            selectedPeriod,
+            initialSalaryPeriodData,
+            hasExistingPeriods,
+        },
         ref
     ) => {
         // Initialize with provided data to skip initial API call
@@ -209,6 +217,9 @@ const WeeklyBudgetCard = forwardRef(
         }
 
         if (error === 'no_period') {
+            // Show different message based on whether periods exist but none are current
+            const hasPeriodsButNoneCurrent = hasExistingPeriods;
+
             return (
                 <div className="bg-gradient-to-br from-bloom-pink to-pink-600 dark:from-dark-pink dark:to-dark-pink-hover rounded-2xl shadow-lg p-6 text-white">
                     <div className="flex flex-col items-center text-center py-4">
@@ -219,26 +230,38 @@ const WeeklyBudgetCard = forwardRef(
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
+                                {hasPeriodsButNoneCurrent ? (
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                ) : (
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                )}
                             </svg>
                         </div>
                         <h3 className="text-xl font-bold mb-2">
-                            Set Up {flexibleSubPeriodsEnabled ? 'Budget Periods' : 'Weekly Budget'}
+                            {hasPeriodsButNoneCurrent
+                                ? 'No Current Period'
+                                : `Set Up ${flexibleSubPeriodsEnabled ? 'Budget Periods' : 'Weekly Budget'}`}
                         </h3>
                         <p className="text-sm opacity-90 mb-4">
-                            Divide your salary into{' '}
-                            {flexibleSubPeriodsEnabled ? 'budget periods' : '4 weekly budgets'}
+                            {hasPeriodsButNoneCurrent
+                                ? 'Your last budget period has ended. Set up a new one to continue tracking.'
+                                : `Divide your salary into ${flexibleSubPeriodsEnabled ? 'budget periods' : '4 weekly budgets'}`}
                         </p>
                         <button
                             onClick={onSetupClick}
                             className="bg-white dark:bg-dark-surface text-bloom-pink dark:text-dark-pink px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition"
                         >
-                            Get Started
+                            {hasPeriodsButNoneCurrent ? 'Set Up Now' : 'Get Started'}
                         </button>
                     </div>
                 </div>

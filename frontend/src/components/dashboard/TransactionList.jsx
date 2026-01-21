@@ -114,6 +114,10 @@ const TransactionList = ({
                 {transactionView === 'transactions' && (
                     <DateNavigator
                         transactionDates={transactionDates}
+                        scheduledDates={[
+                            ...scheduledExpenses.map((e) => e.date),
+                            ...scheduledIncome.map((i) => i.date),
+                        ]}
                         currentViewDate={currentViewDate}
                         onDateChange={handleDateNavigate}
                         selectedPeriod={currentPeriod}
@@ -297,9 +301,12 @@ const TransactionList = ({
                                                                         Fixed Bill
                                                                     </span>
                                                                 )}
-                                                                {transaction.transactionType ===
+                                                                {((transaction.transactionType ===
                                                                     'expense' &&
-                                                                    transaction.recurring_template_id && (
+                                                                    transaction.recurring_template_id) ||
+                                                                    (transaction.transactionType ===
+                                                                        'income' &&
+                                                                        transaction.recurring_income_id)) && (
                                                                         <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                                                                             <svg
                                                                                 className="w-3 h-3"

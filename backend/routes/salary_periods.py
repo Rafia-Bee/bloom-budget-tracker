@@ -143,6 +143,7 @@ def get_current_salary_period():
                         Expense.date >= current_week.start_date,
                         Expense.date <= current_week.end_date,
                         Expense.is_fixed_bill == False,
+                        Expense.deleted_at.is_(None),
                     )
                 )
                 .scalar()
@@ -166,6 +167,7 @@ def get_current_salary_period():
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(BudgetPeriod.salary_period_id == salary_period.id)
@@ -204,6 +206,7 @@ def get_current_salary_period():
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Debit card",
                 )
             )
@@ -219,6 +222,7 @@ def get_current_salary_period():
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Credit card",
                 )
             )
@@ -383,6 +387,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(BudgetPeriod.salary_period_id == salary_period.id)
@@ -421,6 +426,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Debit card",
                 )
             )
@@ -436,6 +442,7 @@ def get_salary_period_by_id(id):
                     Expense.date >= salary_period.start_date,
                     Expense.date <= salary_period.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                     Expense.payment_method == "Credit card",
                 )
             )
@@ -525,6 +532,7 @@ def get_salary_period_by_id(id):
                         Expense.date >= current_week.start_date,
                         Expense.date <= current_week.end_date,
                         Expense.is_fixed_bill == False,
+                        Expense.deleted_at.is_(None),
                     )
                 )
                 .scalar()
@@ -631,10 +639,12 @@ def preview_salary_period():
             .all()
         )
 
-        # Auto-detect expected income from recurring income
-        expected_income_list = RecurringIncome.query.filter_by(
-            user_id=current_user_id, is_active=True
-        ).all()
+        # Auto-detect expected income from recurring income (exclude soft-deleted)
+        expected_income_list = (
+            RecurringIncome.active()
+            .filter_by(user_id=current_user_id, is_active=True)
+            .all()
+        )
 
         # Allow manual adjustments to fixed bills
         fixed_bill_adjustments = data.get("fixed_bills", [])
@@ -839,8 +849,23 @@ def create_salary_period():
             )
             fixed_bills_total = sum(bill.amount for bill in fixed_bills)
 
-        # Calculate budget: debit + credit allowance - fixed bills
-        total_budget = debit_balance + credit_allowance - fixed_bills_total
+        # Get expected income (either from payload or auto-detect)
+        expected_income_list = data.get("expected_income", [])
+        if expected_income_list:
+            expected_income_total = sum(inc["amount"] for inc in expected_income_list)
+        else:
+            # Auto-detect from recurring income
+            recurring_incomes = (
+                RecurringIncome.active()
+                .filter_by(user_id=current_user_id, is_active=True)
+                .all()
+            )
+            expected_income_total = sum(inc.amount for inc in recurring_incomes)
+
+        # Calculate budget: debit + credit allowance + expected income - fixed bills
+        total_budget = (
+            debit_balance + credit_allowance + expected_income_total - fixed_bills_total
+        )
         remaining_amount = total_budget
         weekly_budget = remaining_amount // num_sub_periods
 
@@ -1091,6 +1116,7 @@ def get_week_leftover(id, week_number):
                     Expense.date >= BudgetPeriod.start_date,
                     Expense.date <= BudgetPeriod.end_date,
                     Expense.is_fixed_bill == False,
+                    Expense.deleted_at.is_(None),
                 ),
             )
             .filter(

@@ -68,23 +68,46 @@ export default defineConfig({
             testMatch: /unauthenticated\.spec\.js/,
             use: { ...devices['Desktop Chrome'] },
         },
+        // Balance-related tests run serially in TWO stages to avoid shared user data conflicts
+        // These tests modify user-level balance fields that affect each other
+        // Stage 1: balance-mode tests
+        {
+            name: 'balance-mode-tests',
+            testMatch: /balance-mode\.spec\.js/,
+            use: { ...devices['Desktop Chrome'] },
+            fullyParallel: false,
+            dependencies: ['setup'],
+        },
+        // Stage 2: balance-accumulation tests (depends on balance-mode to ensure serial)
+        {
+            name: 'balance-accumulation-tests',
+            testMatch: /balance-accumulation\.spec\.js/,
+            use: { ...devices['Desktop Chrome'] },
+            fullyParallel: false,
+            dependencies: ['balance-mode-tests'],
+        },
         // Main test suite - auth cookies restored via fixtures.js
         // (storageState removed - doesn't support HttpOnly cookies)
         {
             name: 'chromium',
-            testIgnore: /unauthenticated\.spec\.js/,
+            testIgnore: [/unauthenticated\.spec\.js/, /balance-(mode|accumulation)\.spec\.js/],
             use: {
                 ...devices['Desktop Chrome'],
             },
             dependencies: ['setup'],
         },
         // Mobile viewport for responsive testing (skip in CI to save time)
+        // Balance tests excluded from mobile - they only test backend balance logic,
+        // not UI responsiveness, and running them twice would slow down the suite
         ...(process.env.CI
             ? []
             : [
                   {
                       name: 'mobile',
-                      testIgnore: /unauthenticated\.spec\.js/,
+                      testIgnore: [
+                          /unauthenticated\.spec\.js/,
+                          /balance-(mode|accumulation)\.spec\.js/,
+                      ],
                       use: {
                           ...devices['iPhone 13'],
                       },

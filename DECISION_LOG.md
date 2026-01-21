@@ -4,6 +4,52 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-20: Production Issues - No Period Mode & Wizard Fixes
+
+**Session Summary:** Fixed multiple production issues for scenario where user's last period ended and needs to create a new one.
+
+**Commits on branch `fix/production-issues-jan-2026`:**
+
+1. **Show transactions when no current period** - TransactionList now visible with day navigation even without active period
+2. **Fix recurring badge for income** - Badge now shows for income transactions with `recurring_income_id`
+3. **Exclude soft-deleted recurring income from wizard** - Changed to use `.active()` filter
+4. **Pre-fill balances in wizard** - Fetches global balances when no edit/rollover data
+5. **Pre-existing expenses warning** - Shows count/total of non-fixed-bill expenses in wizard step 3
+6. **Fix budget calculation** - Create endpoint now includes `expected_income` (was missing, causing negative budget error)
+7. **Fix soft-delete filter in budget spent calculation** - 11 expense queries were missing `deleted_at.is_(None)`
+
+**Key Bug 1: Budget Creation Failed with Negative Budget**
+
+- **Problem**: Preview showed €1,217.86 budget, but create failed with CHECK constraint (negative budget)
+- **Root Cause**: Preview calculated `debit + credit + expected_income - fixed_bills`, but create was missing `expected_income`
+- **Fix**: Added `expected_income` handling to create endpoint, frontend now passes it in payload
+
+**Key Bug 2: Budget Spent Including Deleted Expenses**
+
+- **Problem**: Period 1 showed €316.45 spent, but only €68.95 of active non-fixed expenses existed
+- **Root Cause**: Expense sum queries in salary*periods.py had `is_fixed_bill == False` but NOT `deleted_at.is*(None)`
+- **Fix**: Added `Expense.deleted_at.is_(None)` to all 11 expense queries
+
+**New Backend Feature: is_fixed_bill Filter**
+
+- Added `is_fixed_bill` query param to `/expenses` endpoint for server-side filtering
+- Used by wizard to fetch only non-fixed-bill expenses for pre-existing expense preview
+
+**GitHub Issue Created:** Orphaned Transactions Warning Banner - for handling transactions in date gaps between periods
+
+**Files Changed:**
+
+- `backend/routes/expenses.py` - Added `is_fixed_bill` filter param
+- `backend/routes/salary_periods.py` - Fixed soft-delete filter, added expected_income to create, added deleted_at to 11 queries
+- `frontend/src/pages/Dashboard.jsx` - No-period transaction loading
+- `frontend/src/components/DateNavigator.jsx` - scheduledDates for no-period mode
+- `frontend/src/components/dashboard/TransactionList.jsx` - Fixed recurring badge for income
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Balance pre-fill, expected_income payload, pre-existing expenses preview
+
+**What's Next:** Push branch and create PR when ready
+
+---
+
 ## 2026-01-19: Bug Fixes - Import Constraint & API Cleanup
 
 **Session Summary:** Fixed production import failure and simplified recurring generation API.
