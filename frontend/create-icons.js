@@ -28,7 +28,8 @@ async function createIcons() {
         try {
             await sharp(SOURCE_IMAGE)
                 .resize(icon.size, icon.size, {
-                    fit: 'contain',
+                    fit: 'cover',
+                    position: 'center',
                     background: { r: 255, g: 255, b: 255, alpha: 0 }, // Transparent background
                 })
                 .png()
