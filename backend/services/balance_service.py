@@ -148,9 +148,10 @@ def _calculate_debit_balance(
         #   Balance = Anchor + Past Period Balances + Income - Expenses
 
         user = User.query.get(user_id)
-        if user and user.user_initial_debit_balance:
+        if user and user.user_initial_debit_balance is not None:
             anchor_balance = user.user_initial_debit_balance
-            anchor_date = user.balance_start_date
+            # Fallback to salary_period.start_date if balance_start_date is None (Issue #180 Bug #3)
+            anchor_date = user.balance_start_date or salary_period.start_date
         else:
             # Fallback: use earliest period's balance
             earliest_period = (
@@ -166,7 +167,8 @@ def _calculate_debit_balance(
                 anchor_date = salary_period.start_date
 
         # Check if viewing a PAST period (before anchor date)
-        if salary_period.start_date < anchor_date:
+        # Guard against None anchor_date (Issue #180 Bug #3)
+        if anchor_date is not None and salary_period.start_date < anchor_date:
             # Past period: Show isolated balance (like budget mode)
             starting_balance = salary_period.initial_debit_balance
             period_start = salary_period.start_date
@@ -208,20 +210,24 @@ def _calculate_debit_balance(
         # Current or future period: Calculate cumulative balance
         # Sum past period balances (periods that START before anchor date)
         # These are treated as "past income" to be accounted for
-        past_period_balances = (
-            db.session.query(
-                db.func.coalesce(db.func.sum(SalaryPeriod.initial_debit_balance), 0)
-            )
-            .filter(
-                and_(
-                    SalaryPeriod.user_id == user_id,
-                    SalaryPeriod.is_active == True,  # noqa: E712
-                    SalaryPeriod.start_date < anchor_date,
+        # Guard against None anchor_date (Issue #180 Bug #3)
+        if anchor_date is not None:
+            past_period_balances = (
+                db.session.query(
+                    db.func.coalesce(db.func.sum(SalaryPeriod.initial_debit_balance), 0)
                 )
+                .filter(
+                    and_(
+                        SalaryPeriod.user_id == user_id,
+                        SalaryPeriod.is_active == True,  # noqa: E712
+                        SalaryPeriod.start_date < anchor_date,
+                    )
+                )
+                .scalar()
+                or 0
             )
-            .scalar()
-            or 0
-        )
+        else:
+            past_period_balances = 0
 
         # Calculate from earliest date (could be past period or anchor)
         all_periods = (
@@ -349,10 +355,11 @@ def _calculate_credit_available(
         # misrepresent the actual credit card state.
 
         user = User.query.get(user_id)
-        if user and user.user_initial_credit_available:
+        if user and user.user_initial_credit_available is not None:
             # Use stored credit available directly (simplified in Phase 6)
             anchor_available = user.user_initial_credit_available
-            anchor_date = user.balance_start_date
+            # Fallback to salary_period.start_date if balance_start_date is None (Issue #180 Bug #3)
+            anchor_date = user.balance_start_date or salary_period.start_date
         else:
             # Fallback: use earliest period's credit balance
             earliest_period = (
@@ -368,7 +375,8 @@ def _calculate_credit_available(
                 anchor_date = salary_period.start_date
 
         # Check if viewing a PAST period (before anchor date)
-        if salary_period.start_date < anchor_date:
+        # Guard against None anchor_date (Issue #180 Bug #3)
+        if anchor_date is not None and salary_period.start_date < anchor_date:
             # Past period: Show isolated balance (like budget mode)
             starting_available = salary_period.initial_credit_balance
             period_start = salary_period.start_date

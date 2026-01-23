@@ -4,6 +4,41 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-23: Issue #180 Remaining Bug Fixes
+
+**Session Summary:** Fixed remaining bugs from Issue #180 that weren't addressed by PR #182.
+
+**Branch:** `fix/issue-180-remaining-bugs`
+
+**Bugs Fixed:**
+
+1. **Bug #3: Null anchor_date TypeError** - `balance_service.py`
+    - **Problem**: `TypeError: '<' not supported between 'datetime.date' and 'NoneType'` when `user.balance_start_date` is None
+    - **Root Cause**: Code set `anchor_date = user.balance_start_date` which could be None, then compared against it
+    - **Fix**: Added fallback `anchor_date = user.balance_start_date or salary_period.start_date` for both debit and credit calculations
+    - Also wrapped `past_period_balances` query in `if anchor_date is not None` guard
+
+2. **Bug #5: RecurringIncome Missing from Export/Import** - `export_import.py`
+    - **Problem**: Recurring income templates not included in data export/import
+    - **Fix**: Added `RecurringIncome` to imports, export handler (after recurring_expenses), import handler with duplicate detection, and skipped counts display
+
+3. **Bug #6: Delete-All Missing RecurringIncome** - `user_data.py`
+    - **Problem**: "Delete All Data" endpoint didn't clear recurring income
+    - **Fix**: Added `RecurringIncome` to imports, count, total_records sum, and delete statement
+
+**Test Verification:** Created `backend/tests/test_issue_180_verification.py` with 7 tests confirming all bugs are fixed
+
+**Files Changed:**
+
+- `backend/services/balance_service.py` - Null anchor_date handling (lines ~153, ~170, ~225, ~361)
+- `backend/routes/export_import.py` - RecurringIncome export/import support
+- `backend/routes/user_data.py` - RecurringIncome deletion in delete-all
+- `backend/tests/test_issue_180_verification.py` - Verification test suite
+
+**What's Next:** Run full backend tests, then commit and push
+
+---
+
 ## 2026-01-20: Production Issues - No Period Mode & Wizard Fixes
 
 **Session Summary:** Fixed multiple production issues for scenario where user's last period ended and needs to create a new one.

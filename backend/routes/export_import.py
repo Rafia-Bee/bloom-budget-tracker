@@ -11,6 +11,7 @@ from backend.models.database import (
     db,
     Debt,
     RecurringExpense,
+    RecurringIncome,
     SalaryPeriod,
     BudgetPeriod,
     Income,
@@ -206,6 +207,30 @@ def export_data():
                 for r in recurring
             ]
 
+        # Export Recurring Income (Issue #180 Bug #5)
+        if "recurring_income" in export_types:
+            recurring_income = (
+                RecurringIncome.active()
+                .filter_by(user_id=current_user_id, is_active=True)
+                .all()
+            )
+            export_data["data"]["recurring_income"] = [
+                {
+                    "name": ri.name,
+                    "amount": ri.amount,
+                    "income_type": ri.income_type,
+                    "currency": ri.currency,
+                    "frequency": ri.frequency,
+                    "frequency_value": ri.frequency_value,
+                    "day_of_month": ri.day_of_month,
+                    "day_of_week": ri.day_of_week,
+                    "start_date": ri.start_date.isoformat(),
+                    "end_date": ri.end_date.isoformat() if ri.end_date else None,
+                    "notes": ri.notes,
+                }
+                for ri in recurring_income
+            ]
+
         # Export Salary Periods
         if "salary_periods" in export_types:
             salary_periods = (
@@ -371,6 +396,7 @@ def import_data():
         imported_counts = {
             "debts": 0,
             "recurring_expenses": 0,
+            "recurring_income": 0,
             "salary_periods": 0,
             "expenses": 0,
             "income": 0,
@@ -379,6 +405,7 @@ def import_data():
         skipped_counts = {
             "debts": 0,
             "recurring_expenses": 0,
+            "recurring_income": 0,
             "salary_periods": 0,
             "expenses": 0,
             "income": 0,
@@ -593,6 +620,124 @@ def import_data():
                     recurring_template_map[template_key] = recurring
 
                     imported_counts["recurring_expenses"] += 1
+
+            # Import Recurring Income (Issue #180 Bug #5)
+            # Create a map to link imported income entries to new recurring template IDs
+            recurring_income_map = {}
+
+            if "recurring_income" in data["data"]:
+                for recurring_data in data["data"]["recurring_income"]:
+                    start_date = datetime.fromisoformat(
+                        recurring_data["start_date"].replace("Z", "+00:00")
+                    )
+                    end_date = (
+                        datetime.fromisoformat(
+                            recurring_data["end_date"].replace("Z", "+00:00")
+                        )
+                        if recurring_data.get("end_date")
+                        else None
+                    )
+
+                    # Check for duplicate: same name, amount, and income_type
+                    existing_recurring = (
+                        RecurringIncome.active()
+                        .filter_by(
+                            user_id=current_user_id,
+                            name=recurring_data["name"],
+                            amount=recurring_data["amount"],
+                            income_type=recurring_data.get("income_type", "Salary"),
+                            is_active=True,
+                        )
+                        .first()
+                    )
+
+                    if existing_recurring:
+                        skipped_counts["recurring_income"] += 1
+                        continue
+
+                    # Calculate next_due_date based on frequency
+                    next_due = start_date.date()
+                    today = datetime.now().date()
+
+                    # If start date is in the past, calculate the next occurrence after today
+                    if next_due < today:
+                        if recurring_data["frequency"] == "monthly":
+                            day_of_month = recurring_data.get(
+                                "day_of_month", start_date.day
+                            )
+                            # Find next occurrence of this day
+                            if today.day < day_of_month:
+                                # This month
+                                try:
+                                    next_due = datetime(
+                                        today.year, today.month, day_of_month
+                                    ).date()
+                                except ValueError:
+                                    next_due = datetime(
+                                        today.year, today.month, 28
+                                    ).date()
+                            else:
+                                # Next month
+                                next_month = today.month + 1
+                                next_year = today.year
+                                if next_month > 12:
+                                    next_month = 1
+                                    next_year += 1
+                                try:
+                                    next_due = datetime(
+                                        next_year, next_month, day_of_month
+                                    ).date()
+                                except ValueError:
+                                    next_due = datetime(
+                                        next_year, next_month, 28
+                                    ).date()
+                        elif recurring_data["frequency"] == "weekly":
+                            # Calculate next weekly occurrence
+                            days_diff = (today - next_due).days
+                            weeks_passed = days_diff // 7
+                            next_due = next_due + timedelta(days=(weeks_passed + 1) * 7)
+                        elif recurring_data["frequency"] == "biweekly":
+                            days_diff = (today - next_due).days
+                            periods_passed = days_diff // 14
+                            next_due = next_due + timedelta(
+                                days=(periods_passed + 1) * 14
+                            )
+                        elif recurring_data["frequency"] == "custom":
+                            days_diff = (today - next_due).days
+                            freq_value = recurring_data.get("frequency_value", 1)
+                            periods_passed = days_diff // freq_value
+                            next_due = next_due + timedelta(
+                                days=(periods_passed + 1) * freq_value
+                            )
+
+                    recurring = RecurringIncome(
+                        user_id=current_user_id,
+                        name=recurring_data["name"],
+                        amount=recurring_data["amount"],
+                        income_type=recurring_data.get("income_type", "Salary"),
+                        currency=recurring_data.get("currency", "EUR"),
+                        frequency=recurring_data["frequency"],
+                        frequency_value=recurring_data.get("frequency_value"),
+                        day_of_month=recurring_data.get("day_of_month"),
+                        day_of_week=recurring_data.get("day_of_week"),
+                        start_date=start_date,
+                        end_date=end_date,
+                        next_due_date=next_due,
+                        is_active=True,
+                        notes=recurring_data.get("notes", ""),
+                    )
+                    db.session.add(recurring)
+                    db.session.flush()  # Flush to get the ID assigned
+
+                    # Store mapping for linking income entries later
+                    template_key = (
+                        recurring_data["name"],
+                        recurring_data["amount"],
+                        recurring_data.get("income_type", "Salary"),
+                    )
+                    recurring_income_map[template_key] = recurring
+
+                    imported_counts["recurring_income"] += 1
 
             # Import Salary Periods
             if "salary_periods" in data["data"]:
@@ -868,6 +1013,10 @@ def import_data():
             if skipped_counts["recurring_expenses"] > 0:
                 skipped_details.append(
                     f"{skipped_counts['recurring_expenses']} recurring expense(s)"
+                )
+            if skipped_counts["recurring_income"] > 0:
+                skipped_details.append(
+                    f"{skipped_counts['recurring_income']} recurring income(s)"
                 )
             if skipped_counts["salary_periods"] > 0:
                 skipped_details.append(

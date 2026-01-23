@@ -16,6 +16,7 @@ from backend.models.database import (
     SalaryPeriod,
     Debt,
     RecurringExpense,
+    RecurringIncome,
     Subcategory,
     Goal,
 )
@@ -39,6 +40,7 @@ def delete_all_user_data():
     - All salary periods
     - All debts
     - All recurring expenses
+    - All recurring income
     - All goals
     - All custom subcategories
 
@@ -75,6 +77,9 @@ def delete_all_user_data():
         recurring_count = RecurringExpense.query.filter_by(
             user_id=current_user_id
         ).count()
+        recurring_income_count = RecurringIncome.query.filter_by(
+            user_id=current_user_id
+        ).count()
         goal_count = Goal.query.filter_by(user_id=current_user_id).count()
         subcategory_count = Subcategory.query.filter_by(user_id=current_user_id).count()
 
@@ -85,6 +90,7 @@ def delete_all_user_data():
             + salary_period_count
             + debt_count
             + recurring_count
+            + recurring_income_count
             + goal_count
             + subcategory_count
         )
@@ -96,6 +102,7 @@ def delete_all_user_data():
         SalaryPeriod.query.filter_by(user_id=current_user_id).delete()
         Debt.query.filter_by(user_id=current_user_id).delete()
         RecurringExpense.query.filter_by(user_id=current_user_id).delete()
+        RecurringIncome.query.filter_by(user_id=current_user_id).delete()
         Goal.query.filter_by(user_id=current_user_id).delete()
         Subcategory.query.filter_by(user_id=current_user_id).delete()
 

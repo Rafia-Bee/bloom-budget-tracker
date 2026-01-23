@@ -1368,10 +1368,12 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                 </span>{' '}
                                                 totaling{' '}
                                                 <span className="font-semibold">
-                                                    {formatCurrency(fromEur(preExistingExpenses.total))}
+                                                    {formatCurrency(
+                                                        fromEur(preExistingExpenses.total)
+                                                    )}
                                                 </span>{' '}
-                                                already recorded in this date range. These will count
-                                                toward your{' '}
+                                                already recorded in this date range. These will
+                                                count toward your{' '}
                                                 {flexibleSubPeriodsEnabled ? 'period' : 'weekly'}{' '}
                                                 budget.
                                             </p>
