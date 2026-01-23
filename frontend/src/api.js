@@ -222,7 +222,11 @@ export const userAPI = {
             payment_date_adjustment: mode,
         }),
     // Global balances (for when no salary period exists)
-    getGlobalBalances: () => api.get('/user-data/settings/global-balances'),
+    // Cache-buster ensures fresh data after transaction edits (Issue #180)
+    getGlobalBalances: () =>
+        api.get('/user-data/settings/global-balances', {
+            params: { _t: Date.now() },
+        }),
 };
 
 export const currencyAPI = {

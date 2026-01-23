@@ -470,20 +470,22 @@ def get_global_balances():
         has_initial_balances = user.balance_start_date is not None
 
         if not has_initial_balances:
-            return (
-                jsonify(
-                    {
-                        "debit_balance": 0,
-                        "credit_available": 0,
-                        "credit_limit": 0,
-                        "balance_mode": user.balance_mode,
-                        "has_initial_balances": False,
-                        "period_income": 0,
-                        "all_time_spent": 0,
-                    }
-                ),
-                200,
+            response = jsonify(
+                {
+                    "debit_balance": 0,
+                    "credit_available": 0,
+                    "credit_limit": 0,
+                    "balance_mode": user.balance_mode,
+                    "has_initial_balances": False,
+                    "period_income": 0,
+                    "all_time_spent": 0,
+                }
             )
+            # Prevent browser caching to ensure fresh balance data (Issue #180)
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+            return response, 200
 
         # Calculate global balance based on mode
         if user.balance_mode == "sync":
@@ -598,21 +600,23 @@ def get_global_balances():
             or 0
         )
 
-        return (
-            jsonify(
-                {
-                    "debit_balance": debit_balance,
-                    "credit_available": credit_available,
-                    "credit_limit": credit_limit,
-                    "balance_mode": user.balance_mode,
-                    "has_initial_balances": True,
-                    "period_income": 0,  # No period, so 0
-                    "all_time_spent": all_time_spent,
-                    "total_income": total_income_all_time,
-                }
-            ),
-            200,
+        response = jsonify(
+            {
+                "debit_balance": debit_balance,
+                "credit_available": credit_available,
+                "credit_limit": credit_limit,
+                "balance_mode": user.balance_mode,
+                "has_initial_balances": True,
+                "period_income": 0,  # No period, so 0
+                "all_time_spent": all_time_spent,
+                "total_income": total_income_all_time,
+            }
         )
+        # Prevent browser caching to ensure fresh balance data (Issue #180)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response, 200
 
     except SQLAlchemyError as e:
         current_app.logger.error(

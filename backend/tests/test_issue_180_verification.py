@@ -351,3 +351,30 @@ class TestIssue180AdditionalChecks:
                 "Income model missing recurring_income_id field - "
                 "needed for Issue #180 Bug #7 (recurring badge)"
             )
+
+    def test_global_balances_has_cache_control_headers(self, app, client, auth_headers):
+        """
+        Issue #180 Bug #8: Stale pre-filled balance in wizard.
+
+        The global-balances endpoint must have cache-control headers to prevent
+        browser caching, ensuring the wizard always gets fresh balance data.
+        """
+        with app.app_context():
+            response = client.get(
+                "/api/v1/user-data/settings/global-balances",
+                headers=auth_headers,
+            )
+
+            assert response.status_code == 200
+
+            # Verify cache-control headers are set
+            assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate", (
+                "Missing or incorrect Cache-Control header - "
+                "needed to prevent stale balance in wizard (Issue #180 Bug #8)"
+            )
+            assert response.headers.get("Pragma") == "no-cache", (
+                "Missing Pragma: no-cache header"
+            )
+            assert response.headers.get("Expires") == "0", (
+                "Missing or incorrect Expires header"
+            )
