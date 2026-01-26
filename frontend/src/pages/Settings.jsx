@@ -360,13 +360,13 @@ function Settings({ setIsAuthenticated }) {
                             </div>
                         </div>
 
-                        {/* Category Tabs */}
-                        <div className="flex space-x-1 bg-gray-100 dark:bg-dark-surface rounded-lg p-1 mb-6">
+                        {/* Category Tabs - grid on mobile, flex on desktop */}
+                        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-gray-100 dark:bg-dark-surface rounded-lg p-1 mb-6">
                             {categories.map((category) => (
                                 <button
                                     key={category}
                                     onClick={() => setSelectedCategory(category)}
-                                    className={`px-4 py-2 rounded-md transition-colors text-sm ${
+                                    className={`px-2 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm text-center ${
                                         selectedCategory === category
                                             ? 'bg-white dark:bg-dark-elevated text-bloom-pink shadow-sm'
                                             : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-dark-elevated/50'
