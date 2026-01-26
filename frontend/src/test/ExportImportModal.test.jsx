@@ -51,6 +51,7 @@ describe('ExportImportModal', () => {
             expect(screen.getByRole('heading', { name: 'Export Data' })).toBeInTheDocument();
             expect(screen.getByText('Debts')).toBeInTheDocument();
             expect(screen.getByText('Recurring Expenses')).toBeInTheDocument();
+            expect(screen.getByText('Recurring Income')).toBeInTheDocument();
             expect(screen.getByText('Salary Periods')).toBeInTheDocument();
             expect(screen.getByText('Expenses')).toBeInTheDocument();
             expect(screen.getByText('Income')).toBeInTheDocument();
@@ -146,7 +147,14 @@ describe('ExportImportModal', () => {
 
             await waitFor(() => {
                 expect(api.post).toHaveBeenCalledWith('/data/export', {
-                    types: ['debts', 'recurring_expenses', 'salary_periods', 'expenses', 'income'],
+                    types: [
+                        'debts',
+                        'recurring_expenses',
+                        'recurring_income',
+                        'salary_periods',
+                        'expenses',
+                        'income',
+                    ],
                 });
             });
         });
