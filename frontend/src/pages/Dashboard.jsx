@@ -76,6 +76,7 @@ function Dashboard({ setIsAuthenticated }) {
     const [salaryPeriodData, setSalaryPeriodData] = useState(null); // Cached salary period data for child components
     // eslint-disable-next-line no-unused-vars -- Reserved for future current period indicator
     const [isViewingCurrentPeriod, setIsViewingCurrentPeriod] = useState(true);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Issue #187: Track hamburger menu state
     const weeklyBudgetCardRef = useRef(null);
 
     // Currency context for multi-currency support
@@ -84,6 +85,15 @@ function Dashboard({ setIsAuthenticated }) {
     // Feature flags for recurring income
     const { isEnabled } = useFeatureFlag();
     const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
+
+    // Issue #187: Listen for mobile menu toggle to hide FAB
+    useEffect(() => {
+        const handleMobileMenuToggle = (e) => {
+            setIsMobileMenuOpen(e.detail.isOpen);
+        };
+        window.addEventListener('mobileMenuToggle', handleMobileMenuToggle);
+        return () => window.removeEventListener('mobileMenuToggle', handleMobileMenuToggle);
+    }, []);
 
     // Helper to convert EUR amounts to user's currency and format
     // Used for balances/totals stored in EUR on backend
@@ -1245,6 +1255,7 @@ function Dashboard({ setIsAuthenticated }) {
 
             {/* Floating Add Button with Menu - Only show if period exists */}
             {/* Disabled when any modal is open: hidden on mobile, unclickable on desktop */}
+            {/* Issue #187: Also hide when hamburger menu is open */}
             {currentPeriod && (
                 <DraggableFloatingButton
                     showMenu={showAddMenu}
@@ -1258,6 +1269,7 @@ function Dashboard({ setIsAuthenticated }) {
                         showFilterModal ||
                         showSalaryWizard ||
                         showBulkDeleteConfirm ||
+                        isMobileMenuOpen ||
                         !!warningModal ||
                         !!deleteConfirmation
                     }

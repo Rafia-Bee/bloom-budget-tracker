@@ -22,6 +22,13 @@ function Header({ setIsAuthenticated, children }) {
     // Reports feature uses the reportsEnabled flag directly
     const reportsEnabled = isEnabled('reportsEnabled');
 
+    // Issue #187: Dispatch event when mobile menu opens/closes so FAB can be hidden
+    useEffect(() => {
+        window.dispatchEvent(
+            new CustomEvent('mobileMenuToggle', { detail: { isOpen: showMobileMenu } })
+        );
+    }, [showMobileMenu]);
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (!e.target.closest('.user-menu')) {
@@ -355,7 +362,7 @@ function Header({ setIsAuthenticated, children }) {
                     {/* Mobile Menu Dropdown */}
                     {showMobileMenu && (
                         <div className="mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4 max-h-[85vh] overflow-y-auto">
-                            <div className="space-y-3">
+                            <div className="space-y-3 pb-16">
                                 {/* Custom content slot (e.g., PeriodSelector for Dashboard) */}
                                 {children && <div className="mb-4">{children}</div>}
 

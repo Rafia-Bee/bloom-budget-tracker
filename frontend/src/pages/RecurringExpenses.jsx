@@ -278,13 +278,13 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-8">
-                {/* Top Row: Active/Upcoming tabs + Add Button */}
+                {/* Top Row: Active/Upcoming tabs */}
                 <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    {/* View Toggle Buttons */}
+                    {/* View Toggle Buttons - uniform size */}
                     <div className="flex gap-2">
                         <button
                             onClick={() => setView('active')}
-                            className={`px-4 py-2 rounded-lg transition font-semibold ${
+                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[110px] text-center ${
                                 view === 'active'
                                     ? 'bg-bloom-pink text-white'
                                     : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -294,7 +294,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                         </button>
                         <button
                             onClick={() => setView('upcoming')}
-                            className={`px-4 py-2 rounded-lg transition font-semibold ${
+                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[110px] text-center ${
                                 view === 'upcoming'
                                     ? 'bg-bloom-pink text-white'
                                     : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -303,83 +303,16 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             Upcoming
                         </button>
                     </div>
-
-                    {/* Add Button */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        {view === 'active' ? (
-                            activeSubTab === 'income' && recurringIncomeEnabled ? (
-                                <button
-                                    onClick={() => setShowAddIncomeModal(true)}
-                                    className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm whitespace-nowrap"
-                                >
-                                    + Add Recurring Income
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => setShowAddModal(true)}
-                                    className="px-6 py-3 bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors font-semibold shadow-sm whitespace-nowrap"
-                                >
-                                    + Add Recurring Expense
-                                </button>
-                            )
-                        ) : (
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        setGenerating(true);
-                                        const result = await recurringGenerationAPI.generate(
-                                            false,
-                                            null,
-                                            recurringIncomeEnabled
-                                        );
-                                        setGenerationResult(result.data);
-                                        loadScheduledExpenses();
-                                        if (recurringIncomeEnabled) {
-                                            loadScheduledIncome();
-                                        }
-                                    } catch (error) {
-                                        logError('confirmScheduledItems', error);
-                                    } finally {
-                                        setGenerating(false);
-                                    }
-                                }}
-                                disabled={
-                                    generating ||
-                                    (scheduledExpenses.length === 0 && scheduledIncome.length === 0)
-                                }
-                                className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
-                            >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                                {generating
-                                    ? 'Confirming...'
-                                    : recurringIncomeEnabled
-                                      ? 'Confirm Scheduled Items'
-                                      : 'Confirm Scheduled Expenses'}
-                            </button>
-                        )}
-                    </div>
                 </div>
 
                 {/* Second Row: Sub-tabs (when income enabled) + Description */}
-                <div className="mb-6">
+                <div className="mb-4">
                     {/* Sub-tabs for Active view (when income enabled) */}
                     {view === 'active' && recurringIncomeEnabled && (
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => setActiveSubTab('expenses')}
-                                className={`px-3 py-1.5 text-sm rounded-lg transition font-medium ${
+                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[110px] text-center ${
                                     activeSubTab === 'expenses'
                                         ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
@@ -389,13 +322,13 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             </button>
                             <button
                                 onClick={() => setActiveSubTab('income')}
-                                className={`px-3 py-1.5 text-sm rounded-lg transition font-medium ${
+                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[110px] text-center ${
                                     activeSubTab === 'income'
                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
                                 }`}
                             >
-                                Income
+                                Incomes
                             </button>
                         </div>
                     )}
@@ -409,6 +342,73 @@ function RecurringExpenses({ setIsAuthenticated }) {
                               ? 'Preview scheduled expenses and income'
                               : 'Preview and confirm scheduled expenses'}
                     </p>
+                </div>
+
+                {/* Third Row: Add Button (moved below tabs per Issue #17) */}
+                <div className="mb-6 flex flex-col sm:flex-row gap-3">
+                    {view === 'active' ? (
+                        activeSubTab === 'income' && recurringIncomeEnabled ? (
+                            <button
+                                onClick={() => setShowAddIncomeModal(true)}
+                                className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm whitespace-nowrap text-center justify-center flex items-center gap-2"
+                            >
+                                + Add Recurring Income
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="px-6 py-3 bg-bloom-pink dark:bg-dark-pink text-white rounded-lg hover:bg-pink-600 dark:hover:bg-dark-pink-hover transition-colors font-semibold shadow-sm whitespace-nowrap text-center justify-center flex items-center gap-2"
+                            >
+                                + Add Recurring Expense
+                            </button>
+                        )
+                    ) : (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    setGenerating(true);
+                                    const result = await recurringGenerationAPI.generate(
+                                        false,
+                                        null,
+                                        recurringIncomeEnabled
+                                    );
+                                    setGenerationResult(result.data);
+                                    loadScheduledExpenses();
+                                    if (recurringIncomeEnabled) {
+                                        loadScheduledIncome();
+                                    }
+                                } catch (error) {
+                                    logError('confirmScheduledItems', error);
+                                } finally {
+                                    setGenerating(false);
+                                }
+                            }}
+                            disabled={
+                                generating ||
+                                (scheduledExpenses.length === 0 && scheduledIncome.length === 0)
+                            }
+                            className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center justify-center flex items-center gap-2"
+                        >
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                            {generating
+                                ? 'Confirming...'
+                                : recurringIncomeEnabled
+                                  ? 'Confirm Scheduled Items'
+                                  : 'Confirm Scheduled Expenses'}
+                        </button>
+                    )}
                 </div>
 
                 {/* Generation Result */}

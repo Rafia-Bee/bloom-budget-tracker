@@ -98,22 +98,24 @@ function CategoryBreakdownChart({
         color: COLORS[index % COLORS.length],
     }));
 
-    // Custom legend renderer
+    // Custom legend renderer - positioned below chart with proper spacing
     const renderLegend = (props) => {
         const { payload } = props;
         return (
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
+            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mt-2 px-2">
                 {payload.map((entry, index) => (
                     <div
                         key={`legend-${index}`}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
+                        className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs"
                         style={{ backgroundColor: `${entry.color}20` }}
                     >
                         <div
-                            className="w-2 h-2 rounded-full"
+                            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: entry.color }}
                         />
-                        <span className="text-gray-700 dark:text-gray-300">{entry.value}</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[60px] sm:max-w-none">
+                            {entry.value}
+                        </span>
                     </div>
                 ))}
             </div>
@@ -121,22 +123,22 @@ function CategoryBreakdownChart({
     };
 
     // Calculate dynamic height based on number of items
-    // Base: 320px for chart, add ~24px per row of legend items (approximately 4-5 items per row)
-    const legendRows = Math.ceil(data.length / 4);
-    const baseHeight = 280;
-    const legendHeight = Math.max(40, legendRows * 28);
+    // Mobile: smaller chart, more legend rows. Desktop: standard sizes
+    const legendRows = Math.ceil(data.length / 3); // Assume 3 items per row on mobile
+    const baseHeight = 240; // Reduced for mobile
+    const legendHeight = Math.max(50, legendRows * 32);
     const totalHeight = baseHeight + legendHeight;
 
     return (
-        <div style={{ height: `${totalHeight}px`, minHeight: '320px', width: '100%' }}>
+        <div style={{ height: `${totalHeight}px`, minHeight: '300px', width: '100%' }}>
             <SafeResponsiveContainer>
                 <PieChart>
                     <Pie
                         data={chartData}
                         cx="50%"
-                        cy={baseHeight / 2}
-                        innerRadius={60}
-                        outerRadius={90}
+                        cy={100}
+                        innerRadius={50}
+                        outerRadius={75}
                         paddingAngle={2}
                         dataKey="total"
                         nameKey="name"
@@ -167,15 +169,15 @@ function CategoryBreakdownChart({
                     {/* Center label showing total */}
                     <text
                         x="50%"
-                        y={baseHeight / 2}
+                        y={100}
                         textAnchor="middle"
                         dominantBaseline="middle"
                         className="fill-gray-900 dark:fill-white"
                     >
-                        <tspan x="50%" dy="-8" fontSize="12" fill="#9CA3AF">
+                        <tspan x="50%" dy="-8" fontSize="10" fill="#9CA3AF">
                             Total
                         </tspan>
-                        <tspan x="50%" dy="20" fontSize="16" fontWeight="bold" fill="#EC4899">
+                        <tspan x="50%" dy="18" fontSize="14" fontWeight="bold" fill="#EC4899">
                             {currencyFormatter(total)}
                         </tspan>
                     </text>

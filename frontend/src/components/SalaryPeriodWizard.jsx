@@ -689,18 +689,52 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                         type="range"
                                         min="0"
                                         max={parseCurrency(creditAvailable)}
-                                        step="1000"
+                                        step="100"
                                         value={creditAllowance}
                                         onChange={(e) =>
                                             setCreditAllowance(parseInt(e.target.value))
                                         }
                                         className="w-full"
                                     />
-                                    <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
+                                    <div className="flex justify-between items-center text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                                         <span>{formatCurrency(0)}</span>
-                                        <span className="font-semibold text-bloom-pink dark:text-dark-pink">
-                                            {formatCurrency(creditAllowance)}
-                                        </span>
+                                        <div className="relative">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-bloom-pink dark:text-dark-pink font-semibold text-sm">
+                                                {currencySymbol}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={(creditAllowance / 100).toFixed(2)}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(
+                                                        /[^0-9.]/g,
+                                                        ''
+                                                    );
+                                                    const cents = Math.round(
+                                                        parseFloat(val || 0) * 100
+                                                    );
+                                                    const max = parseCurrency(creditAvailable);
+                                                    const clamped = Math.max(
+                                                        0,
+                                                        Math.min(cents, max)
+                                                    );
+                                                    setCreditAllowance(clamped);
+                                                }}
+                                                onBlur={(e) => {
+                                                    // Ensure proper formatting on blur
+                                                    const val = parseFloat(e.target.value) || 0;
+                                                    const cents = Math.round(val * 100);
+                                                    const max = parseCurrency(creditAvailable);
+                                                    const clamped = Math.max(
+                                                        0,
+                                                        Math.min(cents, max)
+                                                    );
+                                                    setCreditAllowance(clamped);
+                                                }}
+                                                className="w-24 pl-6 pr-2 py-1 text-center border border-gray-300 dark:border-dark-border rounded bg-white dark:bg-dark-elevated text-bloom-pink dark:text-dark-pink font-semibold focus:ring-1 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:outline-none"
+                                            />
+                                        </div>
                                         <span>
                                             {formatCurrency(parseCurrency(creditAvailable))}
                                         </span>
@@ -1062,18 +1096,18 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     {fixedBills.map((bill, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg"
+                                            className="flex items-center gap-2 sm:gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg"
                                         >
-                                            <div className="flex-1">
-                                                <div className="font-medium text-gray-800 dark:text-dark-text">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-gray-800 dark:text-dark-text text-sm sm:text-base truncate">
                                                     {bill.name}
                                                 </div>
-                                                <div className="text-sm text-gray-500 dark:text-dark-text-secondary">
+                                                <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-secondary truncate">
                                                     {bill.category}
                                                 </div>
                                             </div>
-                                            <div className="relative w-32">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                            <div className="relative w-24 sm:w-28 flex-shrink-0">
+                                                <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs sm:text-sm">
                                                     {currencySymbol}
                                                 </span>
                                                 <input
@@ -1082,7 +1116,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                     onChange={(e) =>
                                                         updateFixedBillAmount(index, e.target.value)
                                                     }
-                                                    className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded text-sm"
+                                                    className="w-full pl-5 sm:pl-7 pr-2 sm:pr-3 py-2 border border-gray-300 rounded text-xs sm:text-sm"
                                                 />
                                             </div>
                                             <button
@@ -1342,50 +1376,60 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </p>
                             </div>
 
-                            <div className="bg-gradient-to-br from-bloom-pink to-pink-600 text-white rounded-xl p-6 space-y-3">
+                            <div className="bg-gradient-to-br from-bloom-pink to-pink-600 text-white rounded-xl p-4 sm:p-6 space-y-2 sm:space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="opacity-90">Debit Balance</span>
-                                    <span className="text-2xl font-bold">
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        Debit Balance
+                                    </span>
+                                    <span className="text-xl sm:text-2xl font-bold">
                                         {formatCurrency(fromEur(preview.debit_balance))}
                                     </span>
                                 </div>
                                 {preview.credit_allowance > 0 && (
                                     <div className="flex justify-between items-center">
-                                        <span className="opacity-90">+ Credit Allowance</span>
-                                        <span className="text-xl">
+                                        <span className="opacity-90 text-sm sm:text-base">
+                                            + Credit Allowance
+                                        </span>
+                                        <span className="text-lg sm:text-xl">
                                             +{formatCurrency(fromEur(preview.credit_allowance))}
                                         </span>
                                     </div>
                                 )}
                                 {preview.expected_income_total > 0 && (
                                     <div className="flex justify-between items-center">
-                                        <span className="opacity-90">+ Expected Income</span>
-                                        <span className="text-xl">
+                                        <span className="opacity-90 text-sm sm:text-base">
+                                            + Expected Income
+                                        </span>
+                                        <span className="text-lg sm:text-xl">
                                             +
                                             {formatCurrency(fromEur(preview.expected_income_total))}
                                         </span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center">
-                                    <span className="opacity-90">− Fixed Bills</span>
-                                    <span className="text-xl">
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        − Fixed Bills
+                                    </span>
+                                    <span className="text-lg sm:text-xl">
                                         −{formatCurrency(fromEur(preview.fixed_bills_total))}
                                     </span>
                                 </div>
-                                <div className="border-t border-white/30 pt-3 flex justify-between items-center">
-                                    <span className="opacity-90">= Total Budget</span>
-                                    <span className="text-2xl font-bold">
+                                <div className="border-t border-white/30 pt-2 sm:pt-3 flex justify-between items-center">
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        = Total Budget
+                                    </span>
+                                    <span className="text-xl sm:text-2xl font-bold">
                                         {formatCurrency(fromEur(preview.total_budget))}
                                     </span>
                                 </div>
-                                <div className="border-t border-white/30 pt-3 flex justify-between items-center">
-                                    <span className="opacity-90">
+                                <div className="border-t border-white/30 pt-2 sm:pt-3 flex justify-between items-center">
+                                    <span className="opacity-90 text-sm sm:text-base">
                                         ÷{' '}
                                         {flexibleSubPeriodsEnabled
                                             ? `${numSubPeriods} periods`
                                             : '4 weeks'}
                                     </span>
-                                    <span className="text-3xl font-bold">
+                                    <span className="text-2xl sm:text-3xl font-bold">
                                         {formatCurrency(fromEur(preview.weekly_budget))}
                                     </span>
                                 </div>

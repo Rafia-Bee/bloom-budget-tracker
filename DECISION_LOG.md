@@ -4,6 +4,58 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-26: Issue #187 - Mobile UI Fixes (Complete)
+
+**Session Summary:** Comprehensive mobile UI fixes for Issue #187 covering all pages: Dashboard, Wizard, Modals, Menu, Goals, Reports, Recurring, Debts, Settings, and Trash.
+
+**Branch:** `fix/issue-187-mobile-ui` (22 commits)
+
+### Issues Fixed:
+
+| Issue | Page      | Fix                                                             |
+| ----- | --------- | --------------------------------------------------------------- |
+| 1     | Dashboard | Budget card header responsive layout                            |
+| 2     | Dashboard | Debit card total spent alignment                                |
+| 3     | Dashboard | Scheduled amounts no-wrap                                       |
+| 4     | Wizard    | Step 2 input sizes consistent                                   |
+| 5     | Wizard    | Step 3 text responsive                                          |
+| 6     | Dashboard | Leftover modal min alignment grid                               |
+| 7     | Dashboard | Goals progress bug fix (object access)                          |
+| 8     | Wizard    | Slider step=100 (€1 increments) + editable input                |
+| 9     | Modals    | Amount input width fix                                          |
+| 10    | Modals    | Filter button text centering                                    |
+| 11    | Dashboard | FAB hidden when hamburger menu open                             |
+| 12    | Menu      | Logout button bottom padding                                    |
+| 13    | Goals     | Header stacked layout, edit/delete buttons match Dashboard      |
+| 14-16 | Reports   | Date selectors stacked, pie chart smaller, merchants responsive |
+| 17-20 | Recurring | Tabs below content, uniform width 110px, "Incomes" renamed      |
+| 23-24 | Debts     | Progress/Paid off alignment, trailing ")" bug fix               |
+| 25-28 | Settings  | 2x2 grid tabs, dropdowns stacked, SVG icons, borders on buttons |
+| 29    | Settings  | Dropdowns stacked layout (label, dropdown, save)                |
+| 31-32 | Trash     | Dropdown menu on mobile, responsive cards                       |
+
+### Additional Improvements:
+
+- Credit allowance editable input box
+- Settings subcategory tabs uniform height with borders
+- All grids use proper 2x2 layout on mobile
+
+### Technical Patterns:
+
+- **2x2 Grid:** `grid grid-cols-2 sm:flex` for tab groups
+- **Stacked Layouts:** `flex-col gap-3` for dropdowns
+- **Uniform Buttons:** `min-h-[48px] flex items-center justify-center`
+- **Mobile Dropdown:** Native select for complex tab navigation (Trash)
+- **SVG Icons:** Consistent icon buttons replacing emojis
+
+### Remaining Issues (deferred for future work):
+
+- **Issue 21:** Recurring Income cards (complex refactor)
+- **Issue 22:** Scroll shortcuts (new feature)
+- **Issue 30:** App-wide emoji removal (extensive)
+
+---
+
 ## 2026-01-26: Issue #180 - Credit Limit Preservation Fix + Bug #9 Implemented
 
 **Session Summary:**

@@ -690,15 +690,15 @@ const TransactionList = ({
                                                                 className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink cursor-pointer"
                                                             />
                                                         )}
-                                                        <div className="flex-1">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <h4 className="font-semibold text-gray-800 dark:text-dark-text">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start gap-2 mb-1">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-start gap-2 flex-wrap">
+                                                                        <h4 className="font-semibold text-gray-800 dark:text-dark-text break-words">
                                                                             {item.name}
                                                                         </h4>
                                                                         <span
-                                                                            className={`text-xs px-2 py-0.5 rounded-full ${
+                                                                            className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
                                                                                 isIncome
                                                                                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                                                                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -716,7 +716,7 @@ const TransactionList = ({
                                                                     </p>
                                                                 </div>
                                                                 <span
-                                                                    className={`text-lg font-bold ${
+                                                                    className={`text-base sm:text-lg font-bold whitespace-nowrap flex-shrink-0 ${
                                                                         isIncome
                                                                             ? 'text-green-600 dark:text-green-400'
                                                                             : 'text-red-600 dark:text-red-400'

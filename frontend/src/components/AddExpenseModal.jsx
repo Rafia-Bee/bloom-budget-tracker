@@ -234,13 +234,13 @@ function AddExpenseModal({ onClose, onAdd }) {
                         <label className="block text-gray-700 dark:text-dark-text font-semibold mb-2">
                             Amount
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full">
                             <CurrencySelector
                                 value={currency}
                                 onChange={setCurrency}
                                 compact={true}
                                 showLabel={false}
-                                className="w-24 flex-shrink-0"
+                                className="w-20 sm:w-24 flex-shrink-0"
                             />
                             <input
                                 type="number"
@@ -249,7 +249,7 @@ function AddExpenseModal({ onClose, onAdd }) {
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder={`0.00`}
-                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
+                                className="flex-1 min-w-0 px-3 sm:px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink"
                                 required
                             />
                         </div>
