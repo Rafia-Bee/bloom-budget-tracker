@@ -147,9 +147,12 @@ describe('SalaryPeriodWizard', () => {
                 expect(screen.getByText('Credit Card Limit (Total)')).toBeInTheDocument();
             });
 
-            const creditLimitInput = getInputByLabel('Credit Card Limit (Total)');
+            // Wait for the API call to complete and populate the credit limit field
             // Credit limit is loaded from global balances API (150000 cents = €1500.00)
-            expect(creditLimitInput).toHaveValue('1500.00');
+            await waitFor(() => {
+                const creditLimitInput = getInputByLabel('Credit Card Limit (Total)');
+                expect(creditLimitInput).toHaveValue('1500.00');
+            });
         });
 
         it('displays step progress indicators', async () => {
