@@ -284,7 +284,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setView('active')}
-                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[100px] text-center ${
+                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[110px] text-center ${
                                 view === 'active'
                                     ? 'bg-bloom-pink text-white'
                                     : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -294,7 +294,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                         </button>
                         <button
                             onClick={() => setView('upcoming')}
-                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[100px] text-center ${
+                            className={`px-4 py-2 rounded-lg transition font-semibold min-w-[110px] text-center ${
                                 view === 'upcoming'
                                     ? 'bg-bloom-pink text-white'
                                     : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -312,7 +312,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => setActiveSubTab('expenses')}
-                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[100px] text-center ${
+                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[110px] text-center ${
                                     activeSubTab === 'expenses'
                                         ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
@@ -322,7 +322,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             </button>
                             <button
                                 onClick={() => setActiveSubTab('income')}
-                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[100px] text-center ${
+                                className={`px-4 py-2 rounded-lg transition font-medium min-w-[110px] text-center ${
                                     activeSubTab === 'income'
                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-border border border-transparent'
