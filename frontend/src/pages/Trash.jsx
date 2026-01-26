@@ -128,11 +128,11 @@ function Trash({ setIsAuthenticated }) {
         deletedRecurring.length;
 
     const tabs = [
-        { id: 'expenses', label: 'Expenses', count: deletedExpenses.length },
-        { id: 'income', label: 'Income', count: deletedIncome.length },
-        { id: 'debts', label: 'Debts', count: deletedDebts.length },
-        { id: 'goals', label: 'Goals', count: deletedGoals.length },
-        { id: 'recurring', label: 'Recurring', count: deletedRecurring.length },
+        { id: 'expenses', label: 'Expenses', shortLabel: 'Exp', count: deletedExpenses.length },
+        { id: 'income', label: 'Income', shortLabel: 'Inc', count: deletedIncome.length },
+        { id: 'debts', label: 'Debts', shortLabel: 'Debt', count: deletedDebts.length },
+        { id: 'goals', label: 'Goals', shortLabel: 'Goal', count: deletedGoals.length },
+        { id: 'recurring', label: 'Recurring', shortLabel: 'Recr', count: deletedRecurring.length },
     ];
 
     return (
@@ -164,7 +164,7 @@ function Trash({ setIsAuthenticated }) {
                             }`}
                         >
                             <span className="hidden sm:inline">{tab.label}</span>
-                            <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
+                            <span className="sm:hidden">{tab.shortLabel}</span>
                             {tab.count > 0 && (
                                 <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs rounded-full bg-gray-200 dark:bg-dark-elevated text-gray-600 dark:text-gray-400">
                                     {tab.count}
