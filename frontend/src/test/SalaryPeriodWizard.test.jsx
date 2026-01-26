@@ -218,12 +218,23 @@ describe('SalaryPeriodWizard', () => {
             });
         });
 
-        it('shows warning when credit card is maxed out', async () => {
+        it('shows warning when credit card is maxed out (limit > 0 but available = 0)', async () => {
             renderWithProviders(
                 <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
             );
 
-            // Credit available defaults to empty (0)
+            await waitFor(() => {
+                expect(
+                    screen.getByText('Credit Card Available (Remaining Limit)')
+                ).toBeInTheDocument();
+            });
+
+            // Set credit available to 0 (simulating maxed out card)
+            // Note: credit limit is 1500 from the mock API response
+            const creditInput = getInputByLabel('Credit Card Available (Remaining Limit)');
+            await changeWithAct(creditInput, '0');
+
+            // Should show maxed out warning since limit > 0 but available = 0
             await waitFor(() => {
                 expect(screen.getByText(/no credit available/i)).toBeInTheDocument();
             });

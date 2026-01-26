@@ -708,14 +708,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </div>
                             )}
 
-                            {parseCurrency(creditAvailable) === 0 && (
-                                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                    <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                                        ⚠️ No credit available (card is maxed out). Only your debit
-                                        balance will be used for budgeting.
-                                    </p>
-                                </div>
-                            )}
+                            {/* Only show "maxed out" warning if user has a credit card (limit > 0) but no available credit */}
+                            {parseCurrency(creditLimit) > 0 &&
+                                parseCurrency(creditAvailable) === 0 && (
+                                    <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                        <p className="text-sm text-yellow-800 dark:text-yellow-400">
+                                            ⚠️ No credit available (card is maxed out). Only your
+                                            debit balance will be used for budgeting.
+                                        </p>
+                                    </div>
+                                )}
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
