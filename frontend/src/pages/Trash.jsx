@@ -362,7 +362,9 @@ function DeletedItemCard({
                             </div>
                         )}
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                        {subtitle}
+                    </p>
                     <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-0.5 sm:mt-1">
                         Deleted {formatDeletedAt(deletedAt)}
                         {daysLeft !== null && (

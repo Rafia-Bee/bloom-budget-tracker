@@ -707,10 +707,18 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                 inputMode="decimal"
                                                 value={(creditAllowance / 100).toFixed(2)}
                                                 onChange={(e) => {
-                                                    const val = e.target.value.replace(/[^0-9.]/g, '');
-                                                    const cents = Math.round(parseFloat(val || 0) * 100);
+                                                    const val = e.target.value.replace(
+                                                        /[^0-9.]/g,
+                                                        ''
+                                                    );
+                                                    const cents = Math.round(
+                                                        parseFloat(val || 0) * 100
+                                                    );
                                                     const max = parseCurrency(creditAvailable);
-                                                    const clamped = Math.max(0, Math.min(cents, max));
+                                                    const clamped = Math.max(
+                                                        0,
+                                                        Math.min(cents, max)
+                                                    );
                                                     setCreditAllowance(clamped);
                                                 }}
                                                 onBlur={(e) => {
@@ -718,7 +726,10 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                     const val = parseFloat(e.target.value) || 0;
                                                     const cents = Math.round(val * 100);
                                                     const max = parseCurrency(creditAvailable);
-                                                    const clamped = Math.max(0, Math.min(cents, max));
+                                                    const clamped = Math.max(
+                                                        0,
+                                                        Math.min(cents, max)
+                                                    );
                                                     setCreditAllowance(clamped);
                                                 }}
                                                 className="w-24 pl-6 pr-2 py-1 text-center border border-gray-300 dark:border-dark-border rounded bg-white dark:bg-dark-elevated text-bloom-pink dark:text-dark-pink font-semibold focus:ring-1 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:outline-none"
@@ -1367,14 +1378,18 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
                             <div className="bg-gradient-to-br from-bloom-pink to-pink-600 text-white rounded-xl p-4 sm:p-6 space-y-2 sm:space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="opacity-90 text-sm sm:text-base">Debit Balance</span>
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        Debit Balance
+                                    </span>
                                     <span className="text-xl sm:text-2xl font-bold">
                                         {formatCurrency(fromEur(preview.debit_balance))}
                                     </span>
                                 </div>
                                 {preview.credit_allowance > 0 && (
                                     <div className="flex justify-between items-center">
-                                        <span className="opacity-90 text-sm sm:text-base">+ Credit Allowance</span>
+                                        <span className="opacity-90 text-sm sm:text-base">
+                                            + Credit Allowance
+                                        </span>
                                         <span className="text-lg sm:text-xl">
                                             +{formatCurrency(fromEur(preview.credit_allowance))}
                                         </span>
@@ -1382,7 +1397,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 )}
                                 {preview.expected_income_total > 0 && (
                                     <div className="flex justify-between items-center">
-                                        <span className="opacity-90 text-sm sm:text-base">+ Expected Income</span>
+                                        <span className="opacity-90 text-sm sm:text-base">
+                                            + Expected Income
+                                        </span>
                                         <span className="text-lg sm:text-xl">
                                             +
                                             {formatCurrency(fromEur(preview.expected_income_total))}
@@ -1390,13 +1407,17 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center">
-                                    <span className="opacity-90 text-sm sm:text-base">− Fixed Bills</span>
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        − Fixed Bills
+                                    </span>
                                     <span className="text-lg sm:text-xl">
                                         −{formatCurrency(fromEur(preview.fixed_bills_total))}
                                     </span>
                                 </div>
                                 <div className="border-t border-white/30 pt-2 sm:pt-3 flex justify-between items-center">
-                                    <span className="opacity-90 text-sm sm:text-base">= Total Budget</span>
+                                    <span className="opacity-90 text-sm sm:text-base">
+                                        = Total Budget
+                                    </span>
                                     <span className="text-xl sm:text-2xl font-bold">
                                         {formatCurrency(fromEur(preview.total_budget))}
                                     </span>

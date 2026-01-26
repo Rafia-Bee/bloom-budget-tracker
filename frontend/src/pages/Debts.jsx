@@ -593,9 +593,7 @@ function Debts({ setIsAuthenticated }) {
                                         {/* Progress Bar */}
                                         <div className="mt-4">
                                             <div className="flex justify-between items-center text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
-                                                <span>
-                                                    Progress: {progress.toFixed(1)}%
-                                                </span>
+                                                <span>Progress: {progress.toFixed(1)}%</span>
                                                 <span className="text-right">
                                                     Paid off: {fcEur((original - balance) * 100)} /{' '}
                                                     {fcEur(original * 100)}

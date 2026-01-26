@@ -61,11 +61,17 @@ const BalanceCards = ({
                 </div>
                 <div className="mt-4">
                     <div className="flex justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        <span className="whitespace-nowrap">Period income: {fcEur(currentPeriodIncome * 100)}</span>
-                        <span className="whitespace-nowrap">Total spent: {fcEur(allTimeSpent * 100)}</span>
+                        <span className="whitespace-nowrap">
+                            Period income: {fcEur(currentPeriodIncome * 100)}
+                        </span>
+                        <span className="whitespace-nowrap">
+                            Total spent: {fcEur(allTimeSpent * 100)}
+                        </span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        <span className="whitespace-nowrap">All-time income: {fcEur(totalIncome * 100)}</span>
+                        <span className="whitespace-nowrap">
+                            All-time income: {fcEur(totalIncome * 100)}
+                        </span>
                         <span>
                             {totalIncome > 0 ? ((allTimeSpent / totalIncome) * 100).toFixed(0) : 0}%
                             spent
@@ -113,11 +119,17 @@ const BalanceCards = ({
                     </div>
                     <div className="mt-4">
                         <div className="flex justify-between text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
-                            <span className="whitespace-nowrap">Period spent: {fcEur(currentPeriodCreditSpent * 100)}</span>
-                            <span className="whitespace-nowrap">Total debt: {fcEur(creditDebt * 100)}</span>
+                            <span className="whitespace-nowrap">
+                                Period spent: {fcEur(currentPeriodCreditSpent * 100)}
+                            </span>
+                            <span className="whitespace-nowrap">
+                                Total debt: {fcEur(creditDebt * 100)}
+                            </span>
                         </div>
                         <div className="flex justify-between text-xs text-gray-500 dark:text-dark-text-tertiary mt-1">
-                            <span className="whitespace-nowrap">Credit limit: {fcEur(creditLimit * 100)}</span>
+                            <span className="whitespace-nowrap">
+                                Credit limit: {fcEur(creditLimit * 100)}
+                            </span>
                             <span>{((creditDebt / creditLimit) * 100).toFixed(0)}% used</span>
                         </div>
                     </div>

@@ -113,7 +113,9 @@ function CategoryBreakdownChart({
                             className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: entry.color }}
                         />
-                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[60px] sm:max-w-none">{entry.value}</span>
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[60px] sm:max-w-none">
+                            {entry.value}
+                        </span>
                     </div>
                 ))}
             </div>

@@ -328,11 +328,9 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                                 <div className="space-y-2">
                                     {leftoverData.allocation_options.goals.map((goal) => {
                                         // Issue #187 fix: progress is an object with current_amount, percentage, etc.
-                                        const currentAmount =
-                                            goal.progress?.current_amount ?? 0;
+                                        const currentAmount = goal.progress?.current_amount ?? 0;
                                         const targetAmount = goal.target_amount || 1;
-                                        const progressPercent =
-                                            goal.progress?.percentage ?? 0;
+                                        const progressPercent = goal.progress?.percentage ?? 0;
                                         return (
                                             <button
                                                 key={goal.id}
@@ -361,7 +359,8 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                                                         />
                                                     </div>
                                                     <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                                                        {fcEur(currentAmount)} / {fcEur(targetAmount)}
+                                                        {fcEur(currentAmount)} /{' '}
+                                                        {fcEur(targetAmount)}
                                                     </div>
                                                 </div>
                                             </button>

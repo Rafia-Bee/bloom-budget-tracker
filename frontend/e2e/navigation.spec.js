@@ -8,41 +8,37 @@
  * HttpOnly JWT cookies saved by global-setup.js using context.addCookies().
  */
 
-import { test, expect, loginAsTestUser } from "./fixtures.js";
+import { test, expect, loginAsTestUser } from './fixtures.js';
 
-test.describe("Navigation and State Management", () => {
+test.describe('Navigation and State Management', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to dashboard (cookies are auto-restored by fixture)
-        await page.goto("/dashboard");
-        await page.waitForLoadState("networkidle");
+        await page.goto('/dashboard');
+        await page.waitForLoadState('networkidle');
 
         // If redirected to login, perform manual login
-        if (page.url().includes("/login")) {
+        if (page.url().includes('/login')) {
             await loginAsTestUser(page);
         }
     });
 
-    test.describe("Week Navigation", () => {
-        test("week navigation controls are visible when period exists", async ({
-            page,
-        }) => {
+    test.describe('Week Navigation', () => {
+        test('week navigation controls are visible when period exists', async ({ page }) => {
             // Wait for page to be fully loaded
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
             // Look for week navigation elements - only visible if period exists
-            const weekIndicator = page.locator("text=/Week [1-4]/i");
+            const weekIndicator = page.locator('text=/Week [1-4]/i');
 
             // Check if week indicator is visible (only if salary period exists)
-            const isVisible = await weekIndicator
-                .first()
-                .isVisible({ timeout: 3000 });
+            const isVisible = await weekIndicator.first().isVisible({ timeout: 3000 });
 
             if (!isVisible) {
                 // No period - check for setup prompt or wizard
                 // On mobile, these elements might be inside a card or panel
                 const setupPrompt = page.locator(
-                    "text=/Start New Period|Create.*Period|Setup|Set Up|Budget Wizard|Ready to start/i"
+                    'text=/Start New Period|Create.*Period|Setup|Set Up|Budget Wizard|Ready to start/i'
                 );
                 const hasSetupPrompt = await setupPrompt
                     .first()
@@ -62,7 +58,7 @@ test.describe("Navigation and State Management", () => {
             }
         });
 
-        test("can navigate between weeks", async ({ page }) => {
+        test('can navigate between weeks', async ({ page }) => {
             // Find week navigation buttons
             const nextWeekButton = page
                 .locator(
@@ -81,16 +77,13 @@ test.describe("Navigation and State Management", () => {
                 .first();
 
             // Get current week indicator
-            const weekIndicator = page.locator("text=/Week [1-4]/i").first();
+            const weekIndicator = page.locator('text=/Week [1-4]/i').first();
 
             if (await weekIndicator.isVisible({ timeout: 3000 })) {
                 const initialWeek = await weekIndicator.textContent();
 
                 // Try navigating forward
-                if (
-                    (await nextWeekButton.isVisible()) &&
-                    (await nextWeekButton.isEnabled())
-                ) {
+                if ((await nextWeekButton.isVisible()) && (await nextWeekButton.isEnabled())) {
                     await nextWeekButton.click();
                     await page.waitForTimeout(500);
 
@@ -101,10 +94,7 @@ test.describe("Navigation and State Management", () => {
                 }
 
                 // Try navigating backward
-                if (
-                    (await prevWeekButton.isVisible()) &&
-                    (await prevWeekButton.isEnabled())
-                ) {
+                if ((await prevWeekButton.isVisible()) && (await prevWeekButton.isEnabled())) {
                     await prevWeekButton.click();
                     await page.waitForTimeout(500);
 
@@ -114,36 +104,33 @@ test.describe("Navigation and State Management", () => {
             }
         });
 
-        test("week displays budget information", async ({ page }) => {
+        test('week displays budget information', async ({ page }) => {
             // Each week should show budget-related info
             const budgetInfo = page.locator(
-                "text=/Budget|Spent|Remaining|Available|Leftover|Carryover/i"
+                'text=/Budget|Spent|Remaining|Available|Leftover|Carryover/i'
             );
 
             await expect(budgetInfo.first()).toBeVisible({ timeout: 5000 });
         });
     });
 
-    test.describe("Carryover Display", () => {
-        test("carryover information is displayed when applicable", async ({
-            page,
-        }) => {
+    test.describe('Carryover Display', () => {
+        test('carryover information is displayed when applicable', async ({ page }) => {
             // Wait for page to load
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
             // Use the week selector dropdown to navigate between weeks
-            const weekSelector = page.locator("select").first();
+            const weekSelector = page.locator('select').first();
 
             // Try to navigate to a later week
             if (await weekSelector.isVisible({ timeout: 3000 })) {
-                await weekSelector.selectOption({ label: "Week 2" });
+                // Week selector options are just numbers ("1", "2", etc.), not "Week 2"
+                await weekSelector.selectOption({ value: '2' });
                 await page.waitForTimeout(500);
 
                 // Look for carryover indicator
-                const carryoverInfo = page.locator(
-                    "text=/Carryover|Leftover|from Week|carry/i"
-                );
+                const carryoverInfo = page.locator('text=/Carryover|Leftover|from Week|carry/i');
 
                 // Carryover might not always be visible (depends on data)
                 // Just verify the page is still on dashboard
@@ -152,10 +139,10 @@ test.describe("Navigation and State Management", () => {
         });
     });
 
-    test.describe("Main Navigation", () => {
-        test("can navigate to Debts page", async ({ page }) => {
+    test.describe('Main Navigation', () => {
+        test('can navigate to Debts page', async ({ page }) => {
             // Wait for page to load
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000); // Allow UI to settle
 
             // Check if mobile viewport - hamburger menu will be visible
@@ -164,12 +151,8 @@ test.describe("Navigation and State Management", () => {
 
             // Wait for either hamburger (mobile) or desktop link to be visible
             await Promise.race([
-                hamburger
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => null),
-                desktopDebtsLink
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => null),
+                hamburger.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+                desktopDebtsLink.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
             ]);
 
             if (await hamburger.isVisible()) {
@@ -183,12 +166,12 @@ test.describe("Navigation and State Management", () => {
                 await desktopDebtsLink.click();
             }
 
-            await expect(page).toHaveURL("/debts");
+            await expect(page).toHaveURL('/debts');
         });
 
-        test("can navigate to Goals page", async ({ page }) => {
+        test('can navigate to Goals page', async ({ page }) => {
             // Wait for page to load
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000); // Allow UI to settle
 
             // Check if mobile viewport - hamburger menu will be visible
@@ -197,12 +180,8 @@ test.describe("Navigation and State Management", () => {
 
             // Wait for either hamburger (mobile) or desktop link to be visible
             await Promise.race([
-                hamburger
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => null),
-                desktopGoalsLink
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => null),
+                hamburger.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+                desktopGoalsLink.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
             ]);
 
             if (await hamburger.isVisible()) {
@@ -216,22 +195,18 @@ test.describe("Navigation and State Management", () => {
                 await desktopGoalsLink.click();
             }
 
-            await expect(page).toHaveURL("/goals");
+            await expect(page).toHaveURL('/goals');
         });
 
-        test("can navigate to Settings page", async ({ page }) => {
+        test('can navigate to Settings page', async ({ page }) => {
             // Check if mobile hamburger menu is visible
             const hamburgerButton = page.locator('button[aria-label="Menu"]');
             const userMenuButton = page.locator('button[title="User menu"]');
 
             // Wait for either to be visible
             await Promise.race([
-                hamburgerButton
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => {}),
-                userMenuButton
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => {}),
+                hamburgerButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),
+                userMenuButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),
             ]);
 
             if (await hamburgerButton.isVisible()) {
@@ -248,25 +223,19 @@ test.describe("Navigation and State Management", () => {
                 await page.locator('button:has-text("Settings")').click();
             }
 
-            await expect(page).toHaveURL("/settings");
-            await expect(
-                page.locator("text=/Settings|Preferences/i").first()
-            ).toBeVisible();
+            await expect(page).toHaveURL('/settings');
+            await expect(page.locator('text=/Settings|Preferences/i').first()).toBeVisible();
         });
 
-        test("can navigate to Recurring Expenses page", async ({ page }) => {
+        test('can navigate to Recurring Expenses page', async ({ page }) => {
             // Check if mobile hamburger menu is visible
             const hamburgerButton = page.locator('button[aria-label="Menu"]');
             const desktopLink = page.locator('a[href="/recurring-expenses"]');
 
             // Wait for either to be visible
             await Promise.race([
-                hamburgerButton
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => {}),
-                desktopLink
-                    .waitFor({ state: "visible", timeout: 5000 })
-                    .catch(() => {}),
+                hamburgerButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),
+                desktopLink.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),
             ]);
 
             if (await hamburgerButton.isVisible()) {
@@ -274,9 +243,7 @@ test.describe("Navigation and State Management", () => {
                 await hamburgerButton.click();
                 await page.waitForTimeout(300);
                 // Click Recurring Expenses in mobile menu
-                await page
-                    .locator('button:has-text("Recurring Expenses")')
-                    .click();
+                await page.locator('button:has-text("Recurring Expenses")').click();
             } else {
                 // Desktop: Click nav link directly
                 await desktopLink.click();
@@ -285,15 +252,13 @@ test.describe("Navigation and State Management", () => {
             await expect(page).toHaveURL(/\/recurring-expenses/);
         });
 
-        test("can navigate back to Dashboard", async ({ page }) => {
+        test('can navigate back to Dashboard', async ({ page }) => {
             // First navigate away
-            await page.goto("/settings");
-            await expect(page).toHaveURL("/settings");
+            await page.goto('/settings');
+            await expect(page).toHaveURL('/settings');
 
             // Click the Bloom logo to go back to Dashboard
-            const logoLink = page.locator(
-                'a[href="/dashboard"]:has-text("Dashboard")'
-            );
+            const logoLink = page.locator('a[href="/dashboard"]:has-text("Dashboard")');
 
             if (await logoLink.first().isVisible({ timeout: 3000 })) {
                 await logoLink.first().click();
@@ -302,10 +267,10 @@ test.describe("Navigation and State Management", () => {
                 const menuButton = page.locator('button[aria-label*="menu" i]');
                 if (await menuButton.isVisible()) {
                     await menuButton.click();
-                    await page.locator("text=🏠 Dashboard").click();
+                    await page.locator('text=🏠 Dashboard').click();
                 } else {
                     // Just go directly
-                    await page.goto("/dashboard");
+                    await page.goto('/dashboard');
                 }
             }
 
@@ -314,12 +279,12 @@ test.describe("Navigation and State Management", () => {
         });
     });
 
-    test.describe("Responsive Navigation", () => {
-        test("mobile menu works on small viewport", async ({ page }) => {
+    test.describe('Responsive Navigation', () => {
+        test('mobile menu works on small viewport', async ({ page }) => {
             // Set mobile viewport
             await page.setViewportSize({ width: 375, height: 667 });
             await page.reload();
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
 
             // Look for hamburger menu
             const menuButton = page.locator(
@@ -331,37 +296,33 @@ test.describe("Navigation and State Management", () => {
 
                 // Menu should open with navigation links
                 await expect(
-                    page
-                        .locator("text=/Dashboard|Debts|Goals|Settings/i")
-                        .first()
+                    page.locator('text=/Dashboard|Debts|Goals|Settings/i').first()
                 ).toBeVisible({ timeout: 3000 });
             }
         });
     });
 
-    test.describe("State Persistence", () => {
-        test("selected week persists after page reload", async ({ page }) => {
+    test.describe('State Persistence', () => {
+        test('selected week persists after page reload', async ({ page }) => {
             // Wait for page to be fully loaded
-            await page.waitForLoadState("networkidle");
+            await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
             // Navigate to a specific week using the dropdown selector
-            const weekSelector = page.locator("select").first();
+            const weekSelector = page.locator('select').first();
 
             if (await weekSelector.isVisible({ timeout: 3000 })) {
-                // Select week 2 to change week
-                await weekSelector.selectOption({ label: "Week 2" });
+                // Select week 2 to change week (options are just numbers like "2")
+                await weekSelector.selectOption({ value: '2' });
                 await page.waitForTimeout(500);
 
                 // Get current week
-                const weekIndicator = page
-                    .locator("text=/Week [1-4]/i")
-                    .first();
+                const weekIndicator = page.locator('text=/Week [1-4]/i').first();
                 const weekBefore = await weekIndicator.textContent();
 
                 // Reload page
                 await page.reload();
-                await page.waitForLoadState("networkidle");
+                await page.waitForLoadState('networkidle');
                 await page.waitForTimeout(1000);
 
                 // Week should be remembered (or reset to current - both are valid behaviors)

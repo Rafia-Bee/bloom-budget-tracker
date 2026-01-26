@@ -191,7 +191,9 @@ function MerchantRow({ merchant, rank, currencyFormatter, totalSpending }) {
                     <span>•</span>
                     <span className="whitespace-nowrap">{merchant.count}x</span>
                     <span className="hidden sm:inline">•</span>
-                    <span className="hidden sm:inline">avg {currencyFormatter(merchant.average)}</span>
+                    <span className="hidden sm:inline">
+                        avg {currencyFormatter(merchant.average)}
+                    </span>
                 </div>
             </div>
 
@@ -200,7 +202,9 @@ function MerchantRow({ merchant, rank, currencyFormatter, totalSpending }) {
                 <div className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                     {currencyFormatter(merchant.total)}
                 </div>
-                <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{percentage}%</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                    {percentage}%
+                </div>
             </div>
 
             {/* Progress Bar (visual indicator) */}

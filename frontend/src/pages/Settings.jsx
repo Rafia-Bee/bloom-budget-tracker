@@ -502,13 +502,13 @@ function Settings({ setIsAuthenticated }) {
                                             }
                                             className="w-full sm:w-auto sm:max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink"
                                         >
-                                        <option value={7}>7 days (1 week)</option>
-                                        <option value={14}>14 days (2 weeks)</option>
-                                        <option value={21}>21 days (3 weeks)</option>
-                                        <option value={30}>30 days (1 month)</option>
-                                        <option value={45}>45 days (1.5 months)</option>
-                                        <option value={60}>60 days (2 months)</option>
-                                        <option value={90}>90 days (3 months)</option>
+                                            <option value={7}>7 days (1 week)</option>
+                                            <option value={14}>14 days (2 weeks)</option>
+                                            <option value={21}>21 days (3 weeks)</option>
+                                            <option value={30}>30 days (1 month)</option>
+                                            <option value={45}>45 days (1.5 months)</option>
+                                            <option value={60}>60 days (2 months)</option>
+                                            <option value={90}>90 days (3 months)</option>
                                         </select>
                                         <button
                                             onClick={handleSaveLookahead}
