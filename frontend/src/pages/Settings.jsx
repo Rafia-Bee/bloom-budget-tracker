@@ -298,7 +298,7 @@ function Settings({ setIsAuthenticated }) {
                 </div>
 
                 {/* Tab Navigation - 2x2 grid on mobile, row on desktop */}
-                <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm">
+                <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm border border-gray-200 dark:border-dark-border">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -361,7 +361,7 @@ function Settings({ setIsAuthenticated }) {
                         </div>
 
                         {/* Category Tabs - grid on mobile, flex on desktop */}
-                        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-gray-100 dark:bg-dark-surface rounded-lg p-1 mb-6">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-gray-100 dark:bg-dark-surface rounded-lg p-1 mb-6 border border-gray-200 dark:border-dark-border">
                             {categories.map((category) => (
                                 <button
                                     key={category}
