@@ -297,19 +297,19 @@ function Settings({ setIsAuthenticated }) {
                     </p>
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="flex space-x-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm">
+                {/* Tab Navigation - mobile scrollable, desktop wrapping */}
+                <div className="flex flex-wrap gap-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'bg-bloom-pink text-white'
                                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover'
                             }`}
                         >
-                            <span>{tab.icon}</span>
+                            <span className="text-sm sm:text-base">{tab.icon}</span>
                             <span>{tab.label}</span>
                         </button>
                     ))}
@@ -325,18 +325,18 @@ function Settings({ setIsAuthenticated }) {
                 {/* Subcategories Tab */}
                 {activeTab === 'subcategories' && (
                     <div className="bg-white dark:bg-dark-elevated rounded-2xl shadow-lg p-6">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                                     Subcategories
                                 </h2>
-                                <p className="text-gray-600 dark:text-gray-300">
+                                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                                     Manage your expense subcategories
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowCreateModal(true)}
-                                className="bg-bloom-pink hover:bg-bloom-pink/90 text-white px-4 py-2 rounded-lg transition-colors"
+                                className="bg-bloom-pink hover:bg-bloom-pink/90 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto text-center"
                             >
                                 + Add Subcategory
                             </button>
@@ -419,17 +419,43 @@ function Settings({ setIsAuthenticated }) {
                                                             onClick={() =>
                                                                 openEditModal(subcategory)
                                                             }
-                                                            className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                                                            className="p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                                            title="Edit"
                                                         >
-                                                            ✏️
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                                />
+                                                            </svg>
                                                         </button>
                                                         <button
                                                             onClick={() =>
                                                                 setDeleteConfirm(subcategory)
                                                             }
-                                                            className="text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                                                            className="p-1.5 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                                            title="Delete"
                                                         >
-                                                            🗑️
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
                                                         </button>
                                                     </>
                                                 )}
@@ -460,21 +486,22 @@ function Settings({ setIsAuthenticated }) {
                                     the Scheduled view.
                                 </p>
 
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                     <label
                                         htmlFor="lookahead-days"
                                         className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
                                     >
                                         Look ahead:
                                     </label>
-                                    <select
-                                        id="lookahead-days"
-                                        value={recurringLookaheadDays}
-                                        onChange={(e) =>
-                                            setRecurringLookaheadDays(parseInt(e.target.value))
-                                        }
-                                        className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink"
-                                    >
+                                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                        <select
+                                            id="lookahead-days"
+                                            value={recurringLookaheadDays}
+                                            onChange={(e) =>
+                                                setRecurringLookaheadDays(parseInt(e.target.value))
+                                            }
+                                            className="w-full sm:w-auto sm:max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink"
+                                        >
                                         <option value={7}>7 days (1 week)</option>
                                         <option value={14}>14 days (2 weeks)</option>
                                         <option value={21}>21 days (3 weeks)</option>
@@ -482,14 +509,15 @@ function Settings({ setIsAuthenticated }) {
                                         <option value={45}>45 days (1.5 months)</option>
                                         <option value={60}>60 days (2 months)</option>
                                         <option value={90}>90 days (3 months)</option>
-                                    </select>
-                                    <button
-                                        onClick={handleSaveLookahead}
-                                        disabled={savingLookahead}
-                                        className="px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                    >
-                                        {savingLookahead ? 'Saving...' : 'Save'}
-                                    </button>
+                                        </select>
+                                        <button
+                                            onClick={handleSaveLookahead}
+                                            disabled={savingLookahead}
+                                            className="w-full sm:w-auto px-4 py-2 bg-bloom-pink text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-center"
+                                        >
+                                            {savingLookahead ? 'Saving...' : 'Save'}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {lookaheadSuccess && (
