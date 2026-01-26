@@ -4,9 +4,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard + Wizard)
+## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard + Wizard + Modals + Menu)
 
-**Session Summary:** Fixed Dashboard and Wizard mobile UI issues from Issue #187.
+**Session Summary:** Fixed Dashboard, Wizard, Add Modals, Filter Modal, and Hamburger Menu mobile UI issues from Issue #187.
 
 **Branch:** `fix/issue-187-mobile-ui`
 
@@ -30,7 +30,17 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 8. **Issue #5: Step 3 Text Wrapping** - Made budget breakdown fully responsive: text labels (`text-sm sm:text-base`), amounts (`text-lg sm:text-xl` to `text-2xl sm:text-3xl`), padding (`p-4 sm:p-6`), and spacing (`space-y-2 sm:space-y-3`).
 
-9. **Issue #8: Credit Slider Bug** - Changed slider `step` from 1000 (€10 increments) to 100 (€1 increments) for proper fine-grained credit allowance selection.
+9. **Issue #8: Credit Slider Bug** - Changed slider `step` from 1000 (€10 increments) to 100 (€1 increments) for proper fine-grained credit allowance selection. Also made the middle value an editable input box.
+
+### Modal Issues Fixed:
+
+10. **Issue #9: Amount Box Too Wide** - Fixed AddExpenseModal and AddIncomeModal amount inputs. Added `w-full` to flex container, `min-w-0` to input, and responsive sizing (`w-20 sm:w-24` for CurrencySelector, `px-3 sm:px-4` for input).
+
+11. **Issue #10: Expenses Button Text Misaligned** - Added `text-center`, responsive text sizes (`text-sm sm:text-base`), and responsive padding (`px-2 sm:px-4`) to FilterTransactionsModal transaction type buttons.
+
+### Menu Issues Fixed:
+
+12. **Issue #12: Logout Button Too Close to Navigation** - Added `pb-16` (64px) bottom padding to mobile menu content, ensuring Logout button sits higher above phone navigation buttons.
 
 **Files Changed:**
 
@@ -38,11 +48,14 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 - `frontend/src/components/dashboard/BalanceCards.jsx` - Total spent alignment
 - `frontend/src/components/dashboard/TransactionList.jsx` - Amount no-wrap
 - `frontend/src/components/LeftoverBudgetModal.jsx` - Min alignment + goals bug fix
-- `frontend/src/components/Header.jsx` - mobileMenuToggle event dispatch
+- `frontend/src/components/Header.jsx` - mobileMenuToggle event + menu bottom padding
 - `frontend/src/pages/Dashboard.jsx` - Listen for menu toggle, hide FAB
-- `frontend/src/components/SalaryPeriodWizard.jsx` - Step 2 inputs, Step 3 text, slider step fix
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Step 2 inputs, Step 3 text, slider step fix + editable input
+- `frontend/src/components/AddExpenseModal.jsx` - Amount row width fix
+- `frontend/src/components/AddIncomeModal.jsx` - Amount row width fix
+- `frontend/src/components/FilterTransactionsModal.jsx` - Button text centering
 
-**What's Next:** Add modals (9-10), Hamburger menu (12), Settings, Reports, Recurring, Debts, Goals, Trash pages
+**What's Next:** Settings page (13-15), Reports (14-16), Recurring (17-22), Debts (23-24), Goals (13), Trash (31-32), App-wide emoji removal (30)
 
 ---
 

@@ -135,10 +135,10 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                             Transaction Type
                         </label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             <button
                                 onClick={() => setFilters({ ...filters, transactionType: 'both' })}
-                                className={`py-2 px-4 rounded-lg font-medium transition-colors ${
+                                className={`py-2 px-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center transition-colors ${
                                     filters.transactionType === 'both'
                                         ? 'bg-bloom-pink dark:bg-dark-pink text-white'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -150,7 +150,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                                 onClick={() =>
                                     setFilters({ ...filters, transactionType: 'expense' })
                                 }
-                                className={`py-2 px-4 rounded-lg font-medium transition-colors ${
+                                className={`py-2 px-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center transition-colors ${
                                     filters.transactionType === 'expense'
                                         ? 'bg-bloom-pink dark:bg-dark-pink text-white'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border'
@@ -162,7 +162,7 @@ export default function FilterTransactionsModal({ isOpen, onClose, onApply, init
                                 onClick={() =>
                                     setFilters({ ...filters, transactionType: 'income' })
                                 }
-                                className={`py-2 px-4 rounded-lg font-medium transition-colors ${
+                                className={`py-2 px-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center transition-colors ${
                                     filters.transactionType === 'income'
                                         ? 'bg-bloom-mint text-green-800 dark:text-green-900'
                                         : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-border'

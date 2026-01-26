@@ -362,7 +362,7 @@ function Header({ setIsAuthenticated, children }) {
                     {/* Mobile Menu Dropdown */}
                     {showMobileMenu && (
                         <div className="mt-4 pb-4 border-t border-gray-200 dark:border-dark-border pt-4 max-h-[85vh] overflow-y-auto">
-                            <div className="space-y-3">
+                            <div className="space-y-3 pb-16">
                                 {/* Custom content slot (e.g., PeriodSelector for Dashboard) */}
                                 {children && <div className="mb-4">{children}</div>}
 
