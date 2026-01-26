@@ -4,6 +4,49 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-26: Issue #180 - Bug #9 Implemented
+
+**Session Summary:** Implemented "Balance Difference Detected" modal for current periods in sync mode.
+
+**Branch:** `fix/issue-180-remaining-bugs`
+
+**Bug #9 Implementation:**
+
+When user creates a current period (start date ≤ today, ≥ anchor date) in sync mode, and the entered balance differs from tracked balance, a prompt now shows:
+
+- **Entered > Tracked**: Offers to create "Balance Reconciliation" income
+- **Entered < Tracked**: Warning that dashboard will show tracked balance
+
+**Changes Made:**
+
+1. Added state: `showBalanceDifferencePrompt`, `balanceDifferenceData`, `trackedDebitBalance`, `trackedCreditAvailable`
+2. Store tracked balances when fetching from `getGlobalBalances()`
+3. Added `getBalanceDifference()` function with skip conditions (edit, rollover, past, future periods)
+4. Added modal UI matching existing FutureIncomePrompt style
+5. Added `handleCreateWithReconciliationIncome()` handler
+6. Modified `createSalaryPeriod()` to accept optional reconciliation amount
+
+**Edge Cases Handled:**
+
+| Case | Behavior |
+|------|----------|
+| Editing period | Skip (different UX) |
+| Rollover | Skip (pre-fills correct values) |
+| Past period (before anchor) | Skip (PeriodInfoModal handles) |
+| Future period | Skip (FutureIncomePrompt handles) |
+| No tracked data | Skip (first period) |
+| No difference | Skip (nothing to reconcile) |
+
+**Files Changed:**
+
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Full implementation
+
+**Status:** Ready for testing. Run `btest f` to verify.
+
+**What's Next:** Test manually, commit if working
+
+---
+
 ## 2026-01-23: Issue #180 - Bug #9 Enhancement Planned
 
 **Session Summary:** Investigated sync mode balance calculation, found it's by design. Identified UX enhancement needed.

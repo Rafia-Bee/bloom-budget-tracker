@@ -37,6 +37,11 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const [showBalanceModeInfo, setShowBalanceModeInfo] = useState(false);
     const [showPeriodInfoModal, setShowPeriodInfoModal] = useState(false);
     const [showFutureIncomePrompt, setShowFutureIncomePrompt] = useState(false);
+    const [showBalanceDifferencePrompt, setShowBalanceDifferencePrompt] = useState(false);
+    const [balanceDifferenceData, setBalanceDifferenceData] = useState(null);
+    // Store tracked balances from getGlobalBalances for comparison
+    const [trackedDebitBalance, setTrackedDebitBalance] = useState(null);
+    const [trackedCreditAvailable, setTrackedCreditAvailable] = useState(null);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(() => {
         // Default end date: 1 month from start - 1 day
@@ -141,8 +146,13 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                     const data = response.data;
                     if (data.has_initial_balances) {
                         // Pre-fill with current calculated balances
-                        setDebitBalance((fromEur(data.debit_balance) / 100).toFixed(2));
-                        setCreditAvailable((fromEur(data.credit_available) / 100).toFixed(2));
+                        const debitInUserCurrency = fromEur(data.debit_balance);
+                        const creditInUserCurrency = fromEur(data.credit_available);
+                        setDebitBalance((debitInUserCurrency / 100).toFixed(2));
+                        setCreditAvailable((creditInUserCurrency / 100).toFixed(2));
+                        // Store tracked balances for comparison (in cents, user currency)
+                        setTrackedDebitBalance(debitInUserCurrency);
+                        setTrackedCreditAvailable(creditInUserCurrency);
                         if (data.credit_limit > 0) {
                             setCreditLimit((fromEur(data.credit_limit) / 100).toFixed(2));
                         }
@@ -385,6 +395,40 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         return true;
     };
 
+    // Check if entered balance differs from tracked balance (for current/past periods in sync mode)
+    const getBalanceDifference = () => {
+        if (!balanceModeEnabled) return null;
+        if (balanceMode !== 'sync') return null;
+        if (editPeriod) return null; // Skip for edits (different UX flow)
+        if (rolloverData) return null; // Rollover pre-fills correct values
+        if (trackedDebitBalance === null) return null; // No tracked data yet (first period or loading)
+
+        // Skip if this is a PAST period (before anchor) - handled by PeriodInfoModal
+        if (balanceStartDate && startDate < balanceStartDate) return null;
+
+        // Skip if this is a FUTURE period - handled by FutureIncomePrompt
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (startDate > todayStr) return null;
+
+        const enteredDebit = parseCurrency(debitBalance);
+        const enteredCredit = parseCurrency(creditAvailable);
+
+        const debitDiff = enteredDebit - trackedDebitBalance;
+        const creditDiff = enteredCredit - (trackedCreditAvailable || 0);
+
+        // No difference - nothing to prompt
+        if (debitDiff === 0 && creditDiff === 0) return null;
+
+        return {
+            debitDiff,
+            creditDiff,
+            trackedDebit: trackedDebitBalance,
+            trackedCredit: trackedCreditAvailable || 0,
+            enteredDebit,
+            enteredCredit,
+        };
+    };
+
     const handleCreate = async () => {
         // Check if we should show the past period info modal
         if (balanceModeEnabled && isPastPeriod() && !showPeriodInfoModal) {
@@ -395,6 +439,14 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         // Check if we should show the future income prompt (sync mode only)
         if (balanceModeEnabled && isFuturePeriodInSyncMode() && !showFutureIncomePrompt) {
             setShowFutureIncomePrompt(true);
+            return;
+        }
+
+        // Check if we should show the balance difference prompt (current periods in sync mode)
+        const diff = getBalanceDifference();
+        if (diff && !showBalanceDifferencePrompt) {
+            setBalanceDifferenceData(diff);
+            setShowBalanceDifferencePrompt(true);
             return;
         }
 
@@ -422,10 +474,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
         await createSalaryPeriod(true);
     };
 
-    const createSalaryPeriod = async (createIncome) => {
+    // Create with reconciliation income (for balance difference case)
+    const handleCreateWithReconciliationIncome = async () => {
+        await createSalaryPeriod(false, balanceDifferenceData?.debitDiff);
+    };
+
+    const createSalaryPeriod = async (createIncome, reconciliationAmount = null) => {
         setError('');
         setLoading(true);
         setShowFutureIncomePrompt(false);
+        setShowBalanceDifferencePrompt(false);
 
         try {
             // Convert user's currency to EUR for backend storage
@@ -460,6 +518,15 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         type: `Projected Period Salary: ${startDate}`,
                         amount: incomeAmount,
                         date: startDate,
+                    });
+                }
+
+                // If user wants reconciliation income for balance difference
+                if (reconciliationAmount && reconciliationAmount > 0) {
+                    await incomeAPI.create({
+                        type: 'Balance Reconciliation',
+                        amount: toEur(reconciliationAmount),
+                        date: new Date().toISOString().split('T')[0], // Today's date
                     });
                 }
             }
@@ -1515,6 +1582,117 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                             >
                                 {loading ? 'Creating...' : 'Yes, create income'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Balance Difference Prompt (for current periods in sync mode) */}
+            {showBalanceDifferencePrompt && balanceDifferenceData && (
+                <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md p-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-3">
+                            📊 Balance Difference Detected
+                        </h3>
+
+                        {/* Show debit difference */}
+                        {balanceDifferenceData.debitDiff !== 0 && (
+                            <div className="mb-4">
+                                <p className="text-gray-600 dark:text-dark-text-secondary">
+                                    <strong>Debit Balance:</strong>
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                                    Entered: {formatCurrency(balanceDifferenceData.enteredDebit)} •
+                                    Tracked: {formatCurrency(balanceDifferenceData.trackedDebit)}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Show credit difference */}
+                        {balanceDifferenceData.creditDiff !== 0 && (
+                            <div className="mb-4">
+                                <p className="text-gray-600 dark:text-dark-text-secondary">
+                                    <strong>Credit Available:</strong>
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                                    Entered: {formatCurrency(balanceDifferenceData.enteredCredit)} •
+                                    Tracked: {formatCurrency(balanceDifferenceData.trackedCredit)}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Entered > Tracked: Offer income creation */}
+                        {balanceDifferenceData.debitDiff > 0 && (
+                            <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-green-800 dark:text-green-300 font-medium mb-2">
+                                    Your entered balance is{' '}
+                                    {formatCurrency(balanceDifferenceData.debitDiff)} higher than
+                                    tracked.
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-400">
+                                    Would you like to create an income entry to reconcile this
+                                    difference? This will ensure your tracked balance matches your
+                                    actual bank balance.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Entered < Tracked: Warning only */}
+                        {balanceDifferenceData.debitDiff < 0 && (
+                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-2">
+                                    Your entered balance is{' '}
+                                    {formatCurrency(Math.abs(balanceDifferenceData.debitDiff))}{' '}
+                                    lower than tracked.
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                    In <strong>Sync with Bank</strong> mode, your dashboard will
+                                    continue showing the tracked balance (
+                                    {formatCurrency(balanceDifferenceData.trackedDebit)}). You may
+                                    have untracked expenses to add.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-3">
+                            {/* Go Back button - always shown */}
+                            <button
+                                onClick={() => {
+                                    setShowBalanceDifferencePrompt(false);
+                                    setBalanceDifferenceData(null);
+                                }}
+                                disabled={loading}
+                                className="border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text py-2 px-4 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-elevated disabled:opacity-50"
+                            >
+                                Go back
+                            </button>
+
+                            {balanceDifferenceData.debitDiff > 0 ? (
+                                <>
+                                    <button
+                                        onClick={() => createSalaryPeriod(false)}
+                                        disabled={loading}
+                                        className="flex-1 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-elevated disabled:opacity-50"
+                                    >
+                                        No, just create
+                                    </button>
+                                    <button
+                                        onClick={handleCreateWithReconciliationIncome}
+                                        disabled={loading}
+                                        className="flex-1 bg-bloom-pink text-white py-2 rounded-lg font-medium hover:bg-pink-600 disabled:opacity-50"
+                                    >
+                                        {loading ? 'Creating...' : 'Yes, create income'}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => createSalaryPeriod(false)}
+                                    disabled={loading}
+                                    className="flex-1 bg-bloom-pink text-white py-2 rounded-lg font-medium hover:bg-pink-600 disabled:opacity-50"
+                                >
+                                    {loading ? 'Creating...' : 'Continue'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

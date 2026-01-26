@@ -368,13 +368,16 @@ class TestIssue180AdditionalChecks:
             assert response.status_code == 200
 
             # Verify cache-control headers are set
-            assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate", (
+            assert (
+                response.headers.get("Cache-Control")
+                == "no-cache, no-store, must-revalidate"
+            ), (
                 "Missing or incorrect Cache-Control header - "
                 "needed to prevent stale balance in wizard (Issue #180 Bug #8)"
             )
-            assert response.headers.get("Pragma") == "no-cache", (
-                "Missing Pragma: no-cache header"
-            )
-            assert response.headers.get("Expires") == "0", (
-                "Missing or incorrect Expires header"
-            )
+            assert (
+                response.headers.get("Pragma") == "no-cache"
+            ), "Missing Pragma: no-cache header"
+            assert (
+                response.headers.get("Expires") == "0"
+            ), "Missing or incorrect Expires header"
