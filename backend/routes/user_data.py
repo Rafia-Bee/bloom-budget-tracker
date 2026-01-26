@@ -16,6 +16,7 @@ from backend.models.database import (
     SalaryPeriod,
     Debt,
     RecurringExpense,
+    RecurringIncome,
     Subcategory,
     Goal,
 )
@@ -39,6 +40,7 @@ def delete_all_user_data():
     - All salary periods
     - All debts
     - All recurring expenses
+    - All recurring income
     - All goals
     - All custom subcategories
 
@@ -75,6 +77,9 @@ def delete_all_user_data():
         recurring_count = RecurringExpense.query.filter_by(
             user_id=current_user_id
         ).count()
+        recurring_income_count = RecurringIncome.query.filter_by(
+            user_id=current_user_id
+        ).count()
         goal_count = Goal.query.filter_by(user_id=current_user_id).count()
         subcategory_count = Subcategory.query.filter_by(user_id=current_user_id).count()
 
@@ -85,6 +90,7 @@ def delete_all_user_data():
             + salary_period_count
             + debt_count
             + recurring_count
+            + recurring_income_count
             + goal_count
             + subcategory_count
         )
@@ -96,6 +102,7 @@ def delete_all_user_data():
         SalaryPeriod.query.filter_by(user_id=current_user_id).delete()
         Debt.query.filter_by(user_id=current_user_id).delete()
         RecurringExpense.query.filter_by(user_id=current_user_id).delete()
+        RecurringIncome.query.filter_by(user_id=current_user_id).delete()
         Goal.query.filter_by(user_id=current_user_id).delete()
         Subcategory.query.filter_by(user_id=current_user_id).delete()
 
@@ -463,20 +470,22 @@ def get_global_balances():
         has_initial_balances = user.balance_start_date is not None
 
         if not has_initial_balances:
-            return (
-                jsonify(
-                    {
-                        "debit_balance": 0,
-                        "credit_available": 0,
-                        "credit_limit": 0,
-                        "balance_mode": user.balance_mode,
-                        "has_initial_balances": False,
-                        "period_income": 0,
-                        "all_time_spent": 0,
-                    }
-                ),
-                200,
+            response = jsonify(
+                {
+                    "debit_balance": 0,
+                    "credit_available": 0,
+                    "credit_limit": 0,
+                    "balance_mode": user.balance_mode,
+                    "has_initial_balances": False,
+                    "period_income": 0,
+                    "all_time_spent": 0,
+                }
             )
+            # Prevent browser caching to ensure fresh balance data (Issue #180)
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+            return response, 200
 
         # Calculate global balance based on mode
         if user.balance_mode == "sync":
@@ -591,21 +600,23 @@ def get_global_balances():
             or 0
         )
 
-        return (
-            jsonify(
-                {
-                    "debit_balance": debit_balance,
-                    "credit_available": credit_available,
-                    "credit_limit": credit_limit,
-                    "balance_mode": user.balance_mode,
-                    "has_initial_balances": True,
-                    "period_income": 0,  # No period, so 0
-                    "all_time_spent": all_time_spent,
-                    "total_income": total_income_all_time,
-                }
-            ),
-            200,
+        response = jsonify(
+            {
+                "debit_balance": debit_balance,
+                "credit_available": credit_available,
+                "credit_limit": credit_limit,
+                "balance_mode": user.balance_mode,
+                "has_initial_balances": True,
+                "period_income": 0,  # No period, so 0
+                "all_time_spent": all_time_spent,
+                "total_income": total_income_all_time,
+            }
         )
+        # Prevent browser caching to ensure fresh balance data (Issue #180)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response, 200
 
     except SQLAlchemyError as e:
         current_app.logger.error(

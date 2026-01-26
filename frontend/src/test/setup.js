@@ -137,11 +137,22 @@ vi.mock('../api', () => ({
         getGlobalBalances: vi.fn(() =>
             Promise.resolve({
                 data: {
-                    balance_start_date: null,
-                    user_initial_debit_balance: 0,
-                    user_initial_credit_limit: 150000,
-                    user_initial_credit_available: 150000,
+                    has_initial_balances: true,
+                    debit_balance: 0,
+                    credit_available: 150000,
+                    credit_limit: 150000,
                     balance_mode: 'sync',
+                    balance_start_date: null,
+                    period_income: 0,
+                    all_time_spent: 0,
+                },
+            })
+        ),
+        getBalanceMode: vi.fn(() =>
+            Promise.resolve({
+                data: {
+                    balance_mode: 'sync',
+                    balance_start_date: null,
                 },
             })
         ),

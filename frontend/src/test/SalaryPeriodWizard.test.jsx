@@ -138,7 +138,7 @@ describe('SalaryPeriodWizard', () => {
             expect(screen.getByText('Budget Period Start Date')).toBeInTheDocument();
         });
 
-        it('has default credit limit of €1500', async () => {
+        it('loads credit limit from API', async () => {
             renderWithProviders(
                 <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
             );
@@ -147,8 +147,12 @@ describe('SalaryPeriodWizard', () => {
                 expect(screen.getByText('Credit Card Limit (Total)')).toBeInTheDocument();
             });
 
-            const creditLimitInput = getInputByLabel('Credit Card Limit (Total)');
-            expect(creditLimitInput).toHaveValue('1500');
+            // Wait for the API call to complete and populate the credit limit field
+            // Credit limit is loaded from global balances API (150000 cents = €1500.00)
+            await waitFor(() => {
+                const creditLimitInput = getInputByLabel('Credit Card Limit (Total)');
+                expect(creditLimitInput).toHaveValue('1500.00');
+            });
         });
 
         it('displays step progress indicators', async () => {
@@ -217,12 +221,23 @@ describe('SalaryPeriodWizard', () => {
             });
         });
 
-        it('shows warning when credit card is maxed out', async () => {
+        it('shows warning when credit card is maxed out (limit > 0 but available = 0)', async () => {
             renderWithProviders(
                 <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
             );
 
-            // Credit available defaults to empty (0)
+            await waitFor(() => {
+                expect(
+                    screen.getByText('Credit Card Available (Remaining Limit)')
+                ).toBeInTheDocument();
+            });
+
+            // Set credit available to 0 (simulating maxed out card)
+            // Note: credit limit is 1500 from the mock API response
+            const creditInput = getInputByLabel('Credit Card Available (Remaining Limit)');
+            await changeWithAct(creditInput, '0');
+
+            // Should show maxed out warning since limit > 0 but available = 0
             await waitFor(() => {
                 expect(screen.getByText(/no credit available/i)).toBeInTheDocument();
             });
