@@ -151,13 +151,29 @@ function Trash({ setIsAuthenticated }) {
                     </p>
                 </div>
 
-                {/* Tabs - responsive with wrap */}
-                <div className="flex flex-wrap gap-1 border-b border-gray-200 dark:border-dark-border mb-4 pb-1">
+                {/* Tabs - dropdown on mobile, tabs on desktop */}
+                {/* Mobile: Dropdown */}
+                <div className="sm:hidden mb-4">
+                    <select
+                        value={activeTab}
+                        onChange={(e) => setActiveTab(e.target.value)}
+                        className="w-full px-4 py-3 text-sm font-medium rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    >
+                        {tabs.map((tab) => (
+                            <option key={tab.id} value={tab.id}>
+                                {tab.label} {tab.count > 0 ? `(${tab.count})` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Desktop: Tab buttons */}
+                <div className="hidden sm:flex flex-wrap gap-1 border-b border-gray-200 dark:border-dark-border mb-4 pb-1">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'border-pink-500 text-pink-600 dark:text-dark-pink'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -165,7 +181,7 @@ function Trash({ setIsAuthenticated }) {
                         >
                             {tab.label}
                             {tab.count > 0 && (
-                                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs rounded-full bg-gray-200 dark:bg-dark-elevated text-gray-600 dark:text-gray-400">
+                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-dark-elevated text-gray-600 dark:text-gray-400">
                                     {tab.count}
                                 </span>
                             )}
