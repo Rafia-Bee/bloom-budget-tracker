@@ -297,13 +297,13 @@ function Settings({ setIsAuthenticated }) {
                     </p>
                 </div>
 
-                {/* Tab Navigation - mobile scrollable, desktop wrapping */}
-                <div className="flex flex-wrap gap-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm">
+                {/* Tab Navigation - 2x2 grid on mobile, row on desktop */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1 bg-white dark:bg-dark-elevated rounded-lg p-1 mb-8 shadow-sm">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap ${
+                            className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'bg-bloom-pink text-white'
                                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover'
