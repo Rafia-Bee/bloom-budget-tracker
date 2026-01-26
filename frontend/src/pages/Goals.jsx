@@ -208,18 +208,18 @@ function Goals({ setIsAuthenticated }) {
 
             <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
                         <div>
-                            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
                                 Goals & Savings
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-300">
+                            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                                 Track your savings goals and financial targets
                             </p>
                         </div>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="bg-bloom-pink hover:bg-bloom-pink/90 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
+                            className="bg-bloom-pink hover:bg-bloom-pink/90 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
                         >
                             <svg
                                 className="w-5 h-5"

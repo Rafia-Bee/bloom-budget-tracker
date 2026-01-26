@@ -170,39 +170,37 @@ function MerchantRow({ merchant, rank, currencyFormatter, totalSpending }) {
         rankColors[rank] || 'bg-gray-50 dark:bg-dark-elevated text-gray-500 dark:text-gray-400';
 
     return (
-        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors">
+        <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 dark:bg-dark-elevated rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors">
             {/* Rank Badge */}
             <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${rankClass}`}
+                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0 ${rankClass}`}
             >
                 {rank}
             </div>
 
             {/* Merchant Info */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="text-base">{emoji}</span>
-                    <span className="font-medium text-gray-900 dark:text-white truncate">
+                <div className="flex items-center gap-1 sm:gap-2">
+                    <span className="text-sm sm:text-base">{emoji}</span>
+                    <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
                         {merchant.name}
                     </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    <span>{merchant.category}</span>
+                <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <span className="truncate max-w-[60px] sm:max-w-none">{merchant.category}</span>
                     <span>•</span>
-                    <span>
-                        {merchant.count} transaction{merchant.count !== 1 ? 's' : ''}
-                    </span>
-                    <span>•</span>
-                    <span>avg {currencyFormatter(merchant.average)}</span>
+                    <span className="whitespace-nowrap">{merchant.count}x</span>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="hidden sm:inline">avg {currencyFormatter(merchant.average)}</span>
                 </div>
             </div>
 
             {/* Amount & Percentage */}
-            <div className="text-right">
-                <div className="font-semibold text-gray-900 dark:text-white">
+            <div className="text-right flex-shrink-0">
+                <div className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                     {currencyFormatter(merchant.total)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{percentage}%</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{percentage}%</div>
             </div>
 
             {/* Progress Bar (visual indicator) */}

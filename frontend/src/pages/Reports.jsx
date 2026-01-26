@@ -221,25 +221,31 @@ function Reports({ setIsAuthenticated }) {
 
                 {/* Date Range Controls */}
                 <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4 mb-6">
-                    <div className="flex flex-wrap items-center gap-4 justify-end">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 sm:justify-end">
                         {/* Custom Date Range */}
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm text-gray-500 dark:text-gray-400">
-                                From:
-                            </label>
-                            <input
-                                type="date"
-                                value={dateRange.start}
-                                onChange={(e) => handleDateRangeChange('start', e.target.value)}
-                                className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
-                            />
-                            <label className="text-sm text-gray-500 dark:text-gray-400">To:</label>
-                            <input
-                                type="date"
-                                value={dateRange.end}
-                                onChange={(e) => handleDateRangeChange('end', e.target.value)}
-                                className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
-                            />
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm text-gray-500 dark:text-gray-400 w-12 sm:w-auto">
+                                    From:
+                                </label>
+                                <input
+                                    type="date"
+                                    value={dateRange.start}
+                                    onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm text-gray-500 dark:text-gray-400 w-12 sm:w-auto">
+                                    To:
+                                </label>
+                                <input
+                                    type="date"
+                                    value={dateRange.end}
+                                    onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1 text-sm rounded border border-gray-300 dark:border-dark-elevated bg-white dark:bg-dark-elevated text-gray-900 dark:text-white"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
