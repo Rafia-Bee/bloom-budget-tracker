@@ -4,58 +4,50 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard + Wizard + Modals + Menu)
+## 2026-01-26: Issue #187 - Mobile UI Fixes (Complete Page-by-Page)
 
-**Session Summary:** Fixed Dashboard, Wizard, Add Modals, Filter Modal, and Hamburger Menu mobile UI issues from Issue #187.
+**Session Summary:** Comprehensive mobile UI fixes for Issue #187 covering Dashboard, Wizard, Modals, Menu, Goals, Reports, Recurring, Debts, Settings, and Trash pages.
 
 **Branch:** `fix/issue-187-mobile-ui`
 
-### Dashboard Issues Fixed:
+### Commits Made (9 total):
 
-1. **Issue #1: Budget Card Header Cluttered** - Redesigned header with unified responsive layout using Tailwind sm: breakpoints. Cleaner spacing, compact date format, smaller controls on mobile while maintaining good desktop experience.
+1. **Dashboard (Issues 1-3, 6-7, 11)** - Budget card header, debit total spent alignment, amounts no-wrap, leftover modal grid, goals progress bug fix, FAB hide when menu open
+2. **Wizard (Issues 4, 5, 8)** - Step 2 input sizes, Step 3 text responsive, slider step=100 (€1), editable credit input
+3. **Credit Allowance Enhancement** - Made the credit value an editable input box for precise entry
+4. **Modals + Menu (Issues 9, 10, 12)** - Amount input width fix, filter button centering, menu bottom padding
+5. **Goals + Reports (Issues 13-16)** - Goals header stacked layout, Reports date selectors stacked, pie chart legend smaller, top merchants responsive
+6. **Recurring (Issues 17-20)** - Add button below tabs, "Incomes" renamed, uniform tab sizing `min-w-[100px]`
+7. **Debts (Issues 23-24)** - Removed trailing ")" bug in payment history, progress text alignment
+8. **Settings (Issues 25-28)** - Tabs wrap with `flex-wrap gap-1`, icon sizing responsive, Add Subcategory stacked, Save in column on mobile, emoji buttons replaced with SVG edit/delete icons
+9. **Trash (Issues 31-32)** - Tabs wrap with abbreviated labels on mobile, DeletedItemCard responsive (stacked mobile, row desktop, amount inline on mobile)
 
-2. **Issue #2: Debit Card Total Spent Alignment** - Changed from `flex justify-between` to separate rows so "Total spent" is now right-aligned, matching Credit Card styling.
+### Technical Patterns Used:
 
-3. **Issue #3: Scheduled Amounts Line Break** - Added `whitespace-nowrap` and responsive text size (`text-base sm:text-lg`) to prevent minus sign wrapping to separate line.
+- **Responsive Layout:** `flex-col sm:flex-row` for mobile-first stacking
+- **Tab Wrapping:** `flex-wrap gap-1` instead of horizontal scroll
+- **Abbreviated Text:** `{label.slice(0, 3)}` on mobile with full text on desktop
+- **Inline Mobile:** Show amount next to title on mobile, separate column on desktop
+- **Full-width Buttons:** Mobile buttons get `w-full sm:w-auto`
+- **SVG Icons:** Replaced emojis with consistent SVG icons for actions
 
-4. **Issue #6: Leftover Modal Min Alignment** - Changed from `flex justify-between` to `grid grid-cols-[1fr_auto]` layout so "Min:" column aligns consistently regardless of debt name length.
+### Files Changed:
 
-5. **Issue #7: Goals Show Wrong Progress (BUG)** - Fixed bug where `goal.progress` was treated as a number but is actually an object with `current_amount`, `percentage`, etc. Now correctly accesses `goal.progress?.current_amount` and `goal.progress?.percentage`.
+- `WeeklyBudgetCard.jsx`, `BalanceCards.jsx`, `TransactionList.jsx`
+- `LeftoverBudgetModal.jsx`, `Header.jsx`, `Dashboard.jsx`
+- `SalaryPeriodWizard.jsx`, `AddExpenseModal.jsx`, `AddIncomeModal.jsx`
+- `FilterTransactionsModal.jsx`, `Goals.jsx`, `Reports.jsx`
+- `CategoryBreakdownChart.jsx`, `TopMerchantsCard.jsx`
+- `RecurringExpenses.jsx`, `Debts.jsx`, `Settings.jsx`, `Trash.jsx`
 
-6. **Issue #11: FAB Visible When Hamburger Open** - Added `mobileMenuToggle` custom event from Header.jsx, Dashboard.jsx listens and sets `isMobileMenuOpen` state, FAB is hidden when hamburger menu is open.
+### Remaining Issues (deferred):
 
-### Wizard Issues Fixed:
+- **Issue 21:** Recurring Income cards don't match Expense cards (complex refactor)
+- **Issue 22:** Scroll shortcuts under transaction list (new feature)
+- **Issue 29:** Dropdown text sizes (may not be needed)
+- **Issue 30:** App-wide emoji removal (extensive, already started in Settings)
 
-7. **Issue #4: Step 2 Input Sizes Vary** - Fixed bill amount inputs to consistent width (`w-24 sm:w-28`) with `flex-shrink-0`. Added responsive text sizes and `truncate` for long bill names.
-
-8. **Issue #5: Step 3 Text Wrapping** - Made budget breakdown fully responsive: text labels (`text-sm sm:text-base`), amounts (`text-lg sm:text-xl` to `text-2xl sm:text-3xl`), padding (`p-4 sm:p-6`), and spacing (`space-y-2 sm:space-y-3`).
-
-9. **Issue #8: Credit Slider Bug** - Changed slider `step` from 1000 (€10 increments) to 100 (€1 increments) for proper fine-grained credit allowance selection. Also made the middle value an editable input box.
-
-### Modal Issues Fixed:
-
-10. **Issue #9: Amount Box Too Wide** - Fixed AddExpenseModal and AddIncomeModal amount inputs. Added `w-full` to flex container, `min-w-0` to input, and responsive sizing (`w-20 sm:w-24` for CurrencySelector, `px-3 sm:px-4` for input).
-
-11. **Issue #10: Expenses Button Text Misaligned** - Added `text-center`, responsive text sizes (`text-sm sm:text-base`), and responsive padding (`px-2 sm:px-4`) to FilterTransactionsModal transaction type buttons.
-
-### Menu Issues Fixed:
-
-12. **Issue #12: Logout Button Too Close to Navigation** - Added `pb-16` (64px) bottom padding to mobile menu content, ensuring Logout button sits higher above phone navigation buttons.
-
-**Files Changed:**
-
-- `frontend/src/components/WeeklyBudgetCard.jsx` - Cleaner responsive header
-- `frontend/src/components/dashboard/BalanceCards.jsx` - Total spent alignment
-- `frontend/src/components/dashboard/TransactionList.jsx` - Amount no-wrap
-- `frontend/src/components/LeftoverBudgetModal.jsx` - Min alignment + goals bug fix
-- `frontend/src/components/Header.jsx` - mobileMenuToggle event + menu bottom padding
-- `frontend/src/pages/Dashboard.jsx` - Listen for menu toggle, hide FAB
-- `frontend/src/components/SalaryPeriodWizard.jsx` - Step 2 inputs, Step 3 text, slider step fix + editable input
-- `frontend/src/components/AddExpenseModal.jsx` - Amount row width fix
-- `frontend/src/components/AddIncomeModal.jsx` - Amount row width fix
-- `frontend/src/components/FilterTransactionsModal.jsx` - Button text centering
-
-**What's Next:** Settings page (13-15), Reports (14-16), Recurring (17-22), Debts (23-24), Goals (13), Trash (31-32), App-wide emoji removal (30)
+**What's Next:** Consider creating separate issues for remaining items, or address them in follow-up work.
 
 ---
 
