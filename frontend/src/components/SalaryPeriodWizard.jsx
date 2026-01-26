@@ -696,11 +696,34 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                         }
                                         className="w-full"
                                     />
-                                    <div className="flex justify-between text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
+                                    <div className="flex justify-between items-center text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
                                         <span>{formatCurrency(0)}</span>
-                                        <span className="font-semibold text-bloom-pink dark:text-dark-pink">
-                                            {formatCurrency(creditAllowance)}
-                                        </span>
+                                        <div className="relative">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-bloom-pink dark:text-dark-pink font-semibold text-sm">
+                                                {currencySymbol}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={(creditAllowance / 100).toFixed(2)}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                    const cents = Math.round(parseFloat(val || 0) * 100);
+                                                    const max = parseCurrency(creditAvailable);
+                                                    const clamped = Math.max(0, Math.min(cents, max));
+                                                    setCreditAllowance(clamped);
+                                                }}
+                                                onBlur={(e) => {
+                                                    // Ensure proper formatting on blur
+                                                    const val = parseFloat(e.target.value) || 0;
+                                                    const cents = Math.round(val * 100);
+                                                    const max = parseCurrency(creditAvailable);
+                                                    const clamped = Math.max(0, Math.min(cents, max));
+                                                    setCreditAllowance(clamped);
+                                                }}
+                                                className="w-24 pl-6 pr-2 py-1 text-center border border-gray-300 dark:border-dark-border rounded bg-white dark:bg-dark-elevated text-bloom-pink dark:text-dark-pink font-semibold focus:ring-1 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:outline-none"
+                                            />
+                                        </div>
                                         <span>
                                             {formatCurrency(parseCurrency(creditAvailable))}
                                         </span>
