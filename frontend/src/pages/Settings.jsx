@@ -599,10 +599,10 @@ function Settings({ setIsAuthenticated }) {
                                         </div>
                                     )}
 
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex flex-col gap-3">
                                         <label
                                             htmlFor="balance-mode"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
                                         >
                                             Mode:
                                         </label>
@@ -611,7 +611,7 @@ function Settings({ setIsAuthenticated }) {
                                             value={balanceMode}
                                             onChange={(e) => handleSaveBalanceMode(e.target.value)}
                                             disabled={savingBalanceMode}
-                                            className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
+                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
                                         >
                                             <option value="sync">🔗 Sync with Bank</option>
                                             <option value="budget">📊 Budget Tracker</option>
@@ -702,10 +702,10 @@ function Settings({ setIsAuthenticated }) {
                                         </div>
                                     )}
 
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex flex-col gap-3">
                                         <label
                                             htmlFor="payment-date-adjustment"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
                                         >
                                             Adjustment:
                                         </label>
@@ -716,7 +716,7 @@ function Settings({ setIsAuthenticated }) {
                                                 handleSavePaymentDateAdjustment(e.target.value)
                                             }
                                             disabled={savingPaymentDate}
-                                            className="flex-1 max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
+                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
                                         >
                                             <option value="exact_date">📅 Exact Date</option>
                                             <option value="previous_workday">
