@@ -4,46 +4,44 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-26: Issue #180 - Bug #9 Implemented
+## 2026-01-26: Issue #180 - Credit Limit Preservation Fix + Bug #9 Implemented
 
-**Session Summary:** Implemented "Balance Difference Detected" modal for current periods in sync mode.
+**Session Summary:**
+
+1. Implemented "Balance Difference Detected" modal for current periods in sync mode (Bug #9)
+2. Fixed credit limit resetting to €1500 instead of preserving user's value
 
 **Branch:** `fix/issue-180-remaining-bugs`
 
-**Bug #9 Implementation:**
+### Bug #9 Implementation (Balance Difference Prompt)
 
 When user creates a current period (start date ≤ today, ≥ anchor date) in sync mode, and the entered balance differs from tracked balance, a prompt now shows:
 
 - **Entered > Tracked**: Offers to create "Balance Reconciliation" income
 - **Entered < Tracked**: Warning that dashboard will show tracked balance
 
-**Changes Made:**
+**Edge Cases Handled:** edit, rollover, past period, future period, first period, no difference
 
-1. Added state: `showBalanceDifferencePrompt`, `balanceDifferenceData`, `trackedDebitBalance`, `trackedCreditAvailable`
-2. Store tracked balances when fetching from `getGlobalBalances()`
-3. Added `getBalanceDifference()` function with skip conditions (edit, rollover, past, future periods)
-4. Added modal UI matching existing FutureIncomePrompt style
-5. Added `handleCreateWithReconciliationIncome()` handler
-6. Modified `createSalaryPeriod()` to accept optional reconciliation amount
+### Credit Limit Fix (Bug #10)
 
-**Edge Cases Handled:**
+**Problem:** User sets credit limit to 0, but when creating new period, credit limit resets to €1500.
 
-| Case | Behavior |
-|------|----------|
-| Editing period | Skip (different UX) |
-| Rollover | Skip (pre-fills correct values) |
-| Past period (before anchor) | Skip (PeriodInfoModal handles) |
-| Future period | Skip (FutureIncomePrompt handles) |
-| No tracked data | Skip (first period) |
-| No difference | Skip (nothing to reconcile) |
+**Root Cause:** Hardcoded default `creditLimit = '1500'` in SalaryPeriodWizard.jsx
+
+**Fix:**
+
+1. Changed default from `'1500'` to `''` (empty string)
+2. Always set `creditLimit` from `getGlobalBalances()` API response, even if 0
+3. Updated test mock to return proper `credit_limit` field from API
+4. Updated test to expect `'1500.00'` (formatted value from API)
 
 **Files Changed:**
 
-- `frontend/src/components/SalaryPeriodWizard.jsx` - Full implementation
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Both implementations
+- `frontend/src/test/setup.js` - Fixed API mock for getGlobalBalances
+- `frontend/src/test/SalaryPeriodWizard.test.jsx` - Updated test expectation
 
-**Status:** Ready for testing. Run `btest f` to verify.
-
-**What's Next:** Test manually, commit if working
+**Status:** Both committed. All 1025 frontend tests pass.
 
 ---
 

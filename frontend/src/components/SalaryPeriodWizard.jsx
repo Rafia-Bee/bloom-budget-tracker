@@ -30,7 +30,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
     const [debitBalance, setDebitBalance] = useState('');
     const [creditAvailable, setCreditAvailable] = useState('');
-    const [creditLimit, setCreditLimit] = useState('1500');
+    const [creditLimit, setCreditLimit] = useState('');
     const [creditAllowance, setCreditAllowance] = useState(0);
     const [balanceMode, setBalanceMode] = useState('sync');
     const [balanceStartDate, setBalanceStartDate] = useState(null);
@@ -153,9 +153,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         // Store tracked balances for comparison (in cents, user currency)
                         setTrackedDebitBalance(debitInUserCurrency);
                         setTrackedCreditAvailable(creditInUserCurrency);
-                        if (data.credit_limit > 0) {
-                            setCreditLimit((fromEur(data.credit_limit) / 100).toFixed(2));
-                        }
+                        // Always set credit limit from API (preserves user's 0 setting)
+                        setCreditLimit((fromEur(data.credit_limit) / 100).toFixed(2));
                     }
                 })
                 .catch((err) => {

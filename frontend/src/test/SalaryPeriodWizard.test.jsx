@@ -138,7 +138,7 @@ describe('SalaryPeriodWizard', () => {
             expect(screen.getByText('Budget Period Start Date')).toBeInTheDocument();
         });
 
-        it('has default credit limit of €1500', async () => {
+        it('loads credit limit from API', async () => {
             renderWithProviders(
                 <SalaryPeriodWizard onClose={mockOnClose} onComplete={mockOnComplete} />
             );
@@ -148,7 +148,8 @@ describe('SalaryPeriodWizard', () => {
             });
 
             const creditLimitInput = getInputByLabel('Credit Card Limit (Total)');
-            expect(creditLimitInput).toHaveValue('1500');
+            // Credit limit is loaded from global balances API (150000 cents = €1500.00)
+            expect(creditLimitInput).toHaveValue('1500.00');
         });
 
         it('displays step progress indicators', async () => {
