@@ -296,16 +296,16 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                                                     : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-text-secondary'
                                             }`}
                                         >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className="font-semibold text-gray-800 dark:text-dark-text">
+                                            <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                                                <div className="min-w-0">
+                                                    <div className="font-semibold text-gray-800 dark:text-dark-text truncate">
                                                         {debt.name}
                                                     </div>
                                                     <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
                                                         Balance: {fcEur(debt.current_balance)}
                                                     </div>
                                                 </div>
-                                                <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                                                <div className="text-sm text-gray-600 dark:text-dark-text-secondary whitespace-nowrap text-right">
                                                     Min: {fcEur(debt.monthly_payment)}
                                                 </div>
                                             </div>
@@ -327,10 +327,12 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                             ) : (
                                 <div className="space-y-2">
                                     {leftoverData.allocation_options.goals.map((goal) => {
-                                        const progress = Number(goal.progress) || 0;
-                                        const targetAmount = Number(goal.target_amount) || 1;
+                                        // Issue #187 fix: progress is an object with current_amount, percentage, etc.
+                                        const currentAmount =
+                                            goal.progress?.current_amount ?? 0;
+                                        const targetAmount = goal.target_amount || 1;
                                         const progressPercent =
-                                            (progress / targetAmount) * 100 || 0;
+                                            goal.progress?.percentage ?? 0;
                                         return (
                                             <button
                                                 key={goal.id}
@@ -359,7 +361,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
                                                         />
                                                     </div>
                                                     <div className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                                                        {fcEur(progress)} / {fcEur(targetAmount)}
+                                                        {fcEur(currentAmount)} / {fcEur(targetAmount)}
                                                     </div>
                                                 </div>
                                             </button>

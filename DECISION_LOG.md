@@ -4,6 +4,39 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard)
+
+**Session Summary:** Fixed Dashboard-related mobile UI issues from Issue #187.
+
+**Branch:** `fix/issue-187-mobile-ui`
+
+**Issues Fixed:**
+
+1. **Issue #1: Budget Card Header Cluttered** - Redesigned header with unified responsive layout using Tailwind sm: breakpoints. Cleaner spacing, compact date format, smaller controls on mobile while maintaining good desktop experience.
+
+2. **Issue #2: Debit Card Total Spent Alignment** - Changed from `flex justify-between` to separate rows so "Total spent" is now right-aligned, matching Credit Card styling.
+
+3. **Issue #3: Scheduled Amounts Line Break** - Added `whitespace-nowrap` and responsive text size (`text-base sm:text-lg`) to prevent minus sign wrapping to separate line.
+
+4. **Issue #6: Leftover Modal Min Alignment** - Changed from `flex justify-between` to `grid grid-cols-[1fr_auto]` layout so "Min:" column aligns consistently regardless of debt name length.
+
+5. **Issue #7: Goals Show Wrong Progress (BUG)** - Fixed bug where `goal.progress` was treated as a number but is actually an object with `current_amount`, `percentage`, etc. Now correctly accesses `goal.progress?.current_amount` and `goal.progress?.percentage`.
+
+6. **Issue #11: FAB Visible When Hamburger Open** - Added `mobileMenuToggle` custom event from Header.jsx, Dashboard.jsx listens and sets `isMobileMenuOpen` state, FAB is hidden when hamburger menu is open.
+
+**Files Changed:**
+
+- `frontend/src/components/WeeklyBudgetCard.jsx` - Cleaner responsive header
+- `frontend/src/components/dashboard/BalanceCards.jsx` - Total spent alignment
+- `frontend/src/components/dashboard/TransactionList.jsx` - Amount no-wrap
+- `frontend/src/components/LeftoverBudgetModal.jsx` - Min alignment + goals bug fix
+- `frontend/src/components/Header.jsx` - mobileMenuToggle event dispatch
+- `frontend/src/pages/Dashboard.jsx` - Listen for menu toggle, hide FAB
+
+**What's Next:** Wizard issues (4-5, 8), Add modals (9-10), Hamburger menu (12), then other pages
+
+---
+
 ## 2026-01-26: Issue #180 - Credit Limit Preservation Fix + Bug #9 Implemented
 
 **Session Summary:**

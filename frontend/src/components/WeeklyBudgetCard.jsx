@@ -283,48 +283,49 @@ const WeeklyBudgetCard = forwardRef(
         const progress = getProgress();
         const isCurrentWeek = displayWeek?.week_number === current_week?.week_number;
 
+        // Format date range compactly
+        const formatDateRange = () => {
+            if (!displayWeek?.start_date || !displayWeek?.end_date) return '';
+            const start = new Date(displayWeek.start_date);
+            const end = new Date(displayWeek.end_date);
+            const startStr = `${start.getDate()} ${start.toLocaleDateString('en-GB', { month: 'short' })}`;
+            const endStr = `${end.getDate()} ${end.toLocaleDateString('en-GB', { month: 'short' })}`;
+            return `${startStr} - ${endStr}`;
+        };
+
         return (
-            <div className="bg-gradient-to-br from-bloom-pink to-pink-600 dark:from-dark-pink-surface dark:to-dark-surface rounded-2xl shadow-lg p-6 text-white dark:border-2 dark:border-dark-border">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-white/20 dark:bg-black/20 rounded-full flex items-center justify-center font-bold text-xl">
+            <div className="bg-gradient-to-br from-bloom-pink to-pink-600 dark:from-dark-pink-surface dark:to-dark-surface rounded-2xl shadow-lg p-4 sm:p-6 text-white dark:border-2 dark:border-dark-border">
+                {/* Issue #187: Cleaner responsive header for both mobile and desktop */}
+                <div className="flex justify-between items-start mb-4">
+                    {/* Left side: Period info */}
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/20 dark:bg-black/20 rounded-full flex items-center justify-center font-bold text-lg sm:text-xl flex-shrink-0">
                             {displayWeek?.week_number || '?'}
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-lg font-bold">
-                                    {getPeriodLabel(true)} {displayWeek?.week_number || '?'} of{' '}
-                                    {getTotalPeriods()}
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <h2 className="text-sm sm:text-lg font-bold whitespace-nowrap">
+                                    {getPeriodLabel(true)} {displayWeek?.week_number || '?'} of {getTotalPeriods()}
                                 </h2>
                                 {isCurrentWeek && (
-                                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded">
+                                    <span className="text-[10px] sm:text-xs bg-white/20 px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap">
                                         Current
                                     </span>
                                 )}
                             </div>
-                            <p className="text-xs opacity-75 mt-0.5">
-                                {displayWeek?.start_date &&
-                                    (() => {
-                                        const d = new Date(displayWeek.start_date);
-                                        return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`;
-                                    })()}{' '}
-                                -{' '}
-                                {displayWeek?.end_date &&
-                                    (() => {
-                                        const d = new Date(displayWeek.end_date);
-                                        return `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'short' })}, ${d.getFullYear()}`;
-                                    })()}
+                            <p className="text-[10px] sm:text-xs opacity-75 mt-0.5 truncate">
+                                {formatDateRange()}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Week Navigation Dropdown */}
+                    {/* Right side: Controls */}
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         {salary_period?.weeks && salary_period.weeks.length > 1 && (
                             <select
                                 value={selectedWeek || ''}
                                 onChange={(e) => handleWeekChange(parseInt(e.target.value))}
-                                className="bg-white/20 text-white text-sm px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/30 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/50"
+                                className="bg-white/20 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-white/30 hover:bg-white/30 transition cursor-pointer focus:outline-none"
                             >
                                 {salary_period.weeks.map((week) => (
                                     <option
@@ -332,35 +333,19 @@ const WeeklyBudgetCard = forwardRef(
                                         value={week.week_number}
                                         className="text-gray-800"
                                     >
-                                        {getPeriodLabel(true)} {week.week_number}
+                                        {week.week_number}
                                     </option>
                                 ))}
                             </select>
                         )}
-
                         <button
                             onClick={onSetupClick}
-                            className="text-white/80 hover:text-white transition"
+                            className="text-white/80 hover:text-white transition p-1.5 sm:p-2 hover:bg-white/10 rounded-lg"
                             title="Manage salary period"
                         >
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                                />
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </button>
                     </div>

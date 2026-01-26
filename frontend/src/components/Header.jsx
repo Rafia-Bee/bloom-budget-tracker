@@ -22,6 +22,13 @@ function Header({ setIsAuthenticated, children }) {
     // Reports feature uses the reportsEnabled flag directly
     const reportsEnabled = isEnabled('reportsEnabled');
 
+    // Issue #187: Dispatch event when mobile menu opens/closes so FAB can be hidden
+    useEffect(() => {
+        window.dispatchEvent(
+            new CustomEvent('mobileMenuToggle', { detail: { isOpen: showMobileMenu } })
+        );
+    }, [showMobileMenu]);
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (!e.target.closest('.user-menu')) {
