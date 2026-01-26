@@ -302,9 +302,9 @@ describe('WeeklyBudgetCard', () => {
                 />
             );
 
-            // Date format is "24 Dec, 2025 - 30 Dec, 2025"
+            // Date format is compact "24 Dec - 30 Dec" (Issue #187 mobile fix)
             await waitFor(() => {
-                expect(screen.getByText(/24 Dec, 2025/)).toBeInTheDocument();
+                expect(screen.getByText(/24 Dec - 30 Dec/)).toBeInTheDocument();
             });
         });
     });
