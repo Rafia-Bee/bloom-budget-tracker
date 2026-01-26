@@ -366,7 +366,7 @@ function Settings({ setIsAuthenticated }) {
                                 <button
                                     key={category}
                                     onClick={() => setSelectedCategory(category)}
-                                    className={`w-full sm:w-auto px-2 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm text-center ${
+                                    className={`w-full sm:w-auto px-2 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm text-center min-h-[48px] flex items-center justify-center ${
                                         selectedCategory === category
                                             ? 'bg-white dark:bg-dark-elevated text-bloom-pink shadow-sm'
                                             : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-dark-elevated/50'
