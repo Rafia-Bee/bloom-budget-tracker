@@ -303,10 +303,10 @@ function Settings({ setIsAuthenticated }) {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap ${
+                            className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base whitespace-nowrap border ${
                                 activeTab === tab.id
-                                    ? 'bg-bloom-pink text-white'
-                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                    ? 'bg-bloom-pink text-white border-bloom-pink'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover border-gray-200 dark:border-dark-border'
                             }`}
                         >
                             <span className="text-sm sm:text-base">{tab.icon}</span>
@@ -366,10 +366,10 @@ function Settings({ setIsAuthenticated }) {
                                 <button
                                     key={category}
                                     onClick={() => setSelectedCategory(category)}
-                                    className={`w-full sm:w-auto px-2 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm text-center min-h-[48px] flex items-center justify-center ${
+                                    className={`w-full sm:w-auto px-2 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm text-center min-h-[48px] flex items-center justify-center border ${
                                         selectedCategory === category
-                                            ? 'bg-white dark:bg-dark-elevated text-bloom-pink shadow-sm'
-                                            : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-dark-elevated/50'
+                                            ? 'bg-white dark:bg-dark-elevated text-bloom-pink shadow-sm border-bloom-pink/50'
+                                            : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-dark-elevated/50 border-gray-200 dark:border-dark-border'
                                     }`}
                                 >
                                     {category}
