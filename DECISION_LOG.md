@@ -4,13 +4,13 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
-## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard)
+## 2026-01-26: Issue #187 - Mobile UI Fixes (Dashboard + Wizard)
 
-**Session Summary:** Fixed Dashboard-related mobile UI issues from Issue #187.
+**Session Summary:** Fixed Dashboard and Wizard mobile UI issues from Issue #187.
 
 **Branch:** `fix/issue-187-mobile-ui`
 
-**Issues Fixed:**
+### Dashboard Issues Fixed:
 
 1. **Issue #1: Budget Card Header Cluttered** - Redesigned header with unified responsive layout using Tailwind sm: breakpoints. Cleaner spacing, compact date format, smaller controls on mobile while maintaining good desktop experience.
 
@@ -24,6 +24,14 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 6. **Issue #11: FAB Visible When Hamburger Open** - Added `mobileMenuToggle` custom event from Header.jsx, Dashboard.jsx listens and sets `isMobileMenuOpen` state, FAB is hidden when hamburger menu is open.
 
+### Wizard Issues Fixed:
+
+7. **Issue #4: Step 2 Input Sizes Vary** - Fixed bill amount inputs to consistent width (`w-24 sm:w-28`) with `flex-shrink-0`. Added responsive text sizes and `truncate` for long bill names.
+
+8. **Issue #5: Step 3 Text Wrapping** - Made budget breakdown fully responsive: text labels (`text-sm sm:text-base`), amounts (`text-lg sm:text-xl` to `text-2xl sm:text-3xl`), padding (`p-4 sm:p-6`), and spacing (`space-y-2 sm:space-y-3`).
+
+9. **Issue #8: Credit Slider Bug** - Changed slider `step` from 1000 (€10 increments) to 100 (€1 increments) for proper fine-grained credit allowance selection.
+
 **Files Changed:**
 
 - `frontend/src/components/WeeklyBudgetCard.jsx` - Cleaner responsive header
@@ -32,8 +40,9 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 - `frontend/src/components/LeftoverBudgetModal.jsx` - Min alignment + goals bug fix
 - `frontend/src/components/Header.jsx` - mobileMenuToggle event dispatch
 - `frontend/src/pages/Dashboard.jsx` - Listen for menu toggle, hide FAB
+- `frontend/src/components/SalaryPeriodWizard.jsx` - Step 2 inputs, Step 3 text, slider step fix
 
-**What's Next:** Wizard issues (4-5, 8), Add modals (9-10), Hamburger menu (12), then other pages
+**What's Next:** Add modals (9-10), Hamburger menu (12), Settings, Reports, Recurring, Debts, Goals, Trash pages
 
 ---
 
