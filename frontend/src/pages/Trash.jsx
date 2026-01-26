@@ -151,21 +151,22 @@ function Trash({ setIsAuthenticated }) {
                     </p>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex border-b border-gray-200 dark:border-dark-border mb-4">
+                {/* Tabs - responsive with wrap */}
+                <div className="flex flex-wrap gap-1 border-b border-gray-200 dark:border-dark-border mb-4 pb-1">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'border-pink-500 text-pink-600 dark:text-dark-pink'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                             }`}
                         >
-                            {tab.label}
+                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
                             {tab.count > 0 && (
-                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-dark-elevated text-gray-600 dark:text-gray-400">
+                                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs rounded-full bg-gray-200 dark:bg-dark-elevated text-gray-600 dark:text-gray-400">
                                     {tab.count}
                                 </span>
                             )}
@@ -325,25 +326,42 @@ function DeletedItemCard({
     const daysLeft = getDaysUntilPurge(deletedAt);
 
     return (
-        <div className="bg-white dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border p-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border p-3 sm:p-4">
+            {/* Mobile: Stack layout, Desktop: Row layout */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                {/* Item info */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-dark-text truncate">
-                        {title}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-0">
+                        <h3 className="font-medium text-sm sm:text-base text-gray-900 dark:text-dark-text truncate flex-1">
+                            {title}
+                        </h3>
+                        {/* Amount shown inline on mobile */}
+                        {amount && (
+                            <div
+                                className={`sm:hidden text-right flex-shrink-0 ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-dark-text'}`}
+                            >
+                                <span className="font-medium text-sm">
+                                    {isIncome ? '+' : '-'}
+                                    {amount}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{subtitle}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-0.5 sm:mt-1">
                         Deleted {formatDeletedAt(deletedAt)}
                         {daysLeft !== null && (
-                            <span className={`ml-2 ${daysLeft <= 7 ? 'text-red-500' : ''}`}>
-                                • {daysLeft} day{daysLeft !== 1 ? 's' : ''} until auto-purge
+                            <span className={`ml-1 sm:ml-2 ${daysLeft <= 7 ? 'text-red-500' : ''}`}>
+                                • {daysLeft}d left
                             </span>
                         )}
                     </p>
                 </div>
+
+                {/* Amount - hidden on mobile, shown on desktop */}
                 {amount && (
                     <div
-                        className={`text-right mr-4 ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-dark-text'}`}
+                        className={`hidden sm:block text-right mr-4 ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-dark-text'}`}
                     >
                         <span className="font-medium">
                             {isIncome ? '+' : '-'}
@@ -351,10 +369,12 @@ function DeletedItemCard({
                         </span>
                     </div>
                 )}
+
+                {/* Restore button - full width on mobile */}
                 <button
                     onClick={onRestore}
                     disabled={isRestoring}
-                    className="px-3 py-1.5 text-sm font-medium text-pink-600 dark:text-dark-pink bg-pink-50 dark:bg-pink-900/20 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium text-pink-600 dark:text-dark-pink bg-pink-50 dark:bg-pink-900/20 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-center"
                 >
                     {isRestoring ? 'Restoring...' : 'Restore'}
                 </button>
