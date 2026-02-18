@@ -56,6 +56,28 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-01-26: Issue #180 - Bug #5 Frontend Fix (Recurring Income Export/Import)
+
+**Session Summary:**
+Added "Recurring Income" checkbox to Export Data modal. Backend was already fixed in previous session but frontend was missing the UI option.
+
+**Branch:** `fix/issue-180-frontend-export-import`
+
+**Changes:**
+
+- `frontend/src/components/ExportImportModal.jsx`:
+    - Added `recurring_income: true` to exportTypes state
+    - Added to typeAbbreviations for filename generation
+    - Added to import/skipped message handlers
+    - Added UI checkbox after "Recurring Expenses"
+- `frontend/src/test/ExportImportModal.test.jsx`:
+    - Added test expectation for "Recurring Income" checkbox
+    - Updated API call assertion to include `recurring_income`
+
+**Status:** All 20 ExportImportModal tests pass
+
+---
+
 ## 2026-01-26: Issue #180 - Credit Limit Preservation Fix + Bug #9 Implemented
 
 **Session Summary:**

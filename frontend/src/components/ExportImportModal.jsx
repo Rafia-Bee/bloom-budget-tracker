@@ -1,7 +1,7 @@
 /**
  * Bloom - Export/Import Modal
  *
- * Modal for exporting and importing data (debts, recurring expenses, goals).
+ * Modal for exporting and importing data (debts, recurring expenses, recurring income, goals).
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,7 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
     const [exportTypes, setExportTypes] = useState({
         debts: true,
         recurring_expenses: true,
+        recurring_income: true,
         salary_periods: true,
         expenses: true,
         income: true,
@@ -70,7 +71,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
                 const dateStr = new Date().toISOString().split('T')[0];
                 const typeAbbreviations = {
                     debts: 'debts',
-                    recurring_expenses: 'recurring',
+                    recurring_expenses: 'recurring-exp',
+                    recurring_income: 'recurring-inc',
                     salary_periods: 'periods',
                     expenses: 'expenses',
                     income: 'income',
@@ -139,6 +141,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
             if (counts.debts > 0) summary.push(`${counts.debts} debt(s)`);
             if (counts.recurring_expenses > 0)
                 summary.push(`${counts.recurring_expenses} recurring expense(s)`);
+            if (counts.recurring_income > 0)
+                summary.push(`${counts.recurring_income} recurring income(s)`);
             if (counts.salary_periods > 0)
                 summary.push(`${counts.salary_periods} salary period(s)`);
             if (counts.expenses > 0) summary.push(`${counts.expenses} expense(s)`);
@@ -155,6 +159,8 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
             if (skipped?.debts > 0) skippedSummary.push(`${skipped.debts} debt(s)`);
             if (skipped?.recurring_expenses > 0)
                 skippedSummary.push(`${skipped.recurring_expenses} recurring expense(s)`);
+            if (skipped?.recurring_income > 0)
+                skippedSummary.push(`${skipped.recurring_income} recurring income(s)`);
             if (skipped?.salary_periods > 0)
                 skippedSummary.push(`${skipped.salary_periods} salary period(s)`);
             if (skipped?.expenses > 0) skippedSummary.push(`${skipped.expenses} expense(s)`);
@@ -286,6 +292,23 @@ function ExportImportModal({ onClose, mode = 'export', onImportComplete }) {
                                 />
                                 <span className="text-gray-700 dark:text-dark-text">
                                     Recurring Expenses
+                                </span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={exportTypes.recurring_income}
+                                    onChange={(e) =>
+                                        setExportTypes({
+                                            ...exportTypes,
+                                            recurring_income: e.target.checked,
+                                        })
+                                    }
+                                    className="w-5 h-5 text-bloom-pink dark:text-dark-pink rounded focus:ring-bloom-pink dark:focus:ring-dark-pink"
+                                />
+                                <span className="text-gray-700 dark:text-dark-text">
+                                    Recurring Income
                                 </span>
                             </label>
 
