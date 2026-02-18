@@ -8,10 +8,14 @@ Issue #149: Tests ensure only the FIRST Initial Balance income record counts
 for balance calculation. Subsequent salary periods' initial_debit_balance values
 are snapshots and should NOT be added to the balance (as salary income is already
 included in those values).
+
+Issue #167: Tests ensure balance calculations exclude future/scheduled
+transactions within the current period.
 """
 
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
+from unittest.mock import patch
 import pytest
 
 from backend.models.database import (
@@ -26,6 +30,7 @@ from backend.services.balance_service import (
     get_display_balances,
     _calculate_debit_balance,
     _calculate_credit_available,
+    _get_effective_end_date,
 )
 
 
@@ -400,3 +405,267 @@ class TestDisplayBalancesIntegration:
             balances = get_display_balances(period2_id, user.id)
             # Should be €1000 from first period only, NOT €1000 + €2000
             assert balances["debit_balance"] == 1000.0
+
+
+class TestEffectiveEndDate:
+    """Tests for the _get_effective_end_date helper (Issue #167)"""
+
+    def test_current_period_caps_at_today(self):
+        """Current period should return today as effective end date"""
+        today = date.today()
+        period_start = today - timedelta(days=5)
+        period_end = today + timedelta(days=10)
+        assert _get_effective_end_date(period_start, period_end) == today
+
+    def test_past_period_returns_period_end(self):
+        """Past period should return the actual period end date"""
+        period_start = date.today() - timedelta(days=30)
+        period_end = date.today() - timedelta(days=1)
+        assert _get_effective_end_date(period_start, period_end) == period_end
+
+    def test_future_period_returns_period_end(self):
+        """Future period should return the actual period end date"""
+        period_start = date.today() + timedelta(days=1)
+        period_end = date.today() + timedelta(days=30)
+        assert _get_effective_end_date(period_start, period_end) == period_end
+
+    def test_period_ending_today_returns_today(self):
+        """Period ending today should return today"""
+        today = date.today()
+        period_start = today - timedelta(days=10)
+        assert _get_effective_end_date(period_start, today) == today
+
+    def test_period_starting_today_returns_today(self):
+        """Period starting today should return today (not period_end)"""
+        today = date.today()
+        period_end = today + timedelta(days=20)
+        assert _get_effective_end_date(today, period_end) == today
+
+
+class TestFutureTransactionExclusion:
+    """Tests for Issue #167: Balance excludes future/scheduled transactions"""
+
+    def test_future_expense_excluded_from_debit_balance(self, client, auth_headers):
+        """Future expenses within current period should NOT reduce debit balance"""
+        today = date.today()
+        period_start = today - timedelta(days=5)
+        period_end = today + timedelta(days=25)
+
+        # Create salary period
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": period_start.isoformat(),
+                "end_date": period_end.isoformat(),
+                "debit_balance": 50000,  # €500
+                "credit_balance": 50000,
+                "credit_limit": 100000,
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Add expense for today (should be counted)
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Today expense",
+                "amount": 5000,  # €50
+                "category": "Flexible Expenses",
+                "date": today.isoformat(),
+                "payment_method": "Debit card",
+            },
+            headers=auth_headers,
+        )
+
+        # Add expense for future date within period (should NOT be counted)
+        future_date = today + timedelta(days=5)
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Future expense",
+                "amount": 10000,  # €100
+                "category": "Flexible Expenses",
+                "date": future_date.isoformat(),
+                "payment_method": "Debit card",
+            },
+            headers=auth_headers,
+        )
+
+        with client.application.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
+            # Should be €500 - €50 = €450 (future €100 excluded)
+            assert balance == 450.0
+
+    def test_future_income_excluded_from_debit_balance(self, client, auth_headers):
+        """Future income within current period should NOT increase debit balance"""
+        today = date.today()
+        period_start = today - timedelta(days=5)
+        period_end = today + timedelta(days=25)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": period_start.isoformat(),
+                "end_date": period_end.isoformat(),
+                "debit_balance": 50000,  # €500
+                "credit_balance": 50000,
+                "credit_limit": 100000,
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Add income for today (should be counted)
+        client.post(
+            "/api/v1/income",
+            json={
+                "type": "Salary",
+                "amount": 20000,  # €200
+                "date": today.isoformat(),
+            },
+            headers=auth_headers,
+        )
+
+        # Add income for future date within period (should NOT be counted)
+        future_date = today + timedelta(days=5)
+        client.post(
+            "/api/v1/income",
+            json={
+                "type": "Bonus",
+                "amount": 30000,  # €300
+                "date": future_date.isoformat(),
+            },
+            headers=auth_headers,
+        )
+
+        with client.application.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
+            # Should be €500 + €200 = €700 (future €300 excluded)
+            assert balance == 700.0
+
+    def test_future_credit_expense_excluded(self, client, auth_headers):
+        """Future credit expenses within current period should NOT reduce credit"""
+        today = date.today()
+        period_start = today - timedelta(days=5)
+        period_end = today + timedelta(days=25)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": period_start.isoformat(),
+                "end_date": period_end.isoformat(),
+                "debit_balance": 50000,
+                "credit_balance": 100000,  # €1000 credit available
+                "credit_limit": 100000,  # €1000 limit
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Add credit expense for today (should be counted)
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Today credit",
+                "amount": 10000,  # €100
+                "category": "Flexible Expenses",
+                "date": today.isoformat(),
+                "payment_method": "Credit card",
+            },
+            headers=auth_headers,
+        )
+
+        # Add credit expense for future date (should NOT be counted)
+        future_date = today + timedelta(days=5)
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Future credit",
+                "amount": 20000,  # €200
+                "category": "Flexible Expenses",
+                "date": future_date.isoformat(),
+                "payment_method": "Credit card",
+            },
+            headers=auth_headers,
+        )
+
+        with client.application.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            credit = _calculate_credit_available(user.id, salary_period, balance_mode)
+            # Should be €1000 - €100 = €900 (future €200 excluded)
+            assert credit == 900.0
+
+    def test_past_period_includes_all_transactions(self, client, auth_headers):
+        """Past period should include ALL transactions (no today cutoff)"""
+        # Create a past period
+        period_start = date.today() - timedelta(days=60)
+        period_end = date.today() - timedelta(days=31)
+
+        response = client.post(
+            "/api/v1/salary-periods",
+            json={
+                "start_date": period_start.isoformat(),
+                "end_date": period_end.isoformat(),
+                "debit_balance": 50000,  # €500
+                "credit_balance": 50000,
+                "credit_limit": 100000,
+                "num_sub_periods": 4,
+                "fixed_bills": [],
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        period_id = response.json["id"]
+
+        # Add expenses throughout the period
+        mid_date = period_start + timedelta(days=10)
+        late_date = period_end - timedelta(days=1)
+
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Mid expense",
+                "amount": 5000,  # €50
+                "category": "Flexible Expenses",
+                "date": mid_date.isoformat(),
+                "payment_method": "Debit card",
+            },
+            headers=auth_headers,
+        )
+        client.post(
+            "/api/v1/expenses",
+            json={
+                "name": "Late expense",
+                "amount": 10000,  # €100
+                "category": "Flexible Expenses",
+                "date": late_date.isoformat(),
+                "payment_method": "Debit card",
+            },
+            headers=auth_headers,
+        )
+
+        with client.application.app_context():
+            user = User.query.filter_by(email="test@example.com").first()
+            salary_period = SalaryPeriod.query.get(period_id)
+            balance_mode = user.balance_mode or "sync"
+            balance = _calculate_debit_balance(user.id, salary_period, balance_mode)
+            # Past period: ALL expenses counted. €500 - €50 - €100 = €350
+            assert balance == 350.0

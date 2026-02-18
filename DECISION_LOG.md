@@ -4,6 +4,32 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-02-18: February 2026 Fixes (PR #193)
+
+**Session Summary:**
+
+1. Changed GitHub Actions backup and cleanup jobs from daily to weekly (Sundays 2 AM UTC)
+2. Implemented Issue #167 — balance calculations now exclude future/scheduled transactions for the current period
+
+**Branch:** `fix/february-2026-fixes`
+
+**Changes:**
+
+- `.github/workflows/backup.yml`: Daily → weekly cron schedule
+- `.github/workflows/cleanup.yml`: Daily → weekly cron schedule
+- `backend/services/balance_service.py`:
+    - Added `_get_effective_end_date()` helper: caps date filters at today for current period
+    - Applied to all 6 query locations (budget/sync modes, debit/credit, past/cumulative)
+- `backend/tests/test_balance_service.py`:
+    - 5 unit tests for `_get_effective_end_date()`
+    - 4 integration tests for future transaction exclusion
+
+**What's Next:** Merge PR #193, verify production balances
+
+**Files to Note:** `backend/services/balance_service.py` — core balance logic
+
+---
+
 ## 2026-01-26: Issue #187 - Mobile UI Fixes (Complete)
 
 **Session Summary:** Comprehensive mobile UI fixes for Issue #187 covering all pages: Dashboard, Wizard, Modals, Menu, Goals, Reports, Recurring, Debts, Settings, and Trash.

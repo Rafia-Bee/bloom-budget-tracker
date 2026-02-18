@@ -10,9 +10,13 @@ Critical for Issue #89: Debit/Credit Balance Calculation Bug
 When salary periods are created before the previous period ends, snapshot
 balances don't account for transactions made after creation. This service
 always calculates from source of truth (transactions).
+
+Issue #167: Balance excludes future/scheduled transactions
+For the CURRENT period, expense/income cutoff is capped at today's date
+so scheduled future transactions don't reduce displayed balance prematurely.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict
 from backend.models.database import (
     db,
@@ -23,6 +27,27 @@ from backend.models.database import (
     User,
 )
 from sqlalchemy import and_
+
+
+def _get_effective_end_date(period_start, period_end):
+    """
+    Return the effective end date for transaction filtering.
+
+    For the current period (today falls within it), cap at today so that
+    future/scheduled transactions are excluded from balance calculations.
+    For past or future periods, return the full period_end.
+
+    Args:
+        period_start: Period start date
+        period_end: Period end date
+
+    Returns:
+        date: min(today, period_end) if current period, else period_end
+    """
+    today = date.today()
+    if period_start <= today <= period_end:
+        return today
+    return period_end
 
 
 def get_display_balances(salary_period_id: int, user_id: int) -> Dict[str, float]:
@@ -98,7 +123,9 @@ def _calculate_debit_balance(
         # Balance = Period's initial balance + income within period - expenses within period
         starting_balance = salary_period.initial_debit_balance
         period_start = salary_period.start_date
-        period_end = salary_period.end_date
+        period_end = _get_effective_end_date(
+            salary_period.start_date, salary_period.end_date
+        )
 
         # Get income within this period only (excluding Initial Balance markers)
         total_income = (
@@ -172,7 +199,9 @@ def _calculate_debit_balance(
             # Past period: Show isolated balance (like budget mode)
             starting_balance = salary_period.initial_debit_balance
             period_start = salary_period.start_date
-            period_end = salary_period.end_date
+            period_end = _get_effective_end_date(
+                salary_period.start_date, salary_period.end_date
+            )
 
             total_income = (
                 db.session.query(db.func.coalesce(db.func.sum(Income.amount), 0))
@@ -240,7 +269,9 @@ def _calculate_debit_balance(
         else:
             earliest_date = anchor_date
 
-        end_at_date = salary_period.end_date
+        end_at_date = _get_effective_end_date(
+            salary_period.start_date, salary_period.end_date
+        )
 
         # Get all income up to this period's end (excluding Initial Balance markers)
         total_income = (
@@ -306,7 +337,9 @@ def _calculate_credit_available(
         # (which is credit_limit - debt at period start)
         starting_available = salary_period.initial_credit_balance
         period_start = salary_period.start_date
-        period_end = salary_period.end_date
+        period_end = _get_effective_end_date(
+            salary_period.start_date, salary_period.end_date
+        )
 
         # Get credit expenses within this period only (excluding Debt markers)
         total_credit_expenses = (
@@ -380,7 +413,9 @@ def _calculate_credit_available(
             # Past period: Show isolated balance (like budget mode)
             starting_available = salary_period.initial_credit_balance
             period_start = salary_period.start_date
-            period_end = salary_period.end_date
+            period_end = _get_effective_end_date(
+                salary_period.start_date, salary_period.end_date
+            )
 
             # Get credit expenses within this period only (excluding Debt markers)
             total_credit_expenses = (
@@ -422,7 +457,9 @@ def _calculate_credit_available(
             return balance_cents / 100  # Convert cents to euros
 
         # Current or future period: Calculate cumulative credit balance
-        end_at_date = salary_period.end_date
+        end_at_date = _get_effective_end_date(
+            salary_period.start_date, salary_period.end_date
+        )
 
         # Get ALL credit expenses up to this period's end (excluding Debt markers)
         total_credit_expenses = (
