@@ -4,6 +4,30 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
 
 ---
 
+## 2026-02-21: Global Balances Include Future Transactions Bug
+
+**Session Summary:**
+
+1. Fixed production bug: debit balance showed €2,466.38 instead of correct ~€1,302.67
+2. Root cause: `get_global_balances` endpoint (used when no current period) had **no date filtering** — it summed ALL income and expenses including future recurring transactions (March salary +€2,817.46, March bills -€1,652.95 = net +€1,164.51 inflation)
+3. Added `<= today` date filters to all 6 queries in the endpoint (income, debit expenses, credit expenses, credit payments, all-time spent, total income)
+
+**Branch:** `fix/february-2026-fixes`
+
+**Changes:**
+
+- `backend/routes/user_data.py`:
+    - Added `from datetime import date` import
+    - `get_global_balances()`: All 6 queries now filter `<= date.today()` to exclude future scheduled/recurring transactions
+    - Income queries use `func.coalesce(Income.actual_date, Income.scheduled_date) <= today`
+    - Expense queries use `Expense.date <= today`
+
+**What's Next:** Merge PR #193, deploy to production
+
+**Files to Note:** `backend/routes/user_data.py` — global-balances endpoint (lines ~490-620)
+
+---
+
 ## 2026-02-18: February 2026 Fixes (PR #193)
 
 **Session Summary:**
@@ -24,7 +48,7 @@ Session continuity for AI context + architectural decisions. Max 2 days of entri
     - 5 unit tests for `_get_effective_end_date()`
     - 4 integration tests for future transaction exclusion
 
-**What's Next:** Merge PR #193, verify production balances
+**What's Next:** Merged into global-balances fix above
 
 **Files to Note:** `backend/services/balance_service.py` — core balance logic
 

@@ -21,6 +21,7 @@ from backend.models.database import (
     Goal,
 )
 from backend.services.audit_service import log_admin_event
+from datetime import date
 from sqlalchemy import func, and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -488,10 +489,12 @@ def get_global_balances():
             return response, 200
 
         # Calculate global balance based on mode
+        today = date.today()
         if user.balance_mode == "sync":
-            # SYNC MODE: Calculate cumulative balance from all time
+            # SYNC MODE: Calculate cumulative balance up to today
+            # Exclude future scheduled/recurring transactions (Issue #180)
 
-            # Total income (excluding 'Initial Balance' entries)
+            # Total income up to today (excluding 'Initial Balance' entries)
             total_income = (
                 db.session.query(func.coalesce(func.sum(Income.amount), 0))
                 .filter(
@@ -499,13 +502,15 @@ def get_global_balances():
                         Income.user_id == current_user_id,
                         Income.deleted_at.is_(None),
                         Income.type != "Initial Balance",
+                        func.coalesce(Income.actual_date, Income.scheduled_date)
+                        <= today,
                     )
                 )
                 .scalar()
                 or 0
             )
 
-            # Total debit expenses
+            # Total debit expenses up to today
             total_debit_expenses = (
                 db.session.query(func.coalesce(func.sum(Expense.amount), 0))
                 .filter(
@@ -513,13 +518,14 @@ def get_global_balances():
                         Expense.user_id == current_user_id,
                         Expense.deleted_at.is_(None),
                         Expense.payment_method == "Debit card",
+                        Expense.date <= today,
                     )
                 )
                 .scalar()
                 or 0
             )
 
-            # Total credit expenses (exclude Debt category - those are just markers)
+            # Total credit expenses up to today (exclude Debt category - those are just markers)
             total_credit_expenses = (
                 db.session.query(func.coalesce(func.sum(Expense.amount), 0))
                 .filter(
@@ -528,13 +534,14 @@ def get_global_balances():
                         Expense.deleted_at.is_(None),
                         Expense.payment_method == "Credit card",
                         Expense.category != "Debt",  # Exclude debt markers
+                        Expense.date <= today,
                     )
                 )
                 .scalar()
                 or 0
             )
 
-            # Total credit card payments (reduce debt, increase available)
+            # Total credit card payments up to today (reduce debt, increase available)
             total_credit_payments = (
                 db.session.query(func.coalesce(func.sum(Expense.amount), 0))
                 .filter(
@@ -543,6 +550,7 @@ def get_global_balances():
                         Expense.deleted_at.is_(None),
                         Expense.category == "Debt Payments",
                         Expense.subcategory == "Credit Card",
+                        Expense.date <= today,
                     )
                 )
                 .scalar()
@@ -572,7 +580,7 @@ def get_global_balances():
             credit_available = user.user_initial_credit_available
             credit_limit = user.user_initial_credit_limit
 
-        # All-time debit spending (excluding fixed bills)
+        # All-time debit spending up to today (excluding fixed bills)
         all_time_spent = (
             db.session.query(func.coalesce(func.sum(Expense.amount), 0))
             .filter(
@@ -581,19 +589,21 @@ def get_global_balances():
                     Expense.deleted_at.is_(None),
                     Expense.payment_method == "Debit card",
                     Expense.is_fixed_bill == False,
+                    Expense.date <= today,
                 )
             )
             .scalar()
             or 0
         )
 
-        # Total income (all time)
+        # Total income up to today
         total_income_all_time = (
             db.session.query(func.coalesce(func.sum(Income.amount), 0))
             .filter(
                 and_(
                     Income.user_id == current_user_id,
                     Income.deleted_at.is_(None),
+                    func.coalesce(Income.actual_date, Income.scheduled_date) <= today,
                 )
             )
             .scalar()
