@@ -20,18 +20,6 @@ from alembic.runtime.migration import MigrationContext
 from backend.config import config, _validate_production_secrets
 from backend.models.database import db
 from backend.routes.api_v1 import create_v1_blueprint
-from backend.routes.auth import auth_bp
-from backend.routes.expenses import expenses_bp
-from backend.routes.income import income_bp
-from backend.routes.budget_periods import budget_periods_bp
-from backend.routes.debts import debts_bp
-from backend.routes.recurring_expenses import recurring_expenses_bp
-from backend.routes.recurring_generation import recurring_generation_bp
-from backend.routes.salary_periods import salary_periods_bp
-from backend.routes.password_reset import password_reset_bp
-from backend.routes.export_import import export_import_bp
-from backend.routes.admin import admin_bp
-from backend.routes.subcategories import subcategories_bp
 
 
 def _check_pending_migrations(app):
@@ -163,9 +151,9 @@ def create_app(config_name="development"):
     app.config["JWT_COOKIE_SAMESITE"] = "Lax"
 
     # Flask-Migrate: migrations folder is in backend/migrations
-    migrate = Migrate(app, db, directory="backend/migrations")
+    Migrate(app, db, directory="backend/migrations")
 
-    jwt = JWTManager(app)
+    JWTManager(app)
 
     # Register versioned API (v1)
     v1_bp = create_v1_blueprint()

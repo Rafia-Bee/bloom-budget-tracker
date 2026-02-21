@@ -14,8 +14,7 @@ Endpoints:
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from sqlalchemy import and_
-from backend.models.database import db, Expense, ExpenseNameMapping, Debt, BudgetPeriod
+from backend.models.database import db, Expense, ExpenseNameMapping, Debt
 from backend.utils.validators import ALLOWED_CATEGORIES
 from backend.services.currency_service import get_exchange_rate
 
@@ -32,7 +31,6 @@ def get_expenses():
     limit = request.args.get("limit", 50, type=int)
 
     # Filter parameters
-    period_id = request.args.get("budget_period_id", type=int)
     category = request.args.get("category")
     subcategory = request.args.get("subcategory")
     payment_method = request.args.get("payment_method")

@@ -13,7 +13,6 @@ from sendgrid.helpers.mail import (
     Mail,
     Email,
     To,
-    Content,
     PlainTextContent,
     HtmlContent,
 )

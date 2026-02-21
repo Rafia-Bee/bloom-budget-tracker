@@ -16,7 +16,7 @@ For the CURRENT period, expense/income cutoff is capped at today's date
 so scheduled future transactions don't reduce displayed balance prematurely.
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Dict
 from backend.models.database import (
     db,
@@ -116,8 +116,6 @@ def _calculate_debit_balance(
     Returns:
         Debit balance in euros (can be negative if overdrawn)
     """
-    from datetime import datetime
-
     if balance_mode == "budget":
         # BUDGET MODE: Each period is isolated
         # Balance = Period's initial balance + income within period - expenses within period
@@ -329,8 +327,6 @@ def _calculate_credit_available(
     Returns:
         Current available credit balance in euros
     """
-    credit_limit = salary_period.credit_limit
-
     if balance_mode == "budget":
         # BUDGET MODE: Period-isolated balance
         # Credit available = Period's initial credit balance

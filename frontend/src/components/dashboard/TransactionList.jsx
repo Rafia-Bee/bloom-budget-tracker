@@ -158,21 +158,6 @@ const TransactionList = ({
                                         <button
                                             onClick={() => {
                                                 setSelectionMode(false);
-                                                // Clear selections handled in parent effect or here?
-                                                // Parent effect clears it when filter changes, but here we just cancel mode.
-                                                // We should probably clear selections too.
-                                                // But toggleTransactionSelection logic implies we manage it.
-                                                // Let's assume parent handles it or we just hide it.
-                                                // Actually Dashboard.jsx clears it on filter change.
-                                                // But on Cancel, we should probably clear it.
-                                                // The original code didn't seem to clear it explicitly on cancel in the snippet I saw,
-                                                // but let's check the "Cancel" button in Scheduled view. It does clear.
-                                                // For transactions view, I don't see a "Cancel" button in the original snippet?
-                                                // Ah, I missed it. Let's look at the original code again.
-                                                // Wait, I don't see a "Cancel" button for transaction selection mode in the snippet I read.
-                                                // Maybe it was implicit or I missed it.
-                                                // Ah, the "Select" button toggles mode.
-                                                // Let's add a Cancel button if in selection mode.
                                             }}
                                             className="px-4 py-2 bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition text-sm font-semibold"
                                         >

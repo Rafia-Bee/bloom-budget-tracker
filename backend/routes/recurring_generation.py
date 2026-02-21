@@ -10,7 +10,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, User
 from backend.utils.recurring_generator import (
     generate_due_expenses,
-    generate_due_income,
     generate_all_recurring,
     get_upcoming_recurring_expenses,
     get_upcoming_recurring_income,

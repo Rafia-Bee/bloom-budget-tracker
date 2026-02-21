@@ -5,8 +5,7 @@ Handles password reset functionality including token generation and validation.
 """
 
 import secrets
-import os
-from datetime import datetime, timezone, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from backend.models.database import db, User, PasswordResetToken
 from backend.utils.validators import validate_email, validate_password_strength

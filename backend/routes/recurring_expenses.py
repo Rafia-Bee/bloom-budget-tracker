@@ -9,7 +9,7 @@ Also includes export/import for testing purposes.
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.database import db, RecurringExpense, SalaryPeriod
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy import and_
 from sqlalchemy.exc import SQLAlchemyError
 import json
