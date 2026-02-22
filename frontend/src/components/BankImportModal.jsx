@@ -2,7 +2,9 @@
  * Bloom - Bank Import Modal
  *
  * Modal for importing transactions directly from bank statements.
- * Supports pasting tab-separated or multi-space separated data.
+ * Supports pasting tab-separated, semicolon-separated, or comma-separated data.
+ * Auto-detects column names; falls back to a user-driven mapping step when
+ * columns cannot be recognised.  Mapping choices are remembered for next time.
  */
 
 import React, { useState } from 'react';
@@ -21,7 +23,15 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
     const [previewData, setPreviewData] = useState(null);
-    const [step, setStep] = useState('input'); // 'input' or 'preview'
+    const [step, setStep] = useState('input'); // 'input' | 'mapping' | 'preview'
+
+    // Column mapping state
+    const [detectedHeaders, setDetectedHeaders] = useState([]);
+    const [headersKey, setHeadersKey] = useState('');
+    const [dateColumn, setDateColumn] = useState('');
+    const [amountColumn, setAmountColumn] = useState('');
+    const [nameColumn, setNameColumn] = useState('');
+    const [saveMapping, setSaveMapping] = useState(true);
 
     const exampleData = `Transaction Date\tAmount\tName
 2025/11/22\t-42,33\tWise Europe SA
@@ -41,6 +51,45 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                 mark_as_fixed_bills: markAsFixedBills,
             });
 
+            if (response.data.needs_mapping) {
+                setDetectedHeaders(response.data.headers || []);
+                setHeadersKey(response.data.headers_key || '');
+                setDateColumn('');
+                setAmountColumn('');
+                setNameColumn('');
+                setStep('mapping');
+            } else {
+                setPreviewData(response.data);
+                setStep('preview');
+            }
+        } catch (err) {
+            setError(err.response?.data?.error || 'Preview failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmMapping = async () => {
+        if (!dateColumn || !amountColumn || !nameColumn) {
+            setError('Please select all three columns (Date, Amount, Name).');
+            return;
+        }
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await api.post('/data/preview-bank-transactions', {
+                transactions: transactionsText,
+                payment_method: paymentMethod,
+                mark_as_fixed_bills: markAsFixedBills,
+                column_mapping: {
+                    date: dateColumn,
+                    amount: amountColumn,
+                    name: nameColumn,
+                },
+                save_mapping: saveMapping,
+            });
+
             setPreviewData(response.data);
             setStep('preview');
         } catch (err) {
@@ -55,13 +104,23 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
         setError('');
         setResult(null);
 
-        try {
-            const response = await api.post('/data/import-bank-transactions', {
-                transactions: transactionsText,
-                payment_method: paymentMethod,
-                mark_as_fixed_bills: markAsFixedBills,
-            });
+        const payload = {
+            transactions: transactionsText,
+            payment_method: paymentMethod,
+            mark_as_fixed_bills: markAsFixedBills,
+        };
 
+        // Include column mapping if we went through the mapping step
+        if (step === 'preview' && dateColumn && amountColumn && nameColumn) {
+            payload.column_mapping = {
+                date: dateColumn,
+                amount: amountColumn,
+                name: nameColumn,
+            };
+        }
+
+        try {
+            const response = await api.post('/data/import-bank-transactions', payload);
             setResult(response.data);
         } catch (err) {
             setError(err.response?.data?.error || 'Import failed');
@@ -72,6 +131,13 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
 
     const handleBackToEdit = () => {
         setStep('input');
+        setPreviewData(null);
+        setError('');
+        setDetectedHeaders([]);
+    };
+
+    const handleBackToMapping = () => {
+        setStep('mapping');
         setPreviewData(null);
         setError('');
     };
@@ -201,7 +267,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                         </div>
                     )}
 
-                    {step === 'input' ? (
+                    {step === 'input' && (
                         <form onSubmit={handlePreview}>
                             {/* Instructions */}
                             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
@@ -213,14 +279,12 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                         1. Copy transaction data from your bank (including headers)
                                     </li>
                                     <li>2. Paste it in the text area below</li>
-                                    <li>3. Select whether it's debit or credit card</li>
-                                    <li>4. Click Import Transactions</li>
+                                    <li>3. Select whether it&apos;s debit or credit card</li>
+                                    <li>4. Click Preview Transactions</li>
                                 </ol>
                                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                                    Expected format:{' '}
-                                    <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">
-                                        Transaction Date, Amount, Name
-                                    </code>
+                                    Supports tab, semicolon, and comma separated files.
+                                    Column names are detected automatically.
                                 </p>
                                 <button
                                     type="button"
@@ -304,7 +368,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                     className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-dark-text rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent font-mono text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400"
                                 />
                                 <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
-                                    Supports tab-separated or multi-space separated values. Only
+                                    Supports tab, semicolon, and comma separated formats. Only
                                     negative amounts (expenses) will be imported.
                                 </p>
                             </div>
@@ -353,7 +417,128 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                 </button>
                             </div>
                         </form>
-                    ) : (
+                    )}
+
+                    {step === 'mapping' && (
+                        /* Column Mapping Step */
+                        <div>
+                            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 rounded-lg">
+                                <h3 className="font-semibold text-yellow-900 dark:text-yellow-300 mb-1">
+                                    Map Your Columns
+                                </h3>
+                                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                                    We detected these column headers but couldn&apos;t identify
+                                    them automatically. Please tell us which column contains each
+                                    piece of information.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 mb-6">
+                                {[
+                                    {
+                                        label: 'Date column',
+                                        value: dateColumn,
+                                        setter: setDateColumn,
+                                        testId: 'date-column-select',
+                                    },
+                                    {
+                                        label: 'Amount column',
+                                        value: amountColumn,
+                                        setter: setAmountColumn,
+                                        testId: 'amount-column-select',
+                                    },
+                                    {
+                                        label: 'Name / Description column',
+                                        value: nameColumn,
+                                        setter: setNameColumn,
+                                        testId: 'name-column-select',
+                                    },
+                                ].map(({ label, value, setter, testId }) => (
+                                    <div key={label}>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
+                                            {label}
+                                        </label>
+                                        <select
+                                            data-testid={testId}
+                                            value={value}
+                                            onChange={(e) => setter(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-dark-text rounded-lg focus:ring-2 focus:ring-bloom-pink focus:border-transparent"
+                                        >
+                                            <option value="">— select column —</option>
+                                            {detectedHeaders.map((h) => (
+                                                <option key={h} value={h}>
+                                                    {h}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={saveMapping}
+                                        onChange={(e) => setSaveMapping(e.target.checked)}
+                                        className="w-4 h-4 text-bloom-pink rounded focus:ring-bloom-pink"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-dark-text">
+                                        Remember this mapping for next time
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleConfirmMapping}
+                                    disabled={
+                                        loading ||
+                                        !dateColumn ||
+                                        !amountColumn ||
+                                        !nameColumn
+                                    }
+                                    className="flex-1 bg-bloom-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="animate-spin h-5 w-5"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                    fill="none"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                            Previewing...
+                                        </span>
+                                    ) : (
+                                        'Preview Transactions'
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleBackToEdit}
+                                    disabled={loading}
+                                    className="px-6 text-gray-600 dark:text-dark-text-secondary font-semibold py-3 hover:text-gray-800 dark:hover:text-dark-text transition disabled:opacity-50"
+                                >
+                                    Back to Edit
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 'preview' && (
                         /* Preview Step */
                         <div>
                             {previewData && (
@@ -363,7 +548,8 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                             Preview
                                         </h3>
                                         <p className="text-sm text-blue-800 dark:text-blue-300">
-                                            {previewData.total_count} transaction(s) ready to import
+                                            {previewData.total_count} transaction(s) ready to
+                                            import
                                             {previewData.skipped_count > 0 &&
                                                 `, ${previewData.skipped_count} skipped`}
                                         </p>
@@ -433,7 +619,9 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleConfirmImport}
-                                            disabled={loading || previewData.total_count === 0}
+                                            disabled={
+                                                loading || previewData.total_count === 0
+                                            }
                                             className="flex-1 bg-bloom-pink text-white font-semibold py-3 rounded-lg hover:bg-bloom-pink/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {loading ? (
@@ -464,11 +652,15 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                             )}
                                         </button>
                                         <button
-                                            onClick={handleBackToEdit}
+                                            onClick={
+                                                detectedHeaders.length > 0
+                                                    ? handleBackToMapping
+                                                    : handleBackToEdit
+                                            }
                                             disabled={loading}
                                             className="px-6 text-gray-600 dark:text-dark-text-secondary font-semibold py-3 hover:text-gray-800 dark:hover:text-dark-text transition disabled:opacity-50"
                                         >
-                                            Back to Edit
+                                            Back
                                         </button>
                                     </div>
                                 </>
@@ -484,6 +676,9 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                             </h4>
                             <ul className="text-sm text-gray-600 dark:text-dark-text-secondary space-y-1">
                                 <li>
+                                    • Automatically detects delimiters (tab, semicolon, comma)
+                                </li>
+                                <li>
                                     • Automatically categorizes transactions based on merchant name
                                 </li>
                                 <li>
@@ -493,7 +688,8 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                 <li>
                                     • Assigns to correct budget period based on transaction date
                                 </li>
-                                <li>• Supports comma decimal separator (42,33 → 42.33)</li>
+                                <li>• Supports multiple date formats and decimal separators</li>
+                                <li>• Remembers your column mapping choices for next time</li>
                             </ul>
                         </div>
                     )}

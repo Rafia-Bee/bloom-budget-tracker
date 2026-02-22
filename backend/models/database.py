@@ -12,6 +12,7 @@ Models:
 - Debt: Debt tracking with balances
 - RecurringExpense: Recurring expense templates
 - ExpenseNameMapping: AI subcategorization mappings
+- CsvColumnMapping: User's saved column mapping preferences for bank CSV imports
 - UserDefaults: User's default expense values
 - CreditCardSettings: Credit card configuration
 - PeriodSuggestion: End-of-period recommendations
@@ -547,6 +548,36 @@ class ExpenseNameMapping(db.Model):
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class CsvColumnMapping(db.Model):
+    __tablename__ = "csv_column_mappings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    headers_key = db.Column(db.String(500), nullable=False)
+    date_column = db.Column(db.String(200), nullable=False)
+    amount_column = db.Column(db.String(200), nullable=False)
+    name_column = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id", "headers_key", name="uq_user_headers_mapping"
+        ),
     )
 
 
