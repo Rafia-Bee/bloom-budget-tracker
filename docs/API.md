@@ -726,8 +726,6 @@ Generate expenses from recurring templates for next 60 days.
 
 ## Recurring Income
 
-> **Feature Flag**: `recurringIncomeEnabled` must be enabled
-
 ### Get All Recurring Income
 
 **Endpoint:** `GET /recurring-income`

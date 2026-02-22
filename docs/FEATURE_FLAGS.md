@@ -75,13 +75,11 @@ const { isEnabled } = useFeatureFlag();
 - **Description**: Enables automatic budget recalculation
 - **Default**: `false`
 
-### `recurringIncomeEnabled`
+### `recurringIncomeEnabled` (GRADUATED)
 
-- **Type**: Feature flag
-- **Description**: Enables recurring income feature (recurring income templates, recurring toggle in AddIncomeModal, recurring income tab on Recurring page, scheduled income in Dashboard)
-- **Default**: `false`
-- **Access**: Settings -> Experimental -> Recurring Income
-- **Added**: Issue #177
+- **Status**: Graduated to permanent feature
+- **Description**: Recurring income is now always enabled for all users
+- **Graduated**: Issue #204 - Recurring income templates, toggle in AddIncomeModal, income tab on Recurring page, scheduled income in Dashboard are all permanently available
 
 ## Best Practices
 
@@ -99,8 +97,7 @@ Feature flags are stored in `localStorage` under the key `feature_flags`:
 {
     "reportsEnabled": false,
     "budgetRecalculationEnabled": false,
-    "balanceModeEnabled": false,
-    "recurringIncomeEnabled": false
+    "balanceModeEnabled": false
 }
 ```
 
