@@ -22,7 +22,6 @@ test.describe('Reports & Analytics', () => {
                 JSON.stringify({
                     reportsEnabled: true,
                     budgetRecalculationEnabled: false,
-                    flexibleSubPeriodsEnabled: false,
                 })
             );
         });

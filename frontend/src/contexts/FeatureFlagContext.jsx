@@ -17,7 +17,6 @@ const FeatureFlagContext = createContext();
 // Default flags - new flags MUST be added here with default value
 const DEFAULT_FLAGS = {
     budgetRecalculationEnabled: false,
-    flexibleSubPeriodsEnabled: false,
     reportsEnabled: false,
     balanceModeEnabled: false, // Issue #149 - Balance mode toggle
     recurringIncomeEnabled: false, // Issue #177 - Recurring Income feature

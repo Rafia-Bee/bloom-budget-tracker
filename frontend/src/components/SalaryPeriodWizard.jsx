@@ -20,7 +20,6 @@ import PeriodInfoModal from './PeriodInfoModal';
 function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverData = null }) {
     const { defaultCurrency, convertAmount } = useCurrency();
     const { isEnabled } = useFeatureFlag();
-    const flexibleSubPeriodsEnabled = isEnabled('flexibleSubPeriodsEnabled');
     const balanceModeEnabled = isEnabled('balanceModeEnabled');
     const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
     const currencySymbol = getCurrencySymbol(defaultCurrency);
@@ -268,18 +267,16 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             return;
         }
 
-        // Validate dates when flexible sub-periods enabled
-        if (flexibleSubPeriodsEnabled) {
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            if (end <= start) {
-                setError('End date must be after start date');
-                return;
-            }
-            if (numSubPeriods < 1 || numSubPeriods > maxSubPeriods) {
-                setError(`Sub-periods must be between 1 and ${maxSubPeriods}`);
-                return;
-            }
+        // Validate dates for sub-periods
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (end <= start) {
+            setError('End date must be after start date');
+            return;
+        }
+        if (numSubPeriods < 1 || numSubPeriods > maxSubPeriods) {
+            setError(`Sub-periods must be between 1 and ${maxSubPeriods}`);
+            return;
         }
 
         // No validation needed - credit allowance slider only shows when credit available
@@ -299,11 +296,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 start_date: startDate,
             };
 
-            // Add flexible sub-periods params when feature is enabled
-            if (flexibleSubPeriodsEnabled) {
-                payload.end_date = endDate;
-                payload.num_sub_periods = numSubPeriods;
-            }
+            // Add sub-periods params
+            payload.end_date = endDate;
+            payload.num_sub_periods = numSubPeriods;
 
             const response = await api.post('/salary-periods/preview', payload);
 
@@ -335,11 +330,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 expected_income: recurringIncomeEnabled ? expectedIncome : [],
             };
 
-            // Add flexible sub-periods params when feature is enabled
-            if (flexibleSubPeriodsEnabled) {
-                payload.end_date = endDate;
-                payload.num_sub_periods = numSubPeriods;
-            }
+            // Add sub-periods params
+            payload.end_date = endDate;
+            payload.num_sub_periods = numSubPeriods;
 
             const response = await api.post('/salary-periods/preview', payload);
 
@@ -350,7 +343,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
             try {
                 const expensesResponse = await expenseAPI.getAll({
                     start_date: startDate,
-                    end_date: flexibleSubPeriodsEnabled ? endDate : response.data.end_date,
+                    end_date: endDate,
                     is_fixed_bill: 'false',
                 });
                 const expenses = expensesResponse.data.expenses || [];
@@ -496,11 +489,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 expected_income: recurringIncomeEnabled ? expectedIncome : [],
             };
 
-            // Add flexible sub-periods params when feature is enabled
-            if (flexibleSubPeriodsEnabled) {
-                payload.end_date = endDate;
-                payload.num_sub_periods = numSubPeriods;
-            }
+            // Add sub-periods params
+            payload.end_date = endDate;
+            payload.num_sub_periods = numSubPeriods;
 
             if (editPeriod) {
                 // Update existing salary period
@@ -568,8 +559,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 <div className="sticky top-0 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border px-6 py-4 rounded-t-2xl z-10">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-bloom-pink dark:text-dark-pink">
-                            {editPeriod ? 'Edit' : 'Setup'}{' '}
-                            {flexibleSubPeriodsEnabled ? 'Budget Periods' : 'Weekly Budget'}
+                            {editPeriod ? 'Edit' : 'Setup'} Budget Periods
                         </h2>
                         <button
                             onClick={onClose}
@@ -605,11 +595,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     Enter Your Current Balances
                                 </h3>
                                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
-                                    We'll help you create a{' '}
-                                    {flexibleSubPeriodsEnabled
-                                        ? `${numSubPeriods}-period`
-                                        : '4-week'}{' '}
-                                    budget based on your available funds.
+                                    We'll help you create a {numSubPeriods}-period budget based
+                                    on your available funds.
                                 </p>
                             </div>
 
@@ -854,10 +841,9 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </div>
                             )}
 
-                            {/* Flexible Sub-Periods: End Date and Number of Sub-Periods */}
-                            {flexibleSubPeriodsEnabled && (
-                                <>
-                                    <div>
+                            {/* End Date and Number of Periods */}
+                            <>
+                                <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                                             Budget Period End Date
                                         </label>
@@ -903,8 +889,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                             Max: {maxSubPeriods} (1 day per sub-period)
                                         </p>
                                     </div>
-                                </>
-                            )}
+                            </>
 
                             <button
                                 onClick={handleStep1Next}
@@ -924,7 +909,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </h3>
                                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                                     These recurring expenses won't count against your{' '}
-                                    {flexibleSubPeriodsEnabled ? 'period' : 'weekly'} budget. Adjust
+                                    period budget. Adjust
                                     or remove as needed.
                                 </p>
                             </div>
@@ -944,17 +929,10 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                     <strong>
                                                         rent, utilities, or subscriptions
                                                     </strong>
-                                                    ? Adding them now ensures your{' '}
-                                                    {flexibleSubPeriodsEnabled
-                                                        ? 'period'
-                                                        : 'weekly'}{' '}
+                                                    ? Adding them now ensures your period
                                                     budget is accurate. Fixed bills are deducted
                                                     from your total budget <em>before</em>{' '}
-                                                    calculating your{' '}
-                                                    {flexibleSubPeriodsEnabled
-                                                        ? 'period'
-                                                        : 'weekly'}{' '}
-                                                    allowance.
+                                                    calculating your period allowance.
                                                 </p>
                                             </div>
                                         </div>
@@ -1364,15 +1342,11 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                         <div className="space-y-6">
                             <div>
                                 <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">
-                                    Confirm Your {flexibleSubPeriodsEnabled ? 'Period' : 'Weekly'}{' '}
-                                    Budget
+                                    Confirm Your Period Budget
                                 </h3>
                                 <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
                                     Review the breakdown and create your{' '}
-                                    {flexibleSubPeriodsEnabled
-                                        ? `${numSubPeriods}-period`
-                                        : '4-week'}{' '}
-                                    budget plan.
+                                    {numSubPeriods}-period budget plan.
                                 </p>
                             </div>
 
@@ -1424,10 +1398,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </div>
                                 <div className="border-t border-white/30 pt-2 sm:pt-3 flex justify-between items-center">
                                     <span className="opacity-90 text-sm sm:text-base">
-                                        ÷{' '}
-                                        {flexibleSubPeriodsEnabled
-                                            ? `${numSubPeriods} periods`
-                                            : '4 weeks'}
+                                        ÷ {numSubPeriods} periods
                                     </span>
                                     <span className="text-2xl sm:text-3xl font-bold">
                                         {formatCurrency(fromEur(preview.weekly_budget))}
@@ -1437,8 +1408,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                     <div className="text-sm opacity-90 mt-2">
                                         <div className="flex justify-between">
                                             <span>
-                                                Debit per{' '}
-                                                {flexibleSubPeriodsEnabled ? 'period' : 'week'}:
+                                                Debit per period:
                                             </span>
                                             <span>
                                                 {formatCurrency(
@@ -1448,8 +1418,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                         </div>
                                         <div className="flex justify-between">
                                             <span>
-                                                Credit per{' '}
-                                                {flexibleSubPeriodsEnabled ? 'period' : 'week'}:
+                                                Credit per period:
                                             </span>
                                             <span>
                                                 {formatCurrency(
@@ -1485,9 +1454,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                     )}
                                                 </span>{' '}
                                                 already recorded in this date range. These will
-                                                count toward your{' '}
-                                                {flexibleSubPeriodsEnabled ? 'period' : 'weekly'}{' '}
-                                                budget.
+                                                count toward your period budget.
                                             </p>
                                         </div>
                                     </div>
@@ -1497,10 +1464,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                             <div>
                                 <div className="flex justify-between items-center mb-3">
                                     <h4 className="font-semibold text-gray-900 dark:text-dark-text">
-                                        {flexibleSubPeriodsEnabled
-                                            ? `${numSubPeriods}-Period`
-                                            : '4-Week'}{' '}
-                                        Schedule
+                                        {numSubPeriods}-Period Schedule
                                     </h4>
                                     <span className="text-sm text-gray-500">
                                         {(() => {

@@ -158,9 +158,9 @@ test.describe('Salary Period Wizard', () => {
                 timeout: 5000,
             });
 
-            // Should see calculated weekly budget
+            // Should see calculated period budget
             await expect(
-                page.locator('text=/Week 1|Week 2|per week|weekly/i').first()
+                page.locator('text=/Period 1|Period 2|per period|period/i').first()
             ).toBeVisible();
 
             // Click Create Budget Plan button (use getByRole for exact match)
@@ -246,15 +246,15 @@ test.describe('Salary Period Wizard', () => {
 
                 await page.waitForTimeout(500);
 
-                // Step 3 should show "4-Week Schedule" heading
-                const scheduleHeading = page.locator('text=4-Week Schedule');
+                // Step 3 should show "N-Period Schedule" heading
+                const scheduleHeading = page.locator('text=/\\d+-Period Schedule/i');
                 await expect(scheduleHeading).toBeVisible({
                     timeout: 5000,
                 });
             } else {
-                // Period exists - check dashboard for week display (e.g., "Week 1 of 4")
-                // This format comes from WeeklyBudgetCard component
-                const weekDisplay = page.locator('text=/Week \\d+ of 4/i');
+                // Period exists - check dashboard for period display (e.g., "Period 1 of 4")
+                // This format comes from BudgetCard component
+                const weekDisplay = page.locator('text=/Period \\d+ of \\d+/i');
                 const hasWeekDisplay = await weekDisplay
                     .first()
                     .isVisible({ timeout: 5000 })
@@ -404,13 +404,13 @@ test.describe('Salary Period Wizard', () => {
                     const options = await weekSelector.locator('option').allTextContents();
 
                     if (options.length > 1) {
-                        // Select Week 2 if available (options are just numbers like "2")
+                        // Select Period 2 if available (options are just numbers like "2")
                         await weekSelector.selectOption({ value: '2' });
                         await page.waitForTimeout(500);
 
                         // Carryover might be shown
                         const carryoverDisplay = page.locator(
-                            'text=/Carryover|Carry|Leftover|from last week/i'
+                            'text=/Carryover|Carry|Leftover|from previous/i'
                         );
 
                         // Carryover shows if previous week had leftover

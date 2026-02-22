@@ -96,7 +96,7 @@ describe('SalaryPeriodWizard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/setup weekly budget/i)).toBeInTheDocument();
+                expect(screen.getByText(/setup budget periods/i)).toBeInTheDocument();
             });
         });
 
@@ -119,7 +119,7 @@ describe('SalaryPeriodWizard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/edit weekly budget/i)).toBeInTheDocument();
+                expect(screen.getByText(/edit budget periods/i)).toBeInTheDocument();
             });
         });
 
@@ -638,7 +638,7 @@ describe('SalaryPeriodWizard', () => {
 
             // Step 3
             await waitFor(() => {
-                expect(screen.getByText(/confirm your weekly budget/i)).toBeInTheDocument();
+                expect(screen.getByText(/confirm your period budget/i)).toBeInTheDocument();
             });
         });
 
@@ -691,7 +691,7 @@ describe('SalaryPeriodWizard', () => {
             await clickWithAct(screen.getByText(/next: confirm budget/i));
 
             await waitFor(() => {
-                expect(screen.getByText(/4-week schedule/i)).toBeInTheDocument();
+                expect(screen.getByText(/\d+-period schedule/i)).toBeInTheDocument();
             });
         });
 
@@ -933,7 +933,7 @@ describe('SalaryPeriodWizard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/setup weekly budget/i)).toBeInTheDocument();
+                expect(screen.getByText(/setup budget periods/i)).toBeInTheDocument();
             });
 
             // Find the X button

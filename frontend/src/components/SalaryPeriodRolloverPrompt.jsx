@@ -1,8 +1,8 @@
 /**
- * Bloom - Salary Period Rollover Prompt
+ * Bloom - Period Cycle Rollover Prompt
  *
- * Banner that appears when Week 4 of current salary period is ending or has ended.
- * Prompts user to create next salary period with pre-filled balances.
+ * Banner that appears when the last period of current cycle is ending or has ended.
+ * Prompts user to create next period cycle with pre-filled balances.
  *
  * Optimization: Accepts salary period data from parent to avoid duplicate API calls.
  * Falls back to SalaryPeriodContext if parent doesn't provide data.
@@ -34,7 +34,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
             processRolloverData(contextData.salary_period);
         } else if (contextLoaded && !contextData?.salary_period) {
             // Context loaded but no period exists
-            setError('No active salary period found');
+            setError('No active period cycle found');
             setLoading(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,7 +42,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
 
     const processRolloverData = (salary_period) => {
         if (!salary_period) {
-            setError('No active salary period found');
+            setError('No active period cycle found');
             setLoading(false);
             return;
         }
@@ -104,7 +104,7 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
                         <h3
                             className={`text-lg font-bold ${isOverdue ? 'text-red-800 dark:text-red-300' : 'text-yellow-800 dark:text-yellow-300'}`}
                         >
-                            {isOverdue ? 'Salary Period Ended' : 'Week 4 Ending Soon'}
+                            {isOverdue ? 'Period Cycle Ended' : 'Last Period Ending Soon'}
                         </h3>
                     </div>
 
@@ -112,8 +112,8 @@ function SalaryPeriodRolloverPrompt({ onCreateNext, onDismiss, salaryPeriodData 
                         className={`text-sm mb-3 ${isOverdue ? 'text-red-700 dark:text-red-300' : 'text-yellow-700 dark:text-yellow-300'}`}
                     >
                         {isOverdue
-                            ? `Your salary period ended ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) === 1 ? '' : 's'} ago. Create your next period to continue budgeting.`
-                            : `Your salary period ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Set up your next period now for seamless transition.`}
+                            ? `Your period cycle ended ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) === 1 ? '' : 's'} ago. Create your next period to continue budgeting.`
+                            : `Your period cycle ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Set up your next period now for seamless transition.`}
                     </p>
 
                     <div

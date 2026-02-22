@@ -80,7 +80,7 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            expect(screen.getByText('+ Create Salary Period')).toBeInTheDocument();
+            expect(screen.getByText('+ Create Period Cycle')).toBeInTheDocument();
         });
 
         it('calls onCreateNew when create button clicked (no period)', async () => {
@@ -95,7 +95,7 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            await clickWithAct(screen.getByText('+ Create Salary Period'));
+            await clickWithAct(screen.getByText('+ Create Period Cycle'));
             expect(mockOnCreateNew).toHaveBeenCalledTimes(1);
         });
     });
@@ -113,7 +113,7 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            expect(screen.getByText('4-Week Salary Period')).toBeInTheDocument();
+            expect(screen.getByText('4-Period Cycle')).toBeInTheDocument();
         });
 
         it('displays period date range', () => {
@@ -182,7 +182,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
         });
 
         it('shows period description in dropdown header', async () => {
@@ -201,10 +201,10 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText(/each period has 4 weekly budgets/i)).toBeInTheDocument();
+            expect(screen.getByText(/4 periods/i)).toBeInTheDocument();
         });
 
-        it('shows salary periods header in dropdown', async () => {
+        it('shows period cycles header in dropdown', async () => {
             render(
                 <PeriodSelector
                     currentPeriod={mockCurrentPeriod}
@@ -220,10 +220,10 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
         });
 
-        it('shows create new salary period button in dropdown', async () => {
+        it('shows create new period cycle button in dropdown', async () => {
             render(
                 <PeriodSelector
                     currentPeriod={mockCurrentPeriod}
@@ -239,7 +239,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument();
+            expect(screen.getByText('+ Create New Period Cycle')).toBeInTheDocument();
         });
 
         it('closes calendar when clicking outside', async () => {
@@ -261,14 +261,14 @@ describe('PeriodSelector', () => {
             await act(async () => {
                 fireEvent.click(screen.getByRole('button'));
             });
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             // Click outside
             await act(async () => {
                 fireEvent.mouseDown(screen.getByTestId('outside'));
             });
 
-            expect(screen.queryByText('Salary Periods')).not.toBeInTheDocument();
+            expect(screen.queryByText('Period Cycles')).not.toBeInTheDocument();
         });
     });
 
@@ -289,7 +289,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             // Find and click a different period
             const periodButtons = screen.getAllByRole('button');
@@ -320,17 +320,17 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('+ Create New Salary Period')).toBeInTheDocument();
+            expect(screen.getByText('+ Create New Period Cycle')).toBeInTheDocument();
 
             await act(async () => {
-                fireEvent.click(screen.getByText('+ Create New Salary Period'));
+                fireEvent.click(screen.getByText('+ Create New Period Cycle'));
             });
             expect(mockOnCreateNew).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('Period Type Labels', () => {
-        it('shows 4-Week Salary Period label for salary periods', () => {
+        it('shows 4-Period Cycle label for period cycles', () => {
             render(
                 <PeriodSelector
                     currentPeriod={mockCurrentPeriod}
@@ -342,7 +342,7 @@ describe('PeriodSelector', () => {
                 />
             );
 
-            expect(screen.getByText('4-Week Salary Period')).toBeInTheDocument();
+            expect(screen.getByText('4-Period Cycle')).toBeInTheDocument();
         });
 
         it('shows Week label for budget periods with week_number', () => {
@@ -487,7 +487,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             // Find and click a delete button (they appear on hover but are in DOM)
             const deleteButtons = screen.getAllByTitle(/delete/i);
@@ -516,7 +516,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             const deleteButtons = screen.getAllByTitle(/delete/i);
             if (deleteButtons.length > 0) {
@@ -546,7 +546,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             const deleteButtons = screen.getAllByTitle(/delete/i);
             if (deleteButtons.length > 0) {
@@ -585,7 +585,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             const deleteButtons = screen.getAllByTitle(/delete/i);
             if (deleteButtons.length > 0) {
@@ -622,7 +622,7 @@ describe('PeriodSelector', () => {
                 fireEvent.click(screen.getByRole('button'));
             });
 
-            expect(screen.getByText('Salary Periods')).toBeInTheDocument();
+            expect(screen.getByText('Period Cycles')).toBeInTheDocument();
 
             const editButtons = screen.getAllByTitle(/edit/i);
             if (editButtons.length > 0) {
