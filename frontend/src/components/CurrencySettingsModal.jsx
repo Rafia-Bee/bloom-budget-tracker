@@ -140,7 +140,7 @@ export default function CurrencySettingsModal({ onClose }) {
                                         <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">
                                             This may take a moment. We use free hosting and currency
                                             APIs, which can cause slight delays. Thank you for your
-                                             patience!
+                                            patience!
                                         </p>
                                     </div>
                                 </div>

@@ -206,7 +206,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                             {/* Instructions */}
                             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
                                 <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                                 How to Import
+                                    How to Import
                                 </h3>
                                 <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                                     <li>
@@ -277,7 +277,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                     />
                                     <div>
                                         <span className="text-sm font-semibold text-gray-800 dark:text-dark-text">
-                                             Mark as Fixed Bills
+                                            Mark as Fixed Bills
                                         </span>
                                         <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">
                                             Check this to exclude these transactions from your
@@ -360,7 +360,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                 <>
                                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
                                         <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                                             Preview
+                                            Preview
                                         </h3>
                                         <p className="text-sm text-blue-800 dark:text-blue-300">
                                             {previewData.total_count} transaction(s) ready to import
