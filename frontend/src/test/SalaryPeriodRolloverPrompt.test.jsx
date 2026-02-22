@@ -98,7 +98,7 @@ describe('SalaryPeriodRolloverPrompt', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 4 Ending Soon')).toBeInTheDocument();
+                expect(screen.getByText('Last Period Ending Soon')).toBeInTheDocument();
             });
         });
 
@@ -215,7 +215,7 @@ describe('SalaryPeriodRolloverPrompt', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Salary Period Ended')).toBeInTheDocument();
+                expect(screen.getByText('Period Cycle Ended')).toBeInTheDocument();
             });
         });
 
@@ -437,7 +437,7 @@ describe('SalaryPeriodRolloverPrompt', () => {
             );
 
             await waitFor(() => {
-                const banner = screen.getByText('Week 4 Ending Soon').closest('.rounded-xl');
+                const banner = screen.getByText('Last Period Ending Soon').closest('.rounded-xl');
                 expect(banner).toHaveClass('mb-6');
             });
         });

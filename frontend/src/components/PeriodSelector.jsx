@@ -36,15 +36,13 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
     };
 
     const getPeriodTypeLabel = (period) => {
-        // Salary periods have weekly_budget field and optional num_sub_periods
+        // Period cycles have weekly_budget field and optional num_sub_periods
         if (period.weekly_budget !== undefined) {
             const numPeriods = period.num_sub_periods || 4;
             if (numPeriods === 1) {
                 return 'Single Period';
-            } else if (numPeriods === 4) {
-                return '4-Week Salary Period';
             } else {
-                return `${numPeriods}-Period Salary Cycle`;
+                return `${numPeriods}-Period Cycle`;
             }
         }
         // Budget periods with week number
@@ -58,24 +56,21 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
 
     // Helper to get human-readable sub-period description
     const getSubPeriodDescription = () => {
-        if (!currentPeriod) return 'Each period has 4 weekly budgets';
-
-        // Find the salary period that matches (either current is salary period or its parent)
-        const salaryPeriod =
-            currentPeriod.weekly_budget !== undefined
+        // Find the period cycle that matches (either current is period cycle or its parent)
+        const salaryPeriod = currentPeriod
+            ? currentPeriod.weekly_budget !== undefined
                 ? currentPeriod
                 : periods.find(
                       (p) =>
                           p.id === currentPeriod.salary_period_id && p.weekly_budget !== undefined
-                  );
+                  )
+            : null;
 
         const numPeriods = salaryPeriod?.num_sub_periods || 4;
         if (numPeriods === 1) {
             return 'Single budget period';
-        } else if (numPeriods === 4) {
-            return 'Each period has 4 weekly budgets';
         } else {
-            return `Each period has ${numPeriods} sub-periods`;
+            return `${numPeriods} periods`;
         }
     };
 
@@ -136,7 +131,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                     onClick={onCreateNew}
                     className="text-bloom-pink dark:text-dark-pink font-semibold hover:underline"
                 >
-                    + Create Salary Period
+                    + Create Period Cycle
                 </button>
             </div>
         );
@@ -208,7 +203,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                         <div className="flex justify-between items-center">
                             <div>
                                 <h3 className="font-semibold text-gray-800 dark:text-dark-text">
-                                    Salary Periods
+                                    Period Cycles
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-0.5">
                                     {getSubPeriodDescription()}
@@ -361,7 +356,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                                     closeCalendar();
                                                                 }}
                                                                 className="p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
-                                                                title="Edit salary period"
+                                                                title="Edit period cycle"
                                                             >
                                                                 <svg
                                                                     className="w-4 h-4"
@@ -386,7 +381,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                                     });
                                                                 }}
                                                                 className="p-1 text-red-600 dark:text-dark-danger hover:text-red-800 dark:hover:text-red-500 transition"
-                                                                title="Delete salary period"
+                                                                title="Delete period cycle"
                                                             >
                                                                 <svg
                                                                     className="w-4 h-4"
@@ -407,7 +402,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                                                 </div>
                                             </div>
 
-                                            {/* Weekly Budget Periods - compact grid */}
+                                            {/* Budget Periods - compact grid */}
                                             {relatedWeeks.length > 0 &&
                                                 expandedPeriods[salaryPeriod.id] && (
                                                     <div className="bg-white dark:bg-dark-surface border-t border-gray-100 dark:border-dark-border p-2">
@@ -509,7 +504,7 @@ function PeriodSelector({ currentPeriod, periods, onPeriodChange, onCreateNew, o
                             }}
                             className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated transition text-bloom-pink dark:text-dark-pink font-semibold"
                         >
-                            + Create New Salary Period
+                            + Create New Period Cycle
                         </button>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 /**
  * Navigation and State Management Tests
  *
- * Tests for navigating between weeks, viewing carryover calculations,
+ * Tests for navigating between periods, viewing carryover calculations,
  * and general app navigation.
  *
  * Authentication is handled automatically by fixtures.js which restores
@@ -22,16 +22,16 @@ test.describe('Navigation and State Management', () => {
         }
     });
 
-    test.describe('Week Navigation', () => {
-        test('week navigation controls are visible when period exists', async ({ page }) => {
+    test.describe('Period Navigation', () => {
+        test('period navigation controls are visible when period exists', async ({ page }) => {
             // Wait for page to be fully loaded
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
-            // Look for week navigation elements - only visible if period exists
-            const weekIndicator = page.locator('text=/Week [1-4]/i');
+            // Look for period navigation elements - only visible if period exists
+            const weekIndicator = page.locator('text=/Period \\d+ of \\d+/i');
 
-            // Check if week indicator is visible (only if salary period exists)
+            // Check if period indicator is visible (only if period cycle exists)
             const isVisible = await weekIndicator.first().isVisible({ timeout: 3000 });
 
             if (!isVisible) {
@@ -49,20 +49,20 @@ test.describe('Navigation and State Management', () => {
                     await expect(setupPrompt.first()).toBeVisible();
                 } else {
                     // Just verify dashboard loaded without setup prompt
-                    // (meaning period might exist but week nav isn't visible on mobile by default)
+                    // (meaning period might exist but period nav isn't visible on mobile by default)
                     await expect(page).toHaveURL(/\/(dashboard)?$/);
                 }
             } else {
-                // Period exists - week navigation should be visible
+                // Period exists - period navigation should be visible
                 await expect(weekIndicator.first()).toBeVisible();
             }
         });
 
-        test('can navigate between weeks', async ({ page }) => {
-            // Find week navigation buttons
+        test('can navigate between periods', async ({ page }) => {
+            // Find period navigation buttons
             const nextWeekButton = page
                 .locator(
-                    'button:has-text("Next"), button[aria-label*="next" i], [data-testid="next-week"], button:has(svg)'
+                    'button:has-text("Next"), button[aria-label*="next" i], [data-testid="next-period"], button:has(svg)'
                 )
                 .filter({ hasText: /next|›|→/i })
                 .or(page.locator('button:has-text(">")'))
@@ -70,14 +70,14 @@ test.describe('Navigation and State Management', () => {
 
             const prevWeekButton = page
                 .locator(
-                    'button:has-text("Previous"), button:has-text("Prev"), button[aria-label*="prev" i], [data-testid="prev-week"]'
+                    'button:has-text("Previous"), button:has-text("Prev"), button[aria-label*="prev" i], [data-testid="prev-period"]'
                 )
                 .filter({ hasText: /prev|‹|←/i })
                 .or(page.locator('button:has-text("<")'))
                 .first();
 
-            // Get current week indicator
-            const weekIndicator = page.locator('text=/Week [1-4]/i').first();
+            // Get current period indicator
+            const weekIndicator = page.locator('text=/Period \\d+ of \\d+/i').first();
 
             if (await weekIndicator.isVisible({ timeout: 3000 })) {
                 const initialWeek = await weekIndicator.textContent();
@@ -87,9 +87,8 @@ test.describe('Navigation and State Management', () => {
                     await nextWeekButton.click();
                     await page.waitForTimeout(500);
 
-                    // Week should change (or we hit the last week)
+                    // Period should change (or we hit the last period)
                     const newWeek = await weekIndicator.textContent();
-                    // Either the week changed or we were already at week 4
                     expect(newWeek).toBeTruthy();
                 }
 
@@ -104,8 +103,8 @@ test.describe('Navigation and State Management', () => {
             }
         });
 
-        test('week displays budget information', async ({ page }) => {
-            // Each week should show budget-related info
+        test('period displays budget information', async ({ page }) => {
+            // Each period should show budget-related info
             const budgetInfo = page.locator(
                 'text=/Budget|Spent|Remaining|Available|Leftover|Carryover/i'
             );
@@ -120,17 +119,17 @@ test.describe('Navigation and State Management', () => {
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
-            // Use the week selector dropdown to navigate between weeks
+            // Use the period selector dropdown to navigate between periods
             const weekSelector = page.locator('select').first();
 
-            // Try to navigate to a later week
+            // Try to navigate to a later period
             if (await weekSelector.isVisible({ timeout: 3000 })) {
-                // Week selector options are just numbers ("1", "2", etc.), not "Week 2"
+                // Period selector options are just numbers ("1", "2", etc.), not "Period 2"
                 await weekSelector.selectOption({ value: '2' });
                 await page.waitForTimeout(500);
 
                 // Look for carryover indicator
-                const carryoverInfo = page.locator('text=/Carryover|Leftover|from Week|carry/i');
+                const carryoverInfo = page.locator('text=/Carryover|Leftover|from previous|carry/i');
 
                 // Carryover might not always be visible (depends on data)
                 // Just verify the page is still on dashboard
@@ -303,21 +302,21 @@ test.describe('Navigation and State Management', () => {
     });
 
     test.describe('State Persistence', () => {
-        test('selected week persists after page reload', async ({ page }) => {
+        test('selected period persists after page reload', async ({ page }) => {
             // Wait for page to be fully loaded
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
 
-            // Navigate to a specific week using the dropdown selector
+            // Navigate to a specific period using the dropdown selector
             const weekSelector = page.locator('select').first();
 
             if (await weekSelector.isVisible({ timeout: 3000 })) {
-                // Select week 2 to change week (options are just numbers like "2")
+                // Select period 2 to change period (options are just numbers like "2")
                 await weekSelector.selectOption({ value: '2' });
                 await page.waitForTimeout(500);
 
-                // Get current week
-                const weekIndicator = page.locator('text=/Week [1-4]/i').first();
+                // Get current period
+                const weekIndicator = page.locator('text=/Period \\d+ of \\d+/i').first();
                 const weekBefore = await weekIndicator.textContent();
 
                 // Reload page
@@ -325,11 +324,11 @@ test.describe('Navigation and State Management', () => {
                 await page.waitForLoadState('networkidle');
                 await page.waitForTimeout(1000);
 
-                // Week should be remembered (or reset to current - both are valid behaviors)
+                // Period should be remembered (or reset to current - both are valid behaviors)
                 // Just verify page loaded successfully
                 await expect(page).toHaveURL(/\/(dashboard)?$/);
             } else {
-                // No week selector visible - skip test or verify page loaded
+                // No period selector visible - skip test or verify page loaded
                 await expect(page).toHaveURL(/\/(dashboard)?$/);
             }
         });

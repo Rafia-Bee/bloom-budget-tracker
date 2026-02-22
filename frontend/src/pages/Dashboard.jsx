@@ -20,7 +20,7 @@ import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
 import Header from '../components/Header';
 import PeriodSelector from '../components/PeriodSelector';
-import WeeklyBudgetCard from '../components/WeeklyBudgetCard';
+import BudgetCard from '../components/BudgetCard';
 import DraggableFloatingButton from '../components/DraggableFloatingButton';
 import SalaryPeriodRolloverPrompt from '../components/SalaryPeriodRolloverPrompt';
 import Loading from '../components/Loading';
@@ -1059,8 +1059,8 @@ function Dashboard({ setIsAuthenticated }) {
                     <>
                         {/* Balance Cards shown even without period when user has balances (sync mode) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            {/* Weekly Budget Card - shown even without period to trigger setup */}
-                            <WeeklyBudgetCard
+                            {/* Budget Card - shown even without period to trigger setup */}
+                            <BudgetCard
                                 ref={weeklyBudgetCardRef}
                                 onSetupClick={() => {
                                     // Use the currently viewed salary period, not active period
@@ -1166,8 +1166,8 @@ function Dashboard({ setIsAuthenticated }) {
 
                         {/* Balance Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            {/* Weekly Budget Card */}
-                            <WeeklyBudgetCard
+                            {/* Budget Card */}
+                            <BudgetCard
                                 key={viewingSalaryPeriodId || 'current'}
                                 ref={weeklyBudgetCardRef}
                                 onSetupClick={() => {

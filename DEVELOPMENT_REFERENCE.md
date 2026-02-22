@@ -402,9 +402,9 @@ total_budget = debit + credit_allowance - fixed_bills
 period_budget = total_budget / num_sub_periods  // default: 4
 ```
 
-**Flexible Sub-Periods** (experimental feature flag: `flexibleSubPeriodsEnabled`):
+**Flexible Sub-Periods** (graduated to stable):
 
--   When enabled, users can specify custom end date and number of sub-periods
+-   Users can specify custom end date and number of sub-periods
 -   Minimum: 1 period (entire date range)
 -   Maximum: 1 period per day in the range
 -   Days are distributed evenly across periods (extra days go to earlier periods)

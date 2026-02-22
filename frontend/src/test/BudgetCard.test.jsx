@@ -1,13 +1,13 @@
 import React from 'react';
 /**
- * Bloom - WeeklyBudgetCard Component Tests
+ * Bloom - BudgetCard Component Tests
  *
- * Tests for weekly budget display including:
+ * Tests for budget period display including:
  * - Loading states
  * - No period setup state
  * - Error states
  * - Budget display with progress bar
- * - Week navigation
+ * - Period navigation
  * - Carryover display
  * - Allocate leftover button
  * - Progress color thresholds
@@ -17,7 +17,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { clickWithAct, selectWithAct } from './test-utils';
 import { createRef } from 'react';
-import WeeklyBudgetCard from '../components/WeeklyBudgetCard';
+import BudgetCard from '../components/BudgetCard';
 import { FeatureFlagProvider } from '../contexts/FeatureFlagContext';
 import { CurrencyProvider } from '../contexts/CurrencyContext';
 import api from '../api';
@@ -34,7 +34,7 @@ const renderWithProviders = (component) => {
     return render(<TestWrapper>{component}</TestWrapper>);
 };
 
-describe('WeeklyBudgetCard', () => {
+describe('BudgetCard', () => {
     const mockOnSetupClick = vi.fn();
     const mockOnAllocateClick = vi.fn();
     const mockOnWeekChange = vi.fn();
@@ -113,7 +113,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockImplementation(() => new Promise(() => {}));
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -133,7 +133,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('shows setup prompt when no salary period exists', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -141,13 +141,13 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Set Up Weekly Budget')).toBeInTheDocument();
+                expect(screen.getByText('Set Up Budget Periods')).toBeInTheDocument();
             });
         });
 
         it('shows descriptive text about weekly budgets', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -156,14 +156,14 @@ describe('WeeklyBudgetCard', () => {
 
             await waitFor(() => {
                 expect(
-                    screen.getByText(/divide your salary into 4 weekly budgets/i)
+                    screen.getByText(/divide your salary into budget periods/i)
                 ).toBeInTheDocument();
             });
         });
 
         it('shows Get Started button', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -177,7 +177,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('calls onSetupClick when Get Started is clicked', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -199,7 +199,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockRejectedValue({ response: { status: 500 } });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -207,7 +207,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/failed to load weekly budget/i)).toBeInTheDocument();
+                expect(screen.getByText(/failed to load budget data/i)).toBeInTheDocument();
             });
         });
     });
@@ -219,7 +219,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('displays current week number', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -227,13 +227,13 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
         });
 
         it('displays "Current" badge for current week', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -247,7 +247,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('displays base budget amount', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -263,7 +263,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('displays spent amount', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -279,7 +279,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('displays remaining amount', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -295,7 +295,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('displays week date range', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -315,7 +315,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: mockWeeklyData });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -346,7 +346,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: highSpendData });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -377,7 +377,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: veryHighSpendData });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -408,7 +408,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: veryHighSpendData });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -417,7 +417,7 @@ describe('WeeklyBudgetCard', () => {
 
             await waitFor(() => {
                 expect(
-                    screen.getByText(/you've spent 93% of your weekly budget/i)
+                    screen.getByText(/you've spent 93% of your period budget/i)
                 ).toBeInTheDocument();
             });
         });
@@ -430,7 +430,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('shows week dropdown when multiple weeks exist', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -444,7 +444,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('dropdown has options for all 4 weeks', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -461,7 +461,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('calls onWeekChange when week is changed', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -483,7 +483,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('updates display when week changes', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -491,19 +491,19 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
 
             await selectWithAct(screen.getByRole('combobox'), '2');
 
             await waitFor(() => {
-                expect(screen.getByText('Week 2 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 2 of 4')).toBeInTheDocument();
             });
         });
 
         it('does not show "Current" badge for non-current week', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -540,7 +540,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: dataWithNegativeCarryover });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -548,7 +548,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/overspent from previous weeks/i)).toBeInTheDocument();
+                expect(screen.getByText(/overspent from previous periods/i)).toBeInTheDocument();
             });
             expect(screen.getByText('€50.00')).toBeInTheDocument();
         });
@@ -570,7 +570,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: dataWithPositiveCarryover });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -578,7 +578,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText(/leftover from previous weeks/i)).toBeInTheDocument();
+                expect(screen.getByText(/leftover from previous periods/i)).toBeInTheDocument();
             });
             expect(screen.getByText('€100.00')).toBeInTheDocument();
         });
@@ -587,7 +587,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: mockWeeklyData });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -595,11 +595,11 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
 
-            expect(screen.queryByText(/overspent from previous weeks/i)).not.toBeInTheDocument();
-            expect(screen.queryByText(/leftover from previous weeks/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/overspent from previous periods/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/leftover from previous periods/i)).not.toBeInTheDocument();
         });
     });
 
@@ -624,7 +624,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: dataWithAdjustedBudget });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -645,7 +645,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('shows allocate button when remaining > 0', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -661,7 +661,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('shows remaining amount in button text', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -677,7 +677,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('calls onAllocateClick with period ID and week number', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -713,7 +713,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: dataWithNoRemaining });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -721,7 +721,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
 
             expect(
@@ -737,7 +737,7 @@ describe('WeeklyBudgetCard', () => {
 
         it('calls onSetupClick when settings button clicked', async () => {
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}
@@ -745,10 +745,10 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByTitle('Manage salary period')).toBeInTheDocument();
+                expect(screen.getByTitle('Manage period cycle')).toBeInTheDocument();
             });
 
-            await clickWithAct(screen.getByTitle('Manage salary period'));
+            await clickWithAct(screen.getByTitle('Manage period cycle'));
 
             expect(mockOnSetupClick).toHaveBeenCalledTimes(1);
         });
@@ -763,7 +763,7 @@ describe('WeeklyBudgetCard', () => {
             const ref = createRef();
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     ref={ref}
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
@@ -772,7 +772,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
 
             expect(ref.current.refresh).toBeDefined();
@@ -783,7 +783,7 @@ describe('WeeklyBudgetCard', () => {
             const ref = createRef();
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     ref={ref}
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
@@ -792,7 +792,7 @@ describe('WeeklyBudgetCard', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByText('Week 1 of 4')).toBeInTheDocument();
+                expect(screen.getByText('Period 1 of 4')).toBeInTheDocument();
             });
 
             // API was called once on mount
@@ -827,7 +827,7 @@ describe('WeeklyBudgetCard', () => {
             api.get.mockResolvedValue({ data: dataWithNegativeRemaining });
 
             renderWithProviders(
-                <WeeklyBudgetCard
+                <BudgetCard
                     onSetupClick={mockOnSetupClick}
                     onAllocateClick={mockOnAllocateClick}
                     onWeekChange={mockOnWeekChange}

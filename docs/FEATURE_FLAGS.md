@@ -36,7 +36,6 @@ const [flags, setFlags] = useState(() => {
         : {
               reportsEnabled: false,
               budgetRecalculationEnabled: false,
-              flexibleSubPeriodsEnabled: false,
               balanceModeEnabled: false,
               newFeatureName: false, // Add your flag here
           };
@@ -76,12 +75,6 @@ const { isEnabled } = useFeatureFlag();
 - **Description**: Enables automatic budget recalculation
 - **Default**: `false`
 
-### `flexibleSubPeriodsEnabled`
-
-- **Type**: Feature flag
-- **Description**: Enables flexible sub-periods configuration
-- **Default**: `false`
-
 ### `recurringIncomeEnabled`
 
 - **Type**: Feature flag
@@ -106,7 +99,6 @@ Feature flags are stored in `localStorage` under the key `feature_flags`:
 {
     "reportsEnabled": false,
     "budgetRecalculationEnabled": false,
-    "flexibleSubPeriodsEnabled": false,
     "balanceModeEnabled": false,
     "recurringIncomeEnabled": false
 }

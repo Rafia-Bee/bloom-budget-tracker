@@ -1,9 +1,8 @@
 /**
- * Bloom - Weekly Budget Card
+ * Bloom - Budget Card
  *
- * Displays current week's budget information (week number, budget, spent, remaining).
- * Shows progress bar and prompts user to create salary period if none exists.
- * Supports flexible sub-periods when experimental feature is enabled.
+ * Displays current period's budget information (period number, budget, spent, remaining).
+ * Shows progress bar and prompts user to create period cycle if none exists.
  * Can display data for selected period when passed from parent (PeriodSelector).
  * Shows contextual message when past periods exist but no current period is active.
  */
@@ -11,10 +10,9 @@
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import api from '../api';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
 
-const WeeklyBudgetCard = forwardRef(
+const BudgetCard = forwardRef(
     (
         {
             onSetupClick,
@@ -35,22 +33,15 @@ const WeeklyBudgetCard = forwardRef(
         // Currency context for multi-currency support
         const { defaultCurrency, convertAmount } = useCurrency();
 
-        // Feature flag for flexible sub-periods
-        const { isEnabled } = useFeatureFlag();
-        const flexibleSubPeriodsEnabled = isEnabled('flexibleSubPeriodsEnabled');
-
         // Helper function to format EUR amounts (stored in DB) converted to user's currency
         const fcEur = (cents) => {
             const converted = convertAmount ? convertAmount(cents, 'EUR', defaultCurrency) : cents;
             return formatCurrency(converted, defaultCurrency);
         };
 
-        // Helper to get label for period (Week vs Period based on feature flag)
+        // Helper to get label for period
         const getPeriodLabel = (singular = false) => {
-            if (flexibleSubPeriodsEnabled) {
-                return singular ? 'Period' : 'Periods';
-            }
-            return singular ? 'Week' : 'Weeks';
+            return singular ? 'Period' : 'Periods';
         };
 
         // Get total number of periods
@@ -250,12 +241,12 @@ const WeeklyBudgetCard = forwardRef(
                         <h3 className="text-xl font-bold mb-2">
                             {hasPeriodsButNoneCurrent
                                 ? 'No Current Period'
-                                : `Set Up ${flexibleSubPeriodsEnabled ? 'Budget Periods' : 'Weekly Budget'}`}
+                                : 'Set Up Budget Periods'}
                         </h3>
                         <p className="text-sm opacity-90 mb-4">
                             {hasPeriodsButNoneCurrent
                                 ? 'Your last budget period has ended. Set up a new one to continue tracking.'
-                                : `Divide your salary into ${flexibleSubPeriodsEnabled ? 'budget periods' : '4 weekly budgets'}`}
+                                : 'Divide your salary into budget periods'}
                         </p>
                         <button
                             onClick={onSetupClick}
@@ -272,7 +263,7 @@ const WeeklyBudgetCard = forwardRef(
             return (
                 <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-lg p-6 border-2 border-red-200 dark:border-dark-danger">
                     <p className="text-red-600 dark:text-dark-danger text-center">
-                        Failed to load weekly budget
+                        Failed to load budget data
                     </p>
                 </div>
             );
@@ -342,7 +333,7 @@ const WeeklyBudgetCard = forwardRef(
                         <button
                             onClick={onSetupClick}
                             className="text-white/80 hover:text-white transition p-1.5 sm:p-2 hover:bg-white/10 rounded-lg"
-                            title="Manage salary period"
+                            title="Manage period cycle"
                         >
                             <svg
                                 className="w-4 h-4 sm:w-5 sm:h-5"
@@ -375,8 +366,8 @@ const WeeklyBudgetCard = forwardRef(
                         >
                             <span className="opacity-90">
                                 {displayWeek.carryover < 0
-                                    ? `Overspent from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`
-                                    : `Leftover from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`}
+                                    ? 'Overspent from previous periods'
+                                    : 'Leftover from previous periods'}
                             </span>
                             <span className="font-semibold">
                                 {fcEur(Math.abs(displayWeek.carryover))}
@@ -429,8 +420,7 @@ const WeeklyBudgetCard = forwardRef(
                 {progress >= 90 && (
                     <div className="mt-4 bg-white/20 rounded-lg p-3">
                         <p className="text-xs font-medium">
-                            You've spent {progress.toFixed(0)}% of your{' '}
-                            {flexibleSubPeriodsEnabled ? 'period' : 'weekly'} budget
+                            You've spent {progress.toFixed(0)}% of your period budget
                         </p>
                     </div>
                 )}
@@ -450,6 +440,6 @@ const WeeklyBudgetCard = forwardRef(
     }
 );
 
-WeeklyBudgetCard.displayName = 'WeeklyBudgetCard';
+BudgetCard.displayName = 'BudgetCard';
 
-export default WeeklyBudgetCard;
+export default BudgetCard;
