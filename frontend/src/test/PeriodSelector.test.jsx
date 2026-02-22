@@ -204,6 +204,29 @@ describe('PeriodSelector', () => {
             expect(screen.getByText(/4 periods/i)).toBeInTheDocument();
         });
 
+        it('shows dynamic period count in description', async () => {
+            const periodWith6SubPeriods = {
+                ...mockCurrentPeriod,
+                num_sub_periods: 6,
+            };
+            render(
+                <PeriodSelector
+                    currentPeriod={periodWith6SubPeriods}
+                    periods={mockPeriods}
+                    onPeriodChange={mockOnPeriodChange}
+                    onCreateNew={mockOnCreateNew}
+                    onEdit={mockOnEdit}
+                    onDelete={mockOnDelete}
+                />
+            );
+
+            await act(async () => {
+                fireEvent.click(screen.getByRole('button'));
+            });
+
+            expect(screen.getByText(/6 periods/i)).toBeInTheDocument();
+        });
+
         it('shows period cycles header in dropdown', async () => {
             render(
                 <PeriodSelector
