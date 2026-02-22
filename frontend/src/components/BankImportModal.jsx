@@ -206,7 +206,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                             {/* Instructions */}
                             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
                                 <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                                    📋 How to Import
+                                    How to Import
                                 </h3>
                                 <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                                     <li>
@@ -247,7 +247,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                             className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
                                         />
                                         <span className="text-gray-700 dark:text-dark-text">
-                                            💳 Debit Card
+                                            Debit Card
                                         </span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -260,7 +260,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                             className="w-4 h-4 text-bloom-pink focus:ring-bloom-pink"
                                         />
                                         <span className="text-gray-700 dark:text-dark-text">
-                                            💳 Credit Card
+                                            Credit Card
                                         </span>
                                     </label>
                                 </div>
@@ -277,7 +277,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                     />
                                     <div>
                                         <span className="text-sm font-semibold text-gray-800 dark:text-dark-text">
-                                            📌 Mark as Fixed Bills
+                                            Mark as Fixed Bills
                                         </span>
                                         <p className="text-xs text-gray-600 dark:text-dark-text-secondary mt-1">
                                             Check this to exclude these transactions from your
@@ -360,7 +360,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                 <>
                                     <div className="mb-4 p-4 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg">
                                         <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
-                                            📋 Preview
+                                            Preview
                                         </h3>
                                         <p className="text-sm text-blue-800 dark:text-blue-300">
                                             {previewData.total_count} transaction(s) ready to import
@@ -372,7 +372,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                                     {previewData.errors && previewData.errors.length > 0 && (
                                         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-700 rounded-lg">
                                             <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">
-                                                ⚠️ Warnings:
+                                                Warnings:
                                             </p>
                                             <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 max-h-32 overflow-y-auto">
                                                 {previewData.errors.map((err, idx) => (
@@ -480,7 +480,7 @@ function BankImportModal({ onClose /* onImportComplete */ }) {
                     {step === 'input' && (
                         <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg">
                             <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-2">
-                                ✨ Smart Features
+                                Smart Features
                             </h4>
                             <ul className="text-sm text-gray-600 dark:text-dark-text-secondary space-y-1">
                                 <li>

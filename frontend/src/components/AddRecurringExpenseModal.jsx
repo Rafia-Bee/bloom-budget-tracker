@@ -270,7 +270,7 @@ function AddRecurringExpenseModal({ onClose, onAdd, existingExpense = null }) {
                             </select>
                             {category === 'Savings & Investments' && goals.length === 0 && (
                                 <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
-                                    💡 Create goals in the Goals page to track your savings progress
+                                    Create goals in the Goals page to track your savings progress
                                     automatically
                                 </p>
                             )}

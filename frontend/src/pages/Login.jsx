@@ -55,7 +55,7 @@ function Login({ setIsAuthenticated }) {
         // Security fix (#82): Never display token in UI
         // Production or development: Show standard success message
         setResetMessage(
-            '✅ Password reset email sent!\n\nCheck your email inbox for a link to reset your password. The link will expire in 1 hour.'
+            'Password reset email sent!\n\nCheck your email inbox for a link to reset your password. The link will expire in 1 hour.'
         );
         setShowForgotPassword(false);
     };

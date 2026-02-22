@@ -83,7 +83,7 @@ function TopMerchantsCard({ data, currencyFormatter, onSortChange, sortBy = 'amo
                                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                     >
-                        💰 By Amount
+                        By Amount
                     </button>
                     <button
                         onClick={() => handleSortChange('frequency')}
@@ -93,7 +93,7 @@ function TopMerchantsCard({ data, currencyFormatter, onSortChange, sortBy = 'amo
                                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                     >
-                        🔢 By Frequency
+                        By Frequency
                     </button>
                 </div>
             </div>

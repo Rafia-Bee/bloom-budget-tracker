@@ -146,7 +146,7 @@ function BudgetRecalculationModal({ budgetImpact, onClose, onRecalculated }) {
                     </div>
 
                     <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                        💡 This will update all remaining weeks in your current budget period. Past
+                        This will update all remaining weeks in your current budget period. Past
                         weeks and their spending history will not be affected.
                     </p>
                 </div>

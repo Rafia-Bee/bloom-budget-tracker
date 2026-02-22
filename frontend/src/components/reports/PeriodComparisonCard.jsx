@@ -122,7 +122,7 @@ function PeriodComparisonCard({ currencyFormatter = formatCurrency }) {
         <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4 mb-6">
             <div className="mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    📊 Period Comparison
+                    Period Comparison
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                     Compare spending and income between two date ranges (e.g., your salary periods)

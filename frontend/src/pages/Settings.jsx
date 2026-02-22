@@ -266,10 +266,10 @@ function Settings({ setIsAuthenticated }) {
     };
 
     const tabs = [
-        { id: 'preferences', label: 'Preferences', icon: '⚙️' },
-        { id: 'subcategories', label: 'Categories', icon: '🏷️' },
-        { id: 'experimental', label: 'Experimental', icon: '🧪' },
-        { id: 'account', label: 'Account', icon: '👤' },
+        { id: 'preferences', label: 'Preferences' },
+        { id: 'subcategories', label: 'Categories' },
+        { id: 'experimental', label: 'Experimental' },
+        { id: 'account', label: 'Account' },
     ];
 
     return (
@@ -309,7 +309,6 @@ function Settings({ setIsAuthenticated }) {
                                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover border-gray-200 dark:border-dark-border'
                             }`}
                         >
-                            <span className="text-sm sm:text-base">{tab.icon}</span>
                             <span>{tab.label}</span>
                         </button>
                     ))}
@@ -566,7 +565,7 @@ function Settings({ setIsAuthenticated }) {
                                             <div className="space-y-3 text-sm">
                                                 <div>
                                                     <span className="font-medium text-purple-700 dark:text-purple-300">
-                                                        🔗 Sync with Bank
+                                                        Sync with Bank
                                                     </span>
                                                     <p className="text-purple-600 dark:text-purple-400 mt-1">
                                                         All your budget periods share ONE running
@@ -585,7 +584,7 @@ function Settings({ setIsAuthenticated }) {
                                                 </div>
                                                 <div>
                                                     <span className="font-medium text-purple-700 dark:text-purple-300">
-                                                        📊 Budget Tracker
+                                                        Budget Tracker
                                                     </span>
                                                     <p className="text-purple-600 dark:text-purple-400 mt-1">
                                                         Each budget period is completely isolated.
@@ -613,8 +612,8 @@ function Settings({ setIsAuthenticated }) {
                                             disabled={savingBalanceMode}
                                             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
                                         >
-                                            <option value="sync">🔗 Sync with Bank</option>
-                                            <option value="budget">📊 Budget Tracker</option>
+                                            <option value="sync">Sync with Bank</option>
+                                            <option value="budget">Budget Tracker</option>
                                         </select>
                                         {savingBalanceMode && (
                                             <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -671,7 +670,7 @@ function Settings({ setIsAuthenticated }) {
                                             <div className="space-y-3 text-sm">
                                                 <div>
                                                     <span className="font-medium text-emerald-700 dark:text-emerald-300">
-                                                        📅 Exact Date
+                                                        Exact Date
                                                     </span>
                                                     <p className="text-emerald-600 dark:text-emerald-400 mt-1">
                                                         Income is scheduled on the exact date
@@ -680,7 +679,7 @@ function Settings({ setIsAuthenticated }) {
                                                 </div>
                                                 <div>
                                                     <span className="font-medium text-emerald-700 dark:text-emerald-300">
-                                                        ⏪ Previous Business Day
+                                                        Previous Business Day
                                                     </span>
                                                     <p className="text-emerald-600 dark:text-emerald-400 mt-1">
                                                         If payday falls on Saturday or Sunday,
@@ -690,7 +689,7 @@ function Settings({ setIsAuthenticated }) {
                                                 </div>
                                                 <div>
                                                     <span className="font-medium text-emerald-700 dark:text-emerald-300">
-                                                        ⏩ Next Business Day
+                                                        Next Business Day
                                                     </span>
                                                     <p className="text-emerald-600 dark:text-emerald-400 mt-1">
                                                         If payday falls on Saturday or Sunday,
@@ -718,12 +717,12 @@ function Settings({ setIsAuthenticated }) {
                                             disabled={savingPaymentDate}
                                             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bloom-pink disabled:opacity-50"
                                         >
-                                            <option value="exact_date">📅 Exact Date</option>
+                                            <option value="exact_date">Exact Date</option>
                                             <option value="previous_workday">
-                                                ⏪ Previous Business Day
+                                                Previous Business Day
                                             </option>
                                             <option value="next_workday">
-                                                ⏩ Next Business Day
+                                                Next Business Day
                                             </option>
                                         </select>
                                         {savingPaymentDate && (
@@ -773,7 +772,6 @@ function Settings({ setIsAuthenticated }) {
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-amber-500">📊</span>
                                         <span className="font-medium text-gray-900 dark:text-white">
                                             Budget Recalculation
                                         </span>
@@ -807,7 +805,6 @@ function Settings({ setIsAuthenticated }) {
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-cyan-500">📅</span>
                                         <span className="font-medium text-gray-900 dark:text-white">
                                             Flexible Sub-Periods
                                         </span>
@@ -841,7 +838,6 @@ function Settings({ setIsAuthenticated }) {
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-green-500">📈</span>
                                         <span className="font-medium text-gray-900 dark:text-white">
                                             Reports & Analytics
                                         </span>
@@ -874,7 +870,6 @@ function Settings({ setIsAuthenticated }) {
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-purple-500">🔗</span>
                                         <span className="font-medium text-gray-900 dark:text-white">
                                             Balance Mode Selection
                                         </span>
@@ -909,7 +904,6 @@ function Settings({ setIsAuthenticated }) {
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-surface rounded-lg border border-gray-200 dark:border-dark-border">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-emerald-500">💰</span>
                                         <span className="font-medium text-gray-900 dark:text-white">
                                             Recurring Income
                                         </span>
@@ -1004,8 +998,7 @@ function Settings({ setIsAuthenticated }) {
 
                                 {/* Bank Import Card */}
                                 <div className="p-4 border border-gray-200 dark:border-dark-border rounded-xl bg-gray-50 dark:bg-dark-surface">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span className="text-2xl">🏦</span>
+                                    <div className="mb-3">
                                         <h3 className="font-semibold text-gray-900 dark:text-white">
                                             Bank Import
                                         </h3>
@@ -1047,7 +1040,7 @@ function Settings({ setIsAuthenticated }) {
 
                             <div className="mt-2 p-4 border border-red-200 dark:border-red-900 rounded-xl bg-red-50/50 dark:bg-red-950/10">
                                 <p className="text-xs text-red-700 dark:text-red-400 mb-4">
-                                    ⚠️ Actions in this section are permanent and cannot be undone.
+                                    Actions in this section are permanent and cannot be undone.
                                 </p>
 
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-dark-elevated rounded-lg border border-red-200 dark:border-red-800">
@@ -1114,7 +1107,7 @@ function Settings({ setIsAuthenticated }) {
                                 <li>All goals</li>
                             </ul>
                             <p className="text-xs text-red-900 dark:text-red-300 font-bold mt-3">
-                                ⚠️ Your login will remain but all financial data will be gone
+                                Your login will remain but all financial data will be gone
                                 forever!
                             </p>
                         </div>

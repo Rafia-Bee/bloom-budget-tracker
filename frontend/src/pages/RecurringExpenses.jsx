@@ -488,7 +488,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                                                                             </span>
                                                                             {expense.is_fixed_bill && (
                                                                                 <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium whitespace-nowrap">
-                                                                                    📌 Fixed
+                                                                                    Fixed
                                                                                 </span>
                                                                             )}
                                                                             <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-dark-text rounded whitespace-nowrap">
@@ -656,7 +656,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                                                                         </span>
                                                                         {expense.is_fixed_bill && (
                                                                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
-                                                                                📌 Fixed Bill
+                                                                                Fixed Bill
                                                                             </span>
                                                                         )}
                                                                     </div>

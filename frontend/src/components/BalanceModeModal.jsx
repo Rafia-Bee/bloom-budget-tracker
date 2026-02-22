@@ -129,7 +129,7 @@ export default function BalanceModeModal({ isOpen, onClose, onModeChange }) {
                         <div className="space-y-4">
                             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                                 <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2">
-                                    ⚠️ Confirm Mode Change
+                                    Confirm Mode Change
                                 </h3>
                                 <p className="text-sm text-yellow-700 dark:text-yellow-400">
                                     Changing from <strong>{modeInfo[currentMode].title}</strong> to{' '}
