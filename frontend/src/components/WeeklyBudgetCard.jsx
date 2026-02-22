@@ -375,8 +375,8 @@ const WeeklyBudgetCard = forwardRef(
                         >
                             <span className="opacity-90">
                                 {displayWeek.carryover < 0
-                                    ? `⚠️ Overspent from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`
-                                    : `✨ Leftover from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`}
+                                    ? `Overspent from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`
+                                    : `Leftover from previous ${flexibleSubPeriodsEnabled ? 'periods' : 'weeks'}`}
                             </span>
                             <span className="font-semibold">
                                 {fcEur(Math.abs(displayWeek.carryover))}
@@ -429,7 +429,7 @@ const WeeklyBudgetCard = forwardRef(
                 {progress >= 90 && (
                     <div className="mt-4 bg-white/20 rounded-lg p-3">
                         <p className="text-xs font-medium">
-                            ⚠️ You've spent {progress.toFixed(0)}% of your{' '}
+                            You've spent {progress.toFixed(0)}% of your{' '}
                             {flexibleSubPeriodsEnabled ? 'period' : 'weekly'} budget
                         </p>
                     </div>
@@ -442,7 +442,7 @@ const WeeklyBudgetCard = forwardRef(
                         }
                         className="mt-4 w-full bg-white text-bloom-pink py-2 rounded-lg font-semibold hover:bg-opacity-90 transition text-sm"
                     >
-                        💰 Allocate Leftover ({fcEur(displayWeek.remaining)})
+                        Allocate Leftover ({fcEur(displayWeek.remaining)})
                     </button>
                 )}
             </div>

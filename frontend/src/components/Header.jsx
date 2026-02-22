@@ -130,7 +130,7 @@ function Header({ setIsAuthenticated, children }) {
                 }}
                 className={`${mobileNavLinkClasses} text-left w-full`}
             >
-                🏠 Dashboard
+                Dashboard
             </button>
             <button
                 onClick={(e) => {
@@ -141,7 +141,7 @@ function Header({ setIsAuthenticated, children }) {
                 }}
                 className={`${mobileNavLinkClasses} text-left w-full`}
             >
-                🎯 Goals
+                Goals
             </button>
             {reportsEnabled && (
                 <button
@@ -153,7 +153,7 @@ function Header({ setIsAuthenticated, children }) {
                     }}
                     className={`${mobileNavLinkClasses} text-left w-full`}
                 >
-                    📊 Reports
+                    Reports
                 </button>
             )}
             <button
@@ -165,7 +165,7 @@ function Header({ setIsAuthenticated, children }) {
                 }}
                 className={`${mobileNavLinkClasses} text-left w-full`}
             >
-                🔄 Recurring Expenses
+                Recurring Expenses
             </button>
             <button
                 onClick={(e) => {
@@ -176,7 +176,7 @@ function Header({ setIsAuthenticated, children }) {
                 }}
                 className={`${mobileNavLinkClasses} text-left w-full`}
             >
-                💳 Debts
+                Debts
             </button>
         </>
     );
@@ -409,7 +409,7 @@ function Header({ setIsAuthenticated, children }) {
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                                             />
                                         </svg>
-                                        ⚙️ Settings
+                                        Settings
                                     </button>
                                     <button
                                         onClick={(e) => {
@@ -433,7 +433,7 @@ function Header({ setIsAuthenticated, children }) {
                                                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                             />
                                         </svg>
-                                        💱 Currency
+                                        Currency
                                     </button>
                                     <button
                                         onClick={(e) => {
@@ -457,7 +457,7 @@ function Header({ setIsAuthenticated, children }) {
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                             />
                                         </svg>
-                                        🗑️ Trash
+                                        Trash
                                     </button>
                                     <button
                                         onClick={(e) => {

@@ -157,7 +157,7 @@ function Reports({ setIsAuthenticated }) {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            📊 Reports & Analytics
+                            Reports & Analytics
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-1">
                             Visualize your spending patterns and track your financial progress
@@ -280,7 +280,7 @@ function Reports({ setIsAuthenticated }) {
                             >
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                        📈 Spending Trends
+                                        Spending Trends
                                     </h2>
                                     <div className="flex items-center gap-2">
                                         <select
@@ -336,7 +336,6 @@ function Reports({ setIsAuthenticated }) {
                                             </button>
                                         )}
                                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                            🌸{' '}
                                             {selectedCategory
                                                 ? `${selectedCategory} Subcategories`
                                                 : 'Spending by Category'}
@@ -385,7 +384,7 @@ function Reports({ setIsAuthenticated }) {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                        📊 Budget vs Actual
+                                        Budget vs Actual
                                     </h2>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         Compare planned budget with actual spending by category
@@ -404,7 +403,7 @@ function Reports({ setIsAuthenticated }) {
                         <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-4">
                             <div className="mb-4">
                                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    🏪 Top Merchants
+                                    Top Merchants
                                 </h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     Your most frequent and highest spending merchants
@@ -427,7 +426,7 @@ function Reports({ setIsAuthenticated }) {
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                            📉 Debt Payoff Progress
+                                            Debt Payoff Progress
                                         </h2>
                                         <p className="text-sm text-gray-500 dark:text-gray-400">
                                             Track your total debt balance over time

@@ -220,7 +220,7 @@ function LeftoverBudgetModal({ salaryPeriodId, weekNumber, onClose, onAllocate }
 
                     <div>
                         <p className="text-sm text-gray-700 dark:text-dark-text mb-4">
-                            💡 <strong>Important:</strong> Leftover budget doesn't carry over.
+                            <strong>Important:</strong> Leftover budget doesn't carry over.
                             Allocate it now to debt payments or savings goals!
                         </p>
                     </div>

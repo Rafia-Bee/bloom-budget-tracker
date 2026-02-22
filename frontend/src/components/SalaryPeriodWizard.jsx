@@ -747,7 +747,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 parseCurrency(creditAvailable) === 0 && (
                                     <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                                         <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                                            ⚠️ No credit available (card is maxed out). Only your
+                                            No credit available (card is maxed out). Only your
                                             debit balance will be used for budgeting.
                                         </p>
                                     </div>
@@ -799,7 +799,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                             <div className="space-y-3 text-sm">
                                                 <div>
                                                     <span className="font-medium text-purple-700 dark:text-purple-300">
-                                                        🔗 Sync with Bank
+                                                        Sync with Bank
                                                     </span>
                                                     <p className="text-purple-600 dark:text-purple-400 mt-1">
                                                         All your budget periods share ONE running
@@ -818,7 +818,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                                 </div>
                                                 <div>
                                                     <span className="font-medium text-purple-700 dark:text-purple-300">
-                                                        📊 Budget Tracker
+                                                        Budget Tracker
                                                     </span>
                                                     <p className="text-purple-600 dark:text-purple-400 mt-1">
                                                         Each budget period is completely isolated.
@@ -843,8 +843,8 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                         }}
                                         className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-elevated text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-bloom-pink dark:focus:ring-dark-pink focus:border-transparent"
                                     >
-                                        <option value="sync">🔗 Sync with Bank</option>
-                                        <option value="budget">📊 Budget Tracker</option>
+                                        <option value="sync">Sync with Bank</option>
+                                        <option value="budget">Budget Tracker</option>
                                     </select>
                                     <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-1">
                                         {balanceMode === 'sync'
@@ -1546,7 +1546,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
 
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                 <p className="text-sm text-gray-700">
-                                    💡 <strong>Pro tip:</strong> Any leftover budget at the end of
+                                    <strong>Pro tip:</strong> Any leftover budget at the end of
                                     each week should be allocated to debt or savings - it won't
                                     carry over!
                                 </p>
@@ -1579,7 +1579,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-[60] p-4">
                     <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md p-6">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-3">
-                            📅 Future Budget Period Detected
+                            Future Budget Period Detected
                         </h3>
                         <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
                             You're creating a budget period that starts on{' '}
@@ -1637,7 +1637,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-[60] p-4">
                     <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md p-6">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-3">
-                            📊 Balance Difference Detected
+                            Balance Difference Detected
                         </h3>
 
                         {/* Show debit difference */}

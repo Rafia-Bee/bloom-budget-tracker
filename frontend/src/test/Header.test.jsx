@@ -206,8 +206,8 @@ describe('Header', () => {
             const mobileMenuButton = screen.getByRole('button', { name: 'Menu' });
             await clickWithAct(mobileMenuButton);
 
-            // Mobile menu should show navigation options with emojis
-            expect(screen.getByText(/🏠 Dashboard/)).toBeInTheDocument();
+            // Mobile menu should show navigation options
+            expect(screen.getAllByText(/Dashboard/).length).toBeGreaterThanOrEqual(1);
         });
 
         it('shows navigation items in mobile menu', async () => {
@@ -216,9 +216,9 @@ describe('Header', () => {
             const mobileMenuButton = screen.getByRole('button', { name: 'Menu' });
             await clickWithAct(mobileMenuButton);
 
-            expect(screen.getByText(/🎯 Goals/)).toBeInTheDocument();
-            expect(screen.getByText(/🔄 Recurring Expenses/)).toBeInTheDocument();
-            expect(screen.getByText(/💳 Debts/)).toBeInTheDocument();
+            expect(screen.getAllByText(/Goals/).length).toBeGreaterThanOrEqual(1);
+            expect(screen.getAllByText(/Recurring Expenses/).length).toBeGreaterThanOrEqual(1);
+            expect(screen.getAllByText(/Debts/).length).toBeGreaterThanOrEqual(1);
         });
     });
 
