@@ -16,6 +16,7 @@ import BankImportModal from '../components/BankImportModal';
 import BudgetRecalculationModal from '../components/BudgetRecalculationModal';
 import Loading from '../components/Loading';
 import Header from '../components/Header';
+import ScrollNavButtons from '../components/ScrollNavButtons';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
@@ -1341,6 +1342,9 @@ function RecurringExpenses({ setIsAuthenticated }) {
                     }}
                 />
             )}
+
+            {/* Scroll Navigation Buttons */}
+            <ScrollNavButtons />
         </div>
     );
 }
