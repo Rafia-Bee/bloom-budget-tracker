@@ -619,8 +619,10 @@ class TestBankImport:
         assert response.status_code == 400
         assert "required" in response.json["error"]
 
-    def test_preview_bank_transactions_invalid_format(self, client, auth_headers):
-        """Should reject invalid transaction format"""
+    def test_preview_bank_transactions_unknown_headers_returns_needs_mapping(
+        self, client, auth_headers
+    ):
+        """Should return needs_mapping when column headers are not recognised"""
         transactions = """Some random text
 That is not valid"""
 
@@ -630,8 +632,19 @@ That is not valid"""
             headers=auth_headers,
         )
 
+        assert response.status_code == 200
+        assert response.json.get("needs_mapping") is True
+        assert "headers" in response.json
+
+    def test_preview_bank_transactions_invalid_format_empty(self, client, auth_headers):
+        """Should reject data that has fewer than 2 lines (no transactions)"""
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": "   ", "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
         assert response.status_code == 400
-        assert "format" in response.json["error"].lower()
 
     def test_import_bank_transactions(self, client, auth_headers, salary_period):
         """Should import bank transactions"""
@@ -759,3 +772,154 @@ That is not valid"""
         )
 
         assert response.status_code == 400
+
+    # --- Flexible format tests ---
+
+    def test_preview_semicolon_separated_csv(self, client, auth_headers, salary_period):
+        """Should parse semicolon-separated CSV"""
+        from datetime import date
+
+        today = date.today().strftime("%Y-%m-%d")
+        transactions = f"Date;Amount;Name\n{today};-10,50;Coffee Shop"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": transactions, "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+        assert response.json["transactions"][0]["name"] == "Coffee Shop"
+
+    def test_preview_comma_separated_csv(self, client, auth_headers, salary_period):
+        """Should parse comma-separated CSV"""
+        from datetime import date
+
+        today = date.today().strftime("%Y-%m-%d")
+        transactions = f"Date,Amount,Name\n{today},-25.00,Grocery Store"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": transactions, "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+        assert response.json["transactions"][0]["name"] == "Grocery Store"
+
+    def test_preview_alternative_column_names(
+        self, client, auth_headers, salary_period
+    ):
+        """Should accept alternative column header names"""
+        from datetime import date
+
+        today = date.today().strftime("%Y-%m-%d")
+        transactions = f"Booking Date\tBetrag\tDescription\n{today}\t-8,99\tBookshop"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": transactions, "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+        assert response.json["transactions"][0]["name"] == "Bookshop"
+
+    def test_preview_dd_mm_yyyy_date_format(self, client, auth_headers, salary_period):
+        """Should parse DD/MM/YYYY date format"""
+        from datetime import date
+
+        today = date.today()
+        date_str = today.strftime("%d/%m/%Y")
+        transactions = f"Date\tAmount\tName\n{date_str}\t-5,00\tCafe"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": transactions, "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+
+    def test_preview_dot_separated_date_format(
+        self, client, auth_headers, salary_period
+    ):
+        """Should parse DD.MM.YYYY date format"""
+        from datetime import date
+
+        today = date.today()
+        date_str = today.strftime("%d.%m.%Y")
+        transactions = f"Date\tAmount\tName\n{date_str}\t-12,00\tPharmacy"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={"transactions": transactions, "payment_method": "Debit card"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+
+    def test_preview_with_explicit_column_mapping(
+        self, client, auth_headers, salary_period
+    ):
+        """Should use explicit column mapping when provided"""
+        from datetime import date
+
+        today = date.today().strftime("%Y-%m-%d")
+        transactions = f"Datum;Bedrag;Naam\n{today};-20,00;Supermarkt"
+
+        response = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={
+                "transactions": transactions,
+                "payment_method": "Debit card",
+                "column_mapping": {"date": "Datum", "amount": "Bedrag", "name": "Naam"},
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert response.json["total_count"] == 1
+        assert response.json["transactions"][0]["name"] == "Supermarkt"
+
+    def test_preview_saves_and_recalls_column_mapping(
+        self, client, auth_headers, salary_period
+    ):
+        """Saved mapping should be used automatically on next import"""
+        from datetime import date
+
+        today = date.today().strftime("%Y-%m-%d")
+        # Custom headers that won't be auto-detected
+        transactions = f"Datum;Bedrag;Naam\n{today};-20,00;Bakkerij"
+
+        # First call: provide mapping and ask to save it
+        response1 = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={
+                "transactions": transactions,
+                "payment_method": "Debit card",
+                "column_mapping": {"date": "Datum", "amount": "Bedrag", "name": "Naam"},
+                "save_mapping": True,
+            },
+            headers=auth_headers,
+        )
+        assert response1.status_code == 200
+        assert response1.json["total_count"] == 1
+
+        # Second call: no mapping provided - should use saved one
+        response2 = client.post(
+            "/api/v1/data/preview-bank-transactions",
+            json={
+                "transactions": transactions,
+                "payment_method": "Debit card",
+            },
+            headers=auth_headers,
+        )
+        assert response2.status_code == 200
+        assert response2.json["total_count"] == 1
+        assert response2.json["transactions"][0]["name"] == "Bakkerij"

@@ -9,13 +9,14 @@ import React from 'react';
  * - Preview step API call
  * - Preview table display
  * - Import confirmation
+ * - Column mapping step (fallback when auto-detection fails)
  * - Error handling
  * - Example data paste
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
-import { clickWithAct, typeWithAct } from './test-utils';
+import { clickWithAct, typeWithAct, selectWithAct } from './test-utils';
 import BankImportModal from '../components/BankImportModal';
 import api from '../api';
 
@@ -54,7 +55,7 @@ describe('BankImportModal', () => {
     const mockOnClose = vi.fn();
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
     afterEach(() => {
@@ -375,11 +376,11 @@ describe('BankImportModal', () => {
             await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
 
             await waitFor(() => {
-                expect(screen.getByRole('button', { name: 'Back to Edit' })).toBeInTheDocument();
+                expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
             });
         });
 
-        it('returns to input step when Back to Edit is clicked', async () => {
+        it('returns to input step when Back is clicked', async () => {
             api.post.mockResolvedValueOnce({ data: mockPreviewResponse });
 
             render(<BankImportModal onClose={mockOnClose} />);
@@ -389,10 +390,10 @@ describe('BankImportModal', () => {
             await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
 
             await waitFor(() => {
-                expect(screen.getByRole('button', { name: 'Back to Edit' })).toBeInTheDocument();
+                expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
             });
 
-            await clickWithAct(screen.getByRole('button', { name: 'Back to Edit' }));
+            await clickWithAct(screen.getByRole('button', { name: 'Back' }));
 
             // Should be back on input step
             expect(
@@ -607,6 +608,123 @@ describe('BankImportModal', () => {
             await clickWithAct(dismissButton);
 
             expect(screen.queryByText('Test error')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Column Mapping Step', () => {
+        const needsMappingResponse = {
+            needs_mapping: true,
+            headers: ['Datum', 'Bedrag', 'Naam'],
+            headers_key: 'bedrag,datum,naam',
+            error: 'Could not detect column names. Please map them manually.',
+        };
+
+        it('shows mapping step when server returns needs_mapping', async () => {
+            api.post.mockResolvedValueOnce({ data: needsMappingResponse });
+
+            render(<BankImportModal onClose={mockOnClose} />);
+
+            const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/);
+            await typeWithAct(textarea, 'Datum;Bedrag;Naam\n2025-11-22;-10,00;Winkel');
+            await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
+
+            await waitFor(() => {
+                expect(screen.getByText(/Map Your Columns/)).toBeInTheDocument();
+            });
+        });
+
+        it('shows the detected headers as dropdown options', async () => {
+            api.post.mockResolvedValueOnce({ data: needsMappingResponse });
+
+            render(<BankImportModal onClose={mockOnClose} />);
+
+            const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/);
+            await typeWithAct(textarea, 'Datum;Bedrag;Naam\n2025-11-22;-10,00;Winkel');
+            await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('date-column-select')).toBeInTheDocument();
+                expect(screen.getByTestId('amount-column-select')).toBeInTheDocument();
+                expect(screen.getByTestId('name-column-select')).toBeInTheDocument();
+            });
+
+            // Each select should contain the detected headers
+            const dateSelect = screen.getByTestId('date-column-select');
+            expect(dateSelect).toHaveTextContent('Datum');
+            expect(dateSelect).toHaveTextContent('Bedrag');
+            expect(dateSelect).toHaveTextContent('Naam');
+        });
+
+        it('sends column_mapping when user confirms mapping', async () => {
+            api.post
+                .mockResolvedValueOnce({ data: needsMappingResponse })
+                .mockResolvedValueOnce({ data: mockPreviewResponse });
+
+            render(<BankImportModal onClose={mockOnClose} />);
+
+            const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/);
+            await typeWithAct(textarea, 'Datum;Bedrag;Naam\n2025-11-22;-10,00;Winkel');
+            await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('date-column-select')).toBeInTheDocument();
+            });
+
+            // Select columns
+            await selectWithAct(screen.getByTestId('date-column-select'), 'Datum');
+            await selectWithAct(screen.getByTestId('amount-column-select'), 'Bedrag');
+            await selectWithAct(screen.getByTestId('name-column-select'), 'Naam');
+
+            // Submit mapping (click the Preview Transactions button in the mapping step)
+            const previewBtns = screen.getAllByRole('button', {
+                name: /Preview Transactions/,
+            });
+            await clickWithAct(previewBtns[0]);
+
+            await waitFor(() => {
+                expect(api.post).toHaveBeenCalledWith(
+                    '/data/preview-bank-transactions',
+                    expect.objectContaining({
+                        column_mapping: { date: 'Datum', amount: 'Bedrag', name: 'Naam' },
+                    })
+                );
+            });
+        });
+
+        it('shows Back to Edit button on mapping step', async () => {
+            api.post.mockResolvedValueOnce({ data: needsMappingResponse });
+
+            render(<BankImportModal onClose={mockOnClose} />);
+
+            const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/);
+            await typeWithAct(textarea, 'test');
+            await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
+
+            await waitFor(() => {
+                expect(screen.getByText(/Map Your Columns/)).toBeInTheDocument();
+            });
+
+            expect(screen.getByRole('button', { name: 'Back to Edit' })).toBeInTheDocument();
+        });
+
+        it('returns to input when Back to Edit is clicked from mapping step', async () => {
+            api.post.mockResolvedValueOnce({ data: needsMappingResponse });
+
+            render(<BankImportModal onClose={mockOnClose} />);
+
+            const textarea = screen.getByPlaceholderText(/Paste your bank transactions here/);
+            await typeWithAct(textarea, 'test');
+            await clickWithAct(screen.getByRole('button', { name: /Preview Transactions/ }));
+
+            await waitFor(() => {
+                expect(screen.getByText(/Map Your Columns/)).toBeInTheDocument();
+            });
+
+            await clickWithAct(screen.getByRole('button', { name: 'Back to Edit' }));
+
+            expect(
+                screen.getByPlaceholderText(/Paste your bank transactions here/)
+            ).toBeInTheDocument();
         });
     });
 });

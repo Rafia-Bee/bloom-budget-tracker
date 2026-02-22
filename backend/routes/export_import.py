@@ -17,6 +17,7 @@ from backend.models.database import (
     Income,
     Expense,
     ExpenseNameMapping,
+    CsvColumnMapping,
     Goal,
     Subcategory,
 )
@@ -1069,8 +1070,162 @@ def import_data():
         return jsonify({"error": str(e)}), 400
 
 
+# Known column name variants for auto-detection
+_DATE_COLUMN_VARIANTS = {
+    "transaction date",
+    "date",
+    "datum",
+    "fecha",
+    "data",
+    "booking date",
+    "value date",
+    "boekdatum",
+    "buchungsdatum",
+    "buchungstag",
+    "valutadatum",
+    "settlement date",
+    "posting date",
+    "processing date",
+    "trade date",
+    "effective date",
+    "transaction-date",
+}
+
+_AMOUNT_COLUMN_VARIANTS = {
+    "amount",
+    "betrag",
+    "monto",
+    "importe",
+    "bedrag",
+    "value",
+    "sum",
+    "transaction amount",
+    "debit amount",
+    "credit amount",
+    "amount (eur)",
+    "amount (usd)",
+    "amount (gbp)",
+    "debit",
+    "credit",
+}
+
+_NAME_COLUMN_VARIANTS = {
+    "name",
+    "description",
+    "beschreibung",
+    "omschrijving",
+    "reference",
+    "merchant",
+    "payee",
+    "beneficiary",
+    "naam",
+    "bezeichnung",
+    "buchungstext",
+    "creditor name",
+    "details",
+    "transaction description",
+    "merchant name",
+    "narrative",
+    "particulars",
+    "memo",
+    "descripcion",
+    "descripción",
+}
+
+# Date format patterns to try
+_DATE_FORMATS = [
+    "%Y/%m/%d",
+    "%Y-%m-%d",
+    "%d/%m/%Y",
+    "%d-%m-%Y",
+    "%d.%m.%Y",
+    "%m/%d/%Y",
+    "%m-%d-%Y",
+    "%Y.%m.%d",
+]
+
+
+def _detect_delimiter(line):
+    """Return the most likely delimiter character for a CSV header line."""
+    counts = {"\t": line.count("\t"), ";": line.count(";"), ",": line.count(",")}
+    best = max(counts, key=counts.get)
+    if counts[best] > 0:
+        return best
+    return "\t"
+
+
+def _match_column(header_lower, variants):
+    """Return True if header_lower matches any known variant."""
+    return header_lower.strip() in variants
+
+
+def _find_column_index(headers_lower, variants):
+    """Return index of first header matching the variant set, or None."""
+    for i, h in enumerate(headers_lower):
+        if _match_column(h, variants):
+            return i
+    return None
+
+
+def _parse_date(date_str):
+    """Try multiple date formats and return a date object or raise ValueError."""
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(date_str.strip(), fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognised date format '{date_str}'")
+
+
+def _make_headers_key(headers):
+    """Create a normalised key from a list of header strings."""
+    return ",".join(sorted(h.strip().lower() for h in headers))
+
+
+def detect_csv_format(transactions_text):
+    """
+    Analyse the first line of pasted CSV/TSV text and return format metadata.
+
+    Returns a dict:
+        delimiter     - detected field separator
+        headers       - original header strings
+        headers_key   - normalised key for persistent storage
+        date_col      - matched date header (or None)
+        amount_col    - matched amount header (or None)
+        name_col      - matched name header (or None)
+        needs_mapping - True if any column could not be auto-detected
+    """
+    lines = [l.strip() for l in transactions_text.strip().split("\n") if l.strip()]
+    if not lines:
+        raise ValueError(
+            "No data found. Please paste at least one row including headers."
+        )
+
+    delimiter = _detect_delimiter(lines[0])
+    headers = [h.strip() for h in lines[0].split(delimiter)]
+    headers_lower = [h.lower() for h in headers]
+
+    date_idx = _find_column_index(headers_lower, _DATE_COLUMN_VARIANTS)
+    amount_idx = _find_column_index(headers_lower, _AMOUNT_COLUMN_VARIANTS)
+    name_idx = _find_column_index(headers_lower, _NAME_COLUMN_VARIANTS)
+
+    return {
+        "delimiter": delimiter,
+        "headers": headers,
+        "headers_key": _make_headers_key(headers),
+        "date_col": headers[date_idx] if date_idx is not None else None,
+        "amount_col": headers[amount_idx] if amount_idx is not None else None,
+        "name_col": headers[name_idx] if name_idx is not None else None,
+        "needs_mapping": any(idx is None for idx in [date_idx, amount_idx, name_idx]),
+    }
+
+
 def parse_bank_transactions(
-    transactions_text, payment_method, current_user_id, check_duplicates=True
+    transactions_text,
+    payment_method,
+    current_user_id,
+    check_duplicates=True,
+    column_mapping=None,
 ):
     """
     Helper function to parse bank transaction text and return parsed data.
@@ -1080,6 +1235,9 @@ def parse_bank_transactions(
         payment_method: Payment method ('Debit card' or 'Credit card')
         current_user_id: User ID for duplicate checking
         check_duplicates: Whether to check for existing duplicates
+        column_mapping: Optional dict with keys 'date', 'amount', 'name'
+                        giving the exact header strings to use.
+                        When None, auto-detection is attempted.
 
     Returns:
         dict with parsed_transactions, errors, and skipped_count
@@ -1094,16 +1252,40 @@ def parse_bank_transactions(
             "No transaction data found. Please paste at least one transaction."
         )
 
-    # Skip header line
-    header = lines[0].lower()
-    if (
-        "transaction date" not in header
-        or "amount" not in header
-        or "name" not in header
-    ):
-        raise ValueError(
-            "Invalid format. Expected columns: Transaction Date, Amount, Name"
-        )
+    fmt = detect_csv_format(transactions_text)
+    delimiter = fmt["delimiter"]
+    headers = fmt["headers"]
+    headers_lower = [h.lower() for h in headers]
+
+    # Resolve column indices from explicit mapping or auto-detection
+    if column_mapping:
+        try:
+            date_idx = headers_lower.index(column_mapping["date"].strip().lower())
+        except (ValueError, KeyError):
+            raise ValueError(
+                f"Date column '{column_mapping.get('date')}' not found in headers: {headers}"
+            )
+        try:
+            amount_idx = headers_lower.index(column_mapping["amount"].strip().lower())
+        except (ValueError, KeyError):
+            raise ValueError(
+                f"Amount column '{column_mapping.get('amount')}' not found in headers: {headers}"
+            )
+        try:
+            name_idx = headers_lower.index(column_mapping["name"].strip().lower())
+        except (ValueError, KeyError):
+            raise ValueError(
+                f"Name column '{column_mapping.get('name')}' not found in headers: {headers}"
+            )
+    else:
+        date_idx = _find_column_index(headers_lower, _DATE_COLUMN_VARIANTS)
+        amount_idx = _find_column_index(headers_lower, _AMOUNT_COLUMN_VARIANTS)
+        name_idx = _find_column_index(headers_lower, _NAME_COLUMN_VARIANTS)
+
+        if any(idx is None for idx in [date_idx, amount_idx, name_idx]):
+            raise ValueError(
+                "Invalid format. Expected columns: Transaction Date, Amount, Name"
+            )
 
     transaction_lines = lines[1:]
 
@@ -1113,32 +1295,32 @@ def parse_bank_transactions(
 
     for line_num, line in enumerate(transaction_lines, start=2):
         try:
-            # Split by tab or multiple spaces
-            parts = [p.strip() for p in line.split("\t") if p.strip()]
+            # Split by detected delimiter; fall back to multi-space
+            parts = [p.strip() for p in line.split(delimiter)]
+            if len(parts) < 3 and delimiter != "\t":
+                parts = [p.strip() for p in line.split("\t")]
             if len(parts) < 3:
-                # Try splitting by multiple spaces instead
                 parts = [p.strip() for p in re.split(r"\s{2,}", line) if p.strip()]
 
-            if len(parts) < 3:
-                errors.append(f"Line {line_num}: Invalid format (expected 3 columns)")
+            max_idx = max(date_idx, amount_idx, name_idx)
+            if len(parts) <= max_idx:
+                errors.append(
+                    f"Line {line_num}: Invalid format (expected {max_idx + 1} columns)"
+                )
                 skipped_count += 1
                 continue
 
-            date_str, amount_str, merchant_name = parts[0], parts[1], parts[2]
+            date_str = parts[date_idx]
+            amount_str = parts[amount_idx]
+            merchant_name = parts[name_idx]
 
-            # Parse date (YYYY/MM/DD format)
+            # Parse date (try multiple formats)
             try:
-                date_obj = datetime.strptime(date_str, "%Y/%m/%d").date()
+                date_obj = _parse_date(date_str)
             except ValueError:
-                try:
-                    # Try YYYY-MM-DD format
-                    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-                except ValueError:
-                    errors.append(
-                        f"Line {line_num}: Invalid date format '{date_str}' (expected YYYY/MM/DD)"
-                    )
-                    skipped_count += 1
-                    continue
+                errors.append(f"Line {line_num}: Invalid date format '{date_str}'")
+                skipped_count += 1
+                continue
 
             # Parse amount (handle comma decimal separator and negative sign)
             try:
@@ -1261,6 +1443,10 @@ def preview_bank_transactions():
     """
     Preview bank transactions without importing them.
     Returns parsed transactions for user review.
+
+    Accepts optional column_mapping: {date, amount, name} when auto-detection
+    cannot identify the correct columns.  When save_mapping is true the mapping
+    is persisted for future imports with the same headers.
     """
     try:
         current_user_id = int(get_jwt_identity())
@@ -1272,11 +1458,75 @@ def preview_bank_transactions():
                 400,
             )
 
+        column_mapping = data.get("column_mapping")
+
+        # If no explicit mapping provided, check for saved mapping and try auto-detection
+        if not column_mapping:
+            try:
+                fmt = detect_csv_format(data["transactions"])
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
+
+            if fmt["needs_mapping"]:
+                # Check for a previously saved mapping for this headers combination
+                saved = CsvColumnMapping.query.filter_by(
+                    user_id=current_user_id,
+                    headers_key=fmt["headers_key"],
+                ).first()
+
+                if saved:
+                    column_mapping = {
+                        "date": saved.date_column,
+                        "amount": saved.amount_column,
+                        "name": saved.name_column,
+                    }
+                else:
+                    # Ask the frontend to collect a mapping from the user
+                    return (
+                        jsonify(
+                            {
+                                "needs_mapping": True,
+                                "headers": fmt["headers"],
+                                "headers_key": fmt["headers_key"],
+                                "error": "Could not detect column names. Please map them manually.",
+                            }
+                        ),
+                        200,
+                    )
+
+        # Save the mapping when explicitly requested
+        if data.get("save_mapping") and column_mapping:
+            try:
+                fmt = detect_csv_format(data["transactions"])
+                headers_key = fmt["headers_key"]
+                existing = CsvColumnMapping.query.filter_by(
+                    user_id=current_user_id,
+                    headers_key=headers_key,
+                ).first()
+                if existing:
+                    existing.date_column = column_mapping["date"]
+                    existing.amount_column = column_mapping["amount"]
+                    existing.name_column = column_mapping["name"]
+                else:
+                    db.session.add(
+                        CsvColumnMapping(
+                            user_id=current_user_id,
+                            headers_key=headers_key,
+                            date_column=column_mapping["date"],
+                            amount_column=column_mapping["amount"],
+                            name_column=column_mapping["name"],
+                        )
+                    )
+                db.session.commit()
+            except Exception:
+                db.session.rollback()  # Non-fatal: continue with the preview
+
         result = parse_bank_transactions(
             data["transactions"],
             data["payment_method"],
             current_user_id,
             check_duplicates=True,
+            column_mapping=column_mapping,
         )
 
         return (
@@ -1307,9 +1557,8 @@ def import_bank_transactions():
     """
     Import bank transactions from pasted CSV/TSV data.
 
-    Expected format:
-    Transaction Date\tAmount\tName
-    2025/11/22\t-42,33\tWise Europe SA
+    Accepts optional column_mapping: {date, amount, name} when auto-detection
+    cannot identify the correct columns.
 
     Returns created expenses and any errors/warnings.
     """
@@ -1323,12 +1572,33 @@ def import_bank_transactions():
                 400,
             )
 
+        column_mapping = data.get("column_mapping")
+
+        # Fall back to saved mapping if no explicit mapping given
+        if not column_mapping:
+            try:
+                fmt = detect_csv_format(data["transactions"])
+                if fmt["needs_mapping"]:
+                    saved = CsvColumnMapping.query.filter_by(
+                        user_id=current_user_id,
+                        headers_key=fmt["headers_key"],
+                    ).first()
+                    if saved:
+                        column_mapping = {
+                            "date": saved.date_column,
+                            "amount": saved.amount_column,
+                            "name": saved.name_column,
+                        }
+            except ValueError:
+                pass
+
         # Parse transactions
         result = parse_bank_transactions(
             data["transactions"],
             data["payment_method"],
             current_user_id,
             check_duplicates=True,
+            column_mapping=column_mapping,
         )
 
         # Create expenses from parsed transactions
