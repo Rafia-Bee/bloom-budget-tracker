@@ -22,7 +22,7 @@ from backend.models.database import (
 )
 from backend.services.audit_service import log_admin_event
 from datetime import date
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_
 from sqlalchemy.exc import SQLAlchemyError
 
 user_data_bp = Blueprint("user_data", __name__)

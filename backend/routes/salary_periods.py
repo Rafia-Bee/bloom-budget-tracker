@@ -15,7 +15,6 @@ from backend.models.database import (
     RecurringIncome,
     Expense,
     Income,
-    Debt,
     Goal,
     User,
 )
