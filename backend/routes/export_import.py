@@ -1072,23 +1072,64 @@ def import_data():
 
 # Known column name variants for auto-detection
 _DATE_COLUMN_VARIANTS = {
-    "transaction date", "date", "datum", "fecha", "data", "booking date",
-    "value date", "boekdatum", "buchungsdatum", "buchungstag", "valutadatum",
-    "settlement date", "posting date", "processing date", "trade date",
-    "effective date", "transaction-date",
+    "transaction date",
+    "date",
+    "datum",
+    "fecha",
+    "data",
+    "booking date",
+    "value date",
+    "boekdatum",
+    "buchungsdatum",
+    "buchungstag",
+    "valutadatum",
+    "settlement date",
+    "posting date",
+    "processing date",
+    "trade date",
+    "effective date",
+    "transaction-date",
 }
 
 _AMOUNT_COLUMN_VARIANTS = {
-    "amount", "betrag", "monto", "importe", "bedrag", "value", "sum",
-    "transaction amount", "debit amount", "credit amount", "amount (eur)",
-    "amount (usd)", "amount (gbp)", "debit", "credit",
+    "amount",
+    "betrag",
+    "monto",
+    "importe",
+    "bedrag",
+    "value",
+    "sum",
+    "transaction amount",
+    "debit amount",
+    "credit amount",
+    "amount (eur)",
+    "amount (usd)",
+    "amount (gbp)",
+    "debit",
+    "credit",
 }
 
 _NAME_COLUMN_VARIANTS = {
-    "name", "description", "beschreibung", "omschrijving", "reference",
-    "merchant", "payee", "beneficiary", "naam", "bezeichnung", "buchungstext",
-    "creditor name", "details", "transaction description", "merchant name",
-    "narrative", "particulars", "memo", "descripcion", "descripción",
+    "name",
+    "description",
+    "beschreibung",
+    "omschrijving",
+    "reference",
+    "merchant",
+    "payee",
+    "beneficiary",
+    "naam",
+    "bezeichnung",
+    "buchungstext",
+    "creditor name",
+    "details",
+    "transaction description",
+    "merchant name",
+    "narrative",
+    "particulars",
+    "memo",
+    "descripcion",
+    "descripción",
 }
 
 # Date format patterns to try
@@ -1175,9 +1216,7 @@ def detect_csv_format(transactions_text):
         "date_col": headers[date_idx] if date_idx is not None else None,
         "amount_col": headers[amount_idx] if amount_idx is not None else None,
         "name_col": headers[name_idx] if name_idx is not None else None,
-        "needs_mapping": any(
-            idx is None for idx in [date_idx, amount_idx, name_idx]
-        ),
+        "needs_mapping": any(idx is None for idx in [date_idx, amount_idx, name_idx]),
     }
 
 
@@ -1265,7 +1304,9 @@ def parse_bank_transactions(
 
             max_idx = max(date_idx, amount_idx, name_idx)
             if len(parts) <= max_idx:
-                errors.append(f"Line {line_num}: Invalid format (expected {max_idx + 1} columns)")
+                errors.append(
+                    f"Line {line_num}: Invalid format (expected {max_idx + 1} columns)"
+                )
                 skipped_count += 1
                 continue
 
@@ -1277,9 +1318,7 @@ def parse_bank_transactions(
             try:
                 date_obj = _parse_date(date_str)
             except ValueError:
-                errors.append(
-                    f"Line {line_num}: Invalid date format '{date_str}'"
-                )
+                errors.append(f"Line {line_num}: Invalid date format '{date_str}'")
                 skipped_count += 1
                 continue
 

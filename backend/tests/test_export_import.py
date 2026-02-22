@@ -636,9 +636,7 @@ That is not valid"""
         assert response.json.get("needs_mapping") is True
         assert "headers" in response.json
 
-    def test_preview_bank_transactions_invalid_format_empty(
-        self, client, auth_headers
-    ):
+    def test_preview_bank_transactions_invalid_format_empty(self, client, auth_headers):
         """Should reject data that has fewer than 2 lines (no transactions)"""
         response = client.post(
             "/api/v1/data/preview-bank-transactions",
@@ -811,7 +809,9 @@ That is not valid"""
         assert response.json["total_count"] == 1
         assert response.json["transactions"][0]["name"] == "Grocery Store"
 
-    def test_preview_alternative_column_names(self, client, auth_headers, salary_period):
+    def test_preview_alternative_column_names(
+        self, client, auth_headers, salary_period
+    ):
         """Should accept alternative column header names"""
         from datetime import date
 
@@ -845,7 +845,9 @@ That is not valid"""
         assert response.status_code == 200
         assert response.json["total_count"] == 1
 
-    def test_preview_dot_separated_date_format(self, client, auth_headers, salary_period):
+    def test_preview_dot_separated_date_format(
+        self, client, auth_headers, salary_period
+    ):
         """Should parse DD.MM.YYYY date format"""
         from datetime import date
 

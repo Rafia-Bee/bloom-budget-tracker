@@ -575,9 +575,7 @@ class CsvColumnMapping(db.Model):
     )
 
     __table_args__ = (
-        db.UniqueConstraint(
-            "user_id", "headers_key", name="uq_user_headers_mapping"
-        ),
+        db.UniqueConstraint("user_id", "headers_key", name="uq_user_headers_mapping"),
     )
 
 

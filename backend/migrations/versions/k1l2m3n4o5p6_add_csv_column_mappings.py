@@ -13,7 +13,6 @@ Create Date: 2026-02-22 00:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision = "k1l2m3n4o5p6"
 down_revision = "j1k2l3m4n5o6"
@@ -32,13 +31,9 @@ def upgrade():
         sa.Column("name_column", sa.String(200), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "user_id", "headers_key", name="uq_user_headers_mapping"
-        ),
+        sa.UniqueConstraint("user_id", "headers_key", name="uq_user_headers_mapping"),
     )
 
 
