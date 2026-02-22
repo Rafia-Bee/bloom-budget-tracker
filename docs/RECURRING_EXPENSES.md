@@ -7,7 +7,7 @@ This document explains how recurring expenses and recurring income work in Bloom
 Bloom supports two types of recurring transactions:
 
 - **Recurring Expenses**: Automatically generate expense entries from templates
-- **Recurring Income**: Automatically generate income entries from templates (Feature Flag: `recurringIncomeEnabled`)
+- **Recurring Income**: Automatically generate income entries from templates
 
 ## How It Works
 
@@ -109,9 +109,7 @@ POST /api/v1/recurring-generation/generate?dry_run=true
 
 ---
 
-## Recurring Income (Feature Flag)
-
-> **Feature Flag**: `recurringIncomeEnabled` - Enable in Settings → Experimental
+## Recurring Income
 
 ### Overview
 
@@ -124,10 +122,9 @@ Recurring income works identically to recurring expenses but for income entries.
 
 ### Accessing Recurring Income
 
-1. **Enable the flag**: Settings → Experimental → Recurring Income
-2. **Recurring Page**: The page now has "Expenses" and "Income" tabs
-3. **AddIncomeModal**: Shows "Make this recurring" toggle when enabled
-4. **Dashboard Scheduled Tab**: Shows both scheduled expenses and income
+1. **Recurring Page**: The page has "Expenses" and "Income" tabs
+2. **AddIncomeModal**: Shows "Make this recurring" toggle
+3. **Dashboard Scheduled Tab**: Shows both scheduled expenses and income
 
 ### RecurringIncome Data Model
 
@@ -170,8 +167,7 @@ GET  /api/v1/recurring-income/preview     # Preview upcoming
 
 ### Testing Recurring Income
 
-1. Enable `recurringIncomeEnabled` in Settings → Experimental
-2. Go to Recurring page → Income tab
-3. Create a recurring income template with today as start date
-4. Click "⚡ Generate Now"
-5. Check Dashboard → Income or Scheduled tab for the generated entry
+1. Go to Recurring page → Income tab
+2. Create a recurring income template with today as start date
+3. Click "⚡ Generate Now"
+4. Check Dashboard → Income or Scheduled tab for the generated entry

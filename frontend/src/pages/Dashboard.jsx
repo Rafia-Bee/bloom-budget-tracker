@@ -16,7 +16,6 @@ import {
 } from '../api';
 import { logError } from '../utils/logger';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import { formatCurrency } from '../utils/formatters';
 import Header from '../components/Header';
 import PeriodSelector from '../components/PeriodSelector';
@@ -81,10 +80,6 @@ function Dashboard({ setIsAuthenticated }) {
 
     // Currency context for multi-currency support
     const { defaultCurrency, convertAmount } = useCurrency();
-
-    // Feature flags for recurring income
-    const { isEnabled } = useFeatureFlag();
-    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
 
     // Issue #187: Listen for mobile menu toggle to hide FAB
     useEffect(() => {
@@ -188,12 +183,8 @@ function Dashboard({ setIsAuthenticated }) {
         }
     };
 
-    // Issue #177 - Load scheduled income when recurring income feature is enabled
+    // Issue #177 - Load scheduled income
     const loadScheduledIncome = async () => {
-        if (!recurringIncomeEnabled) {
-            setScheduledIncome([]);
-            return;
-        }
         try {
             const response = await recurringGenerationAPI.previewIncome();
             setScheduledIncome(response.data.upcoming || []);
@@ -365,14 +356,13 @@ function Dashboard({ setIsAuthenticated }) {
             setSelectedScheduled([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [transactionView, recurringIncomeEnabled]);
+    }, [transactionView]);
 
     useEffect(() => {
         // Load scheduled data on initial mount for DateNavigator (no-period mode needs it)
-        // Note: Functions already check recurringIncomeEnabled internally
         loadScheduledExpenses();
         loadScheduledIncome();
-    }, [recurringIncomeEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         // Reload transactions when active filters change
@@ -1221,7 +1211,6 @@ function Dashboard({ setIsAuthenticated }) {
                         transactions={transactions}
                         scheduledExpenses={scheduledExpenses}
                         scheduledIncome={scheduledIncome}
-                        recurringIncomeEnabled={recurringIncomeEnabled}
                         isLoadingMore={isLoadingMore}
                         handleLoadMore={handleLoadMore}
                         hasMoreExpenses={hasMoreExpenses}
