@@ -10,7 +10,6 @@ const TransactionList = ({
     transactions,
     scheduledExpenses,
     scheduledIncome = [],
-    recurringIncomeEnabled = false,
     isLoadingMore,
     handleLoadMore,
     hasMoreExpenses,
@@ -496,9 +495,7 @@ const TransactionList = ({
                         // Combine expenses and income with type markers
                         const allScheduledItems = [
                             ...scheduledExpenses.map((item) => ({ ...item, itemType: 'expense' })),
-                            ...(recurringIncomeEnabled
-                                ? scheduledIncome.map((item) => ({ ...item, itemType: 'income' }))
-                                : []),
+                            ...scheduledIncome.map((item) => ({ ...item, itemType: 'income' })),
                         ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
                         const hasItems = allScheduledItems.length > 0;
@@ -587,7 +584,7 @@ const TransactionList = ({
                                                         await recurringGenerationAPI.generate(
                                                             false,
                                                             null,
-                                                            recurringIncomeEnabled
+                                                            true
                                                         );
                                                         // Reload transactions and switch to transactions view
                                                         loadTransactionsAndBalances();
@@ -634,8 +631,7 @@ const TransactionList = ({
                                             />
                                         </svg>
                                         <p>
-                                            No upcoming scheduled{' '}
-                                            {recurringIncomeEnabled ? 'transactions' : 'expenses'}
+                                            No upcoming scheduled transactions
                                         </p>
                                     </div>
                                 ) : (

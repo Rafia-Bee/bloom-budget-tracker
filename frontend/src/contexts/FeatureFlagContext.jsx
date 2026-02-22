@@ -19,7 +19,6 @@ const DEFAULT_FLAGS = {
     budgetRecalculationEnabled: false,
     reportsEnabled: false,
     balanceModeEnabled: false, // Issue #149 - Balance mode toggle
-    recurringIncomeEnabled: false, // Issue #177 - Recurring Income feature
 };
 
 export function FeatureFlagProvider({ children }) {

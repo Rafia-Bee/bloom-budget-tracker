@@ -3,7 +3,7 @@
  *
  * Management page for recurring expense and income templates.
  * View, create, edit, toggle, and delete recurring items.
- * When recurringIncomeEnabled flag is on, shows Expenses/Income sub-tabs.
+ * Shows Expenses/Income sub-tabs by default.
  */
 
 import { useState, useEffect } from 'react';
@@ -50,7 +50,6 @@ function RecurringExpenses({ setIsAuthenticated }) {
     // Feature flags
     const { isEnabled } = useFeatureFlag();
     const budgetRecalculationEnabled = isEnabled('budgetRecalculationEnabled');
-    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
 
     // Helper to check for budget impact in API response
     const checkBudgetImpact = (response) => {
@@ -81,23 +80,19 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
     useEffect(() => {
         loadRecurringExpenses();
-        if (recurringIncomeEnabled) {
-            loadRecurringIncome();
-        }
+        loadRecurringIncome();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recurringIncomeEnabled]);
+    }, []);
 
     useEffect(() => {
         // Load scheduled items when switching to upcoming view
         if (view === 'upcoming') {
             loadScheduledExpenses();
-            if (recurringIncomeEnabled) {
-                loadScheduledIncome();
-            }
+            loadScheduledIncome();
             setSelectedScheduled([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [view, recurringIncomeEnabled]);
+    }, [view]);
 
     const loadRecurringExpenses = async () => {
         try {
@@ -309,7 +304,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                 {/* Second Row: Sub-tabs (when income enabled) + Description */}
                 <div className="mb-4">
                     {/* Sub-tabs for Active view (when income enabled) */}
-                    {view === 'active' && recurringIncomeEnabled && (
+                    {view === 'active' && (
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => setActiveSubTab('expenses')}
@@ -336,19 +331,17 @@ function RecurringExpenses({ setIsAuthenticated }) {
 
                     <p className="text-gray-600 dark:text-dark-text-secondary">
                         {view === 'active'
-                            ? activeSubTab === 'income' && recurringIncomeEnabled
+                            ? activeSubTab === 'income'
                                 ? 'Manage your automatic income templates'
                                 : 'Manage your automatic expense templates'
-                            : recurringIncomeEnabled
-                              ? 'Preview scheduled expenses and income'
-                              : 'Preview and confirm scheduled expenses'}
+                            : 'Preview scheduled expenses and income'}
                     </p>
                 </div>
 
                 {/* Third Row: Add Button (moved below tabs per Issue #17) */}
                 <div className="mb-6 flex flex-col sm:flex-row gap-3">
                     {view === 'active' ? (
-                        activeSubTab === 'income' && recurringIncomeEnabled ? (
+                        activeSubTab === 'income' ? (
                             <button
                                 onClick={() => setShowAddIncomeModal(true)}
                                 className="px-6 py-3 bg-bloom-mint text-green-800 rounded-lg hover:bg-green-200 transition-colors font-semibold shadow-sm whitespace-nowrap text-center justify-center flex items-center gap-2"
@@ -371,13 +364,11 @@ function RecurringExpenses({ setIsAuthenticated }) {
                                     const result = await recurringGenerationAPI.generate(
                                         false,
                                         null,
-                                        recurringIncomeEnabled
+                                        true
                                     );
                                     setGenerationResult(result.data);
                                     loadScheduledExpenses();
-                                    if (recurringIncomeEnabled) {
-                                        loadScheduledIncome();
-                                    }
+                                    loadScheduledIncome();
                                 } catch (error) {
                                     logError('confirmScheduledItems', error);
                                 } finally {
@@ -405,9 +396,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                             </svg>
                             {generating
                                 ? 'Confirming...'
-                                : recurringIncomeEnabled
-                                  ? 'Confirm Scheduled Items'
-                                  : 'Confirm Scheduled Expenses'}
+                                : 'Confirm Scheduled Items'}
                         </button>
                     )}
                 </div>
@@ -452,8 +441,8 @@ function RecurringExpenses({ setIsAuthenticated }) {
                         {/* Active View - Show active/inactive recurring expenses/income */}
                         {view === 'active' && (
                             <>
-                                {/* Show Expenses when not in income mode, or when income flag is off */}
-                                {(activeSubTab === 'expenses' || !recurringIncomeEnabled) && (
+                                {/* Show Expenses when in expenses mode */}
+                                {activeSubTab === 'expenses' && (
                                     <>
                                         {/* Active Recurring Expenses */}
                                         <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
@@ -906,8 +895,8 @@ function RecurringExpenses({ setIsAuthenticated }) {
                                     </>
                                 )}
 
-                                {/* Show Income when in income mode and flag is enabled */}
-                                {activeSubTab === 'income' && recurringIncomeEnabled && (
+                                {/* Show Income when in income mode */}
+                                {activeSubTab === 'income' && (
                                     <>
                                         {/* Active Recurring Income */}
                                         <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
@@ -1131,11 +1120,7 @@ function RecurringExpenses({ setIsAuthenticated }) {
                         {/* Upcoming View - Show scheduled expenses and income */}
                         {view === 'upcoming' && (
                             <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
-                                {(
-                                    recurringIncomeEnabled
-                                        ? allScheduledItems.length === 0
-                                        : scheduledExpenses.length === 0
-                                ) ? (
+                                {allScheduledItems.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-tertiary">
                                         <svg
                                             className="w-16 h-16 mb-4"
@@ -1151,19 +1136,12 @@ function RecurringExpenses({ setIsAuthenticated }) {
                                             />
                                         </svg>
                                         <p>
-                                            No upcoming scheduled{' '}
-                                            {recurringIncomeEnabled ? 'items' : 'expenses'}
+                                            No upcoming scheduled items
                                         </p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {(recurringIncomeEnabled
-                                            ? allScheduledItems
-                                            : scheduledExpenses.map((e) => ({
-                                                  ...e,
-                                                  type: 'expense',
-                                              }))
-                                        ).map((item, idx) => (
+                                        {allScheduledItems.map((item, idx) => (
                                             <div
                                                 key={`scheduled-${item.template_id || item.id}-${idx}`}
                                                 className={`border rounded-lg p-4 hover:shadow-md transition-shadow dark:bg-dark-elevated ${

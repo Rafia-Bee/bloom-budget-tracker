@@ -3,12 +3,10 @@
  *
  * Modal dialog for adding income entries (salary, bonus, freelance, other).
  * Supports creating one-time income or recurring income templates.
- * Recurring option only visible when recurringIncomeEnabled feature flag is on.
  */
 
 import { useState } from 'react';
 import { recurringIncomeAPI } from '../api';
-import { useFeatureFlag } from '../contexts/FeatureFlagContext';
 import CurrencySelector from './CurrencySelector';
 
 function AddIncomeModal({ onClose, onAdd }) {
@@ -26,9 +24,6 @@ function AddIncomeModal({ onClose, onAdd }) {
     const [dayOfWeek, setDayOfWeek] = useState(0);
     const [frequencyValue, setFrequencyValue] = useState(30);
 
-    const { isEnabled } = useFeatureFlag();
-    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
-
     const incomeTypes = ['Salary', 'Bonus', 'Freelance', 'Rental', 'Dividends', 'Other'];
     const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -40,7 +35,7 @@ function AddIncomeModal({ onClose, onAdd }) {
         try {
             const amountInCents = Math.round(parseFloat(amount) * 100);
 
-            if (isRecurring && recurringIncomeEnabled) {
+            if (isRecurring) {
                 // Create recurring income template
                 const recurringData = {
                     name: type, // Use type as name for recurring income
@@ -191,25 +186,23 @@ function AddIncomeModal({ onClose, onAdd }) {
                         />
                     </div>
 
-                    {/* Recurring Income Toggle - only shown when feature enabled */}
-                    {recurringIncomeEnabled && (
-                        <div className="border-t dark:border-dark-border pt-4">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={isRecurring}
-                                    onChange={(e) => setIsRecurring(e.target.checked)}
-                                    className="w-5 h-5 text-bloom-mint focus:ring-bloom-mint rounded"
-                                />
-                                <span className="text-gray-700 dark:text-dark-text font-semibold">
-                                    Make this a recurring income
-                                </span>
-                            </label>
-                        </div>
-                    )}
+                    {/* Recurring Income Toggle */}
+                    <div className="border-t dark:border-dark-border pt-4">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isRecurring}
+                                onChange={(e) => setIsRecurring(e.target.checked)}
+                                className="w-5 h-5 text-bloom-mint focus:ring-bloom-mint rounded"
+                            />
+                            <span className="text-gray-700 dark:text-dark-text font-semibold">
+                                Make this a recurring income
+                            </span>
+                        </label>
+                    </div>
 
                     {/* Recurring Income Options */}
-                    {isRecurring && recurringIncomeEnabled && (
+                    {isRecurring && (
                         <div className="bg-emerald-50 dark:bg-dark-elevated border border-emerald-200 dark:border-dark-border rounded-lg p-4 space-y-3">
                             <h3 className="font-semibold text-emerald-900 dark:text-bloom-mint mb-2">
                                 Recurrence Schedule
@@ -318,7 +311,7 @@ function AddIncomeModal({ onClose, onAdd }) {
                         >
                             {loading
                                 ? 'Adding...'
-                                : isRecurring && recurringIncomeEnabled
+                                : isRecurring
                                   ? 'Create Template'
                                   : 'Add'}
                         </button>

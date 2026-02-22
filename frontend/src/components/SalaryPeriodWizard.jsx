@@ -21,7 +21,6 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
     const { defaultCurrency, convertAmount } = useCurrency();
     const { isEnabled } = useFeatureFlag();
     const balanceModeEnabled = isEnabled('balanceModeEnabled');
-    const recurringIncomeEnabled = isEnabled('recurringIncomeEnabled');
     const currencySymbol = getCurrencySymbol(defaultCurrency);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -327,7 +326,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 credit_allowance: toEur(creditAllowance),
                 start_date: startDate,
                 fixed_bills: fixedBills,
-                expected_income: recurringIncomeEnabled ? expectedIncome : [],
+                expected_income: expectedIncome,
             };
 
             // Add sub-periods params
@@ -486,7 +485,7 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                 credit_allowance: toEur(creditAllowance),
                 start_date: startDate,
                 fixed_bills: fixedBills,
-                expected_income: recurringIncomeEnabled ? expectedIncome : [],
+                expected_income: expectedIncome,
             };
 
             // Add sub-periods params
@@ -1236,89 +1235,87 @@ function SalaryPeriodWizard({ onClose, onComplete, editPeriod = null, rolloverDa
                                 </div>
                             </div>
 
-                            {/* Expected Income Section - Only when feature is enabled */}
-                            {recurringIncomeEnabled && (
-                                <>
-                                    <div className="border-t border-gray-200 dark:border-dark-border pt-6 mt-6">
-                                        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">
-                                            Expected Income
-                                        </h3>
-                                        <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
-                                            Recurring income will be added to your available budget.
+                            {/* Expected Income Section */}
+                            <>
+                                <div className="border-t border-gray-200 dark:border-dark-border pt-6 mt-6">
+                                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-dark-text">
+                                        Expected Income
+                                    </h3>
+                                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
+                                        Recurring income will be added to your available budget.
+                                    </p>
+                                </div>
+
+                                {expectedIncome.length === 0 ? (
+                                    <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-4">
+                                        <p className="text-sm text-gray-500 dark:text-dark-text-secondary text-center">
+                                            No recurring income set up yet. You can add
+                                            recurring income from the Recurring page.
                                         </p>
                                     </div>
-
-                                    {expectedIncome.length === 0 ? (
-                                        <div className="bg-gray-50 dark:bg-dark-elevated rounded-lg p-4">
-                                            <p className="text-sm text-gray-500 dark:text-dark-text-secondary text-center">
-                                                No recurring income set up yet. You can add
-                                                recurring income from the Recurring page.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {expectedIncome.map((income, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg"
-                                                >
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-800 dark:text-dark-text">
-                                                            {income.name}
-                                                        </div>
-                                                        <div className="text-sm text-gray-500 dark:text-dark-text-secondary capitalize">
-                                                            {income.income_type || 'Other'}
-                                                        </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {expectedIncome.map((income, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="font-medium text-gray-800 dark:text-dark-text">
+                                                        {income.name}
                                                     </div>
-                                                    <div className="relative w-32">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
-                                                            {currencySymbol}
-                                                        </span>
-                                                        <input
-                                                            type="text"
-                                                            value={(
-                                                                fromEur(income.amount) / 100
-                                                            ).toFixed(2)}
-                                                            onChange={(e) =>
-                                                                updateExpectedIncomeAmount(
-                                                                    index,
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className="w-full pl-7 pr-3 py-2 border border-emerald-300 dark:border-emerald-700 rounded text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
-                                                        />
+                                                    <div className="text-sm text-gray-500 dark:text-dark-text-secondary capitalize">
+                                                        {income.income_type || 'Other'}
                                                     </div>
-                                                    <button
-                                                        onClick={() => removeExpectedIncome(index)}
-                                                        className="text-red-500 hover:text-red-700 px-2"
-                                                    >
-                                                        ×
-                                                    </button>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="font-medium text-gray-700 dark:text-dark-text">
-                                                Total Expected Income
-                                            </span>
-                                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                                                +
-                                                {formatCurrency(
-                                                    fromEur(
-                                                        expectedIncome.reduce(
-                                                            (sum, inc) => sum + inc.amount,
-                                                            0
-                                                        )
-                                                    )
-                                                )}
-                                            </span>
-                                        </div>
+                                                <div className="relative w-32">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
+                                                        {currencySymbol}
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        value={(
+                                                            fromEur(income.amount) / 100
+                                                        ).toFixed(2)}
+                                                        onChange={(e) =>
+                                                            updateExpectedIncomeAmount(
+                                                                index,
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="w-full pl-7 pr-3 py-2 border border-emerald-300 dark:border-emerald-700 rounded text-sm bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => removeExpectedIncome(index)}
+                                                    className="text-red-500 hover:text-red-700 px-2"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                </>
-                            )}
+                                )}
+
+                                <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-dark-text">
+                                            Total Expected Income
+                                        </span>
+                                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                                            +
+                                            {formatCurrency(
+                                                fromEur(
+                                                    expectedIncome.reduce(
+                                                        (sum, inc) => sum + inc.amount,
+                                                        0
+                                                    )
+                                                )
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
 
                             <div className="flex gap-3">
                                 <button
